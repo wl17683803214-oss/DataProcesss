@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataprocess.mapper.FepFileTransferRecordMapper">
+
+    <!-- 按任务、接口、文件名和文件长度查询唯一处理记录。 -->
+    <select id="findByIdentity"
+            resultType="com.example.dataprocess.entity.FepFileTransferRecord">
+        select id, task_id, interface_id, file_name, file_type, file_length,
+               local_path, object_name, file_url, process_status,
+               retry_count, last_error, next_retry_time,
+               completed_time, create_time, update_time
+        from fep_file_transfer_record
+        where task_id = #{taskId}
+          and interface_id = #{interfaceId}
+          and file_name = #{fileName}
+          and file_length = #{fileLength}
+    </select>
+
+    <!-- 登记已经完整落到本地的文件，并返回生成的主键。 -->
+    <insert id="insertReceived"
+            parameterType="com.example.dataprocess.entity.FepFileTransferRecord"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into fep_file_transfer_record (
+            task_id, interface_id, file_name, file_type, file_length, local_path,
+            object_name, file_url, process_status, retry_count,
+            completed_time, create_time, update_time
+        ) values (
+            #{taskId}, #{interfaceId}, #{fileName}, #{fileType}, #{fileLength}, #{localPath},
+            #{objectName}, #{fileUrl}, #{processStatus}, 0,
+            #{completedTime}, current_timestamp, current_timestamp
+        )
+    </insert>
+
+    <!-- 本地文件重新接收完成后，从对象上传阶段重新开始。 -->
+    <update id="resetReceived"
+            parameterType="com.example.dataprocess.entity.FepFileTransferRecord">
+        update fep_file_transfer_record
+        set local_path = #{localPath},
+            file_type = #{fileType},
+            object_name = #{objectName},
+            file_url = #{fileUrl},
+            process_status = #{processStatus},
+            retry_count = 0,
+            last_error = null,
+            next_retry_time = null,
+            completed_time = #{completedTime},
+            update_time = current_timestamp
+        where id = #{id}
+    </update>
+
+    <!-- 分批查询当前允许重试的未发布文件。 -->
+    <select id="findRetryable"
+            resultType="com.example.dataprocess.entity.FepFileTransferRecord">
+        select id, task_id, interface_id, file_name, file_type, file_length,
+               local_path, object_name, file_url, process_status,
+               retry_count, last_error, next_retry_time,
+               completed_time, create_time, update_time
+        from fep_file_transfer_record
+        where process_status in (1, 2)
+          and (next_retry_time is null or next_retry_time &lt;= #{now})
+        order by update_time, id
+        limit #{limit}
+    </select>
+
+    <!-- 对象存储上传成功后进入消息发布阶段。 -->
+    <update id="markStored">
+        update fep_file_transfer_record
+        set process_status = 2,
+            file_url = #{fileUrl},
+            last_error = null,
+            next_retry_time = null,
+            update_time = current_timestamp
+        where id = #{id}
+          and process_status = 1
+    </update>
+
+    <!-- 消息发布成功后结束文件后续处理。 -->
+    <update id="markPublished">
+        update fep_file_transfer_record
+        set process_status = 3,
+            last_error = null,
+            next_retry_time = null,
+            update_time = current_timestamp
+        where id = #{id}
+          and process_status = 2
+    </update>
+
+    <!-- 失败时保留当前阶段，只增加次数并安排下一次重试。 -->
+    <update id="markRetryFailure">
+        update fep_file_transfer_record
+        set retry_count = retry_count + 1,
+            last_error = #{lastError},
+            next_retry_time = #{nextRetryTime},
+            update_time = current_timestamp
+        where id = #{id}
+          and process_status in (1, 2)
+    </update>
+
+</mapper>

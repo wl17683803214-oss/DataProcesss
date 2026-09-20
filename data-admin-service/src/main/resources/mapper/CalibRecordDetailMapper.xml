@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.CalibRecordDetailMapper">
+
+    <!-- 分页详情查询明确列出页面需要的全部字段。 -->
+    <select id="findByTaskIdAndChannelId"
+            resultType="com.example.dataadmin.entity.CalibRecordDetail">
+        select id, task_id, channel_id, interface_id, channel_name,
+               parameter_name, tm_symbol, telemetry_value, detail,
+               is_deleted, create_time
+        from calib_record_detail
+        where task_id = #{taskId}
+          and channel_id = #{channelId}
+          and is_deleted = 0
+        order by create_time desc, id desc
+    </select>
+
+    <!-- 删除校准通道时同步逻辑删除其野值详情。 -->
+    <update id="deleteByChannelId">
+        update calib_record_detail
+        set is_deleted = 1
+        where channel_id = #{channelId}
+          and is_deleted = 0
+    </update>
+</mapper>

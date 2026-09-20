@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>data-processing</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>common</module>
+        <module>common-security</module>
+        <module>data-admin-service</module>
+        <module>data-process-service</module>
+        <!-- 独立UDP模拟数据源，用于按512字节读取文件并封装PDXP报文。 -->
+        <module>data-source-simulator</module>
+    </modules>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <spring-boot.version>2.6.13</spring-boot.version>
+        <spring-cloud.version>2021.0.5</spring-cloud.version>
+        <spring-cloud-alibaba.version>2021.0.5.0</spring-cloud-alibaba.version>
+        <mybatis-spring-boot.version>2.2.2</mybatis-spring-boot.version>
+        <kingbase.version>8.6.0</kingbase.version>
+        <jjwt.version>0.9.1</jjwt.version>
+        <protobuf.version>3.20.1</protobuf.version>
+        <grpc.version>1.63.0</grpc.version>
+        <!-- RocketMQ Spring与当前Java 8、Spring Boot 2版本保持兼容。 -->
+        <rocketmq-spring.version>2.2.3</rocketmq-spring.version>
+        <!-- Admin管理客户端与RocketMQ Spring使用的经典客户端版本保持一致。 -->
+        <rocketmq-client.version>5.0.0</rocketmq-client.version>
+        <!-- 对象存储客户端用于保存文件交换流程接收完成的文件。 -->
+        <minio.version>8.5.17</minio.version>
+        <!-- MinIO 8.5.17要求使用4.11.0及以上版本的OkHttp。 -->
+        <okhttp.version>4.12.0</okhttp.version>
+        <iotdb.version>1.3.7</iotdb.version>
+        <springdoc.version>1.8.0</springdoc.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.10.1</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

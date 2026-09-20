@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.SysRoleMapper">
+    <select id="findAll" resultType="com.example.dataadmin.entity.SysRole">
+        select id, role_name, role_key, baseline_role_id, baseline_role_key,
+               status, deleted, create_time
+        from dp_role where deleted = 0 order by id
+    </select>
+    <select id="findById" parameterType="long" resultType="com.example.dataadmin.entity.SysRole">
+        select id, role_name, role_key, baseline_role_id, baseline_role_key,
+               status, deleted, create_time
+        from dp_role where id = #{id} and deleted = 0
+    </select>
+    <select id="findByKey" parameterType="string" resultType="com.example.dataadmin.entity.SysRole">
+        select id, role_name, role_key, baseline_role_id, baseline_role_key,
+               status, deleted, create_time
+        from dp_role where role_key = #{roleKey} and deleted = 0
+    </select>
+    <select id="findByBaselineRoleId" parameterType="string"
+            resultType="com.example.dataadmin.entity.SysRole">
+        select id, role_name, role_key, baseline_role_id, baseline_role_key,
+               status, deleted, create_time
+        from dp_role
+        where baseline_role_id = #{baselineRoleId}
+          and deleted = 0
+    </select>
+    <insert id="insert" parameterType="com.example.dataadmin.entity.SysRole">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">select nextval('dp_role_id_seq')</selectKey>
+        insert into dp_role(
+            id, role_name, role_key, baseline_role_id, baseline_role_key,
+            status, deleted, create_time
+        ) values (
+            #{id}, #{roleName}, #{roleKey}, #{baselineRoleId},
+            #{baselineRoleKey}, #{status}, 0, current_timestamp
+        )
+    </insert>
+    <update id="update" parameterType="com.example.dataadmin.entity.SysRole">
+        update dp_role
+        set role_name = #{roleName},
+            role_key = #{roleKey},
+            baseline_role_id = #{baselineRoleId},
+            baseline_role_key = #{baselineRoleKey},
+            status = #{status}
+        where id=#{id} and deleted=0
+    </update>
+    <update id="updateStatus">
+        update dp_role set status=#{status} where id=#{id} and deleted=0
+    </update>
+    <update id="delete" parameterType="long">
+        update dp_role set deleted=1 where id=#{id} and deleted=0
+    </update>
+    <select id="countUsers" parameterType="long" resultType="int">
+        select count(1) from dp_user_role ur join dp_user u on u.id=ur.user_id and u.deleted=0
+        where ur.role_id=#{roleId}
+    </select>
+    <select id="findMenus" resultType="com.example.dataadmin.entity.SysMenu">
+        select id, parent_id, label, icon, path, hidden, sort_order
+        from dp_menu
+        where deleted = 0
+        order by parent_id, sort_order, id
+    </select>
+    <!-- 按基线平台角色编号查询已分配菜单，并递归补齐父菜单。 -->
+    <select id="findMenusByBaselineRoleIds"
+            resultType="com.example.dataadmin.entity.SysMenu">
+        with recursive selected_menu as (
+            select distinct menu.id, menu.parent_id, menu.label, menu.icon,
+                   menu.path, menu.hidden, menu.sort_order
+            from dp_menu menu
+            join dp_role_menu relation on relation.menu_id = menu.id
+            join dp_role role on role.id = relation.role_id
+            where role.status = 1
+              and role.deleted = 0
+              and menu.deleted = 0
+            <if test="roleIds != null and roleIds.size() > 0">
+              and role.baseline_role_id in
+              <foreach collection="roleIds" item="roleId"
+                       open="(" separator="," close=")">
+                  #{roleId}
+              </foreach>
+            </if>
+            <if test="roleIds == null or roleIds.size() == 0">
+              and 1 = 0
+            </if>
+        ), menu_tree as (
+            select id, parent_id, label, icon, path, hidden, sort_order
+            from selected_menu
+            union
+            select parent.id, parent.parent_id, parent.label, parent.icon,
+                   parent.path, parent.hidden, parent.sort_order
+            from dp_menu parent
+            join menu_tree child on child.parent_id = parent.id
+            where parent.deleted = 0
+        )
+        select distinct id, parent_id, label, icon, path, hidden, sort_order
+        from menu_tree
+        order by parent_id, sort_order, id
+    </select>
+    <select id="findMenuById" parameterType="long"
+            resultType="com.example.dataadmin.entity.SysMenu">
+        select id, parent_id, label, icon, path, hidden, sort_order
+        from dp_menu
+        where id = #{id}
+          and deleted = 0
+    </select>
+    <select id="findMenuIds" parameterType="long" resultType="long">
+        select rm.menu_id
+        from dp_role_menu rm
+        join dp_menu m on m.id = rm.menu_id
+        where rm.role_id = #{roleId}
+          and m.deleted = 0
+        order by rm.menu_id
+    </select>
+    <delete id="deleteRoleMenus" parameterType="long">
+        delete from dp_role_menu where role_id=#{roleId}
+    </delete>
+    <insert id="insertRoleMenu">
+        insert into dp_role_menu(role_id, menu_id) values(#{roleId}, #{menuId})
+    </insert>
+</mapper>

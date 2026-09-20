@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.CollectProtocolConfigMapper">
+
+    <!-- 协议配置公共查询字段。 -->
+    <sql id="columns">
+        id,
+        task_id,
+        config_name,
+        protocol_type,
+        data_source_type,
+        config_desc,
+        config_params,
+        parser_class,
+        enabled,
+        is_deleted,
+        create_time,
+        update_time
+    </sql>
+
+    <!-- 按试验任务查询协议配置。 -->
+    <select id="findAllByTaskId"
+            resultType="com.example.dataadmin.entity.CollectProtocolConfig">
+        select
+            <include refid="columns"/>
+        from collect_protocol_config
+        where is_deleted = 0
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+        order by id desc
+    </select>
+
+    <!-- 按主键查询协议配置。 -->
+    <select id="findById"
+            resultType="com.example.dataadmin.entity.CollectProtocolConfig">
+        select
+            <include refid="columns"/>
+        from collect_protocol_config
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <!-- 新增协议配置并通过序列生成主键。 -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('collect_protocol_config_id_seq')
+        </selectKey>
+        insert into collect_protocol_config (
+            id,
+            task_id,
+            config_name,
+            protocol_type,
+            data_source_type,
+            config_desc,
+            config_params,
+            parser_class,
+            enabled,
+            is_deleted
+        )
+        values (
+            #{id},
+            #{taskId},
+            #{configName},
+            #{protocolType},
+            #{dataSourceType},
+            #{configDesc},
+            #{configParams},
+            #{parserClass},
+            #{enabled},
+            #{isDeleted}
+        )
+    </insert>
+
+    <!-- 更新协议配置业务字段。 -->
+    <update id="update">
+        update collect_protocol_config
+        set task_id = #{taskId},
+            config_name = #{configName},
+            protocol_type = #{protocolType},
+            data_source_type = #{dataSourceType},
+            config_desc = #{configDesc},
+            config_params = #{configParams},
+            parser_class = #{parserClass},
+            enabled = #{enabled},
+            update_time = current_timestamp
+        where id = #{id}
+          and is_deleted = 0
+    </update>
+
+    <!-- 逻辑删除协议配置。 -->
+    <update id="delete">
+        update collect_protocol_config
+        set is_deleted = 1,
+            update_time = current_timestamp
+        where id = #{id}
+          and is_deleted = 0
+    </update>
+
+    <!-- 更新协议配置启用状态。 -->
+    <update id="updateEnabled">
+        update collect_protocol_config
+        set enabled = #{enabled},
+            update_time = current_timestamp
+        where id = #{id}
+          and is_deleted = 0
+    </update>
+
+</mapper>

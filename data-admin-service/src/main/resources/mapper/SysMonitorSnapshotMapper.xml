@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.SysMonitorSnapshotMapper">
+    <sql id="columns">id, sample_time, service_status, uptime_seconds, online_node_count, total_node_count, database_latency_ms, message_queue_depth, heartbeat_status, last_heartbeat_time, cpu_usage_percent, memory_usage_percent, disk_usage_percent, health_score, create_time</sql>
+    <select id="ping" resultType="int">select 1</select>
+    <insert id="insert">
+        insert into sys_monitor_snapshot
+        (sample_time, service_status, uptime_seconds, online_node_count,
+         total_node_count, database_latency_ms, message_queue_depth,
+         heartbeat_status, last_heartbeat_time, cpu_usage_percent,
+         memory_usage_percent, disk_usage_percent, health_score)
+        values
+        (#{sampleTime}, #{serviceStatus}, #{uptimeSeconds},
+         #{onlineNodeCount}, #{totalNodeCount}, #{databaseLatencyMs},
+         #{messageQueueDepth}, #{heartbeatStatus}, #{lastHeartbeatTime},
+         #{cpuUsagePercent}, #{memoryUsagePercent}, #{diskUsagePercent},
+         #{healthScore})
+    </insert>
+    <select id="findHistory" resultType="com.example.dataadmin.entity.SysMonitorSnapshot">
+        select <include refid="columns"/> from sys_monitor_snapshot
+        where sample_time &gt;= #{startTime}
+        order by sample_time
+    </select>
+    <delete id="deleteBefore">
+        delete from sys_monitor_snapshot where sample_time &lt; #{expiredTime}
+    </delete>
+</mapper>

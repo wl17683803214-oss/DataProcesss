@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.SysUserMapper">
+
+    <!-- 用户表公共字段，登录查询需要包含密码密文。 -->
+    <sql id="userColumns">
+        id, username, password, baseline_user_id, nickname, phone, email,
+        status, deleted, create_time, update_time
+    </sql>
+
+    <select id="findByUsername" parameterType="string" resultType="com.example.dataadmin.entity.SysUser">
+        select <include refid="userColumns"/>
+        from dp_user
+        where username = #{username} and deleted = 0
+    </select>
+
+    <!-- 使用平台稳定用户编号定位已经绑定的本地用户。 -->
+    <select id="findByBaselineUserId" parameterType="string"
+            resultType="com.example.dataadmin.entity.SysUser">
+        select <include refid="userColumns"/>
+        from dp_user
+        where baseline_user_id = #{baselineUserId}
+          and deleted = 0
+    </select>
+
+    <select id="findAll" resultType="com.example.dataadmin.entity.SysUser">
+        select u.id, u.username, u.baseline_user_id, u.nickname, u.phone, u.email, u.status, u.deleted,
+               u.create_time, u.update_time, r.id role_id, r.role_name, r.role_key
+        from dp_user u
+        left join dp_user_role ur on ur.user_id = u.id
+        left join dp_role r on r.id = ur.role_id and r.deleted = 0
+        where u.deleted = 0 order by u.id
+    </select>
+
+    <select id="findById" parameterType="long" resultType="com.example.dataadmin.entity.SysUser">
+        select u.id, u.username, u.baseline_user_id, u.nickname, u.phone, u.email, u.status, u.deleted,
+               u.create_time, u.update_time, r.id role_id, r.role_name, r.role_key
+        from dp_user u
+        left join dp_user_role ur on ur.user_id = u.id
+        left join dp_role r on r.id = ur.role_id and r.deleted = 0
+        where u.id = #{id} and u.deleted = 0
+    </select>
+
+    <!-- 使用人大金仓序列预先生成主键，确保新增后可以直接返回用户信息。 -->
+    <insert id="insert" parameterType="com.example.dataadmin.entity.SysUser">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('dp_user_id_seq')
+        </selectKey>
+        insert into dp_user (
+            id,
+            username,
+            password,
+            baseline_user_id,
+            nickname,
+            phone,
+            email,
+            status,
+            deleted,
+            create_time,
+            update_time
+        ) values (
+            #{id},
+            #{username},
+            #{password},
+            #{baselineUserId},
+            #{nickname},
+            #{phone},
+            #{email},
+            #{status},
+            0,
+            current_timestamp,
+            current_timestamp
+        )
+    </insert>
+
+    <update id="update" parameterType="com.example.dataadmin.entity.SysUser">
+        update dp_user
+        set nickname = #{nickname},
+            phone = #{phone},
+            email = #{email},
+            status = #{status},
+            update_time = current_timestamp
+        where id = #{id} and deleted = 0
+    </update>
+
+    <!-- SSO登录只更新平台绑定和显示名称，不覆盖本地登录密码。 -->
+    <update id="updateBaselineIdentity">
+        update dp_user
+        set baseline_user_id = #{baselineUserId},
+            nickname = case
+                when #{nickname} is null or #{nickname} = '' then nickname
+                else #{nickname}
+            end,
+            update_time = current_timestamp
+        where id = #{id}
+          and deleted = 0
+    </update>
+
+    <update id="delete" parameterType="long">
+        update dp_user
+        set deleted = 1,
+            update_time = current_timestamp
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="updateStatus">
+        update dp_user
+        set status = #{status},
+            update_time = current_timestamp
+        where id = #{id} and deleted = 0
+    </update>
+
+    <update id="resetPassword">
+        update dp_user
+        set password = #{password},
+            update_time = current_timestamp
+        where id = #{id} and deleted = 0
+    </update>
+
+    <select id="findRoles" parameterType="long" resultType="string">
+        select r.role_key
+        from dp_role r
+        join dp_user_role ur on ur.role_id = r.id
+        where ur.user_id = #{userId}
+          and r.status = 1
+          and r.deleted = 0
+    </select>
+
+    <!-- 查询用户角色已经分配的菜单，并递归补齐父菜单。 -->
+    <select id="findPageMenusByUserId" parameterType="long"
+            resultType="com.example.dataadmin.entity.SysMenu">
+        with recursive selected_menu as (
+            select distinct m.id, m.parent_id, m.label, m.icon,
+                   m.path, m.hidden, m.sort_order
+            from dp_menu m
+            join dp_role_menu rm on rm.menu_id = m.id
+            join dp_user_role ur on ur.role_id = rm.role_id
+            join dp_role r on r.id = ur.role_id
+            where ur.user_id = #{userId}
+              and r.status = 1
+              and r.deleted = 0
+              and m.deleted = 0
+        ), page_tree as (
+            select id, parent_id, label, icon, path, hidden, sort_order
+            from selected_menu
+            union
+            select parent.id, parent.parent_id, parent.label, parent.icon,
+                   parent.path, parent.hidden, parent.sort_order
+            from dp_menu parent
+            join page_tree child on child.parent_id = parent.id
+            where parent.deleted = 0
+        )
+        select distinct id, parent_id, label, icon, path, hidden, sort_order
+        from page_tree
+        order by parent_id, sort_order, id
+    </select>
+
+    <delete id="deleteUserRoles" parameterType="long">
+        delete from dp_user_role where user_id = #{userId}
+    </delete>
+
+    <insert id="insertUserRole">
+        insert into dp_user_role(user_id, role_id) values(#{userId}, #{roleId})
+    </insert>
+
+    <select id="countEnabledRole" parameterType="long" resultType="int">
+        select count(1) from dp_role where id=#{roleId} and status=1 and deleted=0
+    </select>
+
+    <!-- 查询固定角色，供管理员账号保底绑定使用。 -->
+    <select id="findRoleByKey" parameterType="string"
+            resultType="com.example.dataadmin.entity.SysRole">
+        select id, role_name, role_key, baseline_role_id, baseline_role_key,
+               status, deleted, create_time
+        from dp_role
+        where role_key = #{roleKey}
+          and deleted = 0
+    </select>
+</mapper>

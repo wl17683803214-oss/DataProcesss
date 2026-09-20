@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.SysRuntimeLogMapper">
+
+    <!-- 公共查询字段。 -->
+    <sql id="columns">id, task_id, log_time, log_level, log_source, operator_id, log_content, log_detail</sql>
+
+    <!-- 按级别、来源、操作人、关键字和时间范围组合查询系统运行日志。 -->
+    <select id="findAll" resultType="com.example.dataadmin.entity.SysRuntimeLog">
+        select <include refid="columns"/> from sys_runtime_log
+        <where>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId}</if>
+            <if test="logLevel != null and logLevel != ''">
+                and upper(log_level) = #{logLevel}
+            </if>
+            <if test="logSource != null and logSource != ''">
+                and log_source = #{logSource}
+            </if>
+            <if test="operatorId != null and operatorId != ''">
+                and operator_id like '%' || #{operatorId} || '%'
+            </if>
+            <if test="keyword != null and keyword != ''">
+                and (
+                    log_content like '%' || #{keyword} || '%'
+                    or log_detail like '%' || #{keyword} || '%'
+                )
+            </if>
+            <if test="startTime != null">
+                and log_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and log_time &lt;= #{endTime}
+            </if>
+        </where>
+        order by log_time desc, id desc
+    </select>
+
+    <!-- 查询日志来源下拉选项，结果已去重并按来源名称排序。 -->
+    <select id="findSourceNames" resultType="string">
+        select distinct log_source
+        from sys_runtime_log
+        where log_source is not null
+          and trim(log_source) != ''
+        <if test="taskId != null and taskId != ''">and task_id = #{taskId}</if>
+        order by log_source
+    </select>
+
+    <!-- 按试验任务查询列表。 -->
+    <select id="findAllByTaskId" resultType="com.example.dataadmin.entity.SysRuntimeLog">
+        select <include refid="columns"/> from sys_runtime_log
+        <where>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId}</if>
+        </where>
+        order by log_time desc, id desc
+    </select>
+
+    <!-- 按主键查询详情。 -->
+    <select id="findById" resultType="com.example.dataadmin.entity.SysRuntimeLog">
+        select <include refid="columns"/> from sys_runtime_log where id = #{id}
+    </select>
+
+    <!-- 新增记录并通过序列生成主键。 -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('sys_runtime_log_id_seq')
+        </selectKey>
+        insert into sys_runtime_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="taskId != null and taskId != ''">task_id,</if>
+            <if test="logTime != null">log_time,</if>
+            <if test="logLevel != null">log_level,</if>
+            <if test="logSource != null">log_source,</if>
+            <if test="operatorId != null">operator_id,</if>
+            <if test="logContent != null">log_content,</if>
+            <if test="logDetail != null">log_detail,</if>
+        </trim>
+        values
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{id},
+            <if test="taskId != null and taskId != ''">#{taskId},</if>
+            <if test="logTime != null">#{logTime},</if>
+            <if test="logLevel != null">#{logLevel},</if>
+            <if test="logSource != null">#{logSource},</if>
+            <if test="operatorId != null">#{operatorId},</if>
+            <if test="logContent != null">#{logContent},</if>
+            <if test="logDetail != null">#{logDetail},</if>
+        </trim>
+    </insert>
+
+    <!-- 按主键更新非空字段。 -->
+    <update id="update">
+        update sys_runtime_log
+        <set>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId},</if>
+            <if test="logTime != null">log_time = #{logTime},</if>
+            <if test="logLevel != null">log_level = #{logLevel},</if>
+            <if test="logSource != null">log_source = #{logSource},</if>
+            <if test="operatorId != null">operator_id = #{operatorId},</if>
+            <if test="logContent != null">log_content = #{logContent},</if>
+            <if test="logDetail != null">log_detail = #{logDetail},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 删除记录；包含逻辑删除字段的表执行逻辑删除。 -->
+    <delete id="delete">delete from sys_runtime_log where id = #{id}</delete>
+
+    <!-- 按试验任务清理运行日志。 -->
+    <delete id="deleteByTaskId">delete from sys_runtime_log where task_id = #{taskId}</delete>
+
+    <!-- 查询数据采集、代理和协议解析组件产生的最近事件。 -->
+    <select id="findCollectionEvents"
+            resultType="com.example.dataadmin.entity.SysRuntimeLog">
+        select
+            <include refid="columns"/>
+        from sys_runtime_log
+        where log_source in ('DataCollector', 'AgentManager', 'ProtocolParser')
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+        order by log_time desc, id desc
+        limit #{limit}
+    </select>
+
+    <!-- 统计数据采集相关事件的各级别数量。 -->
+    <select id="findCollectionEventOverview"
+            resultType="com.example.dataadmin.vo.collection.CollectionEventOverviewVO">
+        select
+            coalesce(sum(case when upper(log_level) = 'INFO' then 1 else 0 end), 0)
+                as info_total,
+            coalesce(sum(case when upper(log_level) in ('WARN', 'WARNING') then 1 else 0 end), 0)
+                as warning_total,
+            coalesce(sum(case when upper(log_level) = 'ERROR' then 1 else 0 end), 0)
+                as error_total,
+            coalesce(sum(case when upper(log_level) in ('FATAL', 'CRITICAL') then 1 else 0 end), 0)
+                as critical_total
+        from sys_runtime_log
+        where log_source in ('DataCollector', 'AgentManager', 'ProtocolParser')
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+    </select>
+
+</mapper>

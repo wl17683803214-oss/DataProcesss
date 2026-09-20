@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.CollectInterfaceConfigMapper">
+
+    <!-- 查询最近进入运行状态的试验任务下应该运行的完整采集接口主键列表。 -->
+    <select id="findAllEnabledIds" resultType="long">
+        select id
+        from collect_interface_config
+        where enabled = 1
+          and is_deleted = 0
+          and task_id = (
+              select current_task.task_id
+              from (
+                  select task_id, task_status
+                  from experiment_task
+                  order by event_time desc, update_time desc
+                  limit 1
+              ) current_task
+              where current_task.task_status = 1
+          )
+        order by id
+    </select>
+
+    <!-- 显式映射详情展示名称，其余字段沿用已有自动映射配置。 -->
+    <resultMap id="collectInterfaceDetailMap"
+               type="com.example.dataadmin.entity.CollectInterfaceConfig" autoMapping="true">
+        <result column="protocol_config_name" property="protocolConfigName"/>
+    </resultMap>
+
+    <!-- 明确映射筛选项字段，避免依赖全局下划线转驼峰配置。 -->
+    <resultMap id="collectInterfaceOptionMap"
+               type="com.example.dataadmin.vo.processing.CollectInterfaceOptionVO">
+        <id column="id" property="interfaceId"/>
+        <result column="interface_name" property="interfaceName"/>
+    </resultMap>
+
+    <!-- 查询数据处理页面使用的已启用采集接口，只返回主键和名称。 -->
+    <select id="findEnabledOptions"
+            resultMap="collectInterfaceOptionMap">
+        select
+            id,
+            interface_name
+        from collect_interface_config
+        where enabled = 1
+          and is_deleted = 0
+        order by id
+    </select>
+
+    <!-- 采集接口公共查询字段。 -->
+    <sql id="columns">
+        id,
+        task_id,
+        interface_name,
+        interface_type,
+        send_from,
+        message_content,
+        transfer_type,
+        transfer_protocol,
+        protocol_config_id,
+        host,
+        port,
+        status,
+        enabled,
+        rpc_enabled,
+        data_packet_count,
+        remark,
+        is_deleted,
+        create_time,
+        update_time
+    </sql>
+
+    <!-- 采集接口公共筛选条件。 -->
+    <sql id="queryConditions">
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+        <if test="interfaceType != null">
+            and interface_type = #{interfaceType}
+        </if>
+        <if test="transferType != null">
+            and transfer_type = #{transferType}
+        </if>
+        <if test="status != null">
+            and status = #{status}
+        </if>
+        <if test="enabled != null">
+            and enabled = #{enabled}
+        </if>
+    </sql>
+
+    <!-- 按试验任务查询采集接口。 -->
+    <select id="findAllByTaskId"
+            resultType="com.example.dataadmin.entity.CollectInterfaceConfig">
+        select
+            <include refid="columns"/>
+        from collect_interface_config
+        where is_deleted = 0
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+        order by id
+    </select>
+
+    <!-- 分页查询采集接口。 -->
+    <select id="findPage"
+            parameterType="com.example.dataadmin.dto.collection.InterfaceQueryRequest"
+            resultType="com.example.dataadmin.entity.CollectInterfaceConfig">
+        select
+            <include refid="columns"/>
+        from collect_interface_config
+        where is_deleted = 0
+        <include refid="queryConditions"/>
+        order by id desc
+        limit #{pageSize} offset #{offset}
+    </select>
+
+    <!-- 统计符合筛选条件的采集接口数量。 -->
+    <select id="count"
+            parameterType="com.example.dataadmin.dto.collection.InterfaceQueryRequest"
+            resultType="long">
+        select count(1)
+        from collect_interface_config
+        where is_deleted = 0
+        <include refid="queryConditions"/>
+    </select>
+
+    <!-- 查询顶部总览；今日采集量汇总当天未删除的五秒采集统计。 -->
+    <select id="findOverview"
+            resultType="com.example.dataadmin.vo.collection.CollectionOverviewVO">
+        select
+            count(1) as interface_total,
+            coalesce(sum(case when enabled = 1 then 1 else 0 end), 0) as online_total,
+            coalesce(
+                (
+                    select sum(statistics.collection_count)
+                    from collect_interface_statistics statistics
+                    where statistics.statistics_time &gt;= current_date
+                      and statistics.is_deleted = 0
+                      and statistics.task_id = #{taskId}
+                ),
+                0
+            ) as today_collection_count
+        from collect_interface_config
+        where is_deleted = 0
+          and task_id = #{taskId}
+    </select>
+
+    <!-- 按主键查询采集接口。 -->
+    <select id="findById"
+            resultMap="collectInterfaceDetailMap">
+        select
+            <include refid="columns"/>,
+            <!-- 仅补充详情展示名称，未关联或协议已删除时返回空值；禁用协议仍可回显。 -->
+            (
+                select protocol_config.config_name
+                from collect_protocol_config protocol_config
+                where protocol_config.id = collect_interface_config.protocol_config_id
+                  and protocol_config.is_deleted = 0
+            ) as protocol_config_name
+        from collect_interface_config
+        where id = #{id}
+          and is_deleted = 0
+    </select>
+
+    <!-- 校验已启用接口的传输方式、监听地址和端口是否重复。 -->
+    <select id="countEnabledEndpointConflicts" resultType="long">
+        select count(1)
+        from collect_interface_config
+        where transfer_type = #{transferType}
+          and host = #{host}
+          and port = #{port}
+          and enabled = 1
+          and is_deleted = 0
+        <if test="excludeId != null">
+            and id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 新增采集接口并通过序列生成主键。 -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('collect_interface_config_id_seq')
+        </selectKey>
+        insert into collect_interface_config (
+            id,
+            task_id,
+            interface_name,
+            interface_type,
+            send_from,
+            message_content,
+            transfer_type,
+            transfer_protocol,
+            protocol_config_id,
+            host,
+            port,
+            status,
+            enabled,
+            rpc_enabled,
+            data_packet_count,
+            remark,
+            is_deleted
+        )
+        values (
+            #{id},
+            #{taskId},
+            #{interfaceName},
+            #{interfaceType},
+            #{sendFrom},
+            #{messageContent},
+            #{transferType},
+            #{transferProtocol},
+            #{protocolConfigId},
+            #{host},
+            #{port},
+            #{status},
+            #{enabled},
+            #{rpcEnabled},
+            #{dataPacketCount},
+            #{remark},
+            #{isDeleted}
+        )
+    </insert>
+
+    <!-- 更新采集接口业务字段。 -->
+    <update id="update">
+        update collect_interface_config
+        set task_id = #{taskId},
+            interface_name = #{interfaceName},
+            interface_type = #{interfaceType},
+            send_from = #{sendFrom},
+            message_content = #{messageContent},
+            transfer_type = #{transferType},
+            transfer_protocol = #{transferProtocol},
+            protocol_config_id = #{protocolConfigId},
+            host = #{host},
+            port = #{port},
+            status = #{status},
+            enabled = #{enabled},
+            rpc_enabled = #{rpcEnabled},
+            remark = #{remark},
+            update_time = current_timestamp
+        where id = #{id}
+          and is_deleted = 0
+    </update>
+
+    <!-- 逻辑删除采集接口。 -->
+    <update id="delete">
+        update collect_interface_config
+        set is_deleted = 1,
+            update_time = current_timestamp
+        where id = #{id}
+          and is_deleted = 0
+    </update>
+
+    <!-- 更新采集接口启用状态。 -->
+    <update id="updateEnabled">
+        update collect_interface_config
+        set enabled = #{enabled},
+            update_time = current_timestamp
+        where id = #{id}
+          and is_deleted = 0
+    </update>
+
+</mapper>

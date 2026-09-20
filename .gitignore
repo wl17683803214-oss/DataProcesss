@@ -1,0 +1,19 @@
+# Maven编译产物
+**/target/
+*.jar
+
+# 离线部署产物与临时输出
+/outputs/
+/deploy/
+
+# 开发工具与智能助手工作目录
+/.idea/
+/.agents/
+/.codex-remote-attachments/
+
+# 临时文件
+*~
+*.tmp
+
+# 大型本地模拟数据
+/data-source-simulator/sample-data/temp2.dat

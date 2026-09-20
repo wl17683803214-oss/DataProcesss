@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.TelemetryParseRuleConfigMapper">
+
+    <!-- 参数配置查询字段，统一使用表别名避免关联查询字段歧义。 -->
+    <sql id="columns">
+        rule_config.id, rule_config.task_id,
+        rule_config.device_satellite_id, rule_config.table_index,
+        rule_config.bit_width, rule_config.telemetry_name,
+        rule_config.telemetry_code, rule_config.formula_type,
+        rule_config.formula_desc, rule_config.process_param,
+        rule_config.decimal_places, rule_config.alarm_flag,
+        rule_config.normal_value, rule_config.warning_value,
+        rule_config.state_change_info, rule_config.command_code,
+        rule_config.system_name, rule_config.control_channel,
+        rule_config.merge_channel_count, rule_config.delay_channel,
+        rule_config.store_flag, rule_config.calibration_formula,
+        rule_config.is_deleted, rule_config.create_time,
+        rule_config.update_time
+    </sql>
+
+    <!-- 查询当前任务、当前设备卫星的有效参数配置。 -->
+    <select id="findAllByTaskId"
+            resultType="com.example.dataadmin.entity.TelemetryParseRuleConfig">
+        select <include refid="columns"/>
+        from telemetry_parse_rule_config rule_config
+        inner join device_satellite device
+            on device.id = rule_config.device_satellite_id
+            and device.task_id = rule_config.task_id
+            and device.is_deleted = 0
+        where rule_config.task_id = #{taskId}
+          and rule_config.device_satellite_id = #{deviceSatelliteId}
+          and rule_config.is_deleted = 0
+        order by rule_config.id
+    </select>
+
+    <!-- Excel导入按批次写入某个工作表的全部字符串字段。 -->
+    <insert id="batchInsert">
+        insert into telemetry_parse_rule_config (
+            task_id,
+            device_satellite_id,
+            table_index,
+            bit_width,
+            telemetry_name,
+            telemetry_code,
+            formula_type,
+            formula_desc,
+            process_param,
+            decimal_places,
+            alarm_flag,
+            normal_value,
+            warning_value,
+            state_change_info,
+            command_code,
+            system_name,
+            control_channel,
+            merge_channel_count,
+            delay_channel,
+            store_flag,
+            calibration_formula)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.taskId,jdbcType=VARCHAR},
+             #{item.deviceSatelliteId,jdbcType=BIGINT},
+             #{item.tableIndex,jdbcType=VARCHAR},
+             #{item.bitWidth,jdbcType=VARCHAR},
+             #{item.telemetryName,jdbcType=VARCHAR},
+             #{item.telemetryCode,jdbcType=VARCHAR},
+             #{item.formulaType,jdbcType=VARCHAR},
+             #{item.formulaDesc,jdbcType=VARCHAR},
+             #{item.processParam,jdbcType=VARCHAR},
+             #{item.decimalPlaces,jdbcType=VARCHAR},
+             #{item.alarmFlag,jdbcType=VARCHAR},
+             #{item.normalValue,jdbcType=VARCHAR},
+             #{item.warningValue,jdbcType=VARCHAR},
+             #{item.stateChangeInfo,jdbcType=VARCHAR},
+             #{item.commandCode,jdbcType=VARCHAR},
+             #{item.systemName,jdbcType=VARCHAR},
+             #{item.controlChannel,jdbcType=VARCHAR},
+             #{item.mergeChannelCount,jdbcType=VARCHAR},
+             #{item.delayChannel,jdbcType=VARCHAR},
+             #{item.storeFlag,jdbcType=VARCHAR},
+             #{item.calibrationFormula,jdbcType=VARCHAR})
+        </foreach>
+    </insert>
+
+    <!-- 导入前逻辑删除当前任务、当前类型设备卫星关联的旧参数。 -->
+    <update id="deleteByType">
+        update telemetry_parse_rule_config
+        set is_deleted = 1,
+            update_time = current_timestamp
+        where task_id = #{taskId}
+          and is_deleted = 0
+          and device_satellite_id in (
+              select id
+              from device_satellite
+              where task_id = #{taskId}
+                and type = #{type}
+          )
+    </update>
+
+</mapper>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.ExperimentTaskMapper">
+
+    <!-- 查询全部试验任务，供页面任务筛选框使用。 -->
+    <select id="findAll" resultType="com.example.dataadmin.entity.ExperimentTask">
+        select task_id,
+               requirement_id,
+               task_name,
+               task_priority,
+               plan_id,
+               plan_code,
+               flow_instance_id,
+               execution_attempt,
+               task_status,
+               end_reason,
+               event_time,
+               create_time,
+               update_time
+        from experiment_task
+        order by event_time desc, task_id
+    </select>
+
+    <!-- 开始消息重复投递时更新快照；同轮已经结束时不允许回退为运行中。 -->
+    <insert id="upsertStarted">
+        insert into experiment_task (
+            task_id,
+            requirement_id,
+            task_name,
+            task_priority,
+            plan_id,
+            plan_code,
+            flow_instance_id,
+            execution_attempt,
+            task_status,
+            end_reason,
+            event_time,
+            create_time,
+            update_time
+        ) values (
+            #{taskId},
+            #{requirementId},
+            #{taskName},
+            #{taskPriority},
+            #{planId},
+            #{planCode},
+            #{flowInstanceId},
+            #{executionAttempt},
+            #{taskStatus},
+            null,
+            #{eventTime},
+            current_timestamp,
+            current_timestamp
+        )
+        on conflict (task_id) do update
+        set requirement_id = excluded.requirement_id,
+            task_name = excluded.task_name,
+            task_priority = excluded.task_priority,
+            plan_id = excluded.plan_id,
+            plan_code = excluded.plan_code,
+            flow_instance_id = excluded.flow_instance_id,
+            execution_attempt = excluded.execution_attempt,
+            task_status = excluded.task_status,
+            end_reason = null,
+            event_time = excluded.event_time,
+            update_time = current_timestamp
+        where excluded.execution_attempt &gt; experiment_task.execution_attempt
+           or (excluded.execution_attempt = experiment_task.execution_attempt
+               and experiment_task.task_status = #{taskStatus})
+    </insert>
+
+    <!-- 结束消息可以创建任务；同轮重复消息幂等更新，旧轮消息不能覆盖新轮状态。 -->
+    <insert id="upsertEnded">
+        insert into experiment_task (
+            task_id,
+            requirement_id,
+            task_name,
+            task_priority,
+            plan_id,
+            plan_code,
+            flow_instance_id,
+            execution_attempt,
+            task_status,
+            end_reason,
+            event_time,
+            create_time,
+            update_time
+        ) values (
+            #{taskId},
+            #{requirementId},
+            #{taskName},
+            #{taskPriority},
+            #{planId},
+            #{planCode},
+            #{flowInstanceId},
+            #{executionAttempt},
+            #{taskStatus},
+            #{endReason},
+            #{eventTime},
+            current_timestamp,
+            current_timestamp
+        )
+        on conflict (task_id) do update
+        set requirement_id = excluded.requirement_id,
+            task_name = excluded.task_name,
+            task_priority = excluded.task_priority,
+            plan_id = excluded.plan_id,
+            plan_code = excluded.plan_code,
+            flow_instance_id = excluded.flow_instance_id,
+            execution_attempt = excluded.execution_attempt,
+            task_status = excluded.task_status,
+            end_reason = excluded.end_reason,
+            event_time = excluded.event_time,
+            update_time = current_timestamp
+        where excluded.execution_attempt &gt;= experiment_task.execution_attempt
+    </insert>
+
+</mapper>

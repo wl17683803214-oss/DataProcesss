@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.ProcessingRuleConfigMapper">
+    <select id="findByTaskId" resultType="com.example.dataadmin.entity.ProcessingRuleConfig">
+        select parameter_range_check_enabled
+        from processing_rule_config where task_id = #{taskId}
+    </select>
+
+    <insert id="insert">
+        insert into processing_rule_config
+        (task_id, parameter_range_check_enabled)
+        values (#{taskId}, #{parameterRangeCheckEnabled})
+    </insert>
+
+    <update id="update">
+        update processing_rule_config
+        set parameter_range_check_enabled = #{parameterRangeCheckEnabled},
+            update_time = current_timestamp
+        where task_id = #{taskId}
+    </update>
+</mapper>

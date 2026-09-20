@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataprocess.mapper.CollectInterfaceRuntimeMapper">
+
+    <!-- 复用采集任务启动需要的接口字段、协议配置关联和启用条件。 -->
+    <sql id="enabledInterfaceQuery">
+        select
+            interface_config.id as interface_id,
+            interface_config.interface_name,
+            interface_config.task_id,
+            interface_config.host,
+            interface_config.port,
+            interface_config.transfer_type,
+            interface_config.transfer_protocol,
+            interface_config.rpc_enabled,
+            interface_config.protocol_config_id,
+            protocol_config.config_params as protocol_config_params,
+            coalesce(rule_config.parameter_range_check_enabled, 0)
+                as parameter_range_check_enabled
+        from collect_interface_config interface_config
+        left join collect_protocol_config protocol_config
+            on protocol_config.id = interface_config.protocol_config_id
+            and protocol_config.is_deleted = 0
+            and protocol_config.enabled = 1
+        left join processing_rule_config rule_config
+            on rule_config.task_id = interface_config.task_id
+        where interface_config.is_deleted = 0
+          and interface_config.enabled = 1
+          and interface_config.task_id = (
+              select current_task.task_id
+              from (
+                  select
+                      experiment_task_config.task_id,
+                      experiment_task_config.task_status
+                  from experiment_task experiment_task_config
+                  order by
+                      experiment_task_config.event_time desc,
+                      experiment_task_config.update_time desc
+                  limit 1
+              ) current_task
+              where current_task.task_status = 1
+          )
+    </sql>
+
+    <!-- 查询服务启动时当前运行任务下应该自动运行的全部采集接口。 -->
+    <select id="findAllEnabledInterfaces"
+            resultType="com.example.dataprocess.entity.CollectInterfaceRuntimeConfig">
+        <include refid="enabledInterfaceQuery"/>
+        order by interface_config.id
+    </select>
+
+    <!-- 查询管理服务通知的全部已启用接口，并带回传输方式和协议配置。 -->
+    <select id="findEnabledInterfacesByIds"
+            resultType="com.example.dataprocess.entity.CollectInterfaceRuntimeConfig">
+        <include refid="enabledInterfaceQuery"/>
+          and interface_config.id in
+          <foreach collection="interfaceIds" item="interfaceId"
+                   open="(" separator="," close=")">
+              #{interfaceId}
+          </foreach>
+        order by interface_config.id
+    </select>
+
+</mapper>

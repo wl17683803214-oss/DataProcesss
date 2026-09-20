@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataprocess.mapper.TelemetryCodeMappingMapper">
+
+    <!-- 按参数解析配置主键关联查询当前任务下的设备卫星编码和名称。 -->
+    <select id="findFrameSourceByRuleId"
+            resultType="com.example.dataprocess.entity.PdxpFrameSource">
+        select device.code, device.name
+        from telemetry_parse_rule_config rule_config
+        inner join device_satellite device
+            on device.id = rule_config.device_satellite_id
+            and device.task_id = rule_config.task_id
+            and device.is_deleted = 0
+        where rule_config.task_id = #{taskId}
+          and rule_config.id = #{ruleId}
+          and rule_config.is_deleted = 0
+    </select>
+
+    <!-- 按任务和业务序号批量查询RPC结果对应的遥测代号。 -->
+    <select id="findByTaskIdAndTableIndexes"
+            resultType="com.example.dataprocess.entity.TelemetryCodeMapping">
+        select table_index, telemetry_code
+        from telemetry_parse_rule_config
+        where task_id = #{taskId}
+          and is_deleted = 0
+          and exists (select 1 from device_satellite d where d.id = device_satellite_id
+              and d.task_id = telemetry_parse_rule_config.task_id and d.is_deleted = 0)
+          and case when table_index ~ '^[0-9]+$' then table_index::numeric end in
+          <foreach collection="tableIndexes" item="tableIndex"
+                   open="(" separator="," close=")">
+              #{tableIndex}
+          </foreach>
+    </select>
+
+</mapper>

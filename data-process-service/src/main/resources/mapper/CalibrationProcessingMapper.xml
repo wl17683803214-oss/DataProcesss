@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataprocess.mapper.CalibrationProcessingMapper">
+
+    <!-- 按当前接口所属任务加载全部启用校准通道。 -->
+    <select id="findEnabledChannels"
+            resultType="com.example.dataprocess.entity.CalibrationChannelRuntimeConfig">
+        select id, task_id, calibration_formula, channel_name, normal_range,
+               detect_method, sigma_value, fluctuation_rate, chauvenet_coef,
+               min_sample_count, iterate_count, sample_window,
+               dynamic_update, auto_clean
+        from calib_channel_config
+        where task_id = #{taskId}
+          and enabled = 1
+          and is_deleted = 0
+        order by id
+    </select>
+
+    <!-- 一个批次统一写入野值详情。 -->
+    <insert id="insertRecordDetails">
+        insert into calib_record_detail
+            (task_id, channel_id, interface_id, channel_name, parameter_name,
+             tm_symbol, telemetry_value, detail, is_deleted, create_time)
+        values
+        <foreach collection="details" item="detail" separator=",">
+            (#{detail.taskId}, #{detail.channelId}, #{detail.interfaceId},
+             #{detail.channelName}, #{detail.parameterName}, #{detail.tmSymbol},
+             #{detail.telemetryValue}, #{detail.detail}, 0, #{detail.createTime})
+        </foreach>
+    </insert>
+
+    <!-- 根据全局唯一的校准通道ID累加本批野值数量。 -->
+    <update id="incrementRecordOutlierCount">
+        update calib_record
+        set outlier_count = outlier_count + #{outlierCount},
+            update_time = current_timestamp
+        where channel_id = #{channelId}
+          and is_deleted = 0
+    </update>
+</mapper>

@@ -1,0 +1,26 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: data-process-service
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: 127.0.0.1:8848
+        group: DEFAULT_GROUP
+      config:
+        server-addr: 127.0.0.1:8848
+        group: DEFAULT_GROUP
+        file-extension: yaml
+
+# 数据处理服务独立校验 Token，签名密钥必须与后台服务一致。
+auth:
+  # 开发环境临时关闭登录和权限校验，生产环境必须设为 true。
+  enabled: false
+  jwt-secret: data-processing-local-development-secret-change-me
+  # 管理服务提交采集配置后通过该内部地址同步运行接口。
+  exclude-paths:
+    - /internal/collection/interfaces/**

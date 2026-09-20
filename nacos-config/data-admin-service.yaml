@@ -1,0 +1,140 @@
+spring:
+  datasource:
+    driver-class-name: com.kingbase8.Driver
+    url: jdbc:kingbase8://localhost:54321/data_processing
+    username: system
+    password: 123456
+    hikari:
+      minimum-idle: 1
+      maximum-pool-size: 5
+      connection-timeout: 30000
+      validation-timeout: 5000
+      connection-test-query: select 1
+      keepalive-time: 60000
+      idle-timeout: 300000
+      max-lifetime: 600000
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
+    timeout: 3000ms
+
+mybatis:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.example.dataadmin.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    jdbc-type-for-null: 'NULL'
+
+pagehelper:
+  # KingbaseES 的分页语法与 PostgreSQL 兼容。
+  helper-dialect: postgresql
+  reasonable: true
+  support-methods-arguments: false
+
+auth:
+  # 允许任意前端来源跨域访问，由现有跨域过滤器处理预检请求。
+  allowed-origin-patterns:
+    - "*"
+  # 开发环境临时关闭登录和权限校验，生产环境必须设为 true。
+  enabled: false
+  # 生产环境必须在 Nacos 中替换为长度足够的随机密钥。
+  jwt-secret: data-processing-local-development-secret-change-me
+  # 登录令牌和Redis会话有效期，单位秒；0表示永不过期。
+  expire-seconds: 0
+  exclude-paths:
+    - /auth/login
+    - /auth/sso/login
+    - /integration/menu-config
+    - /ws/**
+    - /v3/api-docs/**
+    - /swagger-ui.html
+    - /swagger-ui/**
+
+# 基线平台统一登录接口配置。
+baseline:
+  sso:
+    # 需要替换为部署环境的基线平台内部接口根地址，可以包含/prod-api前缀。
+    api-base-url: http://10.126.100.249:16001/prod-api
+    # 需要替换为基线平台分配给数据交互子系统的客户端编号。
+    client-id:
+    connect-timeout-millis: 5000
+    read-timeout-millis: 10000
+
+# 子系统嵌套集成配置。
+subsystem:
+  integration:
+    # 子系统唯一标识，供外部宿主系统定位当前子系统。
+    system-key: data-processing
+    # 子系统在外部宿主系统中显示的名称。
+    label: 数据处理软件
+    # 子系统图标标识，使用本系统约定的图标名称。
+    icon: system
+    # 填写当前环境可供外部系统访问的前端根地址，不包含末尾斜线。
+    base-url:
+    # 外部宿主系统首次打开本系统时使用的默认页面路径。
+    default-path: /dashboard
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: method
+    tags-sorter: alpha
+
+# 调度系统任务生命周期消息接收配置。
+rocketmq:
+  name-server: 127.0.0.1:9876
+
+task-lifecycle:
+  # 调度系统发布任务生命周期消息的主题。
+  topic: sydu-events
+  # 同时订阅任务开始和任务结束标签。
+  selector-expression: "experiment.task.start||experiment.task.end"
+  # 本系统任务生命周期消费者组。
+  consumer-group: data-processing-task-lifecycle
+
+system-monitor:
+  snapshot-retention-days: 7
+  cpu-warning-percent: 85
+  memory-warning-percent: 90
+  disk-warning-percent: 85
+  queue-warning-depth: 1000
+
+# 当前数据处理结果主题的RocketMQ积压监控配置。
+rocketmq-monitor:
+  name-server: 10.126.100.247:9876
+  topic: telemetry-framed-send
+  # 必须配置实际下游消费者组，否则无法计算消费积压量。
+  consumer-group:
+  access-key:
+  secret-key:
+
+calibration:
+  curve-retention-days: 7
+
+iotdb:
+  host: 127.0.0.1
+  port: 6667
+  username: root
+  password: root
+  max-pool-size: 5
+
+# 卫星目录管理服务的gRPC客户端连接配置。
+satellite-management:
+  rpc:
+    host: 10.126.100.37
+    port: 50051
+    timeout-millis: 5000
+    max-inbound-message-size: 16777216
+    max-upload-file-size: 16777216
+
+# 管理服务在采集接口配置提交后通知数据处理服务同步运行任务。
+data-processing:
+  interface-sync-url: http://127.0.0.1:8083/internal/collection/interfaces/sync
+  # 内部接口连接超时时间，单位毫秒。
+  interface-sync-connect-timeout-millis: 5000
+  # 内部接口响应读取超时时间，单位毫秒。
+  interface-sync-read-timeout-millis: 10000

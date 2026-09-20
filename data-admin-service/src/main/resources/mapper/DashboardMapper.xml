@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.DashboardMapper">
+
+    <!-- 今日处理量只统计当天有效窗口，累计去重数量包含已归档的历史窗口。 -->
+    <select id="findProcessingOverview"
+            resultType="com.example.dataadmin.vo.processing.DataProcessingOverviewVO">
+        select
+            coalesce(
+                sum(
+                    case
+                        when statistics_time &gt;= current_date
+                            and is_deleted = 0
+                        then processing_count
+                        else 0
+                    end
+                ),
+                0
+            ) as today_processed_count,
+            coalesce(sum(duplicate_count), 0) as deduplicated_count
+        from data_processing_statistics
+        where task_id = #{taskId}
+    </select>
+
+    <!-- 按任务统计当前未处理告警数量。 -->
+    <select id="countUnhandledAlarms" resultType="long">
+        select count(1)
+        from dm_alarm_event
+        where alarm_status = 0
+          and is_deleted = 0
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+    </select>
+
+    <!-- 查询指定时间范围内未删除的采集五秒统计。 -->
+    <select id="findCollectionStatisticsRange"
+            resultType="com.example.dataadmin.entity.CollectInterfaceStatistics">
+        select
+            id,
+            task_id,
+            interface_id,
+            statistics_time,
+            collection_count,
+            interface_rate
+        from collect_interface_statistics
+        where statistics_time &gt;= #{startTime}
+          and is_deleted = 0
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+        order by interface_id, statistics_time, id
+    </select>
+
+    <!-- 查询指定时间范围内未删除的处理五秒统计。 -->
+    <select id="findProcessingStatisticsRange"
+            resultType="com.example.dataadmin.entity.DataProcessingStatistics">
+        select
+            id,
+            task_id,
+            interface_id,
+            statistics_time,
+            processing_count,
+            duplicate_count,
+            wild_value_count
+        from data_processing_statistics
+        where statistics_time &gt;= #{startTime}
+          and is_deleted = 0
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+        order by interface_id, statistics_time, id
+    </select>
+
+    <!-- 查询总览关联的接口配置，补充系统、传输方式和状态。 -->
+    <select id="findInterfaces"
+            resultType="com.example.dataadmin.entity.CollectInterfaceConfig">
+        select
+            id,
+            task_id,
+            interface_name,
+            send_from,
+            transfer_type,
+            transfer_protocol,
+            status,
+            enabled
+        from collect_interface_config
+        where is_deleted = 0
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+        order by id
+    </select>
+
+    <!-- 超过保留期限的采集统计执行逻辑删除。 -->
+    <update id="deleteCollectionStatisticsBefore">
+        update collect_interface_statistics
+        set is_deleted = 1
+        where statistics_time &lt; #{beforeTime}
+          and is_deleted = 0
+    </update>
+
+    <!-- 超过保留期限的处理统计执行逻辑删除。 -->
+    <update id="deleteProcessingStatisticsBefore">
+        update data_processing_statistics
+        set is_deleted = 1
+        where statistics_time &lt; #{beforeTime}
+          and is_deleted = 0
+    </update>
+
+</mapper>

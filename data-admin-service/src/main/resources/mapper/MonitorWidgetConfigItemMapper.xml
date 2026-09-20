@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.MonitorWidgetConfigItemMapper">
+
+    <!-- 公共查询字段。 -->
+    <sql id="columns">id, widget_id, parse_rule_id, interface_id, protocol_config_id, item_code, item_name, is_selected, create_time, update_time</sql>
+
+    <!-- 按页面组件查询数据项配置。 -->
+    <select id="findAllByWidgetId" resultType="com.example.dataadmin.entity.MonitorWidgetConfigItem">
+        select <include refid="columns"/> from monitor_widget_config_item
+        <where>
+            <if test="widgetId != null">widget_id = #{widgetId}</if>
+        </where>
+        order by id
+    </select>
+
+    <!-- 按主键查询详情。 -->
+    <select id="findById" resultType="com.example.dataadmin.entity.MonitorWidgetConfigItem">
+        select <include refid="columns"/> from monitor_widget_config_item where id = #{id}
+    </select>
+
+    <!-- 新增记录并通过序列生成主键。 -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('monitor_widget_config_item_id_seq')
+        </selectKey>
+        insert into monitor_widget_config_item
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="widgetId != null">widget_id,</if>
+            <if test="parseRuleId != null">parse_rule_id,</if>
+            <if test="interfaceId != null">interface_id,</if>
+            <if test="protocolConfigId != null">protocol_config_id,</if>
+            <if test="itemCode != null">item_code,</if>
+            <if test="itemName != null">item_name,</if>
+            <if test="isSelected != null">is_selected,</if>
+        </trim>
+        values
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{id},
+            <if test="widgetId != null">#{widgetId},</if>
+            <if test="parseRuleId != null">#{parseRuleId},</if>
+            <if test="interfaceId != null">#{interfaceId},</if>
+            <if test="protocolConfigId != null">#{protocolConfigId},</if>
+            <if test="itemCode != null">#{itemCode},</if>
+            <if test="itemName != null">#{itemName},</if>
+            <if test="isSelected != null">#{isSelected},</if>
+        </trim>
+    </insert>
+
+    <!-- 按主键更新非空字段。 -->
+    <update id="update">
+        update monitor_widget_config_item
+        <set>
+            <if test="widgetId != null">widget_id = #{widgetId},</if>
+            <if test="parseRuleId != null">parse_rule_id = #{parseRuleId},</if>
+            <if test="interfaceId != null">interface_id = #{interfaceId},</if>
+            <if test="protocolConfigId != null">protocol_config_id = #{protocolConfigId},</if>
+            <if test="itemCode != null">item_code = #{itemCode},</if>
+            <if test="itemName != null">item_name = #{itemName},</if>
+            <if test="isSelected != null">is_selected = #{isSelected},</if>
+            update_time = current_timestamp,
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 删除记录；包含逻辑删除字段的表执行逻辑删除。 -->
+    <delete id="delete">delete from monitor_widget_config_item where id = #{id}</delete>
+
+    <!-- 清理页面组件下的全部数据项配置。 -->
+    <delete id="deleteByWidgetId">delete from monitor_widget_config_item where widget_id = #{widgetId}</delete>
+
+    <!-- 更新数据项勾选状态。 -->
+    <update id="updateSelected">
+        update monitor_widget_config_item set is_selected = #{isSelected}, update_time = current_timestamp where id = #{id}
+    </update>
+
+    <!--
+        删除解析配置中已经不存在的自动同步筛选项。
+        parse_rule_id不为空表示该记录已经关联遥测参数解析配置，
+        避免误删未关联解析参数的其他数据项。
+    -->
+    <delete id="deleteObsoleteParseRuleItems">
+        delete from monitor_widget_config_item item
+        where item.parse_rule_id is not null
+          and exists (
+              select 1
+              from monitor_dashboard_widget widget
+              where widget.id = item.widget_id
+                and widget.task_id = #{taskId}
+                and widget.widget_type in (1, 2)
+          )
+          and not exists (
+              select 1
+              from telemetry_parse_rule_config rule_config
+              where rule_config.task_id = #{taskId}
+                and rule_config.is_deleted = 0
+                and rule_config.id = item.parse_rule_id
+          )
+    </delete>
+
+    <!--
+        规则手动修改时按parse_rule_id关联，导入全量替换后按telemetry_code重新绑定新ID。
+        只更新关联和显示字段，不修改用户原有勾选状态。
+    -->
+    <update id="bindActiveParseRuleItems">
+        update monitor_widget_config_item item
+        set parse_rule_id = rule_config.id,
+            item_code = rule_config.telemetry_code,
+            item_name = rule_config.telemetry_name,
+            update_time = current_timestamp
+        from monitor_dashboard_widget widget,
+             (
+                 select current_rule.id,
+                        current_rule.telemetry_code,
+                        current_rule.telemetry_name
+                 from telemetry_parse_rule_config current_rule
+                 inner join (
+                     select telemetry_code, max(id) as id
+                     from telemetry_parse_rule_config
+                     where task_id = #{taskId} and is_deleted = 0
+                     group by telemetry_code
+                 ) latest_rule on latest_rule.id = current_rule.id
+             ) rule_config
+        where widget.id = item.widget_id
+          and widget.task_id = #{taskId}
+          and widget.widget_type in (1, 2)
+          and (item.parse_rule_id = rule_config.id
+               or item.item_code = rule_config.telemetry_code)
+    </update>
+
+    <!--
+        将解析参数补充到实时曲线、实时数据组件的筛选项。
+        新增参数默认不勾选，避免一次导入大量参数后直接绘制全部曲线。
+    -->
+    <insert id="insertMissingParseRuleItems">
+        insert into monitor_widget_config_item
+            (id, widget_id, parse_rule_id, interface_id, protocol_config_id,
+             item_code, item_name, is_selected)
+        select nextval('monitor_widget_config_item_id_seq'),
+               widget.id,
+               rule_config.id,
+               null,
+               null,
+               rule_config.telemetry_code,
+               rule_config.telemetry_name,
+               0
+        from monitor_dashboard_widget widget
+        cross join (
+            select current_rule.id,
+                   current_rule.telemetry_code,
+                   current_rule.telemetry_name
+            from telemetry_parse_rule_config current_rule
+            inner join (
+                select telemetry_code, max(id) as id
+                from telemetry_parse_rule_config
+                where task_id = #{taskId} and is_deleted = 0
+                group by telemetry_code
+            ) latest_rule on latest_rule.id = current_rule.id
+        ) rule_config
+        where widget.task_id = #{taskId}
+          and widget.widget_type in (1, 2)
+          and not exists (
+              select 1
+              from monitor_widget_config_item existing_item
+              where existing_item.widget_id = widget.id
+                and (existing_item.parse_rule_id = rule_config.id
+                     or existing_item.item_code = rule_config.telemetry_code)
+          )
+    </insert>
+
+</mapper>

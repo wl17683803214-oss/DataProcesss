@@ -1,0 +1,56 @@
+server:
+  port: 8082
+spring:
+  application:
+    name: data-admin-service
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      username: nacos
+      password: nacos
+      discovery:
+        server-addr: 127.0.0.1:8848
+        group: DEFAULT_GROUP
+      config:
+        server-addr: 127.0.0.1:8848
+        group: DEFAULT_GROUP
+        file-extension: yaml
+        refresh-enabled: true
+
+# 两个业务服务必须使用同一个 JWT 签名密钥。
+auth:
+  # 开发环境临时关闭登录和权限校验，生产环境必须设为 true。
+  enabled: false
+  jwt-secret: data-processing-local-development-secret-change-me
+  # 登录令牌和Redis会话有效期，单位秒；0表示永不过期。
+  expire-seconds: 0
+  exclude-paths:
+    - /auth/login
+    - /auth/sso/login
+    - /integration/menu-config
+    - /v3/api-docs/**
+    - /swagger-ui.html
+    - /swagger-ui/**
+
+# 子系统嵌套集成的默认配置，部署环境由 Nacos 覆盖前端根地址。
+subsystem:
+  integration:
+    # 子系统唯一标识，供外部宿主系统定位当前子系统。
+    system-key: data-processing
+    # 子系统在外部宿主系统中显示的名称。
+    label: 数据处理软件
+    # 子系统图标标识，使用本系统约定的图标名称。
+    icon: system
+    # 填写当前环境可供外部系统访问的前端根地址，不包含末尾斜线。
+    base-url:
+    # 外部宿主系统首次打开本系统时使用的默认页面路径。
+    default-path: /dashboard
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: method
+    tags-sorter: alpha

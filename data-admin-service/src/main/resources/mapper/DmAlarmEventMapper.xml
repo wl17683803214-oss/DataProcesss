@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.DmAlarmEventMapper">
+
+    <!-- 公共查询字段。 -->
+    <sql id="columns">id, task_id, alarm_time, source_name, alarm_msg, alarm_level, alarm_status, task_name, channel_code, trigger_rule, is_deleted, create_time, update_time</sql>
+
+    <!-- 按页面来源、关键字、级别、状态和时间范围组合查询列表。 -->
+    <select id="findAll" resultType="com.example.dataadmin.entity.DmAlarmEvent">
+        select <include refid="columns"/> from dm_alarm_event
+        <where>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId}</if>
+            <if test="sourceName != null and sourceName != ''">
+                and source_name = #{sourceName}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                and (
+                    source_name like '%' || #{keyword} || '%'
+                    or alarm_msg like '%' || #{keyword} || '%'
+                    or task_name like '%' || #{keyword} || '%'
+                    or channel_code like '%' || #{keyword} || '%'
+                    or trigger_rule like '%' || #{keyword} || '%'
+                )
+            </if>
+            <if test="alarmLevel != null">
+                and alarm_level = #{alarmLevel}
+            </if>
+            <if test="alarmStatus != null">
+                and alarm_status = #{alarmStatus}
+            </if>
+            <if test="startTime != null">
+                and alarm_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null">
+                and alarm_time &lt;= #{endTime}
+            </if>
+            and is_deleted = 0
+        </where>
+        order by alarm_time desc, id desc
+    </select>
+
+    <!-- 查询来源下拉选项，只返回当前任务下非空且未删除的来源。 -->
+    <select id="findSourceNames" resultType="string">
+        select distinct source_name
+        from dm_alarm_event
+        where is_deleted = 0
+          and source_name is not null
+          and trim(source_name) != ''
+        <if test="taskId != null and taskId != ''">and task_id = #{taskId}</if>
+        order by source_name
+    </select>
+
+    <!-- 按主键查询详情。 -->
+    <select id="findById" resultType="com.example.dataadmin.entity.DmAlarmEvent">
+        select <include refid="columns"/> from dm_alarm_event where id = #{id} and is_deleted = 0
+    </select>
+
+    <!-- 新增记录并通过序列生成主键。 -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('dm_alarm_event_id_seq')
+        </selectKey>
+        insert into dm_alarm_event
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="taskId != null and taskId != ''">task_id,</if>
+            <if test="alarmTime != null">alarm_time,</if>
+            <if test="sourceName != null">source_name,</if>
+            <if test="alarmMsg != null">alarm_msg,</if>
+            <if test="alarmLevel != null">alarm_level,</if>
+            <if test="alarmStatus != null">alarm_status,</if>
+            <if test="taskName != null">task_name,</if>
+            <if test="channelCode != null">channel_code,</if>
+            <if test="triggerRule != null">trigger_rule,</if>
+            <if test="isDeleted != null">is_deleted,</if>
+        </trim>
+        values
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{id},
+            <if test="taskId != null and taskId != ''">#{taskId},</if>
+            <if test="alarmTime != null">#{alarmTime},</if>
+            <if test="sourceName != null">#{sourceName},</if>
+            <if test="alarmMsg != null">#{alarmMsg},</if>
+            <if test="alarmLevel != null">#{alarmLevel},</if>
+            <if test="alarmStatus != null">#{alarmStatus},</if>
+            <if test="taskName != null">#{taskName},</if>
+            <if test="channelCode != null">#{channelCode},</if>
+            <if test="triggerRule != null">#{triggerRule},</if>
+            <if test="isDeleted != null">#{isDeleted},</if>
+        </trim>
+    </insert>
+
+    <!-- 按主键更新非空字段。 -->
+    <update id="update">
+        update dm_alarm_event
+        <set>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId},</if>
+            <if test="alarmTime != null">alarm_time = #{alarmTime},</if>
+            <if test="sourceName != null">source_name = #{sourceName},</if>
+            <if test="alarmMsg != null">alarm_msg = #{alarmMsg},</if>
+            <if test="alarmLevel != null">alarm_level = #{alarmLevel},</if>
+            <if test="alarmStatus != null">alarm_status = #{alarmStatus},</if>
+            <if test="taskName != null">task_name = #{taskName},</if>
+            <if test="channelCode != null">channel_code = #{channelCode},</if>
+            <if test="triggerRule != null">trigger_rule = #{triggerRule},</if>
+            update_time = current_timestamp,
+        </set>
+        where id = #{id} and is_deleted = 0
+    </update>
+
+    <!-- 删除记录；包含逻辑删除字段的表执行逻辑删除。 -->
+    <update id="delete">
+        update dm_alarm_event set is_deleted = 1, update_time = current_timestamp where id = #{id} and is_deleted = 0
+    </update>
+
+    <!-- 更新业务状态。 -->
+    <update id="updateStatus">
+        update dm_alarm_event set alarm_status = #{alarmStatus}, update_time = current_timestamp where id = #{id} and is_deleted = 0
+    </update>
+
+</mapper>

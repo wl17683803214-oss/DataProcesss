@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataprocess.mapper.InterfaceStatisticsMapper">
+
+    <!-- 批量写入已结束的采集五秒窗口，重试时覆盖同一窗口避免重复累计。 -->
+    <insert id="saveCollectionStatistics">
+        insert into collect_interface_statistics (
+            task_id,
+            interface_id,
+            statistics_time,
+            collection_count,
+            interface_rate,
+            is_deleted
+        ) values
+        <foreach collection="records" item="record" separator=",">
+            (
+                #{record.taskId},
+                #{record.interfaceId},
+                #{record.statisticsTime},
+                #{record.collectionCount},
+                #{record.interfaceRate},
+                0
+            )
+        </foreach>
+        on conflict (task_id, interface_id, statistics_time)
+        do update set
+            collection_count = excluded.collection_count,
+            interface_rate = excluded.interface_rate,
+            is_deleted = 0
+    </insert>
+
+    <!-- 批量写入已结束的处理五秒窗口，重试时覆盖同一窗口避免重复累计。 -->
+    <insert id="saveProcessingStatistics">
+        insert into data_processing_statistics (
+            task_id,
+            interface_id,
+            statistics_time,
+            processing_count,
+            duplicate_count,
+            wild_value_count,
+            is_deleted
+        ) values
+        <foreach collection="records" item="record" separator=",">
+            (
+                #{record.taskId},
+                #{record.interfaceId},
+                #{record.statisticsTime},
+                #{record.processingCount},
+                #{record.duplicateCount},
+                #{record.wildValueCount},
+                0
+            )
+        </foreach>
+        on conflict (task_id, interface_id, statistics_time)
+        do update set
+            processing_count = excluded.processing_count,
+            duplicate_count = excluded.duplicate_count,
+            wild_value_count = excluded.wild_value_count,
+            is_deleted = 0
+    </insert>
+
+</mapper>

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.MonitorDashboardWidgetMapper">
+
+    <!-- 公共查询字段。 -->
+    <sql id="columns">id, task_id, user_id, widget_key, widget_type, widget_title, grid_x, grid_y, grid_width, grid_height, enabled, create_time, update_time</sql>
+
+    <!-- 按试验任务和用户查询页面组件。 -->
+    <select id="findAllByTaskAndUser" resultType="com.example.dataadmin.entity.MonitorDashboardWidget">
+        select <include refid="columns"/> from monitor_dashboard_widget
+        <where>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId}</if>
+            <if test="userId != null">and user_id = #{userId}</if>
+        </where>
+        order by id
+    </select>
+
+    <!-- 按主键查询详情。 -->
+    <select id="findById" resultType="com.example.dataadmin.entity.MonitorDashboardWidget">
+        select <include refid="columns"/> from monitor_dashboard_widget where id = #{id}
+    </select>
+
+    <!-- 新增记录并通过序列生成主键。 -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('monitor_dashboard_widget_id_seq')
+        </selectKey>
+        insert into monitor_dashboard_widget
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="taskId != null and taskId != ''">task_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="widgetKey != null">widget_key,</if>
+            <if test="widgetType != null">widget_type,</if>
+            <if test="widgetTitle != null">widget_title,</if>
+            <if test="gridX != null">grid_x,</if>
+            <if test="gridY != null">grid_y,</if>
+            <if test="gridWidth != null">grid_width,</if>
+            <if test="gridHeight != null">grid_height,</if>
+            <if test="enabled != null">enabled,</if>
+        </trim>
+        values
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{id},
+            <if test="taskId != null and taskId != ''">#{taskId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="widgetKey != null">#{widgetKey},</if>
+            <if test="widgetType != null">#{widgetType},</if>
+            <if test="widgetTitle != null">#{widgetTitle},</if>
+            <if test="gridX != null">#{gridX},</if>
+            <if test="gridY != null">#{gridY},</if>
+            <if test="gridWidth != null">#{gridWidth},</if>
+            <if test="gridHeight != null">#{gridHeight},</if>
+            <if test="enabled != null">#{enabled},</if>
+        </trim>
+    </insert>
+
+    <!-- 按主键更新非空字段。 -->
+    <update id="update">
+        update monitor_dashboard_widget
+        <set>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="widgetKey != null">widget_key = #{widgetKey},</if>
+            <if test="widgetType != null">widget_type = #{widgetType},</if>
+            <if test="widgetTitle != null">widget_title = #{widgetTitle},</if>
+            <if test="gridX != null">grid_x = #{gridX},</if>
+            <if test="gridY != null">grid_y = #{gridY},</if>
+            <if test="gridWidth != null">grid_width = #{gridWidth},</if>
+            <if test="gridHeight != null">grid_height = #{gridHeight},</if>
+            <if test="enabled != null">enabled = #{enabled},</if>
+            update_time = current_timestamp,
+        </set>
+        where id = #{id}
+    </update>
+
+    <!-- 删除记录；包含逻辑删除字段的表执行逻辑删除。 -->
+    <delete id="delete">delete from monitor_dashboard_widget where id = #{id}</delete>
+
+</mapper>

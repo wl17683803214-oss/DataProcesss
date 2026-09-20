@@ -1,0 +1,85 @@
+package com.example.dataprocess.collection.receive;
+
+import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
+import com.example.dataprocess.processing.handler.ProtocolHandler;
+import com.example.dataprocess.processing.handler.ProtocolHandlerRegistry;
+import com.example.dataprocess.tool.UdpTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+
+/** 单个采集接口的UDP接收任务，只负责传输层收包。 */
+public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
+
+    /** UDP接收日志。 */
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+            UdpInterfaceReceiver.class);
+    /** 接口配置快照。 */
+    private final CollectInterfaceRuntimeConfig config;
+    /** 已绑定地址和端口的UDP端点。 */
+    private final UdpTool.UnicastEndpoint endpoint;
+    /** 当前接口对应的协议会话。 */
+    private final ProtocolHandler.UdpSession protocolSession;
+    /** 是否继续接收数据。 */
+    private volatile boolean running = true;
+
+    public UdpInterfaceReceiver(
+            CollectInterfaceRuntimeConfig config,
+            UdpTool.UnicastEndpoint endpoint,
+            ProtocolHandler.UdpSession protocolSession) {
+        this.config = config;
+        this.endpoint = endpoint;
+        this.protocolSession = protocolSession;
+    }
+
+    /** 绑定UDP端口并创建已经选定协议会话的接收任务。 */
+    public static UdpInterfaceReceiver create(
+            CollectInterfaceRuntimeConfig config,
+            ProtocolHandlerRegistry protocolHandlerRegistry)
+            throws IOException {
+        UdpTool.UnicastEndpoint endpoint = UdpTool.openUnicast(
+                config.getHost(), config.getPort(), 0);
+        try {
+            ProtocolHandler handler = protocolHandlerRegistry.get(
+                    config.getTransferProtocol());
+            ProtocolHandler.UdpSession protocolSession =
+                    handler.createUdpSession(config, endpoint);
+            return new UdpInterfaceReceiver(config, endpoint, protocolSession);
+        } catch (RuntimeException exception) {
+            // 协议会话创建失败时释放已经绑定的UDP端口。
+            endpoint.close();
+            throw exception;
+        }
+    }
+
+    /** 持续接收UDP报文，并交给启动时选定的协议会话。 */
+    @Override
+    public void run() {
+        // Receiver不判断PDXP、FEP等协议，只处理UDP传输层收包。
+        try {
+            while (running && endpoint.isOpen()) {
+                UdpTool.ReceivedPacket packet = endpoint.receivePacket();
+                try {
+                    protocolSession.handle(packet);
+                } catch (RuntimeException exception) {
+                    // 单个协议包异常只提示，不结束整个UDP采集接口。
+                    LOGGER.warn("UDP报文提交协议处理失败，接口编号：{}，原因：{}",
+                            config.getInterfaceId(), exception.getMessage());
+                }
+            }
+        } catch (IOException exception) {
+            if (running) {
+                LOGGER.error("UDP采集接口接收失败，接口编号：{}",
+                        config.getInterfaceId(), exception);
+            }
+        }
+    }
+
+    /** 停止接收并关闭UDP端点以解除阻塞。 */
+    @Override
+    public void stop() {
+        running = false;
+        endpoint.close();
+    }
+}

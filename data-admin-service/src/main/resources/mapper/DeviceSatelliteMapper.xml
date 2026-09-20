@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.DeviceSatelliteMapper">
+    <!-- 复用试验任务主记录加锁，首次导入也可串行化，其他任务互不阻塞。 -->
+    <select id="lockForReplacement" resultType="string" useCache="false" flushCache="true">
+        select task_id
+        from experiment_task
+        where task_id = #{taskId}
+        for update
+    </select>
+    <!-- 任务始终必填；类型未传或为空时不拼接类型筛选条件。 -->
+    <select id="findOptions" resultType="com.example.dataadmin.vo.processing.DeviceSatelliteOptionVO">
+        select id, code, name, type
+        from device_satellite
+        where task_id = #{taskId}
+          and is_deleted = 0
+        <if test="type != null and type != ''">
+            and type = #{type}
+        </if>
+        order by id
+    </select>
+    <!-- 关联校验不能跨任务读取。 -->
+    <select id="findActive" resultType="com.example.dataadmin.entity.DeviceSatellite">
+        select id, task_id, code, name, type, is_deleted, create_time, update_time
+        from device_satellite
+        where task_id = #{taskId} and id = #{id} and is_deleted = 0
+    </select>
+    <!-- 逐页插入以获得用于参数关联的主键。 -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('device_satellite_id_seq')
+        </selectKey>
+        insert into device_satellite (id, task_id, code, name, type)
+        values (#{id}, #{taskId}, #{code}, #{name}, #{type})
+    </insert>
+    <!-- 另一任务和另一类型不受替换影响。 -->
+    <update id="deleteByType">
+        update device_satellite set is_deleted = 1, update_time = current_timestamp
+        where task_id = #{taskId} and type = #{type} and is_deleted = 0
+    </update>
+</mapper>

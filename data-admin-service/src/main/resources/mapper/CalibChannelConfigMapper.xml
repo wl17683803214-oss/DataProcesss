@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.CalibChannelConfigMapper">
+
+    <!-- 公共查询字段。 -->
+    <sql id="columns">id, task_id, channel_name, channel_type, calibration_formula, normal_range, detect_method, sigma_value, fluctuation_rate, chauvenet_coef, min_sample_count, iterate_count, sample_window, dynamic_update, auto_clean, enabled, channel_status, is_deleted, create_time, update_time</sql>
+
+    <!-- 按试验任务查询列表。 -->
+    <select id="findAllByTaskId" resultType="com.example.dataadmin.entity.CalibChannelConfig">
+        select <include refid="columns"/> from calib_channel_config
+        <where>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId}</if>
+            and is_deleted = 0
+        </where>
+        order by id
+    </select>
+
+    <!-- 按主键查询详情。 -->
+    <select id="findById" resultType="com.example.dataadmin.entity.CalibChannelConfig">
+        select <include refid="columns"/> from calib_channel_config where id = #{id} and is_deleted = 0
+    </select>
+
+    <!-- 检查当前任务内的校准公式是否重复。 -->
+    <select id="countByTaskIdAndCalibrationFormula" resultType="int">
+        select count(1)
+        from calib_channel_config
+        where task_id = #{taskId}
+          and calibration_formula = #{calibrationFormula}
+          and is_deleted = 0
+        <if test="excludeId != null">
+          and id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 新增记录并通过序列生成主键。 -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('calib_channel_config_id_seq')
+        </selectKey>
+        insert into calib_channel_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            id,
+            <if test="taskId != null and taskId != ''">task_id,</if>
+            <if test="channelName != null">channel_name,</if>
+            <if test="channelType != null">channel_type,</if>
+            <if test="calibrationFormula != null and calibrationFormula != ''">calibration_formula,</if>
+            <if test="normalRange != null">normal_range,</if>
+            <if test="detectMethod != null">detect_method,</if>
+            <if test="sigmaValue != null">sigma_value,</if>
+            <if test="fluctuationRate != null">fluctuation_rate,</if>
+            <if test="chauvenetCoef != null">chauvenet_coef,</if>
+            <if test="minSampleCount != null">min_sample_count,</if>
+            <if test="iterateCount != null">iterate_count,</if>
+            <if test="sampleWindow != null">sample_window,</if>
+            <if test="dynamicUpdate != null">dynamic_update,</if>
+            <if test="autoClean != null">auto_clean,</if>
+            <if test="enabled != null">enabled,</if>
+            <if test="channelStatus != null">channel_status,</if>
+            <if test="isDeleted != null">is_deleted,</if>
+        </trim>
+        values
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            #{id},
+            <if test="taskId != null and taskId != ''">#{taskId},</if>
+            <if test="channelName != null">#{channelName},</if>
+            <if test="channelType != null">#{channelType},</if>
+            <if test="calibrationFormula != null and calibrationFormula != ''">#{calibrationFormula},</if>
+            <if test="normalRange != null">#{normalRange},</if>
+            <if test="detectMethod != null">#{detectMethod},</if>
+            <if test="sigmaValue != null">#{sigmaValue},</if>
+            <if test="fluctuationRate != null">#{fluctuationRate},</if>
+            <if test="chauvenetCoef != null">#{chauvenetCoef},</if>
+            <if test="minSampleCount != null">#{minSampleCount},</if>
+            <if test="iterateCount != null">#{iterateCount},</if>
+            <if test="sampleWindow != null">#{sampleWindow},</if>
+            <if test="dynamicUpdate != null">#{dynamicUpdate},</if>
+            <if test="autoClean != null">#{autoClean},</if>
+            <if test="enabled != null">#{enabled},</if>
+            <if test="channelStatus != null">#{channelStatus},</if>
+            <if test="isDeleted != null">#{isDeleted},</if>
+        </trim>
+    </insert>
+
+    <!-- 按主键更新非空字段。 -->
+    <update id="update">
+        update calib_channel_config
+        <set>
+            <if test="taskId != null and taskId != ''">task_id = #{taskId},</if>
+            <if test="channelName != null">channel_name = #{channelName},</if>
+            <if test="channelType != null">channel_type = #{channelType},</if>
+            <if test="calibrationFormula != null and calibrationFormula != ''">calibration_formula = #{calibrationFormula},</if>
+            <if test="normalRange != null">normal_range = #{normalRange},</if>
+            <if test="detectMethod != null">detect_method = #{detectMethod},</if>
+            <if test="sigmaValue != null">sigma_value = #{sigmaValue},</if>
+            <if test="fluctuationRate != null">fluctuation_rate = #{fluctuationRate},</if>
+            <if test="chauvenetCoef != null">chauvenet_coef = #{chauvenetCoef},</if>
+            <if test="minSampleCount != null">min_sample_count = #{minSampleCount},</if>
+            <if test="iterateCount != null">iterate_count = #{iterateCount},</if>
+            <if test="sampleWindow != null">sample_window = #{sampleWindow},</if>
+            <if test="dynamicUpdate != null">dynamic_update = #{dynamicUpdate},</if>
+            <if test="autoClean != null">auto_clean = #{autoClean},</if>
+            <if test="enabled != null">enabled = #{enabled},</if>
+            <if test="channelStatus != null">channel_status = #{channelStatus},</if>
+            update_time = current_timestamp,
+        </set>
+        where id = #{id} and is_deleted = 0
+    </update>
+
+    <!-- 删除记录；包含逻辑删除字段的表执行逻辑删除。 -->
+    <update id="delete">
+        update calib_channel_config set is_deleted = 1, update_time = current_timestamp where id = #{id} and is_deleted = 0
+    </update>
+
+    <!-- 更新启用状态。 -->
+</mapper>
