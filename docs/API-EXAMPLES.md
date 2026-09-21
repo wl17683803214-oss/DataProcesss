@@ -2503,7 +2503,7 @@ GET /system/logs/sources?taskId=TASK-20260908-001
 
 采集接口选择 `rpcEnabled=0` 时，通过 `protocolConfigId` 取得协议配置，将 `configParams.fields` 按 `tableIndex` 数字升序排列，再按 `bitWidth` 连续解码并组装遥测Protobuf消息。
 
-当字段的 `alarmFlag` 为 `"1"` 时，优先使用 `warningValue` 状态范围，为空时使用 `normalValue`。命中范围后写入 `STATE_TYPE_NORMAL`、从零开始的 `stateIndex` 和范围中文名称 `stateName`；未命中时只写入 `STATE_TYPE_ALARM`，不写入 `stateIndex` 和 `stateName`。当前 `valueType` 固定为 `VALUE_TYPE_RAW`，后续根据公式类型设置对应的数据类型。
+当字段的 `alarmFlag` 为 `"1"` 时，优先使用 `warningValue` 状态范围，为空时使用 `normalValue`。命中范围后写入 `STATE_TYPE_NORMAL`、从零开始的 `stateIndex` 和范围中文名称 `stateName`；未命中时只写入 `STATE_TYPE_ALARM`，不写入 `stateIndex` 和 `stateName`。本地处理按 `formulaType` 设置 `valueType`：300为 `VALUE_TYPE_FLOAT`，301为 `VALUE_TYPE_DOUBLE`，302为 `VALUE_TYPE_TEXT`，303为 `VALUE_TYPE_TIME`；未约定的旧类型保持 `VALUE_TYPE_RAW`。状态范围仍按解码原始整数判断。
 
 | tableIndex | telemetryCode | bitWidth | 读取位置 | 原始值 |
 | --- | --- | --- | --- | --- |
@@ -2511,10 +2511,35 @@ GET /system/logs/sources?taskId=TASK-20260908-001
 | 2 | TM002 | 9 | 第3～11位 | 377 |
 | 3 | TM003 | 4 | 第12～15位 | 10 |
 
-上述示例的数据域在去掉前5字节自定义数据和末尾4字节遥测帧头后为十六进制 `CD AB`。每字节低位先读，跨字节连续读取，每个字段按无符号小端整数解释，不执行公式、精度修约或告警判断。
+上述示例的数据域在去掉前5字节自定义数据和末尾4字节遥测帧头后为十六进制 `CD AB`。每字节低位先读，跨字节连续读取，该取位示例未配置公式类型，按无符号小端整数解释；配置300或301时还会计算处理公式并按小数位数四舍五入。
 
-每行生成一个 `Telemetry`，汇总为一帧 `TelemetryMessage`：`table_index` 对应 `tableIndex`，`tm_symbol` 和字典键对应 `telemetryCode`，`tm_name` 对应 `telemetryName`。`value_type` 使用现有原码枚举；`value_text` 保存精确十进制值，`value` 使用协议的双精度数值（大整数可能产生舍入）；`raw_data` 保存低位对齐的小端字段原码，末字节高位补零。TM002的原码为 `79 01`。
+每行生成一个 `Telemetry`，汇总为一帧 `TelemetryMessage`：`table_index` 对应 `tableIndex`，`tm_symbol` 和字典键对应 `telemetryCode`，`tm_name` 对应 `telemetryName`。该未配置公式类型的示例中，`value_type` 使用原码枚举；`value_text` 保存精确十进制值，`value` 使用协议的双精度数值（大整数可能产生舍入）；`raw_data` 保存低位对齐的小端字段原码，末字节高位补零。TM002的原码为 `79 01`。
 
 每个字段必须携带参数解析配置 `id`，处理时据此关联当前任务下的设备卫星信息；设备卫星 `code` 写入 `sat_code`，`name` 第一个 `_` 前写入 `channel_name`，后面写入 `bussiness_id`。每个字段自己的 `calibrationFormula` 写入对应遥测参数的 `calibration_formula`，不再作为帧级通道编号使用。消息头主题固定为试验数据，子主题固定为遥测物理值，消息来源为“数据处理”，任务主键来自当前采集接口，遥测类型固定为设备遥测。缺少配置、设备名称格式不正确、无效位宽、重复大表序号或数据不足时停止本帧后续处理，并回退保存完整PDXP原始包。同一帧存在相同遥测代号时保留最后一项，并把该参数的 `is_dep_value` 设置为 `true`。`frame_raw_data` 只保存去掉自定义头和遥测头后的中间遥测原码，时间使用PDXP发送时间，配置未覆盖的尾部位不生成参数。
 
 正常PDXP帧处理成功后，整帧记录和全部遥测参数通过一次 `insertRecords` 批量写入IoTDB。整帧记录不再保存 `telemetryType`，参数记录不再保存 `source`；参数的状态索引测点命名为 `stateIndex`，未命中任何状态范围时不写入该测点。状态中文名称写入 `stateName`，`GET /processing/processed` 将其作为 `status` 返回，并同时返回允许为空的 `stateIndex`。`is_dep_value` 为 `true` 时 `deduplication` 写入“去重”，否则写入“原始”。IoTDB中的 `taskId` 按文本保存；`GET /processing/realtime/telemetry`、`GET /processing/processed` 和 `GET /processing/realtime/invalid` 均要求传入字符串任务编号，例如 `TASK-20260908-001`。解析失败时保存的PDXP完整原始包也会写入该任务编号。
+
+### 本地公式与类型示例
+
+数值原始字节继续按小端无符号整数解码为x，不按IEEE 754位模式重解释。配置示例：
+
+```json
+{"id":81,"tableIndex":1,"bitWidth":32,"telemetryCode":"TM001","formulaType":"300","formulaDesc":"y=a*x+b","processParam":"0.02/1","decimalPlaces":"2"}
+```
+
+当x=100时，a=0.02、b=1，得到y=3；Proto的value为3，valueText为“3.00”，valueType为VALUE_TYPE_FLOAT。类型301使用VALUE_TYPE_DOUBLE。value是二进制浮点字段，不保存末尾零；valueText保存修约后的十进制展示。公式支持四则运算、括号、正负号及科学计数法；参数依次绑定a、b等变量，空公式或横线占位符直接使用x。处理公式formulaDesc与用于野值检测的calibrationFormula独立。
+
+类型302：例如bitWidth=24、字节41 42 43，valueText为“ABC”，valueType为VALUE_TYPE_TEXT，value保持默认值0；按UTF-8解码，位宽必须为8的整数倍，不执行处理公式。
+
+类型303：value保存从2000-01-01 12:00:00开始的0.1毫秒整数计数，valueType为VALUE_TYPE_TIME；例如计数10001对应valueText“2000-01-01 12:00:01.0001”。配置公式时，公式结果必须是整数计数，不按decimalPlaces舍入；直接在约定日历起点上累加，不作时区偏移。格式固定为yyyy-MM-dd HH:mm:ss.SSSS。
+
+非法公式、缺少系数、除零、数值溢出或非整数时间计数会终止当前帧后续处理，并由原有失败流程记录中文上下文及回退保存原始帧；不会用原码伪装成计算成功的物理量。
+### 实时遥测整帧新增身份字段
+
+`GET /processing/realtime/telemetry?taskId=TASK-20260908-001&interfaceId=12` 返回的每条记录在satelliteCode后增加satelliteName和channelCode：
+
+```json
+{"interfaceId":12,"time":"2026-09-20T12:00:00","satelliteCode":"SAT-003","satelliteName":"试验卫星三号","channelCode":"CH-01","channelName":"发控台","rawLength":3,"rawFrame":"41 42 43","checkResult":1,"checkResultName":"正确"}
+```
+
+正常整帧的批量入库与单独原码入库均将Proto的satName写入satelliteName、channelCode写入同名测点，类型均为TEXT。channelName继续表示通道名称，channelCode表示通道编码。历史记录的新测点缺失时返回null；新消息未提供这两个字段时保存空字符串。当前本地处理未配置这两个字段的来源，因此保持为空；RPC消息按实际返回值保存。接口参数保持不变。

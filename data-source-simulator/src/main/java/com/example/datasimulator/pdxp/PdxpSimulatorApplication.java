@@ -66,47 +66,78 @@ public final class PdxpSimulatorApplication {
     private static void sendFile(
             Path filePath,
             SendProgress sendProgress) throws Exception {
-        // 第一步：文件读取器和UDP套接字在发送结束后统一自动关闭。
-        try (FixedFrameFileReader fileReader = new FixedFrameFileReader(
-                filePath, PdxpSimulatorConfig.INPUT_FRAME_LENGTH);
-             UdpSimulatorSender sender = new UdpSimulatorSender(
+        // 第一步：UDP套接字和报文构造器在所有文件轮次之间复用。
+        try (UdpSimulatorSender sender = new UdpSimulatorSender(
                      PdxpSimulatorConfig.TARGET_HOST,
                      PdxpSimulatorConfig.TARGET_PORT)) {
             PdxpPacketBuilder pdxpPacketBuilder = new PdxpPacketBuilder();
             SimulatorPacketBuilder packetBuilder =
                     new SimulatorPacketBuilder(pdxpPacketBuilder);
+            int completedRoundCount = 0;
 
-            // 第二步：每个固定长度遥测帧构造一个UDP报文并依次发送。
-            byte[] inputFrame;
-            while ((inputFrame = fileReader.readNextFrame()) != null) {
-                // 第三步：拆分原始遥测帧的四字节帧头和后续遥测原始数据。
-                byte[] telemetryHeader = Arrays.copyOfRange(
-                        inputFrame,
-                        0,
-                        PdxpSimulatorConfig.TELEMETRY_HEADER_LENGTH);
-                byte[] telemetryData = Arrays.copyOfRange(
-                        inputFrame,
-                        PdxpSimulatorConfig.TELEMETRY_HEADER_LENGTH,
-                        inputFrame.length);
-                // 第四步：发送前输出当前帧的遥测帧头和原始数据十六进制内容。
-                System.out.println("第" + (sendProgress.getSentCount() + 1)
-                        + "帧遥测帧头：" + toHex(telemetryHeader)
-                        + "，遥测数据：" + toHex(telemetryData));
-                byte[] udpPacket = packetBuilder.build(inputFrame);
-                sender.send(udpPacket);
-                sendProgress.recordSentFrame();
-                System.out.println("第" + sendProgress.getSentCount()
-                        + "帧发送成功，UDP报文长度：" + udpPacket.length);
+            // 第二步：每轮重新打开文件，从第一帧开始顺序读取。
+            while (true) {
+                // 外部发出中断信号后及时结束循环发送。
+                if (Thread.currentThread().isInterrupted()) {
+                    throw new InterruptedException("模拟数据发送被中断");
+                }
+                int roundStartCount = sendProgress.getSentCount();
+                try (FixedFrameFileReader fileReader =
+                             new FixedFrameFileReader(
+                                     filePath,
+                                     PdxpSimulatorConfig.INPUT_FRAME_LENGTH)) {
+                    // 第三步：每个固定长度遥测帧构造一个UDP报文并依次发送。
+                    byte[] inputFrame;
+                    while ((inputFrame = fileReader.readNextFrame()) != null) {
+                        // 拆分原始遥测帧的四字节帧头和后续遥测原始数据。
+                        byte[] telemetryHeader = Arrays.copyOfRange(
+                                inputFrame,
+                                0,
+                                PdxpSimulatorConfig.TELEMETRY_HEADER_LENGTH);
+                        byte[] telemetryData = Arrays.copyOfRange(
+                                inputFrame,
+                                PdxpSimulatorConfig.TELEMETRY_HEADER_LENGTH,
+                                inputFrame.length);
+                        // 发送前输出当前帧的遥测帧头和原始数据十六进制内容。
+                        System.out.println("第"
+                                + (sendProgress.getSentCount() + 1)
+                                + "帧遥测帧头：" + toHex(telemetryHeader)
+                                + "，遥测数据：" + toHex(telemetryData));
+                        byte[] udpPacket = packetBuilder.build(inputFrame);
+                        sender.send(udpPacket);
+                        sendProgress.recordSentFrame();
+                        System.out.println("第" + sendProgress.getSentCount()
+                                + "帧发送成功，UDP报文长度："
+                                + udpPacket.length);
 
-                // 第五步：每帧发送后按照配置间隔控制模拟数据速率。
-                if (PdxpSimulatorConfig.SEND_INTERVAL_MILLIS > 0) {
-                    Thread.sleep(PdxpSimulatorConfig.SEND_INTERVAL_MILLIS);
+                        // 第四步：每帧发送后按照配置间隔控制模拟数据速率。
+                        if (PdxpSimulatorConfig.SEND_INTERVAL_MILLIS > 0) {
+                            Thread.sleep(
+                                    PdxpSimulatorConfig.SEND_INTERVAL_MILLIS);
+                        }
+                    }
+                }
+
+                // 第五步：空文件无法形成有效循环，直接提示并停止发送。
+                int roundSentCount = sendProgress.getSentCount()
+                        - roundStartCount;
+                if (roundSentCount == 0) {
+                    throw new IOException("模拟源文件中没有可发送的完整帧");
+                }
+
+                // 第六步：记录当前完整文件轮次及累计发送数量。
+                completedRoundCount++;
+                System.out.println("模拟源文件第" + completedRoundCount
+                        + "轮发送完成，本轮发送帧数：" + roundSentCount
+                        + "，累计发送帧数：" + sendProgress.getSentCount());
+
+                // 第七步：未开启循环时保持原有行为，完成一轮后正常退出。
+                if (!PdxpSimulatorConfig.LOOP_READ_ENABLED) {
+                    System.out.println("模拟数据发送完成，成功发送帧数："
+                            + sendProgress.getSentCount());
+                    return;
                 }
             }
-
-            // 第六步：文件全部发送完成后输出最终统计。
-            System.out.println("模拟数据发送完成，成功发送帧数："
-                    + sendProgress.getSentCount());
         }
     }
 

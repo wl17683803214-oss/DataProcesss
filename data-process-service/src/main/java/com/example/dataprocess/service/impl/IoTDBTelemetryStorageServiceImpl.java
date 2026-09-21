@@ -147,10 +147,12 @@ public class IoTDBTelemetryStorageServiceImpl implements IoTDBTelemetryStorageSe
 
         // 第一步：将整帧原码和帧级业务信息加入本次批量写入。
         List<String> frameMeasurements = Arrays.asList(
-                "interfaceId", "taskId", "satelliteCode", "channelName",
+                "interfaceId", "taskId", "satelliteCode", "satelliteName",
+                "channelCode", "channelName",
                 "businessId", "rawLength", "raw", "frameCheckStatus");
         List<TSDataType> frameDataTypes = Arrays.asList(
                 TSDataType.INT64, TSDataType.TEXT, TSDataType.TEXT,
+                TSDataType.TEXT, TSDataType.TEXT,
                 TSDataType.TEXT, TSDataType.TEXT, TSDataType.INT32,
                 TSDataType.BLOB, TSDataType.BOOLEAN);
         List<Object> frameValues = Arrays.<Object>asList(
@@ -158,6 +160,9 @@ public class IoTDBTelemetryStorageServiceImpl implements IoTDBTelemetryStorageSe
                 text(message.hasProtoHead()
                         ? message.getProtoHead().getTaskId() : ""),
                 text(message.getSatCode()),
+                // 卫星名称和通道编码直接使用消息对应字段，不用通道名称代替。
+                text(message.getSatName()),
+                text(message.getChannelCode()),
                 text(message.getChannelName()),
                 text(message.getBussinessId()),
                 message.getFrameRawData().size(),
@@ -265,9 +270,11 @@ public class IoTDBTelemetryStorageServiceImpl implements IoTDBTelemetryStorageSe
                 parameterRoot + "._frame",
                 timestamp,
                 Arrays.asList(
-                        "taskId", "satelliteCode", "channelName", "businessId",
+                        "taskId", "satelliteCode", "satelliteName", "channelCode",
+                        "channelName", "businessId",
                         "rawLength", "raw", "frameCheckStatus"),
                 Arrays.asList(
+                        TSDataType.TEXT, TSDataType.TEXT,
                         TSDataType.TEXT, TSDataType.TEXT, TSDataType.TEXT,
                         TSDataType.TEXT, TSDataType.INT32, TSDataType.BLOB,
                         TSDataType.BOOLEAN),
@@ -275,6 +282,9 @@ public class IoTDBTelemetryStorageServiceImpl implements IoTDBTelemetryStorageSe
                         text(message.hasProtoHead()
                                 ? message.getProtoHead().getTaskId() : ""),
                         text(message.getSatCode()),
+                        // 单独保存整帧时与批量保存使用相同的身份字段。
+                        text(message.getSatName()),
+                        text(message.getChannelCode()),
                         text(message.getChannelName()),
                         text(message.getBussinessId()),
                         message.getFrameRawData().size(),

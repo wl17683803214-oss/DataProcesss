@@ -15,7 +15,7 @@ public final class PdxpSimulatorConfig {
     public static final String FILE_PATH =
             SimulatorEnvironment.text(
                     "PDXP_FILE_PATH",
-                    "D:\\工作文档\\数据处理软件\\模拟源文件\\temp916.dat");
+                    "D:\\工作文档\\数据处理软件\\模拟源文件\\temp916_cut.dat");
     /** UDP目标地址。 */
     public static final String TARGET_HOST = SimulatorEnvironment.text(
             "PDXP_TARGET_HOST", "127.0.0.1");
@@ -25,7 +25,10 @@ public final class PdxpSimulatorConfig {
     /** 相邻两帧的发送间隔，单位毫秒。 */
     public static final long SEND_INTERVAL_MILLIS =
             SimulatorEnvironment.longValue(
-                    "PDXP_SEND_INTERVAL_MILLIS", 1000L);
+                    "PDXP_SEND_INTERVAL_MILLIS", 500L);
+    /** 输入文件发送完毕后是否从文件开头继续循环发送。 */
+    public static final boolean LOOP_READ_ENABLED =
+            SimulatorEnvironment.bool("PDXP_LOOP_ENABLED", true);
 
     /** 数据处理服务地址。 */
     public static final String DATA_PROCESS_SERVICE_URL =

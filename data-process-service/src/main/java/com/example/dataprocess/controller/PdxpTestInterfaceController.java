@@ -76,7 +76,7 @@ public class PdxpTestInterfaceController {
         CollectInterfaceRuntimeConfig config = new CollectInterfaceRuntimeConfig();
         config.setInterfaceId(TEST_INTERFACE_ID);
         config.setInterfaceName("本地PDXP测试采集接口");
-        config.setTaskId("TEST");
+        config.setTaskId("728101");
         config.setHost(TEST_INTERFACE_HOST);
         config.setPort(TEST_INTERFACE_PORT);
         config.setTransferType(1);

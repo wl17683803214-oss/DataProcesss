@@ -10,10 +10,11 @@ info:
     跨域联调：两个服务的 Nacos 配置 auth.allowed-origin-patterns 均设为 ["*"]，允许任意前端来源；同步线上 Nacos 后重启对应服务生效。
     登录预检示例：向 /auth/login 发送 OPTIONS，携带 Origin: http://192.168.112.55:5173、Access-Control-Request-Method: POST 和 Access-Control-Request-Headers: content-type。
     预期返回 HTTP 200，Access-Control-Allow-Origin 回显请求 Origin，Access-Control-Allow-Credentials 为 true；前端来源地址仅为示例，请按实际页面地址替换。
+    本地类型示例：300或301在x=100、formulaDesc=y=a*x+b、processParam=0.02/1、decimalPlaces=2时，value为3，valueText为3.00；302按UTF-8解码至valueText，不执行公式；303的value为从2000-01-01 12:00:00起的0.1毫秒整数计数，valueText格式为yyyy-MM-dd HH:mm:ss.SSSS，计数10001对应2000-01-01 12:00:01.0001；不进行时区偏移。
     PDXP本地处理：rpcEnabled=0时，通过protocolConfigId取得configParams.fields，按tableIndex数字升序和bitWidth连续解码并组装遥测Protobuf消息；alarmFlag为1时命中状态范围写正常类型、stateIndex和stateName，未命中只写报警类型。
-    通过fields中的参数解析配置id关联当前任务下的设备卫星信息，设备卫星编码写入satCode，名称第一个下划线前后分别写入channelName和bussinessId；帧原码去掉数据域前5字节自定义数据和末尾4字节遥测头，按小端低位优先读取无符号原始整数，不执行公式。
+    通过fields中的参数解析配置id关联当前任务下的设备卫星信息，设备卫星编码写入satCode，名称第一个下划线前后分别写入channelName和bussinessId；帧原码去掉数据域前5字节自定义数据和末尾4字节遥测头，按小端低位优先读取无符号原始整数x，按formulaType设置valueType：300为FLOAT、301为DOUBLE、302为TEXT、303为TIME，其他类型保留RAW。数值按formulaDesc计算，processParam用斜线分隔并依次绑定a、b等参数，decimalPlaces指定四舍五入小数位数。
     示例：遥测数据为CD AB，三行配置(tableIndex, telemetryCode, bitWidth)为(1, TM001, 3)、(2, TM002, 9)、(3, TM003, 4)，对应原始值为5、377、10，汇总为一帧TelemetryMessage。
-    每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；value为原始数值，value_text为精确十进制文本，value_type为原码，raw_data为低位对齐的小端字段字节。
+    每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；未配置公式类型时value为原始数值、value_text为精确十进制文本、value_type为原码；配置300至303时按对应规则生成物理量或文本，raw_data为低位对齐的小端字段字节。
   version: 2.6.0
 
 servers:
@@ -1674,16 +1675,16 @@ paths:
                             description: "遥测代号"
                           formulaType:
                             type: string
-                            description: "公式类型"
+                            description: "公式类型：300单精度、301双精度、302字符串、303时间；其他类型保持原码处理"
                           formulaDesc:
                             type: string
-                            description: "处理公式"
+                            description: "处理公式，例如y=a*x+b；支持四则运算和括号，x为小端无符号解码值"
                           processParam:
                             type: string
-                            description: "处理参数"
+                            description: "处理参数，例如0.02/1表示a=0.02、b=1"
                           decimalPlaces:
                             type: string
-                            description: "小数位数"
+                            description: "数值结果四舍五入的小数位数，非负整数；时间保持整数计数"
                           alarmFlag:
                             type: string
                             description: "是否报警：0否，1是"
@@ -1768,9 +1769,9 @@ paths:
                         bitWidth: "32"
                         telemetryName: "温度"
                         telemetryCode: "TMK1001"
-                        formulaType: "109"
-                        formulaDesc: ""
-                        processParam: ""
+                        formulaType: "300"
+                        formulaDesc: "y=a*x+b"
+                        processParam: "0.02/1"
                         decimalPlaces: "5"
                         alarmFlag: "1"
                         normalValue: "正常:[-1,30]"
@@ -1924,16 +1925,16 @@ paths:
                             description: "遥测代号"
                           formulaType:
                             type: string
-                            description: "公式类型"
+                            description: "公式类型：300单精度、301双精度、302字符串、303时间；其他类型保持原码处理"
                           formulaDesc:
                             type: string
-                            description: "处理公式"
+                            description: "处理公式，例如y=a*x+b；支持四则运算和括号，x为小端无符号解码值"
                           processParam:
                             type: string
-                            description: "处理参数"
+                            description: "处理参数，例如0.02/1表示a=0.02、b=1"
                           decimalPlaces:
                             type: string
-                            description: "小数位数"
+                            description: "数值结果四舍五入的小数位数，非负整数；时间保持整数计数"
                           alarmFlag:
                             type: string
                             description: "是否报警：0否，1是"
@@ -2019,9 +2020,9 @@ paths:
                         bitWidth: "32"
                         telemetryName: "温度"
                         telemetryCode: "TMK1001"
-                        formulaType: "109"
-                        formulaDesc: ""
-                        processParam: ""
+                        formulaType: "300"
+                        formulaDesc: "y=a*x+b"
+                        processParam: "0.02/1"
                         decimalPlaces: "5"
                         alarmFlag: "1"
                         normalValue: "正常:[-1,30]"
@@ -2755,7 +2756,7 @@ paths:
                           "nullable": true
                         "formulaType":
                           "type": "string"
-                          "description": "公式类型"
+                          "description": "公式类型：300单精度、301双精度、302字符串、303时间；其他类型保持原码处理"
                           "nullable": true
                         "formulaDesc":
                           "type": "string"
@@ -6363,9 +6364,9 @@ components:
                       bitWidth: "32"
                       telemetryName: "温度"
                       telemetryCode: "TMK1001"
-                      formulaType: "109"
-                      formulaDesc: ""
-                      processParam: ""
+                      formulaType: "300"
+                      formulaDesc: "y=a*x+b"
+                      processParam: "0.02/1"
                       decimalPlaces: "5"
                       alarmFlag: "1"
                       normalValue: "正常:[-1,30]"
@@ -7295,6 +7296,8 @@ components:
                     interfaceId: { type: integer, format: int64, description: "采集接口主键" }
                     time: { type: string, format: date-time, description: "遥测时间" }
                     satelliteCode: { type: string, description: "卫星编码" }
+                    satelliteName: { type: string, nullable: true, description: "卫星名称，取Proto的satName；历史数据或上游未提供时为空" }
+                    channelCode: { type: string, nullable: true, description: "通道编码，取Proto的channelCode；历史数据或上游未提供时为空" }
                     channelName: { type: string, description: "通道名称" }
                     rawLength: { type: integer, description: "去除PDXP自定义头和遥测头后的原码字节数" }
                     rawFrame: { type: string, description: "大写十六进制遥测数据原码" }
@@ -7310,6 +7313,8 @@ components:
               - interfaceId: 12
                 time: "2026-08-06T15:01:38"
                 satelliteCode: "SAT-003"
+                satelliteName: "试验卫星三号"
+                channelCode: "CH-01"
                 channelName: "发控台"
                 rawLength: 247
                 rawFrame: "3E A7 43 FA 02 EC 09 29"

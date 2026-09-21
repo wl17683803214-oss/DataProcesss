@@ -5,19 +5,20 @@ import SatDataCenter.DataExchange.TmTc.TelemetryMessages.StateType;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.Telemetry;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryType;
-import SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType;
 import SatDataCenter.DataExchange.TmTc.Version.ExchangeTopicType;
 import SatDataCenter.DataExchange.TmTc.Version.ProtoHeadInfo;
 import SatDataCenter.DataExchange.TmTc.Version.SubTopicName;
 import com.example.dataprocess.collection.CollectInterfaceStatistics;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.entity.PdxpFrameSource;
+import com.example.dataprocess.enums.LocalFormulaType;
 import com.example.dataprocess.mapper.TelemetryCodeMappingMapper;
 import com.example.dataprocess.protocol.rpc.PdxpDataPayload;
 import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 import com.example.dataprocess.protocol.rpc.ProtocolConfigParser;
 import com.example.dataprocess.tool.LittleEndianBitReader;
 import com.example.dataprocess.tool.PdxpParser;
+import com.example.dataprocess.tool.TelemetryFormulaEvaluator;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import org.slf4j.Logger;
@@ -26,8 +27,12 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -42,6 +47,12 @@ import java.util.regex.Pattern;
 /** 使用采集接口关联协议配置完成本地解析。 */
 @Component
 public class LocalDataProcessor implements DataProcessor {
+    /** 时间参数的计数起点，直接使用协议约定的日历时间，不作时区偏移。 */
+    private static final LocalDateTime PARAMETER_TIME_EPOCH =
+            LocalDateTime.of(2000, 1, 1, 12, 0);
+    /** 四位秒小数完整表达十分之一毫秒精度。 */
+    private static final DateTimeFormatter PARAMETER_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSS");
     /** 本地数据处理日志。 */
     private static final Logger LOGGER = LoggerFactory.getLogger(
             LocalDataProcessor.class);
@@ -110,11 +121,9 @@ public class LocalDataProcessor implements DataProcessor {
             Telemetry.Builder telemetry = Telemetry.newBuilder()
                     .setTableIndex(item.getTableIndex())
                     .setTmSymbol(tmSymbol)
-                    .setValue(value.doubleValue())
-                    .setValueText(value.toString())
-                    // TODO 后续根据公式类型设置对应的数据类型。
-                    .setValueType(ValueType.VALUE_TYPE_RAW)
                     .setRawData(ByteString.copyFrom(raw));
+            // 按公式类型计算物理量，同时填写消息字段类型和展示文本。
+            fillValue(telemetry, item, raw, value);
             if (duplicate) {
                 // 后出现的同代号参数覆盖前值，并在最终Proto中标记发生过去重。
 //                telemetry.setIsDepValue(true);
@@ -149,6 +158,64 @@ public class LocalDataProcessor implements DataProcessor {
                 data.length,
                 elapsedMillis);
         return Optional.of(result);
+    }
+
+    /** 将原码转换为配置指定的物理量、字符串或时间。 */
+    private void fillValue(
+            Telemetry.Builder telemetry,
+            PdxpProtocolField field,
+            byte[] raw,
+            BigInteger decodedValue) {
+        LocalFormulaType type = LocalFormulaType.fromCode(field.getFormulaType());
+        telemetry.setValueType(type.getValueType());
+        try {
+            // 字符串保持原始字节顺序，不将文本当作整数或代入公式。
+            if (type == LocalFormulaType.TEXT) {
+                if (field.getBitWidth() % 8 != 0) {
+                    throw new IllegalArgumentException("字符串参数位宽必须是8的整数倍");
+                }
+                telemetry.setValueText(new String(raw, StandardCharsets.UTF_8));
+                return;
+            }
+            // 未约定的旧类型保持已有原码语义，避免改变存量协议行为。
+            if (type == LocalFormulaType.RAW) {
+                telemetry.setValue(decodedValue.doubleValue())
+                        .setValueText(decodedValue.toString());
+                return;
+            }
+            BigDecimal physicalValue = TelemetryFormulaEvaluator.evaluate(
+                    field.getFormulaDesc(), field.getProcessParam(), new BigDecimal(decodedValue));
+            if (type == LocalFormulaType.TIME) {
+                // 时间值必须是完整计数，禁止舍入掉十分之一毫秒信息。
+                long ticks = physicalValue.longValueExact();
+                if (ticks < -9007199254740992L || ticks > 9007199254740992L) {
+                    throw new IllegalArgumentException("时间计数超出消息数值字段的精确表示范围");
+                }
+                LocalDateTime time = PARAMETER_TIME_EPOCH
+                        .plusSeconds(Math.floorDiv(ticks, 10000L))
+                        .plusNanos(Math.floorMod(ticks, 10000L) * 100000L);
+                telemetry.setValue(ticks).setValueText(time.format(PARAMETER_TIME_FORMAT));
+                return;
+            }
+            // 数值类型按配置的小数位数四舍五入，文本保留末尾零。
+            if (configuredRange(field.getDecimalPlaces())) {
+                int places = Integer.parseInt(field.getDecimalPlaces().trim());
+                if (places < 0 || places > 340) {
+                    throw new IllegalArgumentException("小数位数必须在0到340之间");
+                }
+                physicalValue = physicalValue.setScale(places, RoundingMode.HALF_UP);
+            }
+            double value = type == LocalFormulaType.FLOAT
+                    ? (double) physicalValue.floatValue() : physicalValue.doubleValue();
+            if (!Double.isFinite(value)) {
+                throw new IllegalArgumentException("物理量超出配置数据类型的有效范围");
+            }
+            telemetry.setValue(value).setValueText(physicalValue.toPlainString());
+        } catch (RuntimeException exception) {
+            // 错误配置不能静默生成错误物理量，保留参数身份供上层日志定位。
+            throw new IllegalArgumentException("本地参数转换失败，遥测代号："
+                    + field.getTelemetryCode() + "，原因：" + exception.getMessage(), exception);
+        }
     }
 
     /** 转换、校验并排序配置字段。 */

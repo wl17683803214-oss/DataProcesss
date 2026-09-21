@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.IoTDBFrameQueryMapper">
+    <!-- 明确列出所需测点，路径通配符用于匹配不同卫星和通道的整帧设备。 -->
+    <select id="realtimeFrames" resultType="map">
+        select interfaceId, satelliteCode, satelliteName, channelCode, channelName,
+               rawLength, raw, frameCheckStatus
+        from root.db.*.tms.*.*._frame
+        <where>
+            <!-- 任务字面量由现有转义工具生成，缺失任务时禁止扩大查询范围。 -->
+            <choose>
+                <when test="taskIdLiteral != null and taskIdLiteral != ''">
+                    taskId = ${taskIdLiteral}
+                </when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+            <if test="interfaceId != null">
+                and interfaceId = ${interfaceId}
+            </if>
+        </where>
+        order by time desc align by device
+    </select>
+</mapper>

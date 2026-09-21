@@ -5,6 +5,7 @@ import com.example.dataadmin.entity.DataProcessLog;
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.entity.DeviceSatellite;
 import com.example.dataadmin.mapper.DeviceSatelliteMapper;
+import com.example.dataadmin.mapper.IoTDBFrameQueryMapper;
 import com.example.dataadmin.enums.DeviceSatelliteType;
 import com.example.dataadmin.service.support.ParameterWorkbookParser;
 import com.example.dataadmin.vo.processing.DeviceSatelliteOptionVO;
@@ -80,6 +81,8 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     /** 采集接口运行配置同步服务。 */
     private final CollectInterfaceRuntimeSyncService runtimeSyncService;
     private final SessionPool iotdbSessionPool;
+    /** 正常整帧查询的MyBatis映射组件。 */
+    private final IoTDBFrameQueryMapper frameQueryMapper;
     /** 可视化参数筛选项同步服务。 */
     private final VisualizationParameterSyncService parameterSyncService;
 
@@ -104,7 +107,8 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             DeviceSatelliteMapper deviceSatelliteMapper,
             ParameterWorkbookParser workbookParser,
             StringRedisTemplate redisTemplate,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            IoTDBFrameQueryMapper frameQueryMapper) {
         this.dashboardMapper = dashboardMapper;
         this.collectInterfaceMapper = collectInterfaceMapper;
         this.logMapper = logMapper;
@@ -117,6 +121,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         this.workbookParser = workbookParser;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
+        this.frameQueryMapper = frameQueryMapper;
     }
 
     /** 查询页面筛选框使用的已启用采集接口。 */
@@ -199,14 +204,10 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             Long interfaceId) {
         // 第一步：任务编号必须明确，防止查询到其他试验任务的数据。
         String normalizedTaskId = requireIoTDBTaskId(taskId);
-        // 第二步：根据任务编号和可选采集接口主键构造实时遥测筛选条件。
-        String filter = interfaceFilter(
-                normalizedTaskId, interfaceId, false);
-        // 第三步：查询符合条件的全部完整原始帧，不再执行分页和总数统计。
-        String sql = "select interfaceId, satelliteCode, channelName, rawLength, raw, "
-                + "frameCheckStatus "
-                + "from root.db.*.tms.*.*._frame" + filter
-                + " order by time desc align by device";
+        // 第二步：复用字面量转义，由MyBatis映射生成带可选接口条件的查询。
+        String sql = frameQueryMapper.realtimeFrames(
+                iotdbTextLiteral(normalizedTaskId), interfaceId);
+        // 第三步：查询完整原始帧及新增的卫星名称、通道编码。
         List<RealtimeTelemetryFrameVO> result = new ArrayList<>();
         try (SessionDataSetWrapper dataSet =
                      iotdbSessionPool.executeQueryStatement(sql)) {
@@ -219,6 +220,11 @@ public class DataProcessingServiceImpl implements DataProcessingService {
                 Timestamp time = iterator.getTimestamp("Time");
                 item.setTime(time == null ? null : time.toLocalDateTime());
                 item.setSatelliteCode(iterator.getString("satelliteCode"));
+                // 旧设备可能尚未创建新测点，列缺失或值为空时均返回空值。
+                item.setSatelliteName(dataSet.getColumnNames().contains("satelliteName")
+                        ? iterator.getString("satelliteName") : null);
+                item.setChannelCode(dataSet.getColumnNames().contains("channelCode")
+                        ? iterator.getString("channelCode") : null);
                 item.setChannelName(iterator.getString("channelName"));
                 item.setRawLength(iterator.getInt("rawLength"));
                 item.setRawFrame(toHex(raw == null ? null : raw.getValues()));
