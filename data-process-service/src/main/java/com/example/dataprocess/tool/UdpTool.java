@@ -258,8 +258,26 @@ public final class UdpTool {
         }
     }
 
+    /** UDP接收任务统一使用的收发端点。 */
+    public interface DatagramEndpoint extends AutoCloseable {
+
+        /** 使用当前套接字向指定来源或目标发送一个UDP报文。 */
+        void send(String targetAddress, int targetPort, byte[] data)
+                throws IOException;
+
+        /** 接收下一条UDP报文并保留发送方地址和端口。 */
+        ReceivedPacket receivePacket() throws IOException;
+
+        /** @return 当前UDP端点是否仍可使用 */
+        boolean isOpen();
+
+        /** 关闭当前UDP端点并释放监听资源。 */
+        @Override
+        void close() throws IOException;
+    }
+
     /** 可以连续发送和接收单播报文的 UDP 端点。 */
-    public static final class UnicastEndpoint implements AutoCloseable {
+    public static final class UnicastEndpoint implements DatagramEndpoint {
 
         /** 当前单播端点长期复用的套接字。 */
         private final DatagramSocket socket;
@@ -277,6 +295,7 @@ public final class UdpTool {
          * @param data 本次发送的原始字节，不能为空且不能超过65507字节
          * @throws IOException 地址解析或网络发送失败
          */
+        @Override
         public void send(String targetAddress, int targetPort, byte[] data) throws IOException {
             // 复用当前端点的同一个套接字发送单播报文。
             UdpTool.send(socket, targetAddress, targetPort, data);
@@ -294,12 +313,14 @@ public final class UdpTool {
         }
 
         /** 接收下一条UDP报文，并返回发送方地址和端口。 */
+        @Override
         public ReceivedPacket receivePacket() throws IOException {
             // FEP应答必须发回当前报文来源，因此保留来源网络信息。
             return UdpTool.receivePacket(socket);
         }
 
         /** @return 当前单播端点是否仍可使用 */
+        @Override
         public boolean isOpen() {
             // 套接字未关闭时可以继续发送和接收。
             return !socket.isClosed();
@@ -387,7 +408,7 @@ public final class UdpTool {
     }
 
     /** 加入组播并负责连续接收报文的接收端。 */
-    public static final class MulticastReceiver implements AutoCloseable {
+    public static final class MulticastReceiver implements DatagramEndpoint {
 
         /** 当前组播接收端长期复用的套接字。 */
         private final MulticastSocket socket;
@@ -419,7 +440,25 @@ public final class UdpTool {
             return UdpTool.receive(socket);
         }
 
+        /** 接收下一条组播报文，并保留实际发送方地址和端口。 */
+        @Override
+        public ReceivedPacket receivePacket() throws IOException {
+            // FEP等需要应答的协议使用来源信息把响应发送给实际发送方。
+            return UdpTool.receivePacket(socket);
+        }
+
+        /** 使用当前组播套接字向指定目标发送一个UDP应答报文。 */
+        @Override
+        public void send(
+                String targetAddress,
+                int targetPort,
+                byte[] data) throws IOException {
+            // 组播接收后的协议应答仍发送到实际报文来源地址。
+            UdpTool.send(socket, targetAddress, targetPort, data);
+        }
+
         /** @return 当前组播接收端是否仍可使用 */
+        @Override
         public boolean isOpen() {
             // 套接字未关闭时可以继续接收组播报文。
             return !socket.isClosed();

@@ -18,6 +18,26 @@
           and rule_config.is_deleted = 0
     </select>
 
+    <!-- 协议配置直接引用设备卫星主键，不再通过首个参数推断设备。 -->
+    <select id="findFrameSourceByDeviceId" resultType="com.example.dataprocess.entity.PdxpFrameSource">
+        select id, code, name
+        from device_satellite
+        where task_id = #{taskId} and id = #{deviceSatelliteId} and is_deleted = 0
+    </select>
+
+    <!-- 一次加载设备下全部有效字段，系统名称沿用导入表中的原始路径。 -->
+    <select id="findPdxpFieldsByDeviceId" resultType="com.example.dataprocess.protocol.rpc.PdxpProtocolField">
+        select id, table_index, bit_width, telemetry_name, telemetry_code,
+               formula_type, formula_desc, process_param, decimal_places,
+               alarm_flag, normal_value, warning_value, state_change_info,
+               command_code, system_name, control_channel, merge_channel_count,
+               delay_channel, store_flag, calibration_formula
+        from telemetry_parse_rule_config
+        where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+          and is_deleted = 0
+        order by case when table_index ~ '^[0-9]+$' then table_index::numeric end, id
+    </select>
+
     <!-- 按任务和业务序号批量查询RPC结果对应的遥测代号。 -->
     <select id="findByTaskIdAndTableIndexes"
             resultType="com.example.dataprocess.entity.TelemetryCodeMapping">

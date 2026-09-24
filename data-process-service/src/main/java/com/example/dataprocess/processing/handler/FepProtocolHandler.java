@@ -77,7 +77,7 @@ public class FepProtocolHandler implements ProtocolHandler {
     @Override
     public UdpSession createUdpSession(
             CollectInterfaceRuntimeConfig config,
-            UdpTool.UnicastEndpoint endpoint) {
+            UdpTool.DatagramEndpoint endpoint) {
         return new FepUdpSession(config, endpoint, createSessionConfig(config));
     }
 
@@ -108,7 +108,7 @@ public class FepProtocolHandler implements ProtocolHandler {
     private final class FepUdpSession implements UdpSession {
 
         private final CollectInterfaceRuntimeConfig config;
-        private final UdpTool.UnicastEndpoint endpoint;
+        private final UdpTool.DatagramEndpoint endpoint;
         private final FepFileReceiver fileReceiver;
         private final Object submitLock = new Object();
         private CompletableFuture<Void> processingTail =
@@ -116,7 +116,7 @@ public class FepProtocolHandler implements ProtocolHandler {
 
         private FepUdpSession(
                 CollectInterfaceRuntimeConfig config,
-                UdpTool.UnicastEndpoint endpoint,
+                UdpTool.DatagramEndpoint endpoint,
                 SessionConfig sessionConfig) {
             this.config = config;
             this.endpoint = endpoint;

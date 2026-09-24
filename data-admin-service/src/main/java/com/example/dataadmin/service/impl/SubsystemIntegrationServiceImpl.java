@@ -4,7 +4,7 @@ import com.example.dataadmin.config.SubsystemIntegrationProperties;
 import com.example.dataadmin.entity.SysMenu;
 import com.example.dataadmin.mapper.SysRoleMapper;
 import com.example.dataadmin.service.SubsystemIntegrationService;
-import com.example.dataadmin.vo.auth.RouteVO;
+import com.example.dataadmin.vo.integration.IntegrationMenuVO;
 import com.example.dataadmin.vo.integration.SubsystemMenuConfigVO;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +38,7 @@ public class SubsystemIntegrationServiceImpl implements SubsystemIntegrationServ
         // 对外菜单中的页面地址以统一处理后的前端根地址为准。
         String baseUrl = normalizeBaseUrl(properties.getBaseUrl());
         // 根据基线平台角色编号查询本地角色菜单关系。
-        List<RouteVO> menus = buildMenuTree(
+        List<IntegrationMenuVO> menus = buildMenuTree(
                 roleMapper.findMenusByBaselineRoleIds(normalizedRoleIds));
         return new SubsystemMenuConfigVO(
                 requireText(properties.getSystemKey(), "子系统标识未配置"),
@@ -73,7 +73,7 @@ public class SubsystemIntegrationServiceImpl implements SubsystemIntegrationServ
     }
 
     /** 按父子关系组装菜单树，并保持数据库查询的排序结果。 */
-    private List<RouteVO> buildMenuTree(List<SysMenu> source) {
+    private List<IntegrationMenuVO> buildMenuTree(List<SysMenu> source) {
         Map<Long, List<SysMenu>> childrenByParent =
                 new LinkedHashMap<Long, List<SysMenu>>();
         for (SysMenu menu : source) {
@@ -85,7 +85,7 @@ public class SubsystemIntegrationServiceImpl implements SubsystemIntegrationServ
             }
             children.add(menu);
         }
-        List<RouteVO> result = new ArrayList<RouteVO>();
+        List<IntegrationMenuVO> result = new ArrayList<IntegrationMenuVO>();
         List<SysMenu> rootMenus = childrenByParent.get(0L);
         if (rootMenus == null) {
             return result;
@@ -97,22 +97,21 @@ public class SubsystemIntegrationServiceImpl implements SubsystemIntegrationServ
     }
 
     /** 递归转换一个菜单节点。 */
-    private RouteVO toMenu(
+    private IntegrationMenuVO toMenu(
             SysMenu menu,
             Map<Long, List<SysMenu>> childrenByParent) {
-        List<RouteVO> children = null;
+        List<IntegrationMenuVO> children = null;
         List<SysMenu> childMenus = childrenByParent.get(menu.getId());
         if (childMenus != null && !childMenus.isEmpty()) {
-            children = new ArrayList<RouteVO>();
+            children = new ArrayList<IntegrationMenuVO>();
             for (SysMenu childMenu : childMenus) {
                 children.add(toMenu(childMenu, childrenByParent));
             }
         }
-        return new RouteVO(
+        return new IntegrationMenuVO(
                 menu.getLabel(),
                 menu.getIcon(),
                 menu.getPath(),
-                menu.getHidden(),
                 children);
     }
 

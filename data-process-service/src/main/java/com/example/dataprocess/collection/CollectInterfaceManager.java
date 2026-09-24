@@ -5,6 +5,11 @@ import com.example.dataprocess.collection.receive.TcpInterfaceReceiver;
 import com.example.dataprocess.collection.receive.UdpInterfaceReceiver;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.entity.CalibrationChannelRuntimeConfig;
+import com.example.dataprocess.entity.PdxpFrameSource;
+import com.example.dataprocess.mapper.TelemetryCodeMappingMapper;
+import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.dataprocess.mapper.CollectInterfaceRuntimeMapper;
 import com.example.dataprocess.processing.handler.ProtocolHandlerRegistry;
 import org.slf4j.Logger;
@@ -12,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.context.event.EventListener;
 
@@ -52,6 +58,29 @@ public class CollectInterfaceManager implements DisposableBean {
             new HashMap<Long, RunningInterface>();
     /** 数据处理服务是否正在停止。 */
     private volatile boolean stopping;
+
+    /** 提交采集任务前使用的目录加载器。 */
+    private BaselineSatelliteDirectory satelliteDirectory;
+    /** 启动采集接口时加载PDXP设备身份和解析字段。 */
+    private TelemetryCodeMappingMapper telemetryMappingMapper;
+    /** 读取协议配置中的设备卫星主键。 */
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    public void setTelemetryMappingMapper(TelemetryCodeMappingMapper mapper) {
+        this.telemetryMappingMapper = mapper;
+    }
+
+    @Autowired
+    public void setObjectMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+    /** 注入目录加载器，保留已有离线直接构造入口。 */
+    @Autowired
+    public void setSatelliteDirectory(BaselineSatelliteDirectory satelliteDirectory) {
+        this.satelliteDirectory = satelliteDirectory;
+    }
 
     public CollectInterfaceManager(
             CollectInterfaceRuntimeMapper runtimeMapper,
@@ -130,6 +159,50 @@ public class CollectInterfaceManager implements DisposableBean {
         for (CollectInterfaceRuntimeConfig config : configs) {
             config.setCalibrationConfigMap(calibrationConfigs);
         }
+        // 同步时加载每个设备的解析配置，处理线程不再逐帧查询参数表。
+        attachPdxpFields(configs);
+    }
+
+    /** 每批同步只加载一次相同设备的解析字段。 */
+    private void attachPdxpFields(List<CollectInterfaceRuntimeConfig> configs) {
+        Map<Long, List<PdxpProtocolField>> fieldsByDevice = new HashMap<>();
+        Map<Long, PdxpFrameSource> sourceByDevice = new HashMap<>();
+        for (CollectInterfaceRuntimeConfig config : configs) {
+            if (!Integer.valueOf(2).equals(config.getTransferProtocol())) {
+                continue;
+            }
+            Long deviceId = protocolDeviceId(config.getProtocolConfigParams());
+            if (deviceId == null || deviceId <= 0) {
+                throw new IllegalArgumentException("PDXP协议配置缺少设备卫星主键");
+            }
+            PdxpFrameSource source = sourceByDevice.computeIfAbsent(deviceId,
+                    id -> telemetryMappingMapper.findFrameSourceByDeviceId(config.getTaskId(), id));
+            if (source == null) {
+                throw new IllegalArgumentException("PDXP协议关联的设备卫星不存在：" + deviceId);
+            }
+            config.setDeviceSatelliteId(deviceId);
+            config.setDeviceSatelliteName(source.getName());
+            // RPC处理只需设备身份；本地处理才加载按位宽解析的参数快照。
+            if (!Integer.valueOf(1).equals(config.getRpcEnabled())) {
+                List<PdxpProtocolField> fields = fieldsByDevice.computeIfAbsent(deviceId,
+                        id -> telemetryMappingMapper.findPdxpFieldsByDeviceId(config.getTaskId(), id));
+                if (fields.isEmpty()) {
+                    throw new IllegalArgumentException("PDXP协议关联的设备没有有效参数：" + deviceId);
+                }
+                config.setPdxpFields(fields);
+            }
+        }
+    }
+
+    /** 从协议配置根对象读取设备卫星主键。 */
+    private Long protocolDeviceId(String configParams) {
+        try {
+            JsonNode root = objectMapper.readTree(configParams);
+            JsonNode id = root == null ? null : root.get("deviceSatelliteId");
+            return id == null || id.isNull() ? null : id.asLong();
+        } catch (Exception exception) {
+            throw new IllegalArgumentException("PDXP协议动态参数格式不正确", exception);
+        }
     }
 
     /** 清理Admin通知列表中的空值和重复值。 */
@@ -166,6 +239,10 @@ public class CollectInterfaceManager implements DisposableBean {
 
     /** 启动新接口，关键运行配置变化时先停止再重新启动。 */
     private void startOrRestart(CollectInterfaceRuntimeConfig config) {
+        // 基线查询在启动或同步线程完成，采集和处理线程仅接收查询结果。
+        if (satelliteDirectory != null) {
+            config.setBaselineSatellites(satelliteDirectory.load(config));
+        }
         RunningInterface current = runningInterfaces.get(config.getInterfaceId());
         if (current != null
                 && current.getConfig().hasSameRuntimeSettings(config)) {
@@ -174,6 +251,11 @@ public class CollectInterfaceManager implements DisposableBean {
                     config.getCalibrationConfigMap());
             current.getConfig().setParameterRangeCheckEnabled(
                     config.getParameterRangeCheckEnabled());
+            // 不重启监听时也刷新目录，后续帧使用最新名称快照。
+            current.getConfig().setBaselineSatellites(config.getBaselineSatellites());
+            current.getConfig().setDeviceSatelliteId(config.getDeviceSatelliteId());
+            current.getConfig().setDeviceSatelliteName(config.getDeviceSatelliteName());
+            current.getConfig().setPdxpFields(config.getPdxpFields());
             return;
         }
         if (current != null) {
@@ -210,9 +292,10 @@ public class CollectInterfaceManager implements DisposableBean {
             runningInterfaces.put(
                     config.getInterfaceId(),
                     new RunningInterface(config, receiver, future));
-            LOGGER.info("采集接口已启动，接口编号：{}，传输方式：{}，传输协议：{}，地址：{}，端口：{}",
+            LOGGER.info("采集接口已启动，接口编号：{}，传输方式：{}，传输协议：{}，地址：{}，端口：{}，组播地址：{}",
                     config.getInterfaceId(), config.getTransferType(),
-                    config.getTransferProtocol(), config.getHost(), config.getPort());
+                    config.getTransferProtocol(), config.getHost(), config.getPort(),
+                    config.getMulticastIp());
         } catch (RejectedExecutionException exception) {
             // 接收任务未进入线程池时立即释放已经绑定的网络端口。
             stopCreatedReceiver(receiver);

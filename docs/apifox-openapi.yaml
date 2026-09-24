@@ -12,7 +12,7 @@ info:
     预期返回 HTTP 200，Access-Control-Allow-Origin 回显请求 Origin，Access-Control-Allow-Credentials 为 true；前端来源地址仅为示例，请按实际页面地址替换。
     本地类型示例：300或301在x=100、formulaDesc=y=a*x+b、processParam=0.02/1、decimalPlaces=2时，value为3，valueText为3.00；302按UTF-8解码至valueText，不执行公式；303的value为从2000-01-01 12:00:00起的0.1毫秒整数计数，valueText格式为yyyy-MM-dd HH:mm:ss.SSSS，计数10001对应2000-01-01 12:00:01.0001；不进行时区偏移。
     PDXP本地处理：rpcEnabled=0时，通过protocolConfigId取得configParams.fields，按tableIndex数字升序和bitWidth连续解码并组装遥测Protobuf消息；alarmFlag为1时命中状态范围写正常类型、stateIndex和stateName，未命中只写报警类型。
-    通过fields中的参数解析配置id关联当前任务下的设备卫星信息，设备卫星编码写入satCode，名称第一个下划线前后分别写入channelName和bussinessId；帧原码去掉数据域前5字节自定义数据和末尾4字节遥测头，按小端低位优先读取无符号原始整数x，按formulaType设置valueType：300为FLOAT、301为DOUBLE、302为TEXT、303为TIME，其他类型保留RAW。数值按formulaDesc计算，processParam用斜线分隔并依次绑定a、b等参数，decimalPlaces指定四舍五入小数位数。
+    通过fields中的参数解析配置id关联当前任务下的设备卫星信息，本地处理不填写satCode，设备名称第一个下划线前后分别写入channelName和bussinessId；帧原码去掉数据域前5字节自定义数据和末尾4字节遥测头，按小端低位优先读取无符号原始整数x，按formulaType设置valueType：300为FLOAT、301为DOUBLE、302为TEXT、303为TIME，其他类型保留RAW。数值按formulaDesc计算，processParam用斜线分隔并依次绑定a、b等参数，decimalPlaces指定四舍五入小数位数。
     示例：遥测数据为CD AB，三行配置(tableIndex, telemetryCode, bitWidth)为(1, TM001, 3)、(2, TM002, 9)、(3, TM003, 4)，对应原始值为5、377、10，汇总为一帧TelemetryMessage。
     每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；未配置公式类型时value为原始数值、value_text为精确十进制文本、value_type为原码；配置300至303时按对应规则生成物理量或文本，raw_data为低位对齐的小端字段字节。
   version: 2.6.0
@@ -40,6 +40,47 @@ tags:
   - name: 系统日志
 
 paths:
+  /rpc-api/knowledge/knowledge/satellite/list:
+    get:
+      tags: [基线卫星目录]
+      summary: 查询基线卫星及通道名称
+      description: 采集任务提交前按协议fields中的sat_code查询；RPC返回后按sat_code匹配satelliteCode赋值sat_name，再在该卫星channelList中按channel_code匹配channelCode赋值channel_name。匹配不到或名称为空时保留RPC原值。此接口属于基线服务。
+      servers:
+        - url: http://10.126.100.249:16001/prod-api
+      security: []
+      parameters:
+        - name: pageNum
+          in: query
+          required: true
+          schema: {type: integer, default: 1}
+          example: 1
+        - name: pageSize
+          in: query
+          required: true
+          schema: {type: integer, default: 10}
+          example: 10
+        - name: satelliteCode
+          in: query
+          required: true
+          schema: {type: string}
+          example: '111'
+      responses:
+        '200':
+          description: 基线返回的卫星列表
+          content:
+            application/json:
+              example:
+                code: 200
+                msg: 操作成功
+                data:
+                  rows:
+                    - satelliteCode: '111'
+                      satelliteName: XX12卫星
+                      channelList:
+                        - channelCode: '1111'
+                          channelName: '1122'
+                        - channelCode: '333'
+                          channelName: '222'
   /integration/menu-config:
     get:
       tags: [子系统集成]
@@ -103,15 +144,12 @@ paths:
                   - label: "总览"
                     icon: "dashboard"
                     path: "/dashboard"
-                    hidden: false
                   - label: "系统配置"
                     icon: "setting"
-                    hidden: false
                     children:
                       - label: "用户管理"
                         icon: "user"
                         path: "/system/user"
-                        hidden: false
 
   /processing/device-satellites:
     "get":
@@ -1029,7 +1067,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 新增采集接口
-      description: '本地处理和RPC处理都必须传protocolConfigId，rpcEnabled只决定处理分支。enabled为1时，同一传输方式、监听地址和端口不能与其他启用接口重复；保存成功后同步全部采集任务。'
+      description: '本地处理和RPC处理都必须传protocolConfigId，rpcEnabled只决定处理分支。multicastIp有值时按UDP组播接收，为空时按UDP单播接收。enabled为1时，相同传输方式、监听地址、端口和组播地址不能与其他启用接口重复；保存成功后同步全部采集任务。'
       requestBody:
         required: true
         content:
@@ -1102,10 +1140,14 @@ paths:
                   format: int64
                 host:
                   type: string
-                  description: "远端主机 IP 地址或域名"
+                  description: "数据处理服务本机监听网卡IP地址"
                 port:
                   type: integer
-                  description: "远端服务端口号"
+                  description: "数据处理服务本机监听端口"
+                multicastIp:
+                  type: string
+                  nullable: true
+                  description: "UDP组播地址；填写时按组播接收，为空时按单播接收"
                 status:
                   type: integer
                   description: "采集接口运行状态。枚举：0 离线，1 在线，2 异常"
@@ -1166,6 +1208,7 @@ paths:
                   protocolConfigId: 21
                   host: "192.168.1.10"
                   port: 9001
+                  multicastIp: "239.1.1.1"
                   status: 0
                   enabled: 1
                   rpcEnabled: 1
@@ -1183,6 +1226,7 @@ paths:
                   protocolConfigId: 21
                   host: "192.168.1.10"
                   port: 9001
+                  multicastIp: null
                   status: 0
                   enabled: 1
                   rpcEnabled: 0
@@ -1195,7 +1239,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 修改采集接口
-      description: '本地处理和RPC处理都必须传protocolConfigId，rpcEnabled只决定处理分支。最终enabled为1时，同一传输方式、监听地址和端口不能与其他启用接口重复；保存成功后同步全部采集任务，运行配置变化时重启对应任务。'
+      description: '本地处理和RPC处理都必须传protocolConfigId，rpcEnabled只决定处理分支。multicastIp有值时按UDP组播接收，为空时按UDP单播接收。最终enabled为1时，相同传输方式、监听地址、端口和组播地址不能与其他启用接口重复；保存成功后同步全部采集任务，运行配置变化时重启对应任务。'
       requestBody:
         required: true
         content:
@@ -1272,10 +1316,14 @@ paths:
                   format: int64
                 host:
                   type: string
-                  description: "远端主机 IP 地址或域名"
+                  description: "数据处理服务本机监听网卡IP地址"
                 port:
                   type: integer
-                  description: "远端服务端口号"
+                  description: "数据处理服务本机监听端口"
+                multicastIp:
+                  type: string
+                  nullable: true
+                  description: "UDP组播地址；填写时按组播接收，为空时按单播接收"
                 status:
                   type: integer
                   description: "采集接口运行状态。枚举：0 离线，1 在线，2 异常"
@@ -1337,6 +1385,7 @@ paths:
                   protocolConfigId: 21
                   host: "192.168.1.11"
                   port: 9001
+                  multicastIp: "239.1.1.1"
                   status: 1
                   enabled: 1
                   rpcEnabled: 1
@@ -1355,6 +1404,7 @@ paths:
                   protocolConfigId: 21
                   host: "192.168.1.11"
                   port: 9001
+                  multicastIp: null
                   status: 1
                   enabled: 1
                   rpcEnabled: 0
@@ -1389,7 +1439,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 修改采集接口启用状态
-      description: 'enabled为1时校验同一传输方式、监听地址和端口不能重复并启动采集任务，为0时停止采集任务；保存成功后向数据处理服务发送全部启用接口ID。'
+      description: 'enabled为1时校验相同传输方式、监听地址、端口和组播地址不能重复并启动采集任务，为0时停止采集任务；保存成功后向数据处理服务发送全部启用接口ID。'
       requestBody:
         required: true
         content:
@@ -1631,8 +1681,12 @@ paths:
                   description: "协议配置说明"
                 configParams:
                   type: object
-                  description: "协议动态配置；PDXP保留pdxphead，fields使用参数解析配置主键id及十九个字符串字段；RPC使用field、fieldName、dataType、value"
+                  description: "PDXP保留pdxphead并填写deviceSatelliteId；RPC保留fields，供PDXP采集接口使用时也需填写deviceSatelliteId"
                   properties:
+                    deviceSatelliteId:
+                      type: integer
+                      format: int64
+                      description: "PDXP协议选择当前任务下的设备卫星主键"
                     encoding:
                       type: string
                       description: "协议字符编码"
@@ -1650,7 +1704,7 @@ paths:
                         res: { description: "保留字段" }
                     fields:
                       type: array
-                      description: "PDXP字段定义或RPC请求配置字段"
+                      description: "RPC请求配置字段；PDXP不再提交fields"
                       items:
                         type: object
                         properties:
@@ -1763,27 +1817,7 @@ paths:
                       no: null
                       flag: null
                       res: null
-                    fields:
-                      - id: 81
-                        tableIndex: "1"
-                        bitWidth: "32"
-                        telemetryName: "温度"
-                        telemetryCode: "TMK1001"
-                        formulaType: "300"
-                        formulaDesc: "y=a*x+b"
-                        processParam: "0.02/1"
-                        decimalPlaces: "5"
-                        alarmFlag: "1"
-                        normalValue: "正常:[-1,30]"
-                        warningValue: ""
-                        stateChangeInfo: ""
-                        commandCode: ""
-                        systemName: "发控台"
-                        controlChannel: ""
-                        mergeChannelCount: "0"
-                        delayChannel: "0"
-                        storeFlag: "1"
-                        calibrationFormula: "x*0.1"
+                    deviceSatelliteId: 12
                   enabled: 1
               rpc:
                 summary: "RPC请求参数配置"
@@ -1794,6 +1828,7 @@ paths:
                   dataSourceType: 1
                   configDesc: "卫星遥测RPC请求参数"
                   configParams:
+                    deviceSatelliteId: 12
                     fields:
                       - field: "sat_code"
                         fieldName: "卫星代号"
@@ -1881,8 +1916,12 @@ paths:
                   description: "协议配置说明"
                 configParams:
                   type: object
-                  description: "协议动态配置；PDXP保留pdxphead，fields使用参数解析配置主键id及十九个字符串字段；RPC使用field、fieldName、dataType、value"
+                  description: "PDXP保留pdxphead并填写deviceSatelliteId；RPC保留fields，供PDXP采集接口使用时也需填写deviceSatelliteId"
                   properties:
+                    deviceSatelliteId:
+                      type: integer
+                      format: int64
+                      description: "PDXP协议选择当前任务下的设备卫星主键"
                     encoding:
                       type: string
                       description: "协议字符编码"
@@ -1900,7 +1939,7 @@ paths:
                         res: { description: "保留字段" }
                     fields:
                       type: array
-                      description: "PDXP字段定义或RPC请求配置字段"
+                      description: "RPC请求配置字段；PDXP不再提交fields"
                       items:
                         type: object
                         properties:
@@ -2014,27 +2053,7 @@ paths:
                       no: null
                       flag: null
                       res: null
-                    fields:
-                      - id: 81
-                        tableIndex: "1"
-                        bitWidth: "32"
-                        telemetryName: "温度"
-                        telemetryCode: "TMK1001"
-                        formulaType: "300"
-                        formulaDesc: "y=a*x+b"
-                        processParam: "0.02/1"
-                        decimalPlaces: "5"
-                        alarmFlag: "1"
-                        normalValue: "正常:[-1,30]"
-                        warningValue: ""
-                        stateChangeInfo: ""
-                        commandCode: ""
-                        systemName: "发控台"
-                        controlChannel: ""
-                        mergeChannelCount: "0"
-                        delayChannel: "0"
-                        storeFlag: "1"
-                        calibrationFormula: "x*0.1"
+                    deviceSatelliteId: 12
                   enabled: 1
               rpc:
                 summary: "修改RPC请求参数配置"
@@ -2046,6 +2065,7 @@ paths:
                   dataSourceType: 1
                   configDesc: "卫星遥测RPC请求参数"
                   configParams:
+                    deviceSatelliteId: 12
                     fields:
                       - field: "sat_code"
                         fieldName: "卫星代号"
@@ -2585,10 +2605,16 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询实时遥测数据
-      description: 从IoTDB按外部试验任务编号查询并按时间倒序返回处理成功的遥测帧，可按采集接口筛选；卫星编码和通道名称取自设备卫星配置，原码已去除PDXP自定义头和遥测头。
+      description: 从IoTDB任务及设备卫星路径按时间倒序查询最终Proto整帧；原码为去除自定义头和遥测头后的数据域。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
-        - $ref: '#/components/parameters/CollectInterfaceId'
+        - name: deviceSatelliteId
+          in: query
+          required: false
+          description: 设备卫星主键，不传时查询当前任务全部设备
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/PageNum'
+        - $ref: '#/components/parameters/IoTDBPageSize'
       responses:
         '200':
           $ref: '#/components/responses/RealtimeTelemetryList'
@@ -2597,20 +2623,16 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询帧检查异常数据
-      description: 从IoTDB的_frame节点按外部试验任务编号筛选检查结果为错误的完整原始帧，可按采集接口筛选。
+      description: 从IoTDB的_frame节点筛选检查结果名称不为正常的最终整帧。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
-        - $ref: '#/components/parameters/CollectInterfaceId'
-        - name: satelliteCode
+        - name: deviceSatelliteId
           in: query
           required: false
-          description: 卫星编码
-          schema: { type: string }
-        - name: channelCode
-          in: query
-          required: false
-          description: 通道编码
-          schema: { type: string }
+          description: 设备卫星主键，不传时查询当前任务全部设备
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/PageNum'
+        - $ref: '#/components/parameters/IoTDBPageSize'
       responses:
         '200':
           $ref: '#/components/responses/InvalidTelemetryList'
@@ -2618,14 +2640,24 @@ paths:
   /processing/processed:
     get:
       tags: [数据处理]
-      summary: 查询处理后遥测数据
-      description: 从IoTDB按外部试验任务编号和处理时间倒序查询处理后的遥测参数，可按采集接口筛选；状态直接返回stateName中保存的范围中文名称。
+      summary: 查询处理后遥测参数最新数据
+      description: 只传taskId，自动查询当前任务全部有效勾选参数，并发读取每个参数最新一条；没有历史值的参数返回空值。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
-        - $ref: '#/components/parameters/CollectInterfaceId'
       responses:
         '200':
           $ref: '#/components/responses/ProcessedTelemetryList'
+
+  /processing/processed/curve:
+    get:
+      tags: [数据处理]
+      summary: 查询处理后遥测参数最近曲线
+      description: 只传taskId，自动查询当前任务全部有效勾选参数，并发读取每个参数最新最多120个原始点；各曲线携带自己的毫秒时间戳数组，不限制时间范围。
+      parameters:
+        - $ref: '#/components/parameters/RequiredTaskId'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProcessedTelemetryCurveList'
 
   /processing/rule-config:
     get:
@@ -2688,188 +2720,234 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProcessingRuleConfigResponse'
 
-  /processing/rules:
-    "get":
-      "tags":
-        - "数据处理"
-      "summary": "查询参数解析配置"
-      "description": "仅查询当前任务、所选设备卫星的未删除参数，同时检查设备卫星属于当前任务且未删除。"
-      "parameters":
-        -
-          "name": "taskId"
-          "in": "query"
-          "required": true
-          "description": "外部试验任务编号，必填"
-          "schema":
-            "type": "integer"
-        -
-          "name": "deviceSatelliteId"
-          "in": "query"
-          "required": true
-          "description": "当前任务下的设备卫星ID，必填"
-          "schema":
-            "type": "integer"
-      "responses":
-        "200":
-          "description": "操作成功"
-          "content":
-            "application/json":
-              "schema":
-                "type": "object"
-                "properties":
-                  "code":
-                    "type": "integer"
-                  "message":
-                    "type": "string"
-                  "data":
-                    "type": "array"
-                    "items":
-                      "type": "object"
-                      "properties":
-                        "id":
-                          "type": "integer"
-                          "description": "主键，编辑时必填"
-                          "format": "int64"
-                        "taskId":
-                          "type": "integer"
-                          "description": "外部试验任务编号，所有操作必须传入"
-                          "format": "int64"
-                        "deviceSatelliteId":
-                          "type": "integer"
-                          "description": "当前任务下的设备卫星ID"
-                          "format": "int64"
-                        "tableIndex":
-                          "type": "string"
-                          "description": "序号"
-                          "nullable": true
-                        "bitWidth":
-                          "type": "string"
-                          "description": "位宽"
-                          "nullable": true
-                        "telemetryName":
-                          "type": "string"
-                          "description": "遥测名称"
-                          "nullable": true
-                        "telemetryCode":
-                          "type": "string"
-                          "description": "遥测代号"
-                          "nullable": true
-                        "formulaType":
-                          "type": "string"
-                          "description": "公式类型：300单精度、301双精度、302字符串、303时间；其他类型保持原码处理"
-                          "nullable": true
-                        "formulaDesc":
-                          "type": "string"
-                          "description": "处理公式"
-                          "nullable": true
-                        "processParam":
-                          "type": "string"
-                          "description": "处理参数"
-                          "nullable": true
-                        "decimalPlaces":
-                          "type": "string"
-                          "description": "小数位数"
-                          "nullable": true
-                        "alarmFlag":
-                          "type": "string"
-                          "description": "是否报警"
-                          "nullable": true
-                          "enum":
-                            - "0"
-                            - "1"
-                        "normalValue":
-                          "type": "string"
-                          "description": "正常值范围"
-                          "nullable": true
-                        "warningValue":
-                          "type": "string"
-                          "description": "预警值范围"
-                          "nullable": true
-                        "stateChangeInfo":
-                          "type": "string"
-                          "description": "状态跳变信息"
-                          "nullable": true
-                        "commandCode":
-                          "type": "string"
-                          "description": "相关命令"
-                          "nullable": true
-                        "systemName":
-                          "type": "string"
-                          "description": "所属系统"
-                          "nullable": true
-                        "controlChannel":
-                          "type": "string"
-                          "description": "控制波道"
-                          "nullable": true
-                        "mergeChannelCount":
-                          "type": "string"
-                          "description": "合并波道"
-                          "nullable": true
-                        "delayChannel":
-                          "type": "string"
-                          "description": "延时波道"
-                          "nullable": true
-                        "storeFlag":
-                          "type": "string"
-                          "description": "存储遥测"
-                          "nullable": true
-                          "enum":
-                            - "0"
-                            - "1"
-                        "calibrationFormula":
-                          "type": "string"
-                          "description": "校准公式"
-                          "nullable": true
-                        "alarmFlagName":
-                          "type": "string"
-                          "description": "是否报警的枚举中文名称"
-                        "storeFlagName":
-                          "type": "string"
-                          "description": "存储遥测的枚举中文名称"
-                        "isDeleted":
-                          "type": "integer"
-                          "description": "是否删除：0否，1是"
-                        "createTime":
-                          "type": "string"
-                          "description": "创建时间"
-                          "format": "date-time"
-                        "updateTime":
-                          "type": "string"
-                          "description": "更新时间"
-                          "format": "date-time"
-              "example":
-                "code": 200
-                "message": "操作成功"
-                "data":
-                  -
-                    "id": 81
-                    "taskId": "TASK-20260908-001"
-                    "deviceSatelliteId": 12
-                    "tableIndex": "1"
-                    "bitWidth": "32"
-                    "telemetryName": "电压"
-                    "telemetryCode": "FKT001"
-                    "formulaType": "109"
-                    "formulaDesc": null
-                    "processParam": null
-                    "decimalPlaces": "5"
-                    "alarmFlag": "1"
-                    "normalValue": "加电:[41,43]/断电:[-1,1]/过程:[1,41]"
-                    "warningValue": null
-                    "stateChangeInfo": null
-                    "commandCode": null
-                    "systemName": "发控台"
-                    "controlChannel": null
-                    "mergeChannelCount": "0"
-                    "delayChannel": "0"
-                    "storeFlag": "1"
-                    "calibrationFormula": "x*0.1"
-                    "alarmFlagName": "是"
-                    "storeFlagName": "是"
-                    "isDeleted": 0
-                    "createTime": "2026-09-11T10:00:00"
-                    "updateTime": "2026-09-11T10:00:00"
+  /processing/systems:
+    get:
+      tags: [数据处理]
+      summary: 查询设备卫星的所属系统
+      parameters:
+        - $ref: '#/components/parameters/RequiredTaskId'
+        - name: deviceSatelliteId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, format: int64 }
+                        systemName: { type: string }
+                        parentId: { type: integer, format: int64 }
+                        sortOrder: { type: integer }
+                        children:
+                          type: array
+                          description: 有子系统时才返回
+                          items: { type: object }
+              example:
+                code: 200
+                message: 操作成功
+                data:
+                  - id: 21
+                    systemName: 测控系统
+                    parentId: 0
+                    sortOrder: 1
+                    children:
+                      - id: 22
+                        systemName: 姿态控制
+                        parentId: 21
+                        sortOrder: 2
 
+  /processing/telemetry-filter-tree:
+    get:
+      tags: [数据处理]
+      summary: 按需展开遥测参数筛选树
+      description: 仅传taskId返回设备；增加deviceSatelliteId返回直属参数和根系统；同时增加systemId返回该系统直属参数和子系统。传非空telemetryCode时按代号前缀搜索当前任务全部匹配的参数，直接返回可勾选节点和所属设备；此时不能传deviceSatelliteId或systemId。接口不分页，且不返回children字段。
+      parameters:
+        - $ref: '#/components/parameters/RequiredTaskId'
+        - name: deviceSatelliteId
+          in: query
+          required: false
+          schema: { type: integer, format: int64 }
+        - name: systemId
+          in: query
+          required: false
+          schema: { type: integer, format: int64 }
+        - name: telemetryCode
+          in: query
+          required: false
+          description: 遥测代号前缀；传入非空值时不能同时传deviceSatelliteId或systemId，返回全部匹配参数
+          schema: { type: string }
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer, format: int64 }
+                        label: { type: string }
+                        nodeType: { type: string, enum: [device, system, parameter] }
+                        nodeTypeName: { type: string }
+                        selectable: { type: boolean }
+                        checked: { type: boolean }
+                        hasChildren: { type: boolean }
+                        deviceSatelliteId: { type: integer, format: int64, description: "搜索结果所属设备卫星主键" }
+                        deviceSatelliteName: { type: string, description: "搜索结果所属设备卫星名称" }
+              examples:
+                expand:
+                  summary: 展开设备层级
+                  value:
+                    code: 200
+                    message: 操作成功
+                    data:
+                      - id: 81
+                        label: 电压/TMK1001
+                        nodeType: parameter
+                        nodeTypeName: 遥测参数
+                        selectable: true
+                        checked: true
+                        hasChildren: false
+                      - id: 21
+                        label: 测控系统
+                        nodeType: system
+                        nodeTypeName: 所属系统
+                        selectable: false
+                        checked: false
+                        hasChildren: true
+                search:
+                  summary: 按遥测代号搜索
+                  value:
+                    code: 200
+                    message: 操作成功
+                    data:
+                      - id: 81
+                        label: 电压/TMK1001
+                        nodeType: parameter
+                        nodeTypeName: 遥测参数
+                        selectable: true
+                        checked: true
+                        hasChildren: false
+                        deviceSatelliteId: 12
+                        deviceSatelliteName: XX12卫星
+        '400':
+          description: 遥测代号搜索与设备或系统展开参数不能同时使用
+          content:
+            application/json:
+              example:
+                code: 400
+                message: 按遥测代号搜索时不能同时指定设备卫星或所属系统
+
+  /processing/telemetry-filter-selection/update:
+    post:
+      tags: [数据处理]
+      summary: 即时保存遥测参数勾选状态
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [taskId, parseRuleId, checked]
+              properties:
+                taskId: { type: string }
+                parseRuleId: { type: integer, format: int64 }
+                checked: { type: boolean }
+            example: { taskId: TASK-20260908-001, parseRuleId: 81, checked: true }
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data: { type: boolean }
+              example: { code: 200, message: 操作成功, data: true }
+
+  /processing/rules:
+    get:
+      tags: [数据处理]
+      summary: 分页查询参数解析配置
+      description: 按当前任务和设备卫星查询有效参数；systemId可选，传入时包含该系统及其全部后代。
+      parameters:
+        - $ref: '#/components/parameters/RequiredTaskId'
+        - name: deviceSatelliteId
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: systemId
+          in: query
+          required: false
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/PageNum'
+        - $ref: '#/components/parameters/IoTDBPageSize'
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      pageNum: { type: integer }
+                      pageSize: { type: integer }
+                      total: { type: integer, format: int64 }
+                      records:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer, format: int64 }
+                            taskId: { type: string }
+                            deviceSatelliteId: { type: integer, format: int64 }
+                            systemId: { type: integer, format: int64, nullable: true }
+                            systemName: { type: string, nullable: true }
+                            tableIndex: { type: string }
+                            bitWidth: { type: string }
+                            telemetryName: { type: string }
+                            telemetryCode: { type: string }
+              example:
+                code: 200
+                message: 操作成功
+                data:
+                  pageNum: 1
+                  pageSize: 20
+                  total: 1
+                  records:
+                    - id: 81
+                      taskId: TASK-20260908-001
+                      deviceSatelliteId: 12
+                      systemId: 21
+                      systemName: 测控系统
+                      tableIndex: '1'
+                      bitWidth: '32'
+                      telemetryName: 电压
+                      telemetryCode: TMK1001
   /processing/logs:
     get:
       tags: [数据处理]
@@ -2907,7 +2985,7 @@ paths:
       "tags":
         - "数据处理"
       "summary": "按任务和类型导入Excel或TXT设备卫星及参数"
-      "description": "上传.xls、.xlsx或.txt文件（最大20MB），前端选择type，整份文件使用相同类型。Excel按Sheet页签分别创建设备卫星；TXT使用制表符分隔，一次表示一个设备卫星，使用去掉扩展名的文件名填写code和name，并自动兼容UTF-8和GBK编码。第一行必须包含全部19个中文表头：序号、位宽、遥测名称、遥测代号、公式类型、处理公式、处理参数、小数位数、是否报警、正常值范围、预警值范围、状态跳变信息、相关命令、所属系统、控制波道、合并波道、延时波道、存储遥测、校准公式；旧TXT最后一列表头和内容为反斜线时按空校准公式处理。每个设备至少有一条有效数据，空行忽略，序号不能重复。完整校验后在同一事务中逻辑删除当前taskId下同类型设备卫星及关联参数，回填设备卫星主键到参数的deviceSatelliteId。其他任务和另一类型不受影响，任意失败整体回滚。正常值范围和预警值范围的整个单元格为-、—或–时按空值保存；是否报警和存储遥测空白时为0。返回导入的参数总条数。"
+      "description": "按任务和类型全量导入Excel或TXT。每个Sheet沿用已有设备卫星主键；所属系统按反斜线逐层建立并写入参数systemId；仍被PDXP协议引用的设备不能从文件移除；仍存在的遥测代号保留勾选状态。全部操作在同一事务中完成。"
       "requestBody":
         "required": true
         "content":
@@ -2920,9 +2998,8 @@ paths:
                 - "file"
               "properties":
                 "taskId":
-                  "type": "integer"
+                  "type": "string"
                   "description": "外部试验任务编号，所有操作必须传入"
-                  "format": "int64"
                 "type":
                   "type": "string"
                   "description": "前端选择：1卫星，2设备"
@@ -4371,7 +4448,7 @@ components:
                   description: "1表示开启"
     IntegrationMenuItem:
       type: object
-      required: [label, icon, hidden]
+      required: [label, icon]
       properties:
         label:
           type: string
@@ -4383,9 +4460,6 @@ components:
           type: string
           nullable: true
           description: "页面访问路径，分组菜单可以为空"
-        hidden:
-          type: boolean
-          description: "是否隐藏菜单"
         children:
           type: array
           description: "子菜单列表"
@@ -4650,6 +4724,15 @@ components:
         type: integer
         default: 20
         maximum: 100
+    IoTDBPageSize:
+      name: pageSize
+      description: "IoTDB页面每页记录数量，最大200条"
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 200
 
   responses:
     DashboardCollectionSuccess:
@@ -5912,10 +5995,14 @@ components:
                           format: int64
                         host:
                           type: string
-                          description: "远端主机 IP 地址或域名"
+                          description: "数据处理服务本机监听网卡IP地址"
                         port:
                           type: integer
-                          description: "远端服务端口号"
+                          description: "数据处理服务本机监听端口"
+                        multicastIp:
+                          type: string
+                          nullable: true
+                          description: "UDP组播地址；填写时按组播接收，为空时按单播接收"
                         status:
                           type: integer
                           description: "采集接口运行状态。枚举：0 离线，1 在线，2 异常"
@@ -5981,6 +6068,7 @@ components:
                   protocolConfigId: 21
                   host: "192.168.1.10"
                   port: 9001
+                  multicastIp: "239.1.1.1"
                   status: 1
                   enabled: 1
                   rpcEnabled: 1
@@ -6081,10 +6169,14 @@ components:
                     description: '关联协议配置名称，未关联或协议已删除时为空，禁用协议仍返回名称'
                   host:
                     type: string
-                    description: "远端主机 IP 地址或域名"
+                    description: "数据处理服务本机监听网卡IP地址"
                   port:
                     type: integer
-                    description: "远端服务端口号"
+                    description: "数据处理服务本机监听端口"
+                  multicastIp:
+                    type: string
+                    nullable: true
+                    description: "UDP组播地址；填写时按组播接收，为空时按单播接收"
                   status:
                     type: integer
                     description: "采集接口运行状态。枚举：0 离线，1 在线，2 异常"
@@ -6147,6 +6239,7 @@ components:
               protocolConfigName: '遥测RPC协议配置'
               host: "192.168.1.10"
               port: 9001
+              multicastIp: "239.1.1.1"
               status: 1
               enabled: 1
               rpcEnabled: 1
@@ -6299,8 +6392,12 @@ components:
                       description: "协议配置说明"
                     configParams:
                       type: object
-                      description: "协议动态配置；PDXP保留pdxphead，fields使用参数解析配置主键id及十九个字符串字段；RPC使用field、fieldName、dataType、value"
+                      description: "PDXP保留pdxphead并填写deviceSatelliteId；RPC保留fields，供PDXP采集接口使用时也需填写deviceSatelliteId"
                       properties:
+                        deviceSatelliteId:
+                          type: integer
+                          format: int64
+                          description: "PDXP协议选择当前任务下的设备卫星主键"
                         encoding:
                           type: string
                           description: "协议字符编码"
@@ -6318,7 +6415,7 @@ components:
                             res: { description: "保留字段" }
                         fields:
                           type: array
-                          description: "PDXP字段定义或RPC请求配置字段"
+                          description: "RPC请求配置字段；PDXP不再提交fields"
                           items:
                             type: object
                             additionalProperties: true
@@ -6358,27 +6455,7 @@ components:
                     no: null
                     flag: null
                     res: null
-                  fields:
-                    - id: 81
-                      tableIndex: "1"
-                      bitWidth: "32"
-                      telemetryName: "温度"
-                      telemetryCode: "TMK1001"
-                      formulaType: "300"
-                      formulaDesc: "y=a*x+b"
-                      processParam: "0.02/1"
-                      decimalPlaces: "5"
-                      alarmFlag: "1"
-                      normalValue: "正常:[-1,30]"
-                      warningValue: ""
-                      stateChangeInfo: ""
-                      commandCode: ""
-                      systemName: "发控台"
-                      controlChannel: ""
-                      mergeChannelCount: "0"
-                      delayChannel: "0"
-                      storeFlag: "1"
-                      calibrationFormula: "x*0.1"
+                  deviceSatelliteId: 12
                 enabled: 1
               - id: 22
                 taskId: "TASK-20260908-001"
@@ -6387,6 +6464,7 @@ components:
                 dataSourceType: 1
                 configDesc: "卫星遥测RPC请求参数"
                 configParams:
+                  deviceSatelliteId: 12
                   fields:
                     - field: "sat_code"
                       fieldName: "卫星代号"
@@ -6474,8 +6552,12 @@ components:
                     description: "协议配置说明"
                   configParams:
                     type: object
-                    description: "协议动态配置；PDXP保留pdxphead，fields使用参数解析配置主键id及十九个字符串字段；RPC使用field、fieldName、dataType、value"
+                    description: "PDXP保留pdxphead并填写deviceSatelliteId；RPC保留fields，供PDXP采集接口使用时也需填写deviceSatelliteId"
                     properties:
+                      deviceSatelliteId:
+                        type: integer
+                        format: int64
+                        description: "PDXP协议选择当前任务下的设备卫星主键"
                       encoding:
                         type: string
                         description: "协议字符编码"
@@ -6493,7 +6575,7 @@ components:
                           res: { description: "保留字段" }
                       fields:
                         type: array
-                        description: "PDXP字段定义或RPC请求配置字段"
+                        description: "RPC请求配置字段；PDXP不再提交fields"
                         items:
                           type: object
                           additionalProperties: true
@@ -6524,6 +6606,7 @@ components:
               dataSourceType: 1
               configDesc: "卫星遥测RPC请求参数"
               configParams:
+                deviceSatelliteId: 12
                 fields:
                   - field: "sat_code"
                     fieldName: "卫星代号"
@@ -7289,37 +7372,38 @@ components:
               code: { type: integer, description: "业务状态码" }
               message: { type: string, description: "处理结果" }
               data:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    interfaceId: { type: integer, format: int64, description: "采集接口主键" }
-                    time: { type: string, format: date-time, description: "遥测时间" }
-                    satelliteCode: { type: string, description: "卫星编码" }
-                    satelliteName: { type: string, nullable: true, description: "卫星名称，取Proto的satName；历史数据或上游未提供时为空" }
-                    channelCode: { type: string, nullable: true, description: "通道编码，取Proto的channelCode；历史数据或上游未提供时为空" }
-                    channelName: { type: string, description: "通道名称" }
-                    rawLength: { type: integer, description: "去除PDXP自定义头和遥测头后的原码字节数" }
-                    rawFrame: { type: string, description: "大写十六进制遥测数据原码" }
-                    checkResult:
-                      type: integer
-                      description: "帧检查结果编码：0未知 1正确 2错误"
-                      enum: [0, 1, 2]
-                    checkResultName: { type: string, description: "帧检查结果中文名称" }
+                type: object
+                properties:
+                  pageNum: { type: integer, description: "当前页码" }
+                  pageSize: { type: integer, description: "每页记录数" }
+                  total: { type: integer, format: int64, description: "符合条件的记录总数" }
+                  records:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        deviceSatelliteId: { type: integer, format: int64, description: "设备卫星主键" }
+                        time: { type: string, format: date-time, description: "遥测时间" }
+                        deviceSatelliteName: { type: string, description: "导入工作表名称" }
+                        channelName: { type: string, description: "通道名称" }
+                        rawLength: { type: integer, description: "去除PDXP自定义头和遥测头后的原码字节数" }
+                        rawFrame: { type: string, description: "大写十六进制遥测数据原码" }
+                        checkResultName: { type: string, description: "帧检查结果中文名称" }
           example:
             code: 200
             message: "操作成功"
             data:
-              - interfaceId: 12
-                time: "2026-08-06T15:01:38"
-                satelliteCode: "SAT-003"
-                satelliteName: "试验卫星三号"
-                channelCode: "CH-01"
-                channelName: "发控台"
-                rawLength: 247
-                rawFrame: "3E A7 43 FA 02 EC 09 29"
-                checkResult: 2
-                checkResultName: "错误"
+              pageNum: 1
+              pageSize: 20
+              total: 1
+              records:
+                - deviceSatelliteId: 12
+                  time: "2026-08-06T15:01:38"
+                  deviceSatelliteName: "发控台_05"
+                  channelName: "发控台"
+                  rawLength: 247
+                  rawFrame: "3E A7 43 FA 02 EC 09 29"
+                  checkResultName: "正常"
 
     InvalidTelemetryList:
       description: 操作成功
@@ -7331,35 +7415,38 @@ components:
               code: { type: integer, description: "业务状态码" }
               message: { type: string, description: "处理结果" }
               data:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    interfaceId: { type: integer, format: int64, description: "采集接口主键" }
-                    receiveTime: { type: string, format: date-time, description: "遥测时间" }
-                    satelliteCode: { type: string, description: "卫星编码" }
-                    channelCode: { type: string, description: "通道编码" }
-                    checkResult:
-                      type: integer
-                      description: "帧检查结果编码：0未知 1正确 2错误"
-                      enum: [0, 1, 2]
-                    checkResultName: { type: string, description: "帧检查结果中文名称" }
-                    rawLength: { type: integer, description: "原始帧字节数" }
-                    rawFrame: { type: string, description: "大写十六进制原始帧" }
-                    uniqueCode: { type: string, description: "唯一编码" }
+                type: object
+                properties:
+                  pageNum: { type: integer, description: "当前页码" }
+                  pageSize: { type: integer, description: "每页记录数" }
+                  total: { type: integer, format: int64, description: "符合条件的记录总数" }
+                  records:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        deviceSatelliteId: { type: integer, format: int64, description: "设备卫星主键" }
+                        receiveTime: { type: string, format: date-time, description: "遥测时间" }
+                        deviceSatelliteName: { type: string, description: "导入工作表名称" }
+                        channelName: { type: string, description: "Proto通道名称" }
+                        checkResultName: { type: string, description: "帧检查结果中文名称" }
+                        rawLength: { type: integer, description: "数据域原码字节数" }
+                        rawFrame: { type: string, description: "数据域原码十六进制文本" }
           example:
             code: 200
             message: "操作成功"
             data:
-              - interfaceId: 12
-                receiveTime: "2026-08-18T16:20:00"
-                satelliteCode: "36"
-                channelCode: "12"
-                checkResult: 2
-                checkResultName: "错误"
-                rawLength: 256
-                rawFrame: "3E A7 43 FA 02 EC 09 29"
-                uniqueCode: "TM-36-20260818-0001"
+              pageNum: 1
+              pageSize: 20
+              total: 1
+              records:
+                - deviceSatelliteId: 12
+                  receiveTime: "2026-08-18T16:20:00"
+                  deviceSatelliteName: "发控台_05"
+                  channelName: "发控台"
+                  checkResultName: "错误"
+                  rawLength: 256
+                  rawFrame: "3E A7 43 FA 02 EC 09 29"
 
     ProcessedTelemetryList:
       description: 操作成功
@@ -7375,34 +7462,62 @@ components:
                 items:
                   type: object
                   properties:
-                    interfaceId: { type: integer, format: int64, description: "采集接口主键" }
-                    satelliteId: { type: string, description: "卫星ID" }
-                    parameter: { type: string, description: "遥测参数" }
-                    parameterValue: { description: "处理后的参数值" }
-                    status:
-                      type: string
-                      description: "参数状态名称，取自遥测状态范围名称"
-                    stateIndex:
-                      type: integer
-                      nullable: true
-                      description: "状态范围索引；未命中任何范围时为空"
-                    deduplication:
-                      type: string
-                      description: "参数去重标记；同帧同遥测代号保留最后一项时返回去重"
-                      enum: [原始, 去重]
-                    processTime: { type: string, format: date-time, description: "处理时间" }
+                    deviceSatelliteId: { type: integer, format: int64, description: "设备卫星主键" }
+                    telemetryCode: { type: string, description: "遥测代号" }
+                    parameter: { type: string, description: "遥测参数名称" }
+                    parameterValue: { type: number, format: double, nullable: true, description: "Proto的value数值，无数据时为空" }
+                    status: { type: string, nullable: true, description: "Proto状态中文名称，无数据时为空" }
+                    processTime: { type: string, format: date-time, nullable: true, description: "处理时间，无数据时为空" }
           example:
             code: 200
             message: "操作成功"
             data:
-              - interfaceId: 12
-                satelliteId: "SAT-001"
+              - deviceSatelliteId: 12
+                telemetryCode: "TMK1001"
                 parameter: "温度"
                 parameterValue: 36.88
                 status: "加电"
-                stateIndex: 0
-                deduplication: "去重"
                 processTime: "2026-08-07T10:30:00"
+
+    ProcessedTelemetryCurveList:
+      description: 操作成功
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code: { type: integer, description: "业务状态码" }
+              message: { type: string, description: "处理结果" }
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    deviceSatelliteId: { type: integer, format: int64, description: "设备卫星主键" }
+                    telemetryCode: { type: string, description: "遥测代号" }
+                    parameter: { type: string, description: "遥测参数名称" }
+                    times:
+                      type: array
+                      description: "各曲线自己的X轴时间，Unix毫秒时间戳，按时间升序"
+                      items: { type: integer, format: int64 }
+                    values:
+                      type: array
+                      description: "与times逐项对应的Proto数值，最多120条"
+                      items: { type: number, format: double }
+          example:
+            code: 200
+            message: 操作成功
+            data:
+              - deviceSatelliteId: 12
+                telemetryCode: TMK1001
+                parameter: 温度
+                times: [1790236800000, 1790236801280]
+                values: [36.88, 36.91]
+              - deviceSatelliteId: 12
+                telemetryCode: TMK1002
+                parameter: 电压
+                times: [1790236800500]
+                values: [41.2]
 
     Success056:
       description: 操作成功

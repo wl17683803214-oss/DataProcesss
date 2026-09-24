@@ -8,9 +8,7 @@ import com.example.dataprocess.tool.PdxpParser;
 public interface IoTDBTelemetryStorageService {
 
     /**
-     * 保存未能生成最终遥测消息的完整PDXP原始帧。
-     *
-     * <p>该方法用于解析失败或后续处理失败时保留排查数据。</p>
+     * 旧原始帧入口。未生成最终Proto时不写入IoTDB。
      *
      * @param config 采集接口配置快照
      * @param packet 已成功解析的PDXP包
@@ -21,7 +19,7 @@ public interface IoTDBTelemetryStorageService {
             PdxpParser.PdxpPacket packet) throws Exception;
 
     /**
-     * 将已保存PDXP原始帧的校验结果更新为错误。
+     * 旧异常帧入口；没有最终Proto时不创建整帧测点。
      *
      * @param config 采集接口配置快照
      * @param packet 已保存的PDXP包
@@ -32,26 +30,26 @@ public interface IoTDBTelemetryStorageService {
             PdxpParser.PdxpPacket packet) throws Exception;
 
     /**
-     * 保存一条遥测消息的完整原始帧。
+     * 旧独立写帧入口；统一批量入口同时写入整帧和参数。
      *
-     * <p>当前只保存正常原始帧；异常帧写入规则尚未确认并保留TODO。
-     * 原始帧用于“实时遥测数据”页面查询，不包含解析后的参数值。</p>
-     *
+     * @param interfaceId 采集接口主键
      * @param message 已解析完成的遥测消息
      * @throws Exception IoTDB连接或写入失败
      */
-    void saveRawFrame(TelemetryMessage message) throws Exception;
+    void saveRawFrame(
+            Long interfaceId,
+            TelemetryMessage message) throws Exception;
 
     /**
      * 一次批量保存遥测消息的整帧记录和全部参数记录。
      *
      * <p>整帧写入帧节点，每个遥测参数写入独立设备节点，二者使用相同消息时间。</p>
      *
-     * @param interfaceId 采集接口主键，非采集链路调用时允许为空
+     * @param config 当前接口配置快照，包含设备卫星主键
      * @param message 已完成业务处理的遥测消息
      * @throws Exception IoTDB连接或写入失败
      */
     void saveProcessedParameters(
-            Long interfaceId,
+            CollectInterfaceRuntimeConfig config,
             TelemetryMessage message) throws Exception;
 }

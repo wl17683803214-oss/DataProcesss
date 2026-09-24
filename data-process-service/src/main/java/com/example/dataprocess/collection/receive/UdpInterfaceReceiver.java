@@ -17,8 +17,8 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
             UdpInterfaceReceiver.class);
     /** 接口配置快照。 */
     private final CollectInterfaceRuntimeConfig config;
-    /** 已绑定地址和端口的UDP端点。 */
-    private final UdpTool.UnicastEndpoint endpoint;
+    /** 已绑定单播监听或加入组播的UDP端点。 */
+    private final UdpTool.DatagramEndpoint endpoint;
     /** 当前接口对应的协议会话。 */
     private final ProtocolHandler.UdpSession protocolSession;
     /** 是否继续接收数据。 */
@@ -26,7 +26,7 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
 
     public UdpInterfaceReceiver(
             CollectInterfaceRuntimeConfig config,
-            UdpTool.UnicastEndpoint endpoint,
+            UdpTool.DatagramEndpoint endpoint,
             ProtocolHandler.UdpSession protocolSession) {
         this.config = config;
         this.endpoint = endpoint;
@@ -38,8 +38,15 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
             CollectInterfaceRuntimeConfig config,
             ProtocolHandlerRegistry protocolHandlerRegistry)
             throws IOException {
-        UdpTool.UnicastEndpoint endpoint = UdpTool.openUnicast(
-                config.getHost(), config.getPort(), 0);
+        // 填写组播地址时加入组播组，否则保持原有单播监听方式。
+        UdpTool.DatagramEndpoint endpoint = hasText(config.getMulticastIp())
+                ? UdpTool.openMulticastReceiver(
+                        config.getMulticastIp(),
+                        config.getPort(),
+                        config.getHost(),
+                        0)
+                : UdpTool.openUnicast(
+                        config.getHost(), config.getPort(), 0);
         try {
             ProtocolHandler handler = protocolHandlerRegistry.get(
                     config.getTransferProtocol());
@@ -80,6 +87,17 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
     @Override
     public void stop() {
         running = false;
-        endpoint.close();
+        try {
+            // 关闭套接字会解除当前采集线程的阻塞接收。
+            endpoint.close();
+        } catch (IOException exception) {
+            LOGGER.warn("UDP采集接口关闭失败，接口编号：{}，原因：{}",
+                    config.getInterfaceId(), exception.getMessage());
+        }
+    }
+
+    /** 判断可选字符串是否包含有效内容。 */
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

@@ -3,11 +3,10 @@ package com.example.dataprocess.processing.handler;
 import com.example.dataprocess.collection.CollectInterfaceStatistics;
 import com.example.dataprocess.collection.ReceivedDatagram;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
-import com.example.dataprocess.entity.PdxpFrameSource;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import com.example.dataprocess.processing.processor.LocalDataProcessor;
 import com.example.dataprocess.processing.processor.RpcDataProcessor;
-import com.example.dataprocess.mapper.TelemetryCodeMappingMapper;
+import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 import com.example.dataprocess.protocol.rpc.ProtocolConfigParser;
 import com.example.dataprocess.protocol.rpc.TelemetryRpcClient;
 import com.example.dataprocess.service.CalibrationProcessingService;
@@ -24,8 +23,6 @@ import java.util.Collections;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -45,18 +42,20 @@ class PdxpProtocolHandlerTest {
         TelemetryMessageService sender = mock(TelemetryMessageService.class);
         CalibrationProcessingService calibration = calibrationService();
         TelemetryRpcClient rpc = mock(TelemetryRpcClient.class);
-        TelemetryCodeMappingMapper mappingMapper = mappingMapper();
         CollectInterfaceStatistics statistics =
                 mock(CollectInterfaceStatistics.class);
         PdxpProtocolHandler handler = new PdxpProtocolHandler(
                 statistics, mock(ThreadPoolExecutor.class), storage,
-                new LocalDataProcessor(configParser, mappingMapper, statistics),
+                new LocalDataProcessor(statistics),
                 new RpcDataProcessor(rpc, configParser), calibration, sender);
         CollectInterfaceRuntimeConfig config = interfaceConfig(0);
         config.setTaskId("TASK-7");
-        config.setProtocolConfigParams("{\"fields\":[{\"id\":81,\"tableIndex\":\"10\","
+        String fields = "{\"fields\":[{\"id\":81,\"tableIndex\":\"10\","
                 + "\"bitWidth\":\"16\",\"telemetryName\":\"电压\","
-                + "\"telemetryCode\":\"TM010\"}]}");
+                + "\"telemetryCode\":\"TM010\"}]}";
+        // 字段在接口同步时已经加载，逐帧处理不再解析协议配置中的fields。
+        config.setProtocolConfigParams("{\"deviceSatelliteId\":12}");
+        config.setPdxpFields(configParser.parseFields(fields, PdxpProtocolField.class));
 
         // 报文包含两字节传输头、固定包头和十一字节数据域。
         byte[] datagram = Arrays.copyOf(validPdxpDatagram(), 45);
@@ -76,11 +75,11 @@ class PdxpProtocolHandlerTest {
         assertEquals("电压", message.getTelemetriesOrThrow("TM010").getTmName());
         assertEquals("设备通道", message.getChannelName());
         assertEquals("业务001", message.getBussinessId());
-        assertEquals("DEVICE001", message.getSatCode());
+        assertEquals("", message.getSatCode());
         verify(rpc, never()).process(any());
     }
 
-    /** 验证缺少数据域的报文只保存原始帧，不发布处理结果。 */
+    /** 验证缺少数据域时不写IoTDB也不发布处理结果。 */
     @Test
     void shouldFollowNormalFrameOrder() throws Exception {
         IoTDBTelemetryStorageService storageService =
@@ -94,7 +93,7 @@ class PdxpProtocolHandlerTest {
         handler.handle(new ReceivedDatagram(
                 interfaceConfig(0), validPdxpDatagram()));
 
-        verify(storageService).savePdxpRawFrame(any(), any());
+        verify(storageService, never()).savePdxpRawFrame(any(), any());
         verify(storageService, never()).saveProcessedParameters(any(), any());
         verify(messageService, never()).send(any());
         verify(rpcClient, never()).process(any());
@@ -135,10 +134,7 @@ class PdxpProtocolHandlerTest {
                 statistics,
                 mock(ThreadPoolExecutor.class),
                 storageService,
-                new LocalDataProcessor(
-                        new ProtocolConfigParser(new ObjectMapper()),
-                        mappingMapper(),
-                        statistics),
+                new LocalDataProcessor(statistics),
                 rpcProcessor,
                 calibrationService(),
                 messageService);
@@ -161,19 +157,9 @@ class PdxpProtocolHandlerTest {
         config.setPort(19001);
         config.setRpcEnabled(rpcEnabled);
         config.setProtocolConfigParams("{}");
+        config.setDeviceSatelliteId(12L);
+        config.setDeviceSatelliteName("设备通道_业务001");
         return config;
-    }
-
-    /** 创建返回固定设备工作表名称的查询组件。 */
-    private TelemetryCodeMappingMapper mappingMapper() {
-        TelemetryCodeMappingMapper mapper = mock(TelemetryCodeMappingMapper.class);
-        // 测试中的参数解析配置统一关联到同一设备。
-        PdxpFrameSource source = new PdxpFrameSource();
-        source.setCode("DEVICE001");
-        source.setName("设备通道_业务001");
-        when(mapper.findFrameSourceByRuleId(anyString(), anyLong()))
-                .thenReturn(source);
-        return mapper;
     }
 
     /** 创建版本、积日和长度均合法的最小PDXP报文。 */

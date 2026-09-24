@@ -12,6 +12,7 @@
             interface_config.task_id,
             interface_config.host,
             interface_config.port,
+            interface_config.multicast_ip,
             interface_config.transfer_type,
             interface_config.transfer_protocol,
             interface_config.rpc_enabled,

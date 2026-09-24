@@ -61,6 +61,7 @@
         protocol_config_id,
         host,
         port,
+        multicast_ip,
         status,
         enabled,
         rpc_enabled,
@@ -164,13 +165,21 @@
           and is_deleted = 0
     </select>
 
-    <!-- 校验已启用接口的传输方式、监听地址和端口是否重复。 -->
+    <!-- 校验已启用接口的传输方式、监听地址、端口和组播地址是否重复。 -->
     <select id="countEnabledEndpointConflicts" resultType="long">
         select count(1)
         from collect_interface_config
         where transfer_type = #{transferType}
           and host = #{host}
           and port = #{port}
+        <choose>
+            <when test="multicastIp != null and multicastIp != ''">
+                and multicast_ip = #{multicastIp}
+            </when>
+            <otherwise>
+                and multicast_ip is null
+            </otherwise>
+        </choose>
           and enabled = 1
           and is_deleted = 0
         <if test="excludeId != null">
@@ -195,6 +204,7 @@
             protocol_config_id,
             host,
             port,
+            multicast_ip,
             status,
             enabled,
             rpc_enabled,
@@ -214,6 +224,7 @@
             #{protocolConfigId},
             #{host},
             #{port},
+            #{multicastIp},
             #{status},
             #{enabled},
             #{rpcEnabled},
@@ -236,6 +247,7 @@
             protocol_config_id = #{protocolConfigId},
             host = #{host},
             port = #{port},
+            multicast_ip = #{multicastIp},
             status = #{status},
             enabled = #{enabled},
             rpc_enabled = #{rpcEnabled},

@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: 交互系统心跳上报接口
+  version: 1.0.0
+  description: 数据处理软件每10秒向交互系统上报一次正常心跳。
+servers:
+  - url: http://10.126.100.247:8063/inst2
+    description: 交互系统当前环境
+paths:
+  /wjp-admin/kzt/status/report:
+    post:
+      summary: 上报系统心跳
+      operationId: reportInteractionHeartbeat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InteractionHeartbeatRequest'
+            example:
+              systemId: sjcl
+              status: '0'
+              reportTs: null
+      responses:
+        '200':
+          description: 心跳上报成功
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+components:
+  schemas:
+    InteractionHeartbeatRequest:
+      type: object
+      description: 交互系统心跳上报请求。
+      properties:
+        systemId:
+          type: string
+          description: 系统编号或名称，数据处理软件固定使用sjcl。
+          example: sjcl
+        status:
+          type: string
+          description: 心跳状态，0表示正常，1表示异常。
+          enum:
+            - '0'
+            - '1'
+          example: '0'
+          x-apifox-enum:
+            - value: '0'
+              name: 正常
+              description: 当前系统运行正常。
+            - value: '1'
+              name: 异常
+              description: 当前系统运行异常。
+        reportTs:
+          type: integer
+          format: int64
+          nullable: true
+          description: 状态上报时间戳，当前不填写并传空值。
+          example: null

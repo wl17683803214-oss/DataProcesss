@@ -1,6 +1,5 @@
 package com.example.dataadmin.vo.integration;
 
-import com.example.dataadmin.vo.auth.RouteVO;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.util.List;
@@ -14,7 +13,7 @@ public class SubsystemMenuConfigVO {
     private String baseUrl;
     private String defaultPath;
     private String origin;
-    private List<RouteVO> menus;
+    private List<IntegrationMenuVO> menus;
 
     public SubsystemMenuConfigVO(
             String systemKey,
@@ -23,7 +22,7 @@ public class SubsystemMenuConfigVO {
             String baseUrl,
             String defaultPath,
             String origin,
-            List<RouteVO> menus) {
+            List<IntegrationMenuVO> menus) {
         this.systemKey = systemKey;
         this.label = label;
         this.icon = icon;
@@ -45,6 +44,6 @@ public class SubsystemMenuConfigVO {
     public void setDefaultPath(String defaultPath) { this.defaultPath = defaultPath; }
     public String getOrigin() { return origin; }
     public void setOrigin(String origin) { this.origin = origin; }
-    public List<RouteVO> getMenus() { return menus; }
-    public void setMenus(List<RouteVO> menus) { this.menus = menus; }
+    public List<IntegrationMenuVO> getMenus() { return menus; }
+    public void setMenus(List<IntegrationMenuVO> menus) { this.menus = menus; }
 }

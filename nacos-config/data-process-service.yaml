@@ -31,19 +31,6 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
-auth:
-  # 允许任意前端来源跨域访问，由现有跨域过滤器处理预检请求。
-  allowed-origin-patterns:
-    - "*"
-  # 开发环境临时关闭登录和权限校验，生产环境必须设为 true。
-  enabled: false
-  # 必须与 data-admin-service 使用同一个 JWT 签名密钥和 Redis 数据库。
-  jwt-secret: data-processing-local-development-secret-change-me
-  # WebSocket 握手先放行，再由 STOMP 连接拦截器校验 token。
-  exclude-paths:
-    - /ws/**
-    # 管理服务提交采集配置后通过该内部地址同步运行接口。
-    - /internal/collection/interfaces/**
 
 system-monitor:
   snapshot-retention-days: 7
@@ -112,3 +99,9 @@ calibration:
   persistence-batch-size: 500
   # 校准算法有效样本缓存保留天数。
   effective-cache-days: 7
+# 基线卫星目录查询与管理服务角色查询使用相同根地址。
+baseline:
+  sso:
+    api-base-url: http://10.126.100.249:16001/prod-api
+    connect-timeout-millis: 5000
+    read-timeout-millis: 10000

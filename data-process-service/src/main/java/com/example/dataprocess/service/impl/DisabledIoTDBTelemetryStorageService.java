@@ -49,14 +49,16 @@ public class DisabledIoTDBTelemetryStorageService
 
     /** 跳过遥测消息原始帧保存。 */
     @Override
-    public void saveRawFrame(TelemetryMessage message) {
+    public void saveRawFrame(
+            Long interfaceId,
+            TelemetryMessage message) {
         // IoTDB已禁用，本方法保留为空操作以维持原有处理流程。
     }
 
     /** 跳过处理后遥测参数保存。 */
     @Override
     public void saveProcessedParameters(
-            Long interfaceId,
+            CollectInterfaceRuntimeConfig config,
             TelemetryMessage message) {
         // IoTDB已禁用，本方法保留为空操作以维持原有处理流程。
     }

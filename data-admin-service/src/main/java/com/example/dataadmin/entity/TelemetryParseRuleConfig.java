@@ -8,6 +8,8 @@ public class TelemetryParseRuleConfig {
     private String taskId;
     /** 设备卫星ID。 */
     private Long deviceSatelliteId;
+    /** 所属系统主键，为空时参数直属设备卫星。 */
+    private Long systemId;
     /** 序号。 */
     private String tableIndex;
     /** 位宽。 */
@@ -82,6 +84,12 @@ public class TelemetryParseRuleConfig {
     public void setDeviceSatelliteId(Long deviceSatelliteId) {
         this.deviceSatelliteId = deviceSatelliteId;
     }
+
+    /** 获取所属系统主键。 */
+    public Long getSystemId() { return systemId; }
+
+    /** 设置所属系统主键。 */
+    public void setSystemId(Long systemId) { this.systemId = systemId; }
 
     /** 获取序号。 */
     public String getTableIndex() {

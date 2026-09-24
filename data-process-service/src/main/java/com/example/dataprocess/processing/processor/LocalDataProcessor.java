@@ -10,7 +10,6 @@ import SatDataCenter.DataExchange.TmTc.Version.ProtoHeadInfo;
 import SatDataCenter.DataExchange.TmTc.Version.SubTopicName;
 import com.example.dataprocess.collection.CollectInterfaceStatistics;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
-import com.example.dataprocess.entity.PdxpFrameSource;
 import com.example.dataprocess.enums.LocalFormulaType;
 import com.example.dataprocess.mapper.TelemetryCodeMappingMapper;
 import com.example.dataprocess.protocol.rpc.PdxpDataPayload;
@@ -24,6 +23,7 @@ import com.google.protobuf.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -39,8 +39,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,24 +57,21 @@ public class LocalDataProcessor implements DataProcessor {
     /** 状态范围格式。 */
     private static final Pattern RANGE = Pattern.compile(
             "^\\s*([^:：/]+)\\s*[:：]\\s*\\[\\s*([^,，]+)\\s*[,，]\\s*([^\\]]+)\\s*\\]\\s*$");
-    /** 协议配置解析器。 */
-    private final ProtocolConfigParser parser;
-    /** 参数解析配置和设备名称查询组件。 */
-    private final TelemetryCodeMappingMapper mappingMapper;
     /** 本地处理去重数量统计组件。 */
     private final CollectInterfaceStatistics statistics;
-    /** 按任务和参数解析配置缓存设备名称拆分结果。 */
-    private final ConcurrentMap<String, FrameIdentity> identityCache =
-            new ConcurrentHashMap<String, FrameIdentity>();
 
-    /** 注入协议配置解析器和设备名称查询组件。 */
+    /** 运行时字段和设备名称由采集接口快照提供。 */
+    @Autowired
+    public LocalDataProcessor(CollectInterfaceStatistics statistics) {
+        this.statistics = statistics;
+    }
+
+    /** 保留既有离线构造入口，解析器和查询组件已不参与逐帧处理。 */
     public LocalDataProcessor(
             ProtocolConfigParser parser,
             TelemetryCodeMappingMapper mappingMapper,
             CollectInterfaceStatistics statistics) {
-        this.parser = parser;
-        this.mappingMapper = mappingMapper;
-        this.statistics = statistics;
+        this(statistics);
     }
 
     /** 按字段位宽解码并组装遥测消息。 */
@@ -88,23 +83,27 @@ public class LocalDataProcessor implements DataProcessor {
         // 记录本帧处理起点，用于输出完整处理耗时。
         long startNanos = System.nanoTime();
         // 第一步：解析并校验协议配置字段。
-        List<PdxpProtocolField> fields = fields(
-                config.getProtocolConfigParams());
+        List<PdxpProtocolField> fields = fields(config.getPdxpFields());
         byte[] data = payload.getData();
         LittleEndianBitReader reader = new LittleEndianBitReader(data);
         Instant time = packet.getSendDate().atStartOfDay()
                 .plus(packet.getTimeSinceMidnight()).toInstant(ZoneOffset.ofHours(8));
-        FrameIdentity identity = frameIdentity(config, fields);
+        FrameIdentity identity = frameIdentity(config);
+        // 当前处理时间用于标识消息实际完成组装的时间点。
+        Instant messageTime = Instant.now();
         ProtoHeadInfo protoHead = ProtoHeadInfo.newBuilder()
                 .setTopicType(ExchangeTopicType.TEST_DATA_TYPE)
-                .setBussiness(SubTopicName.DATA_SUBSYSTEM_YCHL_PHYVALUE)
+                .setBussiness(resolveBusiness(identity.businessId))
+                .setMsgTime(Timestamp.newBuilder()
+                        .setSeconds(messageTime.getEpochSecond())
+                        .setNanos(messageTime.getNano()))
                 .setTaskId(config.getTaskId())
                 .setMsgSource("数据处理")
                 .build();
+        // 本地处理不填写卫星编码，帧标识只保留通道名称和业务标识。
         TelemetryMessage.Builder message = TelemetryMessage.newBuilder()
                 .setProtoHead(protoHead)
                 .setTime(Timestamp.newBuilder().setSeconds(time.getEpochSecond()).setNanos(time.getNano()))
-                .setSatCode(identity.satelliteCode)
                 .setFrameRawData(ByteString.copyFrom(data))
                 .setChannelName(identity.channelName)
                 .setTmType(TelemetryType.TM_TYPE_DEVICE_TM)
@@ -158,6 +157,16 @@ public class LocalDataProcessor implements DataProcessor {
                 data.length,
                 elapsedMillis);
         return Optional.of(result);
+    }
+
+    /** 根据消息业务标识确定本地处理子主题。 */
+    private SubTopicName resolveBusiness(String businessId) {
+        // 05开头的业务标识使用测试测量物理量子主题。
+        if (trim(businessId).startsWith("05")) {
+            return SubTopicName.DATA_SUBSYSTEM_CSCL_PHYVALUE;
+        }
+        // 其他或空业务标识按约定使用同一默认子主题。
+        return SubTopicName.DATA_SUBSYSTEM_CSCL_PHYVALUE;
     }
 
     /** 将原码转换为配置指定的物理量、字符串或时间。 */
@@ -219,11 +228,9 @@ public class LocalDataProcessor implements DataProcessor {
     }
 
     /** 转换、校验并排序配置字段。 */
-    private List<PdxpProtocolField> fields(String configParams) {
-        List<PdxpProtocolField> parsedFields = parser.parseFields(
-                configParams, PdxpProtocolField.class);
+    private List<PdxpProtocolField> fields(List<PdxpProtocolField> parsedFields) {
         if (parsedFields.isEmpty()) {
-            throw new IllegalArgumentException("协议配置没有有效的fields字段");
+            throw new IllegalArgumentException("当前接口未加载有效的参数解析配置");
         }
         // 创建可排序副本，缓存中的协议字段列表保持只读和原始顺序。
         List<PdxpProtocolField> result = new ArrayList<PdxpProtocolField>(
@@ -298,35 +305,20 @@ public class LocalDataProcessor implements DataProcessor {
     }
 
     /** 查询并拆分当前帧对应的设备工作表名称。 */
-    private FrameIdentity frameIdentity(
-            CollectInterfaceRuntimeConfig config,
-            List<PdxpProtocolField> fields) {
-        String taskId = config.getTaskId();
-        Long ruleId = fields.get(0).getId();
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("采集接口未配置试验任务编号");
-        }
-        String cacheKey = taskId + "\u0000" + ruleId;
-        return identityCache.computeIfAbsent(
-                cacheKey, ignored -> loadFrameIdentity(taskId, ruleId));
+    private FrameIdentity frameIdentity(CollectInterfaceRuntimeConfig config) {
+        // 设备名称在接口同步时加载，处理线程只读取当前快照。
+        String deviceName = trim(config.getDeviceSatelliteName());
+        return splitFrameIdentity(deviceName);
     }
 
-    /** 从参数解析配置关联的设备名称创建帧标识。 */
-    private FrameIdentity loadFrameIdentity(String taskId, Long ruleId) {
-        PdxpFrameSource source = mappingMapper.findFrameSourceByRuleId(
-                taskId, ruleId);
-        if (source == null || !text(source.getCode())) {
-            throw new IllegalArgumentException(
-                    "参数解析配置未关联有效的设备卫星编码，配置主键：" + ruleId);
-        }
-        String deviceName = trim(source.getName());
+    /** 将设备名称拆成通道名称和业务标识。 */
+    private FrameIdentity splitFrameIdentity(String deviceName) {
         int separator = deviceName.indexOf('_');
         if (separator <= 0 || separator == deviceName.length() - 1) {
             throw new IllegalArgumentException(
                     "设备名称必须使用“通道名称_业务标识”格式：" + deviceName);
         }
         return new FrameIdentity(
-                source.getCode().trim(),
                 deviceName.substring(0, separator).trim(),
                 deviceName.substring(separator + 1).trim());
     }
@@ -364,8 +356,6 @@ public class LocalDataProcessor implements DataProcessor {
 
     /** 保存设备名称拆分得到的通道名称和业务标识。 */
     private static final class FrameIdentity {
-        /** 设备卫星编码。 */
-        private final String satelliteCode;
         /** 通道名称。 */
         private final String channelName;
         /** 业务标识。 */
@@ -373,14 +363,12 @@ public class LocalDataProcessor implements DataProcessor {
 
         /** 保存已经校验通过的名称组成部分。 */
         private FrameIdentity(
-                String satelliteCode,
                 String channelName,
                 String businessId) {
-            if (satelliteCode.isEmpty() || channelName.isEmpty()
+            if (channelName.isEmpty()
                     || businessId.isEmpty()) {
                 throw new IllegalArgumentException("设备名称中的通道名称和业务标识不能为空");
             }
-            this.satelliteCode = satelliteCode;
             this.channelName = channelName;
             this.businessId = businessId;
         }

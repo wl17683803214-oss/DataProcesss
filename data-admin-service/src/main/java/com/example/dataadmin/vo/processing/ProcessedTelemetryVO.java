@@ -2,33 +2,31 @@ package com.example.dataadmin.vo.processing;
 
 import java.time.LocalDateTime;
 
-/** IoTDB 中的处理后遥测参数。 */
+/** IoTDB处理后参数的页面返回结构。 */
 public class ProcessedTelemetryVO {
-    /** 采集接口主键。 */
-    private Long interfaceId;
-    private String satelliteId;
+    /** 路径中的设备卫星主键。 */
+    private Long deviceSatelliteId;
+    /** 路径末级遥测代号。 */
+    private String telemetryCode;
+    /** Proto参数名称。 */
     private String parameter;
-    private Object parameterValue;
+    /** Proto数值。 */
+    private Double parameterValue;
+    /** Proto状态中文名称。 */
     private String status;
-    /** 状态范围中从零开始的状态索引。 */
-    private Integer stateIndex;
-    private String deduplication;
+    /** 实际处理时间。 */
     private LocalDateTime processTime;
 
-    public Long getInterfaceId() { return interfaceId; }
-    public void setInterfaceId(Long interfaceId) { this.interfaceId = interfaceId; }
-    public String getSatelliteId() { return satelliteId; }
-    public void setSatelliteId(String satelliteId) { this.satelliteId = satelliteId; }
+    public Long getDeviceSatelliteId() { return deviceSatelliteId; }
+    public void setDeviceSatelliteId(Long value) { this.deviceSatelliteId = value; }
+    public String getTelemetryCode() { return telemetryCode; }
+    public void setTelemetryCode(String value) { this.telemetryCode = value; }
     public String getParameter() { return parameter; }
-    public void setParameter(String parameter) { this.parameter = parameter; }
-    public Object getParameterValue() { return parameterValue; }
-    public void setParameterValue(Object parameterValue) { this.parameterValue = parameterValue; }
+    public void setParameter(String value) { this.parameter = value; }
+    public Double getParameterValue() { return parameterValue; }
+    public void setParameterValue(Double value) { this.parameterValue = value; }
     public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public Integer getStateIndex() { return stateIndex; }
-    public void setStateIndex(Integer stateIndex) { this.stateIndex = stateIndex; }
-    public String getDeduplication() { return deduplication; }
-    public void setDeduplication(String deduplication) { this.deduplication = deduplication; }
+    public void setStatus(String value) { this.status = value; }
     public LocalDateTime getProcessTime() { return processTime; }
-    public void setProcessTime(LocalDateTime processTime) { this.processTime = processTime; }
+    public void setProcessTime(LocalDateTime value) { this.processTime = value; }
 }

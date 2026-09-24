@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper">
+    <!-- 勾选状态按任务和设备隔离。 -->
+    <select id="findSelectedCodes" resultType="string">
+        select telemetry_code
+        from processed_telemetry_filter_selection
+        where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+          and is_deleted = 0
+    </select>
+    <!-- 只返回当前任务仍有效的设备和参数，避免重新导入后查询失效路径。 -->
+    <select id="findSelected" resultType="com.example.dataadmin.entity.ProcessedTelemetryFilterSelection">
+        select selection.task_id, selection.device_satellite_id, selection.telemetry_code,
+               rule_config.telemetry_name
+        from processed_telemetry_filter_selection selection
+        inner join device_satellite device
+          on device.id = selection.device_satellite_id
+         and device.task_id = selection.task_id and device.is_deleted = 0
+        inner join telemetry_parse_rule_config rule_config
+          on rule_config.task_id = selection.task_id
+         and rule_config.device_satellite_id = selection.device_satellite_id
+         and rule_config.telemetry_code = selection.telemetry_code
+         and rule_config.is_deleted = 0
+        where selection.task_id = #{taskId} and selection.is_deleted = 0
+        order by selection.device_satellite_id, selection.telemetry_code
+    </select>
+    <!-- 唯一键冲突时原地更新状态，重复点击仍保持幂等。 -->
+    <insert id="save">
+        insert into processed_telemetry_filter_selection
+            (task_id, device_satellite_id, telemetry_code, is_deleted)
+        values (#{taskId}, #{deviceSatelliteId}, #{telemetryCode}, #{deleted})
+        on conflict (task_id, device_satellite_id, telemetry_code)
+        do update set is_deleted = excluded.is_deleted, update_time = current_timestamp
+    </insert>
+    <!-- 只清除本次导入类型中已不存在的参数，保留仍在新表中的勾选。 -->
+    <update id="removeMissing">
+        update processed_telemetry_filter_selection selection
+        set is_deleted = 1, update_time = current_timestamp
+        where selection.task_id = #{taskId} and selection.is_deleted = 0
+          and selection.device_satellite_id in (
+              select id from device_satellite
+              where task_id = #{taskId} and type = #{type}
+          )
+          and not exists (
+              select 1 from telemetry_parse_rule_config rule_config
+              where rule_config.task_id = selection.task_id
+                and rule_config.device_satellite_id = selection.device_satellite_id
+                and rule_config.telemetry_code = selection.telemetry_code
+                and rule_config.is_deleted = 0
+          )
+    </update>
+</mapper>

@@ -51,14 +51,18 @@ public class InterfaceSaveRequest {
 
     @NotBlank(message = "主机地址不能为空")
     @Size(max = 100, message = "主机地址不能超过100个字符")
-    /** 远端主机地址。 */
+    /** 数据处理服务本机监听地址。 */
     private String host;
 
     @NotNull(message = "端口号不能为空")
     @Min(value = 1, message = "端口号不能小于1")
     @Max(value = 65535, message = "端口号不能大于65535")
-    /** 远端服务端口。 */
+    /** 数据处理服务本机监听端口。 */
     private Integer port;
+
+    /** UDP组播地址；为空时按UDP单播接收。 */
+    @Size(max = 100, message = "组播地址不能超过100个字符")
+    private String multicastIp;
 
     /** 接口运行状态：0 离线，1 在线。 */
     private Integer status;
@@ -161,6 +165,14 @@ public class InterfaceSaveRequest {
 
     public void setPort(Integer port) {
         this.port = port;
+    }
+
+    public String getMulticastIp() {
+        return multicastIp;
+    }
+
+    public void setMulticastIp(String multicastIp) {
+        this.multicastIp = multicastIp;
     }
 
     public Integer getStatus() {

@@ -36,11 +36,12 @@ public interface CollectInterfaceConfigMapper {
     /** 按主键查询采集接口。 */
     CollectInterfaceConfig findById(@Param("id") Long id);
 
-    /** 统计同一传输方式、监听地址和端口的已启用接口数量。 */
+    /** 统计相同监听配置的已启用接口数量。 */
     long countEnabledEndpointConflicts(
             @Param("transferType") Integer transferType,
             @Param("host") String host,
             @Param("port") Integer port,
+            @Param("multicastIp") String multicastIp,
             @Param("excludeId") Long excludeId);
 
     /** 新增采集接口并回填主键。 */

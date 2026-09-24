@@ -9,8 +9,7 @@ import SatDataCenter.DataExchange.TmTc.Version.ExchangeTopicType;
 import SatDataCenter.DataExchange.TmTc.Version.SubTopicName;
 import com.example.dataprocess.collection.CollectInterfaceStatistics;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
-import com.example.dataprocess.entity.PdxpFrameSource;
-import com.example.dataprocess.mapper.TelemetryCodeMappingMapper;
+import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 import com.example.dataprocess.protocol.rpc.PdxpDataPayload;
 import com.example.dataprocess.protocol.rpc.PdxpDataPayloadParser;
 import com.example.dataprocess.protocol.rpc.ProtocolConfigParser;
@@ -22,21 +21,17 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /** 验证协议配置字段的连续取位、消息组装和状态判断。 */
 class LocalDataProcessorTest {
-    /** 模拟参数解析配置关联的设备名称查询。 */
-    private final TelemetryCodeMappingMapper mappingMapper = mappingMapper();
-    /** 使用真实配置解析器验证本地处理。 */
+    /** 使用真实解析器准备接口启动时已经加载的字段快照。 */
+    private final ProtocolConfigParser configParser =
+            new ProtocolConfigParser(new ObjectMapper());
+    /** 本地处理只读取接口配置快照。 */
     private final LocalDataProcessor processor =
-            new LocalDataProcessor(
-                    new ProtocolConfigParser(new ObjectMapper()),
-                    mappingMapper,
-                    mock(CollectInterfaceStatistics.class));
+            new LocalDataProcessor(mock(CollectInterfaceStatistics.class));
 
     /** 验证排序、跨字节读取及基础Protobuf字段映射。 */
     @Test
@@ -54,12 +49,13 @@ class LocalDataProcessorTest {
         assertArrayEquals(new byte[]{0x79, 0x01}, voltage.getRawData().toByteArray());
         assertEquals(ExchangeTopicType.TEST_DATA_TYPE,
                 message.getProtoHead().getTopicType());
-        assertEquals(SubTopicName.DATA_SUBSYSTEM_YCHL_PHYVALUE,
+        assertEquals(SubTopicName.DATA_SUBSYSTEM_CSCL_PHYVALUE,
                 message.getProtoHead().getBussiness());
+        assertTrue(message.getProtoHead().hasMsgTime());
         assertEquals("TASK-7", message.getProtoHead().getTaskId());
         assertEquals("数据处理", message.getProtoHead().getMsgSource());
         assertEquals("设备通道", message.getChannelName());
-        assertEquals("DEVICE001", message.getSatCode());
+        assertEquals("", message.getSatCode());
         assertEquals("业务001", message.getBussinessId());
         assertEquals(TelemetryType.TM_TYPE_DEVICE_TM, message.getTmType());
         assertArrayEquals(new byte[]{(byte) 0xCD, (byte) 0xAB},
@@ -98,7 +94,10 @@ class LocalDataProcessorTest {
         CollectInterfaceRuntimeConfig config = new CollectInterfaceRuntimeConfig();
         config.setTaskId("TASK-7");
         config.setProtocolConfigId(21L);
-        config.setProtocolConfigParams(params);
+        config.setProtocolConfigParams("{\"deviceSatelliteId\":12}");
+        config.setDeviceSatelliteId(12L);
+        config.setDeviceSatelliteName("设备通道_业务001");
+        config.setPdxpFields(configParser.parseFields(params, PdxpProtocolField.class));
         byte[] header = new byte[PdxpParser.HEADER_LENGTH];
         header[0] = (byte) 0x80;
         header[24] = 1;
@@ -126,20 +125,4 @@ class LocalDataProcessorTest {
                 .replace("\"normalValue\":\"\"", "\"normalValue\":\"" + normal + "\"");
     }
 
-    /** 创建返回固定设备工作表名称的查询组件。 */
-    private TelemetryCodeMappingMapper mappingMapper() {
-        TelemetryCodeMappingMapper mapper = mock(TelemetryCodeMappingMapper.class);
-        // 所有测试字段均模拟关联到同一张设备工作表。
-        when(mapper.findFrameSourceByRuleId(anyString(), anyLong()))
-                .thenReturn(frameSource());
-        return mapper;
-    }
-
-    /** 创建本地处理使用的设备卫星编码和名称。 */
-    private PdxpFrameSource frameSource() {
-        PdxpFrameSource source = new PdxpFrameSource();
-        source.setCode("DEVICE001");
-        source.setName("设备通道_业务001");
-        return source;
-    }
 }

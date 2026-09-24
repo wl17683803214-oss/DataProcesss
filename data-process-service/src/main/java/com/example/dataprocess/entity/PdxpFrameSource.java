@@ -3,10 +3,16 @@ package com.example.dataprocess.entity;
 /** PDXP本地处理关联的设备卫星编码和工作表名称。 */
 public class PdxpFrameSource {
 
+    /** 设备卫星主键。 */
+    private Long id;
+
     /** 设备卫星编码。 */
     private String code;
     /** 导入工作表对应的设备卫星名称。 */
     private String name;
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     /** 获取设备卫星编码。 */
     public String getCode() {

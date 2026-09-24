@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 16MB
+      max-request-size: 20MB
   datasource:
     driver-class-name: com.kingbase8.Driver
     url: jdbc:kingbase8://localhost:54321/data_processing
@@ -37,7 +41,7 @@ auth:
   allowed-origin-patterns:
     - "*"
   # 开发环境临时关闭登录和权限校验，生产环境必须设为 true。
-  enabled: false
+  enabled: true
   # 生产环境必须在 Nacos 中替换为长度足够的随机密钥。
   jwt-secret: data-processing-local-development-secret-change-me
   # 登录令牌和Redis会话有效期，单位秒；0表示永不过期。
@@ -67,13 +71,35 @@ subsystem:
     # 子系统唯一标识，供外部宿主系统定位当前子系统。
     system-key: data-processing
     # 子系统在外部宿主系统中显示的名称。
-    label: 数据处理软件
+    label: 数据处理系统
     # 子系统图标标识，使用本系统约定的图标名称。
-    icon: system
+    icon: i-lucide-network
     # 填写当前环境可供外部系统访问的前端根地址，不包含末尾斜线。
     base-url:
     # 外部宿主系统首次打开本系统时使用的默认页面路径。
     default-path: /dashboard
+
+# 向交互系统定时上报当前系统心跳的配置。
+interaction:
+  heartbeat:
+    # 交互系统接口协议。
+    scheme: http
+    # 交互系统服务IP。
+    host: 10.126.100.247
+    # 交互系统服务端口。
+    port: 8063
+    # 交互系统部署上下文路径。
+    context-path: /inst2
+    # 心跳上报接口路径。
+    report-path: /wjp-admin/kzt/status/report
+    # 当前数据处理软件在交互系统中的系统标识。
+    system-id: sjcl
+    # 心跳上报间隔，单位毫秒
+    interval-millis: 60000
+    # 心跳接口连接超时时间，单位毫秒。
+    connect-timeout-millis: 5000
+    # 心跳接口响应读取超时时间，单位毫秒。
+    read-timeout-millis: 10000
 
 springdoc:
   api-docs:
@@ -120,7 +146,8 @@ iotdb:
   port: 6667
   username: root
   password: root
-  max-pool-size: 5
+  # 管理服务IoTDB连接上限；处理后参数查询线程数自动比此值少一个，至少配置为2。
+  max-pool-size: 40
 
 # 卫星目录管理服务的gRPC客户端连接配置。
 satellite-management:

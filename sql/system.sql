@@ -191,39 +191,41 @@ COMMENT ON COLUMN calib_record_detail.create_time IS '野值发生时间';
 CREATE INDEX IF NOT EXISTS idx_calib_record_detail_task_channel_time
     ON calib_record_detail (task_id, channel_id, create_time DESC);
 
--- 初始化左侧菜单节点。
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (10,0,'总览','dashboard','/dashboard',0,1,0);
+values (10,0,'总览','i-lucide-layout-dashboard','/dashboard',0,1,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (30,0,'数据可视化','chart','/data-viz',0,2,0);
+values (30,0,'数据可视化','i-lucide-line-chart','/data-viz',0,2,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (20,0,'数据采集','collection','/data-collection',0,3,0);
+values (20,0,'数据采集','i-lucide-radio-tower','/data-collection',0,3,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (35,0,'卫星管理','satellite','/satellite-management',0,4,0);
+values (35,0,'卫星管理','i-lucide-satellite-dish','/satellite-management',0,4,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (40,0,'数据处理','process','/data-process',0,5,0);
+values (40,0,'数据处理','i-lucide-cog','/data-process',0,5,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (50,0,'数据校准','calibration','/calibration',0,6,0);
+values (50,0,'数据校准','i-lucide-sliders-horizontal','/calibration',0,6,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (60,0,'告警管理','alarm','/alarms',0,7,0);
+values (60,0,'告警管理','i-lucide-bell-ring','/alarms',0,7,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (1,0,'系统配置','setting',null,0,8,0);
+values (1,0,'系统配置','i-lucide-settings',null,0,8,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (2,1,'用户管理','user','/system/user',0,1,0);
+values (2,1,'采集代理','i-lucide-server','/config/agent',0,1,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (7,1,'角色管理','peoples','/system/role',0,2,0);
+values (3,1,'用户管理','i-lucide-users','/config/user',0,2,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (11,1,'日志管理','log','/system/log',0,3,0);
+values (4,1,'角色管理','i-lucide-users','/config/role',0,3,0);
+
+insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
+values (5,1,'日志管理','i-lucide-scroll-text','/config/log',0,4,0);
 
 -- 超级管理员始终关联全部菜单。
 insert into dp_role_menu(role_id,menu_id)

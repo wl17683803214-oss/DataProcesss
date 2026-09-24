@@ -17,17 +17,77 @@ public class IoTDBFrameQueryMapper {
         this.sqlSessionFactory = sqlSessionFactory;
     }
 
-    /** 生成任务范围内的整帧查询；文字字面量由调用方统一转义。 */
-    public String realtimeFrames(String taskIdLiteral, Long interfaceId) {
-        // IoTDB会话接口不接受绑定参数，只传入已转义的任务字面量及强类型编号。
-        if (taskIdLiteral == null || taskIdLiteral.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
+    /** 生成任务范围内的实时整帧分页查询。 */
+    public String realtimeFrames(
+            String devicePath,
+            int limit,
+            long offset) {
+        // 第一步：通过已校验设备路径限定任务和采集接口。
+        Map<String, Object> parameters = baseParameters(devicePath);
+        // 第二步：传递分页参数并生成IoTDB可直接执行的语句。
+        parameters.put("limit", limit);
+        parameters.put("offset", offset);
+        return mappedSql("realtimeFrames", parameters);
+    }
+
+    /** 生成任务范围内的实时整帧总数查询。 */
+    public String countRealtimeFrames(String devicePath) {
+        Map<String, Object> parameters = baseParameters(devicePath);
+        return mappedSql("countRealtimeFrames", parameters);
+    }
+
+    /** 生成单个遥测参数最新一条数据的查询。 */
+    public String latestProcessedTelemetry(String devicePath) {
+        return mappedSql("latestProcessedTelemetry", baseParameters(devicePath));
+    }
+
+    /** 生成单个遥测参数最新一百二十条曲线点的查询。 */
+    public String recentProcessedTelemetry(String devicePath) {
+        return mappedSql("recentProcessedTelemetry", baseParameters(devicePath));
+    }
+
+    /** 生成异常整帧分页查询。 */
+    public String invalidFrames(
+            String devicePath,
+            int limit,
+            long offset) {
+        Map<String, Object> parameters = baseParameters(devicePath);
+        parameters.put("limit", limit);
+        parameters.put("offset", offset);
+        return mappedSql("invalidFrames", parameters);
+    }
+
+    /** 生成异常整帧总数查询。 */
+    public String countInvalidFrames(String devicePath) {
+        Map<String, Object> parameters = baseParameters(devicePath);
+        return mappedSql("countInvalidFrames", parameters);
+    }
+
+    /** 创建所有IoTDB查询共用的安全设备路径参数。 */
+    private Map<String, Object> baseParameters(String devicePath) {
+        // 第一步：设备路径只能使用业务层生成的root.db范围，禁止执行其他语句。
+        if (devicePath == null
+                || !devicePath.startsWith("root.db.")
+                || devicePath.contains(";")
+                || devicePath.matches(".*\\s+.*")) {
+            throw new IllegalArgumentException("IoTDB设备路径不合法");
         }
+        // 第二步：映射仅拼接经过校验的设备路径。
         Map<String, Object> parameters = new HashMap<String, Object>();
-        parameters.put("taskIdLiteral", taskIdLiteral);
-        parameters.put("interfaceId", interfaceId);
+        parameters.put("devicePath", devicePath);
+        return parameters;
+    }
+
+    /** 从MyBatis映射中取得最终IoTDB语句。 */
+    private String mappedSql(
+            String statementId,
+            Map<String, Object> parameters) {
+        // IoTDB会话不支持MyBatis绑定参数，映射只接收已转义文本和强类型数值。
         return sqlSessionFactory.getConfiguration()
-                .getMappedStatement(IoTDBFrameQueryMapper.class.getName() + ".realtimeFrames")
-                .getBoundSql(parameters).getSql();
+                .getMappedStatement(
+                        IoTDBFrameQueryMapper.class.getName()
+                                + "." + statementId)
+                .getBoundSql(parameters)
+                .getSql();
     }
 }

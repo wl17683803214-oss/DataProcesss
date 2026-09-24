@@ -12,6 +12,7 @@ import com.example.dataadmin.vo.processing.DataProcessingRealtimeVO;
 import com.example.dataadmin.vo.processing.CollectInterfaceOptionVO;
 import com.example.dataadmin.vo.processing.RealtimeTelemetryFrameVO;
 import com.example.dataadmin.vo.processing.ProcessedTelemetryVO;
+import com.example.dataadmin.vo.processing.ProcessedTelemetryCurveVO;
 import com.example.dataadmin.entity.InvalidTelemetryFrame;
 import com.example.dataadmin.enums.ControllerEnumData;
 import com.example.dataadmin.vo.EnumOptionVO;
@@ -69,36 +70,49 @@ public class DataProcessingController {
         return ApiResponse.success(processingService.getRealtime(taskId));
     }
 
-    /** 按任务查询IoTDB中最新的处理成功遥测帧。 */
+    /** 按任务分页查询IoTDB中最新的遥测帧。 */
     @GetMapping("/realtime/telemetry")
-    public ApiResponse<List<RealtimeTelemetryFrameVO>> listRealtimeTelemetry(
+    public ApiResponse<PageResult<RealtimeTelemetryFrameVO>> pageRealtimeTelemetry(
             @RequestParam String taskId,
-            @RequestParam(required = false) Long interfaceId) {
+            @RequestParam(required = false) Long deviceSatelliteId,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        // 查询参数统一交给业务层校验并转换为IoTDB分页范围。
         return ApiResponse.success(
-                processingService.listRealtimeTelemetryFrames(
-                        taskId, interfaceId));
+                processingService.pageRealtimeTelemetryFrames(
+                        taskId, deviceSatelliteId, pageNum, pageSize));
     }
 
-    /** 按任务和采集接口查询IoTDB中的处理后遥测参数。 */
+    /** 查询当前任务全部已勾选参数的最新处理结果。 */
     @GetMapping("/processed")
     public ApiResponse<List<ProcessedTelemetryVO>> listProcessedTelemetry(
-            @RequestParam String taskId,
-            @RequestParam(required = false) Long interfaceId) {
-        return ApiResponse.success(
-                processingService.listProcessedTelemetry(
-                        taskId, interfaceId));
+            @RequestParam String taskId) {
+        // 设备和遥测代号从已保存的有效勾选记录自动取得。
+        return ApiResponse.success(processingService.listProcessedTelemetry(taskId));
     }
 
-    /** 按任务和页面条件查询IoTDB中帧检查异常的遥测原始帧。 */
+    /** 查询当前任务全部已勾选参数的最近曲线点。 */
+    @GetMapping("/processed/curve")
+    public ApiResponse<List<ProcessedTelemetryCurveVO>> listProcessedTelemetryCurves(
+            @RequestParam String taskId) {
+        // 每条曲线各自携带时间轴，以保留实际采样时间。
+        return ApiResponse.success(processingService.listProcessedTelemetryCurves(taskId));
+    }
+
+    /** 按任务和页面条件分页查询IoTDB中帧检查异常的遥测原始帧。 */
     @GetMapping("/realtime/invalid")
-    public ApiResponse<List<InvalidTelemetryFrame>> listInvalidTelemetry(
+    public ApiResponse<PageResult<InvalidTelemetryFrame>> pageInvalidTelemetry(
             @RequestParam String taskId,
-            @RequestParam(required = false) Long interfaceId,
-            @RequestParam(required = false) String satelliteCode,
-            @RequestParam(required = false) String channelCode) {
+            @RequestParam(required = false) Long deviceSatelliteId,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        // 查询参数统一交给业务层校验并转换为IoTDB分页范围。
         return ApiResponse.success(
-                processingService.listInvalidTelemetryFrames(
-                        taskId, interfaceId, satelliteCode, channelCode));
+                processingService.pageInvalidTelemetryFrames(
+                        taskId,
+                        deviceSatelliteId,
+                        pageNum,
+                        pageSize));
     }
 
     /** 查询任务级参数值范围检查开关。 */
@@ -145,10 +159,14 @@ public class DataProcessingController {
 
     /** 查询遥测解析规则。 */
     @GetMapping("/rules")
-    public ApiResponse<List<TelemetryParseRuleConfig>> listRules(
+    public ApiResponse<PageResult<TelemetryParseRuleConfig>> listRules(
             @RequestParam String taskId,
-            @RequestParam Long deviceSatelliteId) {
-        return ApiResponse.success(processingService.listParseRules(taskId, deviceSatelliteId));
+            @RequestParam Long deviceSatelliteId,
+            @RequestParam(required = false) Long systemId,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        return ApiResponse.success(processingService.pageParseRules(
+                taskId, deviceSatelliteId, systemId, pageNum, pageSize));
     }
 
     /** 从Excel页签或制表符TXT导入设备卫星及参数，按当前任务和类型替换。 */

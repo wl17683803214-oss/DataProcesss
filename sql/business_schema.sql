@@ -378,11 +378,41 @@ COMMENT ON COLUMN device_satellite.update_time IS '更新时间';
 CREATE UNIQUE INDEX IF NOT EXISTS uk_device_satellite_task_type_code
     ON device_satellite (task_id, type, code) WHERE is_deleted = 0;
 
+-- 所属系统按设备卫星分层存储，同名系统可位于不同父节点。
+CREATE TABLE IF NOT EXISTS telemetry_system_config (
+    id BIGSERIAL PRIMARY KEY,
+    task_id VARCHAR(100) NOT NULL,
+    device_satellite_id BIGINT NOT NULL,
+    system_name VARCHAR(100) NOT NULL,
+    parent_id BIGINT NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_deleted SMALLINT NOT NULL DEFAULT 0,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE telemetry_system_config IS '遥测参数所属系统层级配置';
+COMMENT ON COLUMN telemetry_system_config.id IS '主键';
+COMMENT ON COLUMN telemetry_system_config.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN telemetry_system_config.device_satellite_id IS '设备卫星主键';
+COMMENT ON COLUMN telemetry_system_config.system_name IS '当前层级系统名称';
+COMMENT ON COLUMN telemetry_system_config.parent_id IS '父系统主键，0表示设备直属系统';
+COMMENT ON COLUMN telemetry_system_config.sort_order IS '导入文件中首次出现的顺序';
+COMMENT ON COLUMN telemetry_system_config.is_deleted IS '是否删除：0否，1是';
+COMMENT ON COLUMN telemetry_system_config.create_time IS '创建时间';
+COMMENT ON COLUMN telemetry_system_config.update_time IS '更新时间';
+CREATE UNIQUE INDEX IF NOT EXISTS uk_telemetry_system_active_path
+    ON telemetry_system_config (task_id, device_satellite_id, parent_id, system_name)
+    WHERE is_deleted = 0;
+CREATE INDEX IF NOT EXISTS idx_telemetry_system_children
+    ON telemetry_system_config (task_id, device_satellite_id, parent_id, sort_order)
+    WHERE is_deleted = 0;
+
 -- 遥测参数解析配置表：全部业务列按字符串存储。
 CREATE TABLE IF NOT EXISTS telemetry_parse_rule_config (
     id BIGSERIAL PRIMARY KEY,
     task_id VARCHAR(100) NOT NULL,
     device_satellite_id BIGINT NOT NULL,
+    system_id BIGINT,
     table_index VARCHAR(100) NOT NULL,
     bit_width VARCHAR(100) NOT NULL,
     telemetry_name VARCHAR(100) NOT NULL,
@@ -396,7 +426,7 @@ CREATE TABLE IF NOT EXISTS telemetry_parse_rule_config (
     warning_value TEXT,
     state_change_info TEXT,
     command_code TEXT,
-    system_name VARCHAR(100),
+    system_name TEXT,
     control_channel VARCHAR(100),
     merge_channel_count VARCHAR(100),
     delay_channel VARCHAR(100),
@@ -410,6 +440,7 @@ COMMENT ON TABLE telemetry_parse_rule_config IS '参数解析配置';
 COMMENT ON COLUMN telemetry_parse_rule_config.id IS '主键';
 COMMENT ON COLUMN telemetry_parse_rule_config.task_id IS '外部试验任务编号';
 COMMENT ON COLUMN telemetry_parse_rule_config.device_satellite_id IS '设备卫星表ID，由代码校验关联';
+COMMENT ON COLUMN telemetry_parse_rule_config.system_id IS '所属系统主键，为空表示直属设备卫星';
 COMMENT ON COLUMN telemetry_parse_rule_config.table_index IS '序号';
 COMMENT ON COLUMN telemetry_parse_rule_config.bit_width IS '位宽';
 COMMENT ON COLUMN telemetry_parse_rule_config.telemetry_name IS '遥测名称';
@@ -423,7 +454,7 @@ COMMENT ON COLUMN telemetry_parse_rule_config.normal_value IS '正常值范围';
 COMMENT ON COLUMN telemetry_parse_rule_config.warning_value IS '预警值范围';
 COMMENT ON COLUMN telemetry_parse_rule_config.state_change_info IS '状态跳变信息';
 COMMENT ON COLUMN telemetry_parse_rule_config.command_code IS '相关命令';
-COMMENT ON COLUMN telemetry_parse_rule_config.system_name IS '所属系统';
+COMMENT ON COLUMN telemetry_parse_rule_config.system_name IS '导入文件中的所属系统原始层级路径';
 COMMENT ON COLUMN telemetry_parse_rule_config.control_channel IS '控制波道';
 COMMENT ON COLUMN telemetry_parse_rule_config.merge_channel_count IS '合并波道';
 COMMENT ON COLUMN telemetry_parse_rule_config.delay_channel IS '延时波道';
@@ -437,6 +468,35 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_parse_rule_task_device_index
     ON telemetry_parse_rule_config (task_id, device_satellite_id, table_index) WHERE is_deleted = 0;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_parse_rule_task_device_code
     ON telemetry_parse_rule_config (task_id, device_satellite_id, telemetry_code) WHERE is_deleted = 0;
+-- 任务范围内按遥测代号搜索筛选框参数。
+CREATE INDEX IF NOT EXISTS idx_parse_rule_task_code
+    ON telemetry_parse_rule_config (task_id, telemetry_code) WHERE is_deleted = 0;
+CREATE INDEX IF NOT EXISTS idx_parse_rule_system
+    ON telemetry_parse_rule_config (task_id, device_satellite_id, system_id, id)
+    WHERE is_deleted = 0;
+CREATE INDEX IF NOT EXISTS idx_parse_rule_device_page
+    ON telemetry_parse_rule_config (task_id, device_satellite_id, id)
+    WHERE is_deleted = 0;
+
+-- 参数筛选勾选结果由当前任务共享，不与登录用户绑定。
+CREATE TABLE IF NOT EXISTS processed_telemetry_filter_selection (
+    id BIGSERIAL PRIMARY KEY,
+    task_id VARCHAR(100) NOT NULL,
+    device_satellite_id BIGINT NOT NULL,
+    telemetry_code VARCHAR(100) NOT NULL,
+    is_deleted SMALLINT NOT NULL DEFAULT 0,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (task_id, device_satellite_id, telemetry_code)
+);
+COMMENT ON TABLE processed_telemetry_filter_selection IS '处理后遥测参数筛选勾选记录';
+COMMENT ON COLUMN processed_telemetry_filter_selection.id IS '主键';
+COMMENT ON COLUMN processed_telemetry_filter_selection.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN processed_telemetry_filter_selection.device_satellite_id IS '设备卫星主键';
+COMMENT ON COLUMN processed_telemetry_filter_selection.telemetry_code IS '遥测代号';
+COMMENT ON COLUMN processed_telemetry_filter_selection.is_deleted IS '是否取消勾选：0否，1是';
+COMMENT ON COLUMN processed_telemetry_filter_selection.create_time IS '创建时间';
+COMMENT ON COLUMN processed_telemetry_filter_selection.update_time IS '更新时间';
 
 -- 采集接口管理表
 CREATE TABLE IF NOT EXISTS collect_interface_config (
@@ -451,6 +511,7 @@ CREATE TABLE IF NOT EXISTS collect_interface_config (
     protocol_config_id BIGINT,
     host VARCHAR(100) NOT NULL,
     port INT NOT NULL,
+    multicast_ip VARCHAR(100),
     status SMALLINT NOT NULL DEFAULT 1,
     enabled SMALLINT NOT NULL DEFAULT 1,
     rpc_enabled SMALLINT NOT NULL DEFAULT 0,
@@ -471,8 +532,9 @@ COMMENT ON COLUMN collect_interface_config.message_content IS '消息内容';
 COMMENT ON COLUMN collect_interface_config.transfer_type IS '传输方式：1UDP 2TCP 3HTTP';
 COMMENT ON COLUMN collect_interface_config.transfer_protocol IS '传输协议：1JSON 2PDXP 3Protobuf 4FEP';
 COMMENT ON COLUMN collect_interface_config.protocol_config_id IS '协议配置ID';
-COMMENT ON COLUMN collect_interface_config.host IS '主机IP地址';
-COMMENT ON COLUMN collect_interface_config.port IS '端口号';
+COMMENT ON COLUMN collect_interface_config.host IS '数据处理服务本机监听网卡IP地址';
+COMMENT ON COLUMN collect_interface_config.port IS '数据处理服务本机监听端口';
+COMMENT ON COLUMN collect_interface_config.multicast_ip IS 'UDP组播地址，为空时按UDP单播接收';
 COMMENT ON COLUMN collect_interface_config.status IS '状态：0离线 1在线 2异常';
 COMMENT ON COLUMN collect_interface_config.enabled IS '启用状态：0禁用 1启用';
 COMMENT ON COLUMN collect_interface_config.data_packet_count IS '累计数据包数量';

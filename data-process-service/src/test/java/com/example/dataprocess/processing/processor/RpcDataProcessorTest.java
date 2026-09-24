@@ -3,6 +3,8 @@ package com.example.dataprocess.processing.processor;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.Telemetry;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType;
+import SatDataCenter.DataExchange.TmTc.Version.ExchangeTopicType;
+import SatDataCenter.DataExchange.TmTc.Version.SubTopicName;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.protocol.rpc.PdxpDataPayload;
 import com.example.dataprocess.protocol.rpc.PdxpDataPayloadParser;
@@ -65,6 +67,7 @@ class RpcDataProcessorTest {
                 TelemetryMessage.newBuilder().build().toByteArray());
         RpcDataProcessor processor = processor(rpcClient);
         CollectInterfaceRuntimeConfig config = new CollectInterfaceRuntimeConfig();
+        config.setTaskId("TASK-7");
         config.setProtocolConfigParams("{\"fields\":["
                 + "{\"field\":\"sat_code\",\"value\":1001}]}");
 
@@ -119,6 +122,13 @@ class RpcDataProcessorTest {
         assertEquals("电压", telemetry.getTmName());
         assertEquals(42.0D, telemetry.getValue());
         assertEquals(ValueType.VALUE_TYPE_RAW, telemetry.getValueType());
+        assertEquals(ExchangeTopicType.TEST_DATA_TYPE,
+                result.getProtoHead().getTopicType());
+        assertEquals(SubTopicName.DATA_SAT_PHYVALUE,
+                result.getProtoHead().getBussiness());
+        assertTrue(result.getProtoHead().hasMsgTime());
+        assertEquals("TASK-7", result.getProtoHead().getTaskId());
+        assertEquals("数据处理", result.getProtoHead().getMsgSource());
     }
 
     /** 创建使用真实配置解析器的RPC处理器。 */
@@ -132,6 +142,7 @@ class RpcDataProcessorTest {
         CollectInterfaceRuntimeConfig config =
                 new CollectInterfaceRuntimeConfig();
         config.setInterfaceId(11L);
+        config.setTaskId("TASK-7");
         config.setProtocolConfigParams("{\"fields\":["
                 + "{\"field\":\"channel\",\"value\":\"CH-01\"},"
                 + "{\"field\":\"data_source\",\"value\":\"遥测\"},"

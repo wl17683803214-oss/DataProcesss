@@ -1,9 +1,15 @@
 package com.example.dataadmin.service.impl;
 
 import com.example.common.response.PageResult;
+import com.example.common.tool.IoTDBPathTool;
 import com.example.dataadmin.entity.DataProcessLog;
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.entity.DeviceSatellite;
+import com.example.dataadmin.entity.TelemetrySystemConfig;
+import com.example.dataadmin.entity.CollectProtocolConfig;
+import com.example.dataadmin.mapper.TelemetrySystemConfigMapper;
+import com.example.dataadmin.mapper.CollectProtocolConfigMapper;
+import com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper;
 import com.example.dataadmin.mapper.DeviceSatelliteMapper;
 import com.example.dataadmin.mapper.IoTDBFrameQueryMapper;
 import com.example.dataadmin.enums.DeviceSatelliteType;
@@ -12,13 +18,13 @@ import com.example.dataadmin.vo.processing.DeviceSatelliteOptionVO;
 import com.example.dataadmin.entity.ProcessingRuleConfig;
 import com.example.dataadmin.entity.InvalidTelemetryFrame;
 import com.example.dataadmin.enums.DataProcessLogLevel;
-import com.example.dataadmin.enums.TelemetryFrameCheckResult;
 import com.example.dataadmin.mapper.DataProcessLogMapper;
 import com.example.dataadmin.mapper.DashboardMapper;
 import com.example.dataadmin.mapper.CollectInterfaceConfigMapper;
 import com.example.dataadmin.mapper.TelemetryParseRuleConfigMapper;
 import com.example.dataadmin.mapper.ProcessingRuleConfigMapper;
 import com.example.dataadmin.service.DataProcessingService;
+import com.example.dataadmin.service.ProcessedTelemetryQueryService;
 import com.example.dataadmin.service.CollectInterfaceRuntimeSyncService;
 import com.example.dataadmin.service.VisualizationParameterSyncService;
 import com.example.dataadmin.vo.processing.DataProcessingOverviewVO;
@@ -26,6 +32,7 @@ import com.example.dataadmin.vo.processing.DataProcessingRealtimeVO;
 import com.example.dataadmin.vo.processing.CollectInterfaceOptionVO;
 import com.example.dataadmin.vo.processing.RealtimeTelemetryFrameVO;
 import com.example.dataadmin.vo.processing.ProcessedTelemetryVO;
+import com.example.dataadmin.vo.processing.ProcessedTelemetryCurveVO;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,15 +40,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.apache.iotdb.isession.SessionDataSet;
 import org.apache.iotdb.isession.pool.SessionDataSetWrapper;
 import org.apache.iotdb.session.pool.SessionPool;
 import org.apache.tsfile.utils.Binary;
 
 import java.time.LocalDateTime;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -65,6 +74,8 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             "dashboard:processing:runtime";
     /** 一个GB对应的字节数。 */
     private static final double BYTES_PER_GB = 1024D * 1024D * 1024D;
+    /** IoTDB页面查询允许的最大单页数量。 */
+    private static final int MAX_IOTDB_PAGE_SIZE = 200;
 
     /** 数据处理统计数据访问组件。 */
     private final DashboardMapper dashboardMapper;
@@ -83,11 +94,19 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     private final SessionPool iotdbSessionPool;
     /** 正常整帧查询的MyBatis映射组件。 */
     private final IoTDBFrameQueryMapper frameQueryMapper;
+    /** 已勾选参数的独立并发查询组件。 */
+    private final ProcessedTelemetryQueryService processedTelemetryQueryService;
     /** 可视化参数筛选项同步服务。 */
     private final VisualizationParameterSyncService parameterSyncService;
 
     /** 设备卫星关联与替换锁。 */
     private final DeviceSatelliteMapper deviceSatelliteMapper;
+    /** 所属系统层级访问组件。 */
+    private final TelemetrySystemConfigMapper systemMapper;
+    /** 导入时核对仍被协议配置引用的设备。 */
+    private final CollectProtocolConfigMapper protocolMapper;
+    /** 筛选勾选状态在重新导入后按遥测代号保留。 */
+    private final ProcessedTelemetryFilterSelectionMapper selectionMapper;
     /** 工作簿读取和字段校验。 */
     private final ParameterWorkbookParser workbookParser;
     /** Redis字符串访问组件。 */
@@ -105,10 +124,14 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             SessionPool iotdbQuerySessionPool,
             VisualizationParameterSyncService parameterSyncService,
             DeviceSatelliteMapper deviceSatelliteMapper,
+            TelemetrySystemConfigMapper systemMapper,
+            CollectProtocolConfigMapper protocolMapper,
+            ProcessedTelemetryFilterSelectionMapper selectionMapper,
             ParameterWorkbookParser workbookParser,
             StringRedisTemplate redisTemplate,
             ObjectMapper objectMapper,
-            IoTDBFrameQueryMapper frameQueryMapper) {
+            IoTDBFrameQueryMapper frameQueryMapper,
+            ProcessedTelemetryQueryService processedTelemetryQueryService) {
         this.dashboardMapper = dashboardMapper;
         this.collectInterfaceMapper = collectInterfaceMapper;
         this.logMapper = logMapper;
@@ -118,10 +141,14 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         this.iotdbSessionPool = iotdbQuerySessionPool;
         this.parameterSyncService = parameterSyncService;
         this.deviceSatelliteMapper = deviceSatelliteMapper;
+        this.systemMapper = systemMapper;
+        this.protocolMapper = protocolMapper;
+        this.selectionMapper = selectionMapper;
         this.workbookParser = workbookParser;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.frameQueryMapper = frameQueryMapper;
+        this.processedTelemetryQueryService = processedTelemetryQueryService;
     }
 
     /** 查询页面筛选框使用的已启用采集接口。 */
@@ -199,15 +226,24 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     }
 
     @Override
-    public List<RealtimeTelemetryFrameVO> listRealtimeTelemetryFrames(
+    public PageResult<RealtimeTelemetryFrameVO> pageRealtimeTelemetryFrames(
             String taskId,
-            Long interfaceId) {
+            Long deviceSatelliteId,
+            Integer pageNum,
+            Integer pageSize) {
         // 第一步：任务编号必须明确，防止查询到其他试验任务的数据。
         String normalizedTaskId = requireIoTDBTaskId(taskId);
-        // 第二步：复用字面量转义，由MyBatis映射生成带可选接口条件的查询。
+        // 第二步：校验分页范围，避免一次读取大量原始帧。
+        IoTDBPage page = requireIoTDBPage(pageNum, pageSize);
+        String devicePath = iotdbFrameDevicePath(normalizedTaskId, deviceSatelliteId);
+        // 第三步：所有IoTDB语句通过MyBatis映射生成。
         String sql = frameQueryMapper.realtimeFrames(
-                iotdbTextLiteral(normalizedTaskId), interfaceId);
-        // 第三步：查询完整原始帧及新增的卫星名称、通道编码。
+                devicePath,
+                page.pageSize,
+                page.offset);
+        String countSql = frameQueryMapper.countRealtimeFrames(
+                devicePath);
+        // 第四步：查询当前页完整整帧和中文检查结果。
         List<RealtimeTelemetryFrameVO> result = new ArrayList<>();
         try (SessionDataSetWrapper dataSet =
                      iotdbSessionPool.executeQueryStatement(sql)) {
@@ -216,173 +252,126 @@ public class DataProcessingServiceImpl implements DataProcessingService {
                 Binary raw = iterator.getBlob("raw");
                 RealtimeTelemetryFrameVO item =
                         new RealtimeTelemetryFrameVO();
-                item.setInterfaceId(nullableLong(iterator, "interfaceId"));
+                item.setDeviceSatelliteId(deviceIdFromPath(iterator.getString("Device")));
                 Timestamp time = iterator.getTimestamp("Time");
                 item.setTime(time == null ? null : time.toLocalDateTime());
-                item.setSatelliteCode(iterator.getString("satelliteCode"));
-                // 旧设备可能尚未创建新测点，列缺失或值为空时均返回空值。
-                item.setSatelliteName(dataSet.getColumnNames().contains("satelliteName")
-                        ? iterator.getString("satelliteName") : null);
-                item.setChannelCode(dataSet.getColumnNames().contains("channelCode")
-                        ? iterator.getString("channelCode") : null);
+                item.setDeviceSatelliteName(iterator.getString("deviceSatelliteName"));
+                // 通道名称直接取最终Proto保存的帧级字段。
                 item.setChannelName(iterator.getString("channelName"));
-                item.setRawLength(iterator.getInt("rawLength"));
+                item.setRawLength(raw == null ? 0 : raw.getValues().length);
                 item.setRawFrame(toHex(raw == null ? null : raw.getValues()));
 
-                // 新结构使用布尔检查结果，空值按未知状态返回。
-                TelemetryFrameCheckResult checkResult;
-                if (iterator.isNull("frameCheckStatus")) {
-                    checkResult = TelemetryFrameCheckResult.UNKNOWN;
-                } else {
-                    checkResult = iterator.getBoolean("frameCheckStatus")
-                            ? TelemetryFrameCheckResult.CORRECT
-                            : TelemetryFrameCheckResult.ERROR;
-                }
-                item.setCheckResult(checkResult.getCode());
-                item.setCheckResultName(checkResult.getDescription());
+                // 检查结果直接取新存储结构中的中文字段。
+                item.setCheckResultName(iterator.getString("checkResultName"));
                 result.add(item);
             }
-            return result;
         } catch (Exception ex) {
             throw new IllegalStateException("查询IoTDB实时遥测数据失败", ex);
         }
+        // 第五步：汇总各设备的聚合数量并返回统一分页结构。
+        long total = queryIoTDBTotal(countSql, "查询IoTDB实时遥测总数失败");
+        return new PageResult<RealtimeTelemetryFrameVO>(
+                page.pageNum, page.pageSize, total, result);
     }
 
     @Override
-    public List<ProcessedTelemetryVO> listProcessedTelemetry(
-            String taskId,
-            Long interfaceId) {
-        // 第一步：任务编号必须明确，防止查询到其他试验任务的数据。
-        String normalizedTaskId = requireIoTDBTaskId(taskId);
-        // 第二步：处理后数据排除空参数值，并追加任务和可选采集接口条件。
-        String filter = interfaceFilter(
-                normalizedTaskId, interfaceId, true);
-        // 第三步：查询符合条件的全部处理后参数，不再执行分页和总数统计。
-        String sql = "select interfaceId, satelliteCode, tmName, value, stateName, "
-                + "stateIndex, deduplication, processedAt "
-                + "from root.db.*.tms.*.*.*" + filter
-                + " order by time desc align by device";
-        List<ProcessedTelemetryVO> records = new ArrayList<>();
-        try (SessionDataSetWrapper dataSet =
-                     iotdbSessionPool.executeQueryStatement(sql)) {
-            SessionDataSet.DataIterator iterator = dataSet.iterator();
-            while (iterator.next()) {
-                ProcessedTelemetryVO item = new ProcessedTelemetryVO();
-                item.setInterfaceId(nullableLong(iterator, "interfaceId"));
-                item.setSatelliteId(iterator.getString("satelliteCode"));
-                item.setParameter(iterator.getString("tmName"));
-                item.setParameterValue(normalizeIoTDBValue(
-                        iterator.getObject("value")));
-                item.setStatus(iterator.getString("stateName"));
-                item.setStateIndex(nullableInteger(iterator, "stateIndex"));
-                item.setDeduplication(iterator.getString("deduplication"));
-                long processedAt = iterator.getLong("processedAt");
-                item.setProcessTime(
-                        new Timestamp(processedAt).toLocalDateTime());
-                records.add(item);
-            }
-            return records;
-        } catch (Exception ex) {
-            throw new IllegalStateException("查询IoTDB处理后数据失败", ex);
-        }
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public List<ProcessedTelemetryVO> listProcessedTelemetry(String taskId) {
+        return processedTelemetryQueryService.latest(requireIoTDBTaskId(taskId));
     }
 
-    private static Object normalizeIoTDBValue(Object value) {
-        if (value instanceof Binary) {
-            return ((Binary) value).getStringValue(StandardCharsets.UTF_8);
-        }
-        return value;
-    }
-
+    /** 与最新值使用同一批勾选参数，分别查询各参数的最近曲线点。 */
     @Override
-    public List<InvalidTelemetryFrame> listInvalidTelemetryFrames(
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public List<ProcessedTelemetryCurveVO> listProcessedTelemetryCurves(String taskId) {
+        return processedTelemetryQueryService.curves(requireIoTDBTaskId(taskId));
+    }
+    @Override
+    public PageResult<InvalidTelemetryFrame> pageInvalidTelemetryFrames(
             String taskId,
-            Long interfaceId,
-            String satelliteCode,
-            String channelCode) {
+            Long deviceSatelliteId,
+            Integer pageNum,
+            Integer pageSize) {
         // 第一步：任务编号必须明确，防止查询到其他试验任务的数据。
         String normalizedTaskId = requireIoTDBTaskId(taskId);
-        // 第二步：异常帧和正常帧共用_frame节点，通过检查结果编码筛选异常帧。
-        String filter = invalidFrameFilter(
-                normalizedTaskId, interfaceId, satelliteCode, channelCode);
-        String sql = "select interfaceId, satelliteCode, channelCode, checkResult, "
-                + "rawLength, raw, uniqueCode "
-                + "from root.db.*.tms.*.*._frame" + filter
-                + " order by time desc align by device";
+        // 第二步：校验分页范围并转换全部文本查询条件。
+        IoTDBPage page = requireIoTDBPage(pageNum, pageSize);
+        String devicePath = iotdbFrameDevicePath(normalizedTaskId, deviceSatelliteId);
+        // 第三步：异常帧与正常帧共用_frame节点，只按统一检查结果编码筛选。
+        String sql = frameQueryMapper.invalidFrames(
+                devicePath,
+                page.pageSize,
+                page.offset);
+        String countSql = frameQueryMapper.countInvalidFrames(
+                devicePath);
 
-        // 第三步：将IoTDB查询结果转换为原异常帧接口的数据结构。
+        // 第四步：将IoTDB查询结果转换为异常帧分页记录。
         List<InvalidTelemetryFrame> records = new ArrayList<>();
         try (SessionDataSetWrapper dataSet =
                      iotdbSessionPool.executeQueryStatement(sql)) {
             SessionDataSet.DataIterator iterator = dataSet.iterator();
             while (iterator.next()) {
                 InvalidTelemetryFrame record = new InvalidTelemetryFrame();
-                record.setInterfaceId(nullableLong(iterator, "interfaceId"));
+                record.setDeviceSatelliteId(deviceIdFromPath(iterator.getString("Device")));
                 Timestamp time = iterator.getTimestamp("Time");
                 record.setReceiveTime(
                         time == null ? null : time.toLocalDateTime());
-                record.setSatelliteCode(iterator.getString("satelliteCode"));
-                record.setChannelCode(iterator.getString("channelCode"));
+                record.setDeviceSatelliteName(iterator.getString("deviceSatelliteName"));
+                record.setChannelName(iterator.getString("channelName"));
 
-                // 查询返回的枚举字段统一使用枚举中的中文名称。
-                TelemetryFrameCheckResult checkResult =
-                        TelemetryFrameCheckResult.fromCode(
-                                iterator.getInt("checkResult"));
-                record.setCheckResult(checkResult.getCode());
-                record.setCheckResultName(checkResult.getDescription());
-                record.setRawLength(iterator.getInt("rawLength"));
+                // 检查结果名称直接读取新存储结构中的中文字段。
+                record.setCheckResultName(iterator.getString("checkResultName"));
                 Binary raw = iterator.getBlob("raw");
+                record.setRawLength(raw == null ? 0 : raw.getValues().length);
                 record.setRawFrame(toHex(
                         raw == null ? null : raw.getValues()));
-                record.setUniqueCode(iterator.getString("uniqueCode"));
                 records.add(record);
             }
-
-            return records;
         } catch (Exception exception) {
             throw new IllegalStateException("查询IoTDB异常遥测帧失败", exception);
         }
+        // 第五步：汇总各帧设备的聚合数量并返回统一分页结构。
+        long total = queryIoTDBTotal(countSql, "查询IoTDB异常遥测帧总数失败");
+        return new PageResult<InvalidTelemetryFrame>(
+                page.pageNum, page.pageSize, total, records);
     }
 
-    /** 生成异常帧查询条件，并对文本条件进行转义。 */
-    private String invalidFrameFilter(
-            String taskId,
-            Long interfaceId,
-            String satelliteCode,
-            String channelCode) {
-        StringBuilder filter = new StringBuilder(" where taskId = ")
-                .append(iotdbTextLiteral(taskId))
-                .append(" and checkResult = 2");
-        if (interfaceId != null) {
-            filter.append(" and interfaceId = ").append(interfaceId);
+    /** 汇总IoTDB按设备返回的计数结果。 */
+    private long queryIoTDBTotal(String sql, String errorMessage) {
+        long total = 0L;
+        try (SessionDataSetWrapper dataSet =
+                     iotdbSessionPool.executeQueryStatement(sql)) {
+            SessionDataSet.DataIterator iterator = dataSet.iterator();
+            while (iterator.next()) {
+                // 聚合结果为空时按零处理，避免无数据页面查询报错。
+                if (!iterator.isNull("total")) {
+                    total += iterator.getLong("total");
+                }
+            }
+            return total;
+        } catch (Exception exception) {
+            throw new IllegalStateException(errorMessage, exception);
         }
-        String safeSatelliteCode = trimToNull(satelliteCode);
-        String safeChannelCode = trimToNull(channelCode);
-        if (safeSatelliteCode != null) {
-            filter.append(" and satelliteCode = ")
-                    .append(iotdbTextLiteral(safeSatelliteCode));
-        }
-        if (safeChannelCode != null) {
-            filter.append(" and channelCode = ")
-                    .append(iotdbTextLiteral(safeChannelCode));
-        }
-        return filter.toString();
     }
 
-    /** 生成采集接口筛选条件，处理后参数查询同时排除空值。 */
-    private String interfaceFilter(
-            String taskId,
-            Long interfaceId,
-            boolean requireValue) {
-        StringBuilder filter = new StringBuilder(" where taskId = ")
-                .append(iotdbTextLiteral(taskId));
-        if (requireValue) {
-            filter.append(" and value is not null");
+    /** 校验IoTDB页面查询的页码和每页数量。 */
+    private IoTDBPage requireIoTDBPage(
+            Integer pageNum,
+            Integer pageSize) {
+        int normalizedPageNum = pageNum == null ? 1 : pageNum;
+        int normalizedPageSize = pageSize == null ? 20 : pageSize;
+        if (normalizedPageNum < 1) {
+            throw new IllegalArgumentException("页码不能小于1");
         }
-        if (interfaceId != null) {
-            filter.append(" and interfaceId = ").append(interfaceId);
+        if (normalizedPageSize < 1
+                || normalizedPageSize > MAX_IOTDB_PAGE_SIZE) {
+            throw new IllegalArgumentException("每页数量必须在1到200之间");
         }
-        return filter.toString();
+        // 使用长整型计算偏移量，避免较大页码发生整数溢出。
+        long offset = (long) (normalizedPageNum - 1)
+                * normalizedPageSize;
+        return new IoTDBPage(
+                normalizedPageNum, normalizedPageSize, offset);
     }
 
     /** 校验并规范化IoTDB查询使用的外部任务编号。 */
@@ -394,27 +383,42 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         return normalizedTaskId;
     }
 
-    /** 读取允许为空的IoTDB长整型测点。 */
-    private Long nullableLong(
-            SessionDataSet.DataIterator iterator,
-            String columnName) throws Exception {
-        return iterator.isNull(columnName)
-                ? null : iterator.getLong(columnName);
+    /** 构造实时帧和异常帧查询使用的设备路径。 */
+    private String iotdbFrameDevicePath(
+            String taskId,
+            Long deviceSatelliteId) {
+        // 整帧始终位于遥测类型节点下的_frame设备。
+        return iotdbTaskDevicePrefix(taskId, deviceSatelliteId)
+                + ".tms.*._frame";
     }
 
-    /** 读取允许为空的IoTDB整型测点。 */
-    private Integer nullableInteger(
-            SessionDataSet.DataIterator iterator,
-            String columnName) throws Exception {
-        return iterator.isNull(columnName)
-                ? null : iterator.getInt(columnName);
+    /** 构造所有查询共用的任务和设备卫星路径前缀。 */
+    private String iotdbTaskDevicePrefix(
+            String taskId,
+            Long deviceSatelliteId) {
+        if (deviceSatelliteId != null && deviceSatelliteId <= 0) {
+            throw new IllegalArgumentException("设备卫星主键必须大于零");
+        }
+        String deviceNode = deviceSatelliteId == null
+                ? "*" : IoTDBPathTool.prefixedPathNode(
+                        "device_", String.valueOf(deviceSatelliteId), "unknown_device");
+        return "root.db."
+                + IoTDBPathTool.prefixedPathNode(
+                        "task_", taskId, "unknown_task")
+                + "." + deviceNode;
     }
 
-    /** 将查询文本转换为安全的IoTDB字符串字面量。 */
-    private String iotdbTextLiteral(String value) {
-        String escaped = value.replace("\\", "\\\\")
-                .replace("'", "\\'");
-        return "'" + escaped + "'";
+    /** 从IoTDB设备路径中提取设备卫星主键。 */
+    private Long deviceIdFromPath(String path) {
+        if (path == null) {
+            return null;
+        }
+        for (String node : path.split("\\.")) {
+            if (node.startsWith("device_") && node.substring(7).matches("[0-9]+")) {
+                return Long.valueOf(node.substring(7));
+            }
+        }
+        return null;
     }
 
     private static String toHex(byte[] data) {
@@ -429,6 +433,23 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             result.append(String.format("%02X", data[i] & 0xFF));
         }
         return result.toString();
+    }
+
+    /** IoTDB页面查询使用的已校验分页参数。 */
+    private static final class IoTDBPage {
+        /** 当前页码。 */
+        private final int pageNum;
+        /** 每页记录数。 */
+        private final int pageSize;
+        /** 当前页起始偏移量。 */
+        private final long offset;
+
+        /** 保存一次查询所需的分页参数。 */
+        private IoTDBPage(int pageNum, int pageSize, long offset) {
+            this.pageNum = pageNum;
+            this.pageSize = pageSize;
+            this.offset = offset;
+        }
     }
 
     private static String trimToNull(String value) {
@@ -545,6 +566,27 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         return parseRuleMapper.findAllByTaskId(taskId, deviceSatelliteId);
     }
 
+    /** 参数解析配置使用数据库分页，系统筛选包含所选系统的后代。 */
+    @Override
+    public PageResult<TelemetryParseRuleConfig> pageParseRules(String taskId,
+            Long deviceSatelliteId, Long systemId, Integer pageNum, Integer pageSize) {
+        requireDevice(taskId, deviceSatelliteId);
+        if (systemId != null && systemMapper.findActive(taskId, deviceSatelliteId, systemId) == null) {
+            throw new IllegalArgumentException("当前设备下不存在有效的所属系统");
+        }
+        int normalizedPageNum = pageNum == null ? 1 : pageNum;
+        int normalizedPageSize = pageSize == null ? 20 : pageSize;
+        if (normalizedPageNum < 1 || normalizedPageSize < 1 || normalizedPageSize > 200) {
+            throw new IllegalArgumentException("页码或每页数量不正确");
+        }
+        long total = parseRuleMapper.countPage(taskId, deviceSatelliteId, systemId);
+        List<TelemetryParseRuleConfig> records = total == 0
+                ? new ArrayList<>() : parseRuleMapper.findPage(taskId, deviceSatelliteId,
+                        systemId, normalizedPageSize,
+                        (long) (normalizedPageNum - 1) * normalizedPageSize);
+        return new PageResult<>(normalizedPageNum, normalizedPageSize, total, records);
+    }
+
     /** 先校验全部Excel页签或TXT内容，再原子替换当前任务内的同类型设备及参数。 */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -559,29 +601,103 @@ public class DataProcessingServiceImpl implements DataProcessingService {
                 workbookParser.parse(taskId, fileName, content);
         // 第一步：锁定替换过程，防止并发导入或编辑留下多套有效记录。
         lockTask(taskId);
+        // 第二步：保留同名工作表的设备主键，阻止移除仍被有效协议引用的设备。
+        Map<String, DeviceSatellite> existing = new HashMap<>();
+        for (DeviceSatellite device : deviceSatelliteMapper.findByType(taskId, type)) {
+            existing.put(device.getCode(), device);
+        }
+        assertUnreferencedDevices(taskId, sheets.keySet(), existing);
         parseRuleMapper.deleteByType(taskId, type);
+        systemMapper.deleteByType(taskId, type);
         deviceSatelliteMapper.deleteByType(taskId, type);
         int count = 0;
-        // 第二步：每页先生成设备主键，再批量保存这一页的全部参数。
+        // 第三步：逐页复用设备主键，按首次出现顺序建立所属系统层级。
         for (Map.Entry<String, List<TelemetryParseRuleConfig>> sheet : sheets.entrySet()) {
-            DeviceSatellite device = new DeviceSatellite();
-            device.setTaskId(taskId);
-            device.setType(type);
-            device.setCode(sheet.getKey());
-            device.setName(sheet.getKey());
-            deviceSatelliteMapper.insert(device);
+            DeviceSatellite device = existing.get(sheet.getKey());
+            if (device == null) {
+                device = new DeviceSatellite();
+                device.setTaskId(taskId);
+                device.setType(type);
+                device.setCode(sheet.getKey());
+                device.setName(sheet.getKey());
+                deviceSatelliteMapper.insert(device);
+            } else {
+                deviceSatelliteMapper.restore(taskId, device.getId());
+            }
             List<TelemetryParseRuleConfig> rules = sheet.getValue();
+            Map<String, Long> systemIds = new HashMap<>();
+            int order = 0;
             for (TelemetryParseRuleConfig rule : rules) {
                 rule.setDeviceSatelliteId(device.getId());
+                // 空所属系统保持空主键，其他路径逐段复用当前父节点下的系统。
+                String path = rule.getSystemName();
+                if (path == null || path.trim().isEmpty() || "-".equals(path.trim())
+                        || "—".equals(path.trim())) {
+                    rule.setSystemName(null);
+                    continue;
+                }
+                long parentId = 0L;
+                StringBuilder key = new StringBuilder();
+                for (String component : path.split("\\\\")) {
+                    String name = component.trim();
+                    if (name.isEmpty()) {
+                        throw new IllegalArgumentException("所属系统路径包含空层级：" + path);
+                    }
+                    key.append(parentId).append('\u0000').append(name);
+                    Long systemId = systemIds.get(key.toString());
+                    if (systemId == null) {
+                        TelemetrySystemConfig system = new TelemetrySystemConfig();
+                        system.setTaskId(taskId);
+                        system.setDeviceSatelliteId(device.getId());
+                        system.setParentId(parentId);
+                        system.setSystemName(name);
+                        system.setSortOrder(++order);
+                        systemMapper.insert(system);
+                        systemId = system.getId();
+                        systemIds.put(key.toString(), systemId);
+                    }
+                    parentId = systemId;
+                    key.setLength(0);
+                }
+                rule.setSystemId(parentId);
             }
             for (int start = 0; start < rules.size(); start += IMPORT_BATCH_SIZE) {
                 parseRuleMapper.batchInsert(rules.subList(start, Math.min(start + IMPORT_BATCH_SIZE, rules.size())));
             }
             count += rules.size();
         }
-        // 第三步：同步当前任务的可视化配置，任何一步失败都回滚本次替换。
+        // 第四步：同步页面参数，运行接口快照保持不变直到下一次接口同步。
         parameterSyncService.synchronizeTaskParameters(taskId);
+        selectionMapper.removeMissing(taskId, type);
         return count;
+    }
+
+    /** 仍被有效协议引用的工作表不能从本次全量导入中移除。 */
+    private void assertUnreferencedDevices(String taskId, Set<String> sheets,
+                                            Map<String, DeviceSatellite> existing) {
+        Set<Long> removedIds = new HashSet<>();
+        for (Map.Entry<String, DeviceSatellite> entry : existing.entrySet()) {
+            if (!sheets.contains(entry.getKey())) {
+                removedIds.add(entry.getValue().getId());
+            }
+        }
+        if (removedIds.isEmpty()) {
+            return;
+        }
+        for (CollectProtocolConfig protocol : protocolMapper.findAllByTaskId(taskId)) {
+            if (protocol.getConfigParams() == null || protocol.getConfigParams().trim().isEmpty()) {
+                continue;
+            }
+            try {
+                JsonNode root = objectMapper.readTree(protocol.getConfigParams());
+                JsonNode id = root == null ? null : root.get("deviceSatelliteId");
+                if (id != null && removedIds.contains(id.asLong())) {
+                    throw new IllegalArgumentException("导入文件缺少协议配置正在使用的设备卫星：" + id.asLong());
+                }
+            } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
+                throw new IllegalArgumentException("协议配置参数格式不正确，无法执行替换导入", exception);
+            }
+        }
     }
 
     /** 设备卫星必须属于当前任务且未删除。 */

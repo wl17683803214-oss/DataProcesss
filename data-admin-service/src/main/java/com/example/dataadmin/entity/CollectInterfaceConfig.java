@@ -33,10 +33,12 @@ public class CollectInterfaceConfig {
     /** 详情展示使用的协议配置名称，不参与新增和修改入库。 */
     private String protocolConfigName;
 
-    /** 主机IP地址。 */
+    /** 数据处理服务本机监听网卡IP地址。 */
     private String host;
-    /** 端口号。 */
+    /** 数据处理服务本机监听端口。 */
     private Integer port;
+    /** UDP组播地址，为空时按单播接收。 */
+    private String multicastIp;
     /** 状态：0离线 1在线。 */
     private Integer status;
     /** 启用状态：0禁用 1启用。 */
@@ -166,6 +168,14 @@ public class CollectInterfaceConfig {
 
     public void setPort(Integer port) {
         this.port = port;
+    }
+
+    public String getMulticastIp() {
+        return multicastIp;
+    }
+
+    public void setMulticastIp(String multicastIp) {
+        this.multicastIp = multicastIp;
     }
 
     public Integer getStatus() {

@@ -75,6 +75,6 @@ Swagger 调试页面：
 
 在 Swagger 页面先调用登录接口获取 Token，再点击右上角 `Authorize`，仅填写 Token 本身即可调试其他接口，无需重复输入 `Bearer` 前缀。
 
-完整接口说明参见 `docs/API.md`，逐接口入参与出参示例参见 `docs/API-EXAMPLES.md`，Apifox 可导入 `docs/apifox-openapi.yaml`。
+完整接口说明参见 `docs/API.md`，逐接口入参与出参示例参见 `docs/API-EXAMPLES.md`，本系统接口可导入 Apifox 文件 `docs/apifox-openapi.yaml`，交互系统心跳上报接口可单独导入 `docs/apifox-interaction-heartbeat.yaml`。
 
 系统左侧导航页面由 `sql/system.sql` 预置到 `dp_menu`，角色通过后台接口绑定可见页面；暂未提供页面自身的增删改查接口。

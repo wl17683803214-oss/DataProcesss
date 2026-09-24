@@ -17,7 +17,7 @@ public interface ProtocolHandler {
     /** 为一个UDP采集接口创建独立协议会话。 */
     UdpSession createUdpSession(
             CollectInterfaceRuntimeConfig config,
-            UdpTool.UnicastEndpoint endpoint);
+            UdpTool.DatagramEndpoint endpoint);
 
     /** 为一个TCP采集接口创建独立协议会话。 */
     TcpSession createTcpSession(CollectInterfaceRuntimeConfig config);

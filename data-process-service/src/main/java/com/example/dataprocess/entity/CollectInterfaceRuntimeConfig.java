@@ -1,7 +1,10 @@
 package com.example.dataprocess.entity;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.List;
+import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 
 /** 数据处理服务运行采集接口所需的配置快照。 */
 public class CollectInterfaceRuntimeConfig {
@@ -16,6 +19,8 @@ public class CollectInterfaceRuntimeConfig {
     private String host;
     /** 采集接口本机监听端口。 */
     private Integer port;
+    /** UDP组播地址，为空时按单播接收。 */
+    private String multicastIp;
     /** 传输方式：1UDP、2TCP、3HTTP。 */
     private Integer transferType;
     /** 传输协议：1JSON、2PDXP、3Protobuf、4FEP。 */
@@ -29,6 +34,35 @@ public class CollectInterfaceRuntimeConfig {
 
     /** 协议动态配置参数。 */
     private String protocolConfigParams;
+    /** PDXP协议关联的设备卫星主键。 */
+    private volatile Long deviceSatelliteId;
+    /** 导入工作表对应的设备卫星名称。 */
+    private volatile String deviceSatelliteName;
+    /** 接口启动时加载的参数解析配置快照。 */
+    private volatile List<PdxpProtocolField> pdxpFields = Collections.emptyList();
+
+    public Long getDeviceSatelliteId() { return deviceSatelliteId; }
+    public void setDeviceSatelliteId(Long deviceSatelliteId) { this.deviceSatelliteId = deviceSatelliteId; }
+    public String getDeviceSatelliteName() { return deviceSatelliteName; }
+    public void setDeviceSatelliteName(String name) { this.deviceSatelliteName = name; }
+    public List<PdxpProtocolField> getPdxpFields() { return pdxpFields; }
+    public void setPdxpFields(List<PdxpProtocolField> fields) {
+        this.pdxpFields = fields == null ? Collections.emptyList()
+                : Collections.unmodifiableList(new java.util.ArrayList<>(fields));
+    }
+    /** 提交采集任务前加载的卫星名称快照，按卫星编码索引。 */
+    private volatile Map<String, BaselineSatelliteInfo> baselineSatellites = Collections.emptyMap();
+
+    /** 获取采集和处理线程共用的只读目录。 */
+    public Map<String, BaselineSatelliteInfo> getBaselineSatellites() {
+        return baselineSatellites;
+    }
+
+    /** 原子替换快照，避免跨线程读取正在修改的目录。 */
+    public void setBaselineSatellites(Map<String, BaselineSatelliteInfo> satellites) {
+        baselineSatellites = satellites == null ? Collections.emptyMap()
+                : Collections.unmodifiableMap(new LinkedHashMap<>(satellites));
+    }
     /** 当前任务按校准公式索引的有效校准通道配置。 */
     private volatile Map<String, CalibrationChannelRuntimeConfig>
             calibrationConfigMap = Collections.emptyMap();
@@ -71,6 +105,14 @@ public class CollectInterfaceRuntimeConfig {
 
     public void setPort(Integer port) {
         this.port = port;
+    }
+
+    public String getMulticastIp() {
+        return multicastIp;
+    }
+
+    public void setMulticastIp(String multicastIp) {
+        this.multicastIp = multicastIp;
     }
 
     public Integer getTransferType() {
@@ -140,6 +182,7 @@ public class CollectInterfaceRuntimeConfig {
                 && same(host, other.host)
                 && same(taskId, other.taskId)
                 && same(port, other.port)
+                && same(multicastIp, other.multicastIp)
                 && same(transferType, other.transferType)
                 && same(transferProtocol, other.transferProtocol)
                 && same(rpcEnabled, other.rpcEnabled)

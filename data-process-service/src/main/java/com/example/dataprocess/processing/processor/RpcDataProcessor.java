@@ -1,7 +1,11 @@
 package com.example.dataprocess.processing.processor;
 
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
+import SatDataCenter.DataExchange.TmTc.Version.ExchangeTopicType;
+import SatDataCenter.DataExchange.TmTc.Version.ProtoHeadInfo;
+import SatDataCenter.DataExchange.TmTc.Version.SubTopicName;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
+import com.example.dataprocess.entity.BaselineSatelliteInfo;
 import com.example.dataprocess.protocol.rpc.ProtocolConfigParser;
 import com.example.dataprocess.protocol.rpc.RpcProtocolField;
 import com.example.dataprocess.protocol.rpc.TelemetryRpcClient;
@@ -111,7 +115,24 @@ public class RpcDataProcessor implements DataProcessor {
         try {
             // 第六步：解析完整遥测消息并记录本帧远程处理完成信息。
             TelemetryMessage result = TelemetryMessage.parseFrom(responseData);
-            // TODO RPC返回的通道名称为空时，后续通过接口使用任务主键和通道编码查询通道名称并补入消息。
+            // 使用本次处理时间直接组装RPC返回消息的协议头。
+            Instant messageTime = Instant.now();
+            ProtoHeadInfo protoHead = ProtoHeadInfo.newBuilder()
+                    .setTopicType(ExchangeTopicType.TEST_DATA_TYPE)
+                    .setBussiness(SubTopicName.DATA_SAT_PHYVALUE)
+                    .setMsgTime(Timestamp.newBuilder()
+                            .setSeconds(messageTime.getEpochSecond())
+                            .setNanos(messageTime.getNano()))
+                    .setTaskId(config.getTaskId())
+                    .setMsgSource("数据处理")
+                    .build();
+            // IoTDB整帧原码统一使用已经拆出的数据域，不依赖RPC返回的原码格式。
+            result = result.toBuilder()
+                    .setProtoHead(protoHead)
+                    .setFrameRawData(ByteString.copyFrom(data))
+                    .build();
+            // 按返回消息的编码匹配采集启动前加载的卫星和通道名称。
+            result = fillNames(config, result);
             long elapsedMillis =
                     (System.nanoTime() - startNanos) / 1_000_000L;
             LOGGER.info(
@@ -138,5 +159,34 @@ public class RpcDataProcessor implements DataProcessor {
                 packet.getSendDate(), LocalTime.MIDNIGHT)
                 .plus(packet.getTimeSinceMidnight());
         return sendTime.toInstant(ZoneOffset.ofHours(8));
+    }
+
+    /** 按返回消息编码匹配卫星和通道，缺失的名称保留原值。 */
+    private TelemetryMessage fillNames(
+            CollectInterfaceRuntimeConfig config, TelemetryMessage message) {
+        // 第一步：只按返回的卫星编码定位目录，不使用请求编码替代返回编码。
+        BaselineSatelliteInfo satellite = config.getBaselineSatellites()
+                .get(message.getSatCode().trim());
+        if (satellite == null) {
+            LOGGER.warn("远程结果未匹配基线卫星，接口编号：{}，卫星编码：{}",
+                    config.getInterfaceId(), message.getSatCode());
+            return message;
+        }
+        TelemetryMessage.Builder builder = message.toBuilder();
+        if (!satellite.getSatelliteName().trim().isEmpty()) {
+            builder.setSatName(satellite.getSatelliteName());
+        } else {
+            LOGGER.warn("基线卫星名称为空，接口编号：{}，卫星编码：{}",
+                    config.getInterfaceId(), message.getSatCode());
+        }
+        // 第二步：只在命中卫星自己的通道列表中查找，不跨卫星匹配通道。
+        String channelName = satellite.getChannelNames().get(message.getChannelCode().trim());
+        if (channelName != null && !channelName.trim().isEmpty()) {
+            builder.setChannelName(channelName);
+        } else {
+            LOGGER.warn("远程结果未匹配基线通道名称，接口编号：{}，卫星编码：{}，通道编码：{}",
+                    config.getInterfaceId(), message.getSatCode(), message.getChannelCode());
+        }
+        return builder.build();
     }
 }

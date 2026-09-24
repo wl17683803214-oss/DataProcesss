@@ -11,6 +11,7 @@ import com.example.dataadmin.enums.BusinessEnums;
 import com.example.dataadmin.enums.EnumData;
 import com.example.dataadmin.mapper.CollectInterfaceConfigMapper;
 import com.example.dataadmin.mapper.CollectProtocolConfigMapper;
+import com.example.dataadmin.mapper.DeviceSatelliteMapper;
 import com.example.dataadmin.mapper.SysRuntimeLogMapper;
 import com.example.dataadmin.service.CollectInterfaceRuntimeSyncService;
 import com.example.dataadmin.service.DataCollectionService;
@@ -21,12 +22,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 /**
  * 数据采集业务实现。
@@ -40,12 +45,16 @@ public class DataCollectionServiceImpl implements DataCollectionService {
 
     private static final int DEFAULT_EVENT_LIMIT = 20;
     private static final int MAX_EVENT_LIMIT = 100;
+    /** UDP传输方式编码。 */
+    private static final int TRANSFER_TYPE_UDP = 1;
 
     /** 采集接口数据访问组件。 */
     private final CollectInterfaceConfigMapper interfaceMapper;
 
     /** 协议配置数据访问组件。 */
     private final CollectProtocolConfigMapper protocolMapper;
+    /** 校验PDXP协议引用的设备卫星。 */
+    private final DeviceSatelliteMapper deviceSatelliteMapper;
 
     /** 系统运行日志数据访问组件。 */
     private final SysRuntimeLogMapper runtimeLogMapper;
@@ -56,17 +65,30 @@ public class DataCollectionServiceImpl implements DataCollectionService {
     /** 采集接口运行任务同步组件。 */
     private final CollectInterfaceRuntimeSyncService interfaceRuntimeSyncService;
 
+    @Autowired
     public DataCollectionServiceImpl(
             CollectInterfaceConfigMapper interfaceMapper,
             CollectProtocolConfigMapper protocolMapper,
+            DeviceSatelliteMapper deviceSatelliteMapper,
             SysRuntimeLogMapper runtimeLogMapper,
             ObjectMapper objectMapper,
             CollectInterfaceRuntimeSyncService interfaceRuntimeSyncService) {
         this.interfaceMapper = interfaceMapper;
         this.protocolMapper = protocolMapper;
+        this.deviceSatelliteMapper = deviceSatelliteMapper;
         this.runtimeLogMapper = runtimeLogMapper;
         this.objectMapper = objectMapper;
         this.interfaceRuntimeSyncService = interfaceRuntimeSyncService;
+    }
+
+    /** 保留既有离线构造入口，运行环境使用包含设备校验组件的构造器。 */
+    DataCollectionServiceImpl(CollectInterfaceConfigMapper interfaceMapper,
+            CollectProtocolConfigMapper protocolMapper,
+            SysRuntimeLogMapper runtimeLogMapper,
+            ObjectMapper objectMapper,
+            CollectInterfaceRuntimeSyncService interfaceRuntimeSyncService) {
+        this(interfaceMapper, protocolMapper, null, runtimeLogMapper,
+                objectMapper, interfaceRuntimeSyncService);
     }
 
     @Override
@@ -155,7 +177,8 @@ public class DataCollectionServiceImpl implements DataCollectionService {
                     current.getId(),
                     current.getTransferType(),
                     current.getHost(),
-                    current.getPort());
+                    current.getPort(),
+                    current.getMulticastIp());
         }
         if (interfaceMapper.updateEnabled(id, enabled) == 0) {
             throw new IllegalArgumentException("采集接口启用状态修改失败");
@@ -200,6 +223,8 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         if (protocolMapper.update(config) == 0) {
             throw new IllegalArgumentException("协议配置修改失败");
         }
+        // 修改正在使用的PDXP设备主键后，提交成功再刷新处理服务的字段快照。
+        interfaceRuntimeSyncService.syncAfterCommit();
     }
 
     @Override
@@ -257,6 +282,8 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         config.setHost(request.getHost() == null
                 ? null : request.getHost().trim());
         config.setPort(request.getPort());
+        // 空组播地址统一保存为null，避免重复校验受到空字符串影响。
+        config.setMulticastIp(trimToNull(request.getMulticastIp()));
         config.setStatus(request.getStatus() == null ? 1 : request.getStatus());
         config.setEnabled(request.getEnabled() == null ? 1 : request.getEnabled());
         // RPC处理默认关闭，避免接口创建后在RPC定义不完整时误调用。
@@ -279,6 +306,8 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         // RPC开关与通用启用开关复用相同的枚举取值。
         validateEnabled(request.getRpcEnabled() == null
                 ? 0 : request.getRpcEnabled());
+        // 只有UDP接口允许配置组播地址，有值时必须属于IP组播范围。
+        validateMulticastIp(request.getTransferType(), request.getMulticastIp());
         Integer status = request.getStatus() == null ? 1 : request.getStatus();
         if (status < 0 || status > 2) {
             throw new IllegalArgumentException("接口状态只能为0、1或2");
@@ -297,6 +326,31 @@ public class DataCollectionServiceImpl implements DataCollectionService {
             Long id,
             ProtocolSaveRequest request) {
         validateEnabled(request.getEnabled() == null ? 1 : request.getEnabled());
+        Map<String, Object> storedParams = request.getConfigParams();
+        // PDXP字段改为设备卫星主键，创建和修改都必须验证任务范围。
+        Map<String, Object> params = request.getConfigParams();
+        Object value = params == null ? null : params.get("deviceSatelliteId");
+        if (BusinessEnums.ProtocolType.PDXP.getValue().equals(request.getProtocolType())
+                || value != null) {
+            Long deviceId;
+            try {
+                deviceId = value == null ? null : Long.valueOf(value.toString());
+            } catch (NumberFormatException exception) {
+                throw new IllegalArgumentException("设备卫星主键格式不正确", exception);
+            }
+            if (deviceId == null || deviceSatelliteMapper.findActive(
+                    request.getTaskId(), deviceId) == null) {
+                throw new IllegalArgumentException("协议必须选择当前任务下有效的设备卫星");
+            }
+            if (BusinessEnums.ProtocolType.PDXP.getValue().equals(request.getProtocolType())) {
+                // PDXP本地配置只保留包头和设备主键，RPC配置继续保留fields。
+                storedParams = new LinkedHashMap<>();
+                if (params.containsKey("pdxphead")) {
+                    storedParams.put("pdxphead", params.get("pdxphead"));
+                }
+                storedParams.put("deviceSatelliteId", deviceId);
+            }
+        }
         CollectProtocolConfig config = new CollectProtocolConfig();
         config.setId(id);
         config.setTaskId(request.getTaskId());
@@ -304,7 +358,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         config.setProtocolType(request.getProtocolType());
         config.setDataSourceType(request.getDataSourceType());
         config.setConfigDesc(request.getConfigDesc());
-        config.setConfigParams(writeConfigParams(request.getConfigParams()));
+        config.setConfigParams(writeConfigParams(storedParams));
         config.setParserClass(request.getParserClass());
         config.setEnabled(request.getEnabled() == null ? 1 : request.getEnabled());
         return config;
@@ -391,24 +445,55 @@ public class DataCollectionServiceImpl implements DataCollectionService {
                 config.getId(),
                 config.getTransferType(),
                 config.getHost(),
-                config.getPort());
+                config.getPort(),
+                config.getMulticastIp());
     }
 
-    /** 校验同一传输方式、监听地址和端口没有被其他启用接口占用。 */
+    /** 校验相同监听配置没有被其他启用接口占用。 */
     private void validateEndpointAvailable(
             Long excludeId,
             Integer transferType,
             String host,
-            Integer port) {
+            Integer port,
+            String multicastIp) {
         // 查询覆盖全部任务，因为所有接口最终由同一个数据处理服务绑定端口。
         long conflictCount = interfaceMapper.countEnabledEndpointConflicts(
                 transferType,
                 host,
                 port,
+                multicastIp,
                 excludeId);
         if (conflictCount > 0) {
             throw new IllegalArgumentException(
-                    "相同传输方式、监听地址和端口的采集接口已经启用");
+                    "相同传输方式、监听地址、端口和组播地址的采集接口已经启用");
         }
+    }
+
+    /** 校验可选组播地址，并限制组播仅用于UDP采集接口。 */
+    private void validateMulticastIp(
+            Integer transferType,
+            String multicastIp) {
+        String normalizedMulticastIp = trimToNull(multicastIp);
+        if (normalizedMulticastIp == null) {
+            return;
+        }
+        if (!Integer.valueOf(TRANSFER_TYPE_UDP).equals(transferType)) {
+            throw new IllegalArgumentException("只有UDP采集接口可以配置组播地址");
+        }
+        try {
+            // 地址解析后必须处于IP协议规定的组播地址范围。
+            InetAddress address = InetAddress.getByName(normalizedMulticastIp);
+            if (!address.isMulticastAddress()) {
+                throw new IllegalArgumentException("组播地址不合法");
+            }
+        } catch (UnknownHostException exception) {
+            throw new IllegalArgumentException("组播地址不合法");
+        }
+    }
+
+    /** 清理可选字符串两端空白，空内容统一转为null。 */
+    private String trimToNull(String value) {
+        return value == null || value.trim().isEmpty()
+                ? null : value.trim();
     }
 }

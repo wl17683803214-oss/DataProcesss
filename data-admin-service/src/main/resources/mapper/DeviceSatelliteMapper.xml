@@ -25,6 +25,19 @@
         from device_satellite
         where task_id = #{taskId} and id = #{id} and is_deleted = 0
     </select>
+    <!-- 复用当前任务、当前类型工作表对应的设备主键。 -->
+    <select id="findByType" resultType="com.example.dataadmin.entity.DeviceSatellite">
+        select id, task_id, code, name, type, is_deleted, create_time, update_time
+        from device_satellite
+        where task_id = #{taskId} and type = #{type} and is_deleted = 0
+        order by id
+    </select>
+    <!-- 替换导入时恢复仍存在的设备，避免协议配置中的设备主键失效。 -->
+    <update id="restore">
+        update device_satellite
+        set is_deleted = 0, update_time = current_timestamp
+        where task_id = #{taskId} and id = #{id}
+    </update>
     <!-- 逐页插入以获得用于参数关联的主键。 -->
     <insert id="insert">
         <selectKey keyProperty="id" resultType="long" order="BEFORE">

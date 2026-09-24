@@ -5,7 +5,7 @@
     <!-- 参数配置查询字段，统一使用表别名避免关联查询字段歧义。 -->
     <sql id="columns">
         rule_config.id, rule_config.task_id,
-        rule_config.device_satellite_id, rule_config.table_index,
+        rule_config.device_satellite_id, rule_config.system_id, rule_config.table_index,
         rule_config.bit_width, rule_config.telemetry_name,
         rule_config.telemetry_code, rule_config.formula_type,
         rule_config.formula_desc, rule_config.process_param,
@@ -33,12 +33,95 @@
           and rule_config.is_deleted = 0
         order by rule_config.id
     </select>
+    <!-- 仅在指定系统时递归匹配其后代，避免全设备列表扫描。 -->
+    <sql id="systemFilter">
+        <if test="systemId != null">
+            and rule_config.system_id in (
+                with recursive descendants(id) as (
+                    select id from telemetry_system_config
+                    where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+                      and id = #{systemId} and is_deleted = 0
+                    union all
+                    select child.id from telemetry_system_config child
+                    inner join descendants parent on child.parent_id = parent.id
+                    where child.task_id = #{taskId}
+                      and child.device_satellite_id = #{deviceSatelliteId}
+                      and child.is_deleted = 0
+                )
+                select id from descendants
+            )
+        </if>
+    </sql>
+    <!-- 统计分页总数。 -->
+    <select id="countPage" resultType="long">
+        select count(rule_config.id)
+        from telemetry_parse_rule_config rule_config
+        where rule_config.task_id = #{taskId}
+          and rule_config.device_satellite_id = #{deviceSatelliteId}
+          and rule_config.is_deleted = 0
+          <include refid="systemFilter"/>
+    </select>
+    <!-- 只返回当前分页，不把设备的几十万条参数全部加载到内存。 -->
+    <select id="findPage" resultType="com.example.dataadmin.entity.TelemetryParseRuleConfig">
+        select <include refid="columns"/>
+        from telemetry_parse_rule_config rule_config
+        where rule_config.task_id = #{taskId}
+          and rule_config.device_satellite_id = #{deviceSatelliteId}
+          and rule_config.is_deleted = 0
+          <include refid="systemFilter"/>
+        order by rule_config.id limit #{limit} offset #{offset}
+    </select>
+
+    <!-- 只加载当前展开层级直属参数，不展开后代系统。 -->
+    <select id="findDirectBySystem" resultType="com.example.dataadmin.entity.TelemetryParseRuleConfig">
+        select <include refid="columns"/>
+        from telemetry_parse_rule_config rule_config
+        where rule_config.task_id = #{taskId}
+          and rule_config.device_satellite_id = #{deviceSatelliteId}
+          and rule_config.is_deleted = 0
+        <choose>
+            <when test="systemId != null">and rule_config.system_id = #{systemId}</when>
+            <otherwise>and rule_config.system_id is null</otherwise>
+        </choose>
+        order by rule_config.id
+    </select>
+    <!-- 勾选保存前校验参数仍属于当前任务的有效设备。 -->
+    <select id="findActiveById" resultType="com.example.dataadmin.entity.TelemetryParseRuleConfig">
+        select <include refid="columns"/>
+        from telemetry_parse_rule_config rule_config
+        inner join device_satellite device
+          on device.id = rule_config.device_satellite_id
+         and device.task_id = rule_config.task_id and device.is_deleted = 0
+        where rule_config.task_id = #{taskId} and rule_config.id = #{id}
+          and rule_config.is_deleted = 0
+    </select>
+
+    <!-- 搜索只扫描有效参数，联结勾选状态后按设备和遥测代号返回。 -->
+    <select id="searchByTelemetryCode" resultType="com.example.dataadmin.entity.TelemetryFilterSearchRecord">
+        select rule_config.id, rule_config.device_satellite_id,
+               device.name as device_satellite_name,
+               rule_config.telemetry_name, rule_config.telemetry_code,
+               case when selection.id is null then false else true end as checked
+        from telemetry_parse_rule_config rule_config
+        inner join device_satellite device
+          on device.id = rule_config.device_satellite_id
+         and device.task_id = rule_config.task_id and device.is_deleted = 0
+        left join processed_telemetry_filter_selection selection
+          on selection.task_id = rule_config.task_id
+         and selection.device_satellite_id = rule_config.device_satellite_id
+         and selection.telemetry_code = rule_config.telemetry_code
+         and selection.is_deleted = 0
+        where rule_config.task_id = #{taskId} and rule_config.is_deleted = 0
+          and rule_config.telemetry_code like #{codePrefix} escape '\'
+        order by rule_config.device_satellite_id, rule_config.telemetry_code
+    </select>
 
     <!-- Excel导入按批次写入某个工作表的全部字符串字段。 -->
     <insert id="batchInsert">
         insert into telemetry_parse_rule_config (
             task_id,
             device_satellite_id,
+            system_id,
             table_index,
             bit_width,
             telemetry_name,
@@ -62,6 +145,7 @@
         <foreach collection="list" item="item" separator=",">
             (#{item.taskId,jdbcType=VARCHAR},
              #{item.deviceSatelliteId,jdbcType=BIGINT},
+             #{item.systemId,jdbcType=BIGINT},
              #{item.tableIndex,jdbcType=VARCHAR},
              #{item.bitWidth,jdbcType=VARCHAR},
              #{item.telemetryName,jdbcType=VARCHAR},

@@ -80,7 +80,7 @@ public class PdxpProtocolHandler implements ProtocolHandler {
     @Override
     public UdpSession createUdpSession(
             CollectInterfaceRuntimeConfig config,
-            UdpTool.UnicastEndpoint endpoint) {
+            UdpTool.DatagramEndpoint endpoint) {
         return packet -> submit(config, packet.getData(), "UDP");
     }
 
@@ -149,7 +149,6 @@ public class PdxpProtocolHandler implements ProtocolHandler {
     private void handleNormalPacket(
             CollectInterfaceRuntimeConfig config,
             PdxpParser.PdxpPacket packet) {
-        boolean stored = false;
         try {
             // 第一步：拆分自定义数据、遥测原始数据和遥测帧头。
             PdxpDataPayload payload = PdxpDataPayloadParser.parse(
@@ -160,10 +159,8 @@ public class PdxpProtocolHandler implements ProtocolHandler {
             Optional<TelemetryMessage> processedMessage =
                     processor.process(config, packet, payload);
             if (!processedMessage.isPresent()) {
-                // 未生成遥测消息时仍保存完整PDXP原始包，便于后续排查。
-                storageService.savePdxpRawFrame(config, packet);
-                stored = true;
-                LOGGER.info("遥测消息转换失败，当前帧只保存原始数据，接口编号：{}，包序号：{}",
+                // 没有最终Proto时不写IoTDB，避免产生缺少设备身份的孤立帧。
+                LOGGER.info("遥测消息转换失败，当前帧不写入IoTDB，接口编号：{}，包序号：{}",
                         config.getInterfaceId(), packet.getSequenceNumber());
                 return;
             }
@@ -177,35 +174,25 @@ public class PdxpProtocolHandler implements ProtocolHandler {
                     .getTelemetriesMap().values().stream()
                     .filter(telemetry -> telemetry.getIsWildValue())
                     .count());
-            // 第五步：整帧和全部遥测参数通过一次批量请求写入IoTDB。
-            storageService.saveProcessedParameters(
-                    config.getInterfaceId(), telemetryMessage);
-            stored = true;
-            // 第六步：入库成功后发送最终遥测Proto消息。
+            // 第五步：单独隔离IoTDB入库异常，避免存储故障阻断消息发送链路。
+            try {
+                storageService.saveProcessedParameters(
+                        config, telemetryMessage);
+            } catch (Exception storageException) {
+                // TODO 后续根据监控方案补充IoTDB入库失败告警和失败数据补偿机制。
+                LOGGER.error("IoTDB入库失败，继续发送当前遥测消息，接口编号：{}，包序号：{}",
+                        config.getInterfaceId(), packet.getSequenceNumber(), storageException);
+            }
+            // 第六步：无论IoTDB入库是否成功，都继续发送最终遥测Proto消息。
             messageService.send(telemetryMessage.toByteArray());
             // 第七步：全部处理步骤成功后，一帧只累计一次处理量。
             statistics.recordFrameProcessing(
                     config.getTaskId(), config.getInterfaceId());
         } catch (Exception exception) {
-            // 处理阶段失败且尚未入库时，回退保存完整PDXP原始包。
-            if (!stored) {
-                saveFallbackRawFrame(config, packet);
-            }
+            // 处理失败时只记录日志，未生成Proto的整包不落入IoTDB。
             LOGGER.error("正常PDXP帧后续处理失败，接口编号：{}，包序号：{}",
                     config.getInterfaceId(), packet.getSequenceNumber(), exception);
         }
     }
 
-    /** 后续处理失败时尽力保留完整PDXP原始包。 */
-    private void saveFallbackRawFrame(
-            CollectInterfaceRuntimeConfig config,
-            PdxpParser.PdxpPacket packet) {
-        try {
-            // 回退写入使用接口级临时路径，不掩盖原始处理异常。
-            storageService.savePdxpRawFrame(config, packet);
-        } catch (Exception storageException) {
-            LOGGER.error("PDXP处理失败后保存原始数据失败，接口编号：{}，包序号：{}",
-                    config.getInterfaceId(), packet.getSequenceNumber(), storageException);
-        }
-    }
 }
