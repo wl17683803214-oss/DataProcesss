@@ -1,0 +1,33 @@
+# 导入Nacos，配置标识为data-simulator-service.yaml，默认分组为DEFAULT_GROUP。
+# 配置项直接填写实际值，发布后重启模拟源服务生效。
+server:
+  # 模拟源管理接口的监听端口。
+  port: 8084
+spring:
+  datasource:
+    # 金仓数据库连接信息，按部署环境修改。
+    driver-class-name: com.kingbase8.Driver
+    url: jdbc:kingbase8://127.0.0.1:54321/data_processing
+    username: system
+    password: "123456"
+  jackson:
+    deserialization:
+      # 拒绝请求中的未知字段，防止误提交展示字段或运行统计。
+      fail-on-unknown-properties: true
+mybatis:
+  # 加载本模块的数据库映射文件。
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    # 将数据库下划线字段映射为实体的驼峰属性。
+    map-underscore-to-camel-case: true
+simulator:
+  # 同一组模拟源表仅部署一个服务进程；运行目录锁防止本机重复启动。
+  lock-file: ./data-simulator-service.lock
+  # 同时发送的模拟源数量上限，允许1到256。
+  max-concurrent: 16
+  # FEP接收端必须使用相同的分块长度。
+  data-unit-length: 4096
+  # 建立文件交换连接的超时，单位毫秒。
+  connect-timeout-millis: 5000
+  # 等待文件交换协议应答的超时，单位毫秒。
+  response-timeout-millis: 10000

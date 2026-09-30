@@ -1,0 +1,26 @@
+# 本地只保留应用标识及Nacos连接信息，业务配置由配置中心提供。
+spring:
+  application:
+    # 应用名称同时决定配置中心读取的配置标识。
+    name: data-simulator-service
+  cloud:
+    nacos:
+      # 配置中心地址及登录账号，部署时直接修改为实际值。
+      server-addr: 127.0.0.1:8848
+      username: nacos
+      password: nacos
+      discovery:
+        # 服务注册地址需与当前部署环境一致。
+        server-addr: 127.0.0.1:8848
+        # 空字符串表示公共命名空间，指定其他空间时填写其标识。
+        namespace: ""
+        group: DEFAULT_GROUP
+      config:
+        # 配置读取与服务注册使用相同地址、命名空间和分组。
+        server-addr: 127.0.0.1:8848
+        namespace: ""
+        group: DEFAULT_GROUP
+        # 读取的配置标识为data-simulator-service.yaml。
+        file-extension: yaml
+        # 线程池、锁与执行快照需保持一致，发布配置后通过重启生效。
+        refresh-enabled: false

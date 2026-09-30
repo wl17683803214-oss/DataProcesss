@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.simulator.mapper.SimulatorMapper">
+    <!-- 会话级锁跨事务保持，固定键仅供本模块使用。 -->
+    <select id="acquireServiceLock" resultType="boolean" useCache="false" flushCache="true">
+        SELECT pg_try_advisory_lock(1936289133, 1)
+    </select>
+    <select id="releaseServiceLock" resultType="boolean" useCache="false" flushCache="true">
+        SELECT pg_advisory_unlock(1936289133, 1)
+    </select>
+    <!-- 明确列名，避免表结构变动影响查询。 -->
+    <sql id="sourceColumns">s.id, s.source_name, s.transfer_protocol, s.transfer_type, s.file_path, s.target_host, s.target_port, s.send_interval_millis, s.loop_enabled, s.remark, s.create_time, s.update_time</sql>
+    <sql id="runColumns">id, source_id, run_status AS status_code, CAST(config_snapshot AS TEXT) AS config_snapshot, start_time, end_time, sent_unit_count, sent_byte_count, completed_loop_count, last_send_time, error_message, create_time, update_time</sql>
+    <sql id="latestJoin">
+        LEFT JOIN simulator_run_record r ON r.id = (
+            SELECT MAX(rr.id) FROM simulator_run_record rr WHERE rr.source_id = s.id
+        )
+    </sql>
+    <select id="findSource" resultType="com.example.simulator.model.SourceConfig">
+        SELECT <include refid="sourceColumns"/>, r.id AS latest_run_id,
+               r.run_status AS latest_status, COALESCE(r.sent_unit_count, 0) AS sent_unit_count
+        FROM simulator_source_config s <include refid="latestJoin"/>
+        WHERE s.id = #{id} AND s.is_deleted = 0
+    </select>
+    <select id="lockSource" resultType="com.example.simulator.model.SourceConfig">
+        SELECT <include refid="sourceColumns"/> FROM simulator_source_config s
+        WHERE s.id = #{id} AND s.is_deleted = 0 FOR UPDATE
+    </select>
+    <select id="findPdxp" resultType="com.example.simulator.model.PdxpConfig">
+        SELECT source_id, input_frame_length, transport_header_length, telemetry_header_length,
+               custom_data_length, transport_header, custom_data, ver, mid, sid, did, bid, initial_no, flag
+        FROM simulator_pdxp_config WHERE source_id = #{id}
+    </select>
+    <select id="activeCount" resultType="int">
+        SELECT COUNT(id) FROM simulator_run_record WHERE source_id = #{id} AND run_status IN (1,2,3)
+    </select>
+    <insert id="insertSource" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO simulator_source_config (source_name, transfer_protocol, transfer_type, file_path, target_host, target_port, send_interval_millis, loop_enabled, remark)
+        VALUES (#{sourceName}, #{transferProtocol}, #{transferType}, #{filePath}, #{targetHost}, #{targetPort}, #{sendIntervalMillis}, #{loopEnabled}, #{remark})
+    </insert>
+    <update id="updateSource">
+        UPDATE simulator_source_config SET
+        source_name = #{sourceName},
+        file_path = #{filePath},
+        target_host = #{targetHost},
+        target_port = #{targetPort},
+        send_interval_millis = #{sendIntervalMillis},
+        loop_enabled = #{loopEnabled},
+        remark = #{remark},
+        update_time = CURRENT_TIMESTAMP WHERE id = #{id} AND is_deleted = 0
+    </update>
+    <insert id="insertPdxp">
+        INSERT INTO simulator_pdxp_config (source_id, input_frame_length, transport_header_length,
+            telemetry_header_length, custom_data_length, transport_header, custom_data,
+            ver, mid, sid, did, bid, initial_no, flag)
+        VALUES (#{sourceId}, #{inputFrameLength}, #{transportHeaderLength},
+            #{telemetryHeaderLength}, #{customDataLength}, #{transportHeader}, #{customData},
+            #{ver}, #{mid}, #{sid}, #{did}, #{bid}, #{initialNo}, #{flag})
+    </insert>
+    <update id="updatePdxp">
+        UPDATE simulator_pdxp_config SET input_frame_length = #{inputFrameLength},
+            transport_header_length = #{transportHeaderLength}, telemetry_header_length = #{telemetryHeaderLength},
+            custom_data_length = #{customDataLength}, transport_header = #{transportHeader},
+            custom_data = #{customData}, ver = #{ver}, mid = #{mid}, sid = #{sid}, did = #{did},
+            bid = #{bid}, initial_no = #{initialNo}, flag = #{flag}
+        WHERE source_id = #{sourceId}
+    </update>
+    <update id="deleteSource">
+        UPDATE simulator_source_config SET is_deleted = 1, update_time = CURRENT_TIMESTAMP WHERE id = #{id}
+    </update>
+    <select id="pageSources" resultType="com.example.simulator.model.SourceConfig">
+        SELECT <include refid="sourceColumns"/>, r.id AS latest_run_id,
+               r.run_status AS latest_status, COALESCE(r.sent_unit_count, 0) AS sent_unit_count
+        FROM simulator_source_config s <include refid="latestJoin"/>
+        <!-- 条件在完整查询中判断，零状态仍表示尚未启动。 -->
+        <where>
+            s.is_deleted = 0
+            <if test="name != null and name.trim() != ''">
+                AND s.source_name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="status != null">
+                AND COALESCE(r.run_status, 0) = #{status}
+            </if>
+        </where>
+        ORDER BY s.id DESC LIMIT #{size} OFFSET #{offset}
+    </select>
+    <select id="countSources" resultType="long">
+        SELECT COUNT(s.id) FROM simulator_source_config s <include refid="latestJoin"/>
+        <!-- 总数使用与分页记录相同的可选条件。 -->
+        <where>
+            s.is_deleted = 0
+            <if test="name != null and name.trim() != ''">
+                AND s.source_name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="status != null">
+                AND COALESCE(r.run_status, 0) = #{status}
+            </if>
+        </where>
+    </select>
+    <insert id="insertRun" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO simulator_run_record(source_id, run_status, config_snapshot)
+        VALUES (#{sourceId}, #{statusCode}, CAST(#{configSnapshot} AS JSONB))
+    </insert>
+    <update id="updateRun">
+        UPDATE simulator_run_record SET run_status = #{statusCode}, end_time = #{endTime},
+            sent_unit_count = #{sentUnitCount}, sent_byte_count = #{sentByteCount},
+            completed_loop_count = #{completedLoopCount}, last_send_time = #{lastSendTime},
+            error_message = #{errorMessage}, update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND run_status IN (1,2,3)
+    </update>
+    <select id="findRun" resultType="com.example.simulator.model.RunRecord">
+        SELECT <include refid="runColumns"/> FROM simulator_run_record WHERE id = #{id}
+    </select>
+    <select id="pageRuns" resultType="com.example.simulator.model.RunRecord">
+        SELECT <include refid="runColumns"/> FROM simulator_run_record WHERE source_id = #{id}
+        ORDER BY id DESC LIMIT #{size} OFFSET #{offset}
+    </select>
+    <select id="countRuns" resultType="long">
+        SELECT COUNT(id) FROM simulator_run_record WHERE source_id = #{id}
+    </select>
+    <update id="recoverRuns">
+        UPDATE simulator_run_record SET run_status = 6, end_time = CURRENT_TIMESTAMP,
+            error_message = '服务重启，上次运行未正常结束', update_time = CURRENT_TIMESTAMP
+        WHERE run_status IN (1,2,3)
+    </update>
+</mapper>
+

@@ -1,0 +1,1551 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "独立模拟源管理服务",
+    "version": "1.0.0",
+    "description": "支持PDXP/UDP和FEP/TCP，多模拟源独立并发。默认端口8085。发送端不自动启停接收服务。"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8085",
+      "description": "本地独立服务"
+    }
+  ],
+  "paths": {
+    "/simulator/sources": {
+      "get": {
+        "summary": "分页查询模拟源",
+        "parameters": [
+          {
+            "name": "pageNum",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "页码"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "每页数量"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "名称包含查询"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ]
+            },
+            "description": "0未启动1启动中2运行中3停止中4已停止5已完成6异常"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "结果说明",
+                      "example": "操作成功"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pageNum": {
+                          "type": "integer",
+                          "description": "页码"
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "description": "每页数量"
+                        },
+                        "total": {
+                          "type": "integer",
+                          "description": "总数",
+                          "format": "int64"
+                        },
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Source"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "名称重复、重复启动或运行中编辑等状态冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 409
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务或数据库异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 500
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulator/sources/{id}": {
+      "get": {
+        "summary": "模拟源详情",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "模拟源编号"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "结果说明",
+                      "example": "操作成功"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Source"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "名称重复、重复启动或运行中编辑等状态冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 409
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务或数据库异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 500
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulator/sources/{id}/runs": {
+      "get": {
+        "summary": "运行历史，允许查询已删除源",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "模拟源编号"
+          },
+          {
+            "name": "pageNum",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "页码"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "每页数量"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "结果说明",
+                      "example": "操作成功"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pageNum": {
+                          "type": "integer",
+                          "description": "页码"
+                        },
+                        "pageSize": {
+                          "type": "integer",
+                          "description": "每页数量"
+                        },
+                        "total": {
+                          "type": "integer",
+                          "description": "总数",
+                          "format": "int64"
+                        },
+                        "records": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Run"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "名称重复、重复启动或运行中编辑等状态冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 409
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务或数据库异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 500
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulator/findData": {
+      "get": {
+        "summary": "查询中文枚举和协议默认值",
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "结果说明",
+                      "example": "操作成功"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EnumData"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "名称重复、重复启动或运行中编辑等状态冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 409
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务或数据库异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 500
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulator/sources/create": {
+      "post": {
+        "summary": "新建配置",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "结果说明",
+                      "example": "操作成功"
+                    },
+                    "data": {
+                      "type": "integer",
+                      "description": "新建模拟源编号",
+                      "format": "int64"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "名称重复、重复启动或运行中编辑等状态冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 409
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务或数据库异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 500
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulator/sources/update": {
+      "post": {
+        "summary": "完整修改配置，禁止切换协议",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "结果说明",
+                      "example": "操作成功"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "名称重复、重复启动或运行中编辑等状态冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 409
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务或数据库异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 500
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulator/sources/delete": {
+      "post": {
+        "summary": "逻辑删除配置",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "结果说明",
+                      "example": "操作成功"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "名称重复、重复启动或运行中编辑等状态冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 409
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务或数据库异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 500
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulator/sources/start": {
+      "post": {
+        "summary": "启动独立发送任务",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "结果说明",
+                      "example": "操作成功"
+                    },
+                    "data": {
+                      "type": "integer",
+                      "description": "本次运行编号",
+                      "format": "int64"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "名称重复、重复启动或运行中编辑等状态冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 409
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务或数据库异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 500
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/simulator/sources/stop": {
+      "post": {
+        "summary": "幂等停止指定运行",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "结果说明",
+                      "example": "操作成功"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求校验失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "名称重复、重复启动或运行中编辑等状态冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 409
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务或数据库异常",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "description": "结果码",
+                      "example": 500
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误说明"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PdxpConfig": {
+        "type": "object",
+        "properties": {
+          "transportHeader": {
+            "type": "string",
+            "description": "传输头十六进制内容，字符数必须等于transportHeaderLength乘2",
+            "pattern": "^(?:[0-9a-fA-F]{2})*$",
+            "default": "1234"
+          },
+          "customData": {
+            "type": "string",
+            "description": "自定义数据十六进制内容，字符数必须等于customDataLength乘2",
+            "pattern": "^(?:[0-9a-fA-F]{2})*$",
+            "default": "0102030405"
+          },
+          "ver": {
+            "type": "string",
+            "description": "版本",
+            "pattern": "^[0-9a-fA-F]{2}$",
+            "default": "80"
+          },
+          "mid": {
+            "type": "string",
+            "description": "任务标志",
+            "pattern": "^[0-9a-fA-F]{4}$",
+            "default": "0001"
+          },
+          "sid": {
+            "type": "string",
+            "description": "信源地址",
+            "pattern": "^[0-9a-fA-F]{8}$",
+            "default": "00000001"
+          },
+          "did": {
+            "type": "string",
+            "description": "信宿地址",
+            "pattern": "^[0-9a-fA-F]{8}$",
+            "default": "00000001"
+          },
+          "bid": {
+            "type": "string",
+            "description": "数据标志",
+            "pattern": "^[0-9a-fA-F]{8}$",
+            "default": "00000001"
+          },
+          "initialNo": {
+            "type": "string",
+            "description": "包序号初值",
+            "pattern": "^[0-9a-fA-F]{8}$",
+            "default": "00000000"
+          },
+          "flag": {
+            "type": "string",
+            "description": "处理标志",
+            "pattern": "^[0-9a-fA-F]{2}$",
+            "default": "00"
+          },
+          "inputFrameLength": {
+            "minimum": 1,
+            "description": "每次读取的输入帧长度",
+            "maximum": 65475,
+            "type": "integer",
+            "default": 512
+          },
+          "transportHeaderLength": {
+            "minimum": 0,
+            "description": "传输头字节长度，零时内容为空字符串",
+            "maximum": 65475,
+            "type": "integer",
+            "default": 2
+          },
+          "telemetryHeaderLength": {
+            "minimum": 0,
+            "description": "原帧开头移到末尾的长度，不能超过输入帧长度",
+            "maximum": 65475,
+            "type": "integer",
+            "default": 4
+          },
+          "customDataLength": {
+            "minimum": 0,
+            "description": "自定义数据字节长度，零时内容为空字符串",
+            "maximum": 65475,
+            "type": "integer",
+            "default": 5
+          },
+          "sourceId": {
+            "description": "所属模拟源编号，仅响应使用",
+            "readOnly": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "description": "仅PDXP使用。所有长度按实例配置，输入帧长度加传输头长度加32加自定义数据长度不得超过65507；FEP必须省略此对象。"
+      },
+      "SaveRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "修改时必填，新建时禁止填写",
+            "format": "int64",
+            "minimum": 1
+          },
+          "sourceName": {
+            "type": "string",
+            "description": "未删除配置中唯一",
+            "maxLength": 100
+          },
+          "transferProtocol": {
+            "type": "integer",
+            "description": "2为PDXP，4为FEP",
+            "enum": [
+              2,
+              4
+            ]
+          },
+          "transferType": {
+            "type": "integer",
+            "description": "PDXP只允许1（UDP），FEP只允许2（TCP）；省略时按协议设置",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "filePath": {
+            "type": "string",
+            "description": "服务所在机器上的文件路径",
+            "maxLength": 1000
+          },
+          "targetHost": {
+            "type": "string",
+            "description": "目标地址",
+            "default": "127.0.0.1",
+            "maxLength": 100
+          },
+          "targetPort": {
+            "type": "integer",
+            "description": "PDXP默认9001，FEP默认19003",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "sendIntervalMillis": {
+            "type": "integer",
+            "description": "数据单元发送间隔；PDXP默认500，FEP默认10",
+            "minimum": 0,
+            "maximum": 86400000,
+            "format": "int64"
+          },
+          "loopEnabled": {
+            "type": "integer",
+            "description": "0否1是；PDXP默认1，FEP默认0",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "remark": {
+            "type": "string",
+            "description": "备注",
+            "maxLength": 500
+          },
+          "pdxp": {
+            "$ref": "#/components/schemas/PdxpConfig"
+          }
+        },
+        "required": [
+          "sourceName",
+          "transferProtocol",
+          "filePath"
+        ],
+        "additionalProperties": false
+      },
+      "Source": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "修改时必填，新建时禁止填写",
+            "format": "int64",
+            "minimum": 1
+          },
+          "sourceName": {
+            "type": "string",
+            "description": "未删除配置中唯一",
+            "maxLength": 100
+          },
+          "transferProtocol": {
+            "type": "integer",
+            "description": "2为PDXP，4为FEP",
+            "enum": [
+              2,
+              4
+            ]
+          },
+          "transferType": {
+            "type": "integer",
+            "description": "PDXP只允许1（UDP），FEP只允许2（TCP）；省略时按协议设置",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "filePath": {
+            "type": "string",
+            "description": "服务所在机器上的文件路径",
+            "maxLength": 1000
+          },
+          "targetHost": {
+            "type": "string",
+            "description": "目标地址",
+            "default": "127.0.0.1",
+            "maxLength": 100
+          },
+          "targetPort": {
+            "type": "integer",
+            "description": "PDXP默认9001，FEP默认19003",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "sendIntervalMillis": {
+            "type": "integer",
+            "description": "数据单元发送间隔；PDXP默认500，FEP默认10",
+            "minimum": 0,
+            "maximum": 86400000,
+            "format": "int64"
+          },
+          "loopEnabled": {
+            "type": "integer",
+            "description": "0否1是；PDXP默认1，FEP默认0",
+            "enum": [
+              0,
+              1
+            ]
+          },
+          "remark": {
+            "type": "string",
+            "description": "备注",
+            "maxLength": 500
+          },
+          "pdxp": {
+            "$ref": "#/components/schemas/PdxpConfig"
+          },
+          "createTime": {
+            "type": "string",
+            "description": "服务器本地时间",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "description": "服务器本地时间",
+            "format": "date-time"
+          },
+          "protocolName": {
+            "type": "string",
+            "description": "协议名称"
+          },
+          "transferTypeName": {
+            "type": "string",
+            "description": "传输方式中文名称"
+          },
+          "loopEnabledName": {
+            "type": "string",
+            "description": "是否循环中文名称",
+            "enum": [
+              "否",
+              "是"
+            ]
+          },
+          "latestRunId": {
+            "type": "integer",
+            "description": "最近运行编号",
+            "format": "int64",
+            "nullable": true
+          },
+          "sentUnitCount": {
+            "type": "integer",
+            "description": "最近运行发送单元数量",
+            "format": "int64"
+          },
+          "runStatus": {
+            "type": "string",
+            "description": "运行状态",
+            "enum": [
+              "未启动",
+              "启动中",
+              "运行中",
+              "停止中",
+              "已停止",
+              "已完成",
+              "异常"
+            ]
+          }
+        }
+      },
+      "Run": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "运行编号",
+            "format": "int64"
+          },
+          "sourceId": {
+            "type": "integer",
+            "description": "模拟源编号",
+            "format": "int64"
+          },
+          "runStatus": {
+            "type": "string",
+            "description": "中文状态",
+            "enum": [
+              "启动中",
+              "运行中",
+              "停止中",
+              "已停止",
+              "已完成",
+              "异常"
+            ]
+          },
+          "configSnapshot": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "$ref": "#/components/schemas/Source"
+              },
+              "fep": {
+                "type": "object",
+                "properties": {
+                  "dataUnitLength": {
+                    "type": "integer",
+                    "description": "FEP公共分块长度"
+                  },
+                  "connectTimeoutMillis": {
+                    "type": "integer",
+                    "description": "连接超时毫秒"
+                  },
+                  "responseTimeoutMillis": {
+                    "type": "integer",
+                    "description": "应答超时毫秒"
+                  }
+                }
+              }
+            }
+          },
+          "startTime": {
+            "type": "string",
+            "description": "开始时间",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "结束时间",
+            "format": "date-time",
+            "nullable": true
+          },
+          "sentUnitCount": {
+            "type": "integer",
+            "description": "已发送数据单元数，FEP包括结束空单元",
+            "format": "int64"
+          },
+          "sentByteCount": {
+            "type": "integer",
+            "description": "应用层协议字节数，FEP包括发送请求",
+            "format": "int64"
+          },
+          "completedLoopCount": {
+            "type": "integer",
+            "description": "完整文件交换轮数，接收端已存在文件也计一轮",
+            "format": "int64"
+          },
+          "lastSendTime": {
+            "type": "string",
+            "description": "最近发送时间",
+            "format": "date-time",
+            "nullable": true
+          },
+          "errorMessage": {
+            "type": "string",
+            "description": "中文异常原因",
+            "nullable": true
+          },
+          "createTime": {
+            "type": "string",
+            "description": "服务器本地时间",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "description": "服务器本地时间",
+            "format": "date-time"
+          }
+        }
+      },
+      "IdRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "模拟源编号",
+            "format": "int64",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "StopRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "模拟源编号",
+            "format": "int64",
+            "minimum": 1
+          },
+          "runId": {
+            "type": "integer",
+            "description": "本次运行编号，防止误停新一轮",
+            "format": "int64",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "id",
+          "runId"
+        ],
+        "additionalProperties": false
+      },
+      "Option": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "description": "枚举编码"
+          },
+          "label": {
+            "type": "string",
+            "description": "显示名称"
+          }
+        }
+      },
+      "EnumData": {
+        "type": "object",
+        "properties": {
+          "protocols": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "integer",
+                  "description": "协议编码"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "协议名称"
+                },
+                "transferType": {
+                  "type": "integer",
+                  "description": "传输方式编码"
+                },
+                "transferTypeName": {
+                  "type": "string",
+                  "description": "中文传输方式"
+                },
+                "defaultPort": {
+                  "type": "integer",
+                  "description": "默认端口"
+                },
+                "defaultIntervalMillis": {
+                  "type": "integer",
+                  "description": "默认间隔"
+                },
+                "defaultLoopEnabled": {
+                  "type": "integer",
+                  "description": "默认循环"
+                }
+              }
+            }
+          },
+          "statuses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            }
+          },
+          "yesNo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            }
+          }
+        }
+      }
+    }
+  }
+}
