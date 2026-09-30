@@ -3,6 +3,7 @@ package com.example.dataadmin.service;
 import com.example.common.tool.IoTDBPathTool;
 import com.example.dataadmin.config.IoTDBQueryConfig;
 import com.example.dataadmin.entity.ProcessedTelemetryFilterSelection;
+import com.example.dataadmin.enums.BusinessEnums;
 import com.example.dataadmin.mapper.IoTDBFrameQueryMapper;
 import com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper;
 import com.example.dataadmin.vo.processing.ProcessedTelemetryCurveVO;
@@ -32,28 +33,42 @@ public class ProcessedTelemetryQueryService {
     private final IoTDBFrameQueryMapper queryMapper;
     private final SessionPool sessionPool;
     private final ExecutorService queryExecutor;
+    private final TelemetrySelectionScopeService scopeService;
 
     public ProcessedTelemetryQueryService(
             ProcessedTelemetryFilterSelectionMapper selectionMapper,
             IoTDBFrameQueryMapper queryMapper,
             SessionPool sessionPool,
             IoTDBQueryConfig queryConfig,
+            TelemetrySelectionScopeService scopeService,
             @Qualifier("processedTelemetryQueryExecutor") ExecutorService queryExecutor) {
         this.selectionMapper = selectionMapper;
         this.queryMapper = queryMapper;
         this.sessionPool = sessionPool;
         this.queryExecutor = queryExecutor;
+        this.scopeService = scopeService;
         this.queryConcurrency = queryConfig.getProcessedTelemetryQueryThreadCount();
     }
 
     /** 从有效勾选记录取得路径，并按记录顺序汇总每个参数的最新值。 */
-    public List<ProcessedTelemetryVO> latest(String taskId) {
-        return queryInBatches(selected(taskId), this::latestOne);
+    public List<ProcessedTelemetryVO> latest(String taskId, Integer selectionType, Long targetId) {
+        // 最新值仅接受处理后数据表格和数据可视化表格的勾选场景。
+        if (selectionType != BusinessEnums.SelectionType.PROCESSED_TABLE.getCode()
+                && selectionType != BusinessEnums.SelectionType.VISUALIZATION_TABLE.getCode()) {
+            throw new IllegalArgumentException("最新值查询的勾选类型不正确");
+        }
+        return queryInBatches(selected(taskId, selectionType, targetId), this::latestOne);
     }
 
     /** 从有效勾选记录取得路径，并按记录顺序汇总每个参数的曲线。 */
-    public List<ProcessedTelemetryCurveVO> curves(String taskId) {
-        return queryInBatches(selected(taskId), this::curveOne);
+    public List<ProcessedTelemetryCurveVO> curves(String taskId, Integer selectionType,
+            Long targetId) {
+        // 曲线仅接受处理后数据曲线和数据可视化曲线的勾选场景。
+        if (selectionType != BusinessEnums.SelectionType.PROCESSED_CURVE.getCode()
+                && selectionType != BusinessEnums.SelectionType.VISUALIZATION_CURVE.getCode()) {
+            throw new IllegalArgumentException("曲线查询的勾选类型不正确");
+        }
+        return queryInBatches(selected(taskId, selectionType, targetId), this::curveOne);
     }
 
     /** 每批最多提交连接池容量内的查询，不一次创建所有参数的查询任务。 */
@@ -142,10 +157,12 @@ public class ProcessedTelemetryQueryService {
     }
 
     /** 查询任务下仍有效的勾选参数，任务编号不允许为空。 */
-    private List<ProcessedTelemetryFilterSelection> selected(String taskId) {
+    private List<ProcessedTelemetryFilterSelection> selected(String taskId,
+            Integer selectionType, Long targetId) {
         if (taskId == null || taskId.trim().isEmpty()) {
             throw new IllegalArgumentException("试验任务编号不能为空");
         }
-        return selectionMapper.findSelected(taskId.trim());
+        long scopeId = scopeService.require(taskId.trim(), selectionType, targetId);
+        return selectionMapper.findSelected(taskId.trim(), selectionType, scopeId);
     }
 }

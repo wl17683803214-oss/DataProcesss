@@ -25,7 +25,7 @@ public class MonitorWidgetConfigItem {
     private String itemCode;
     /** 数据项名称，如温度、姿态角X、电压或电流。 */
     private String itemName;
-    /** 是否勾选：0未勾选 1已勾选。 */
+    /** 非遥测项直接存储状态；遥测项查询时从场景勾选表计算状态。 */
     private Integer isSelected;
     /** 创建时间。 */
     private LocalDateTime createTime;

@@ -14,6 +14,12 @@ public class TelemetryFilterSelectionRequest {
     /** 勾选时为真，取消时为假。 */
     @NotNull
     private Boolean checked;
+    /** 勾选场景编码。 */
+    @NotNull
+    private Integer selectionType;
+    /** 固定页面为零，可视化页面为组件主键。 */
+    @NotNull
+    private Long targetId;
 
     public String getTaskId() { return taskId; }
     public void setTaskId(String taskId) { this.taskId = taskId; }
@@ -21,4 +27,8 @@ public class TelemetryFilterSelectionRequest {
     public void setParseRuleId(Long parseRuleId) { this.parseRuleId = parseRuleId; }
     public Boolean getChecked() { return checked; }
     public void setChecked(Boolean checked) { this.checked = checked; }
+    public Integer getSelectionType() { return selectionType; }
+    public void setSelectionType(Integer value) { this.selectionType = value; }
+    public Long getTargetId() { return targetId; }
+    public void setTargetId(Long value) { this.targetId = value; }
 }

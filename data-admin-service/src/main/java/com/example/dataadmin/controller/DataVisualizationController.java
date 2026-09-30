@@ -1,6 +1,8 @@
 package com.example.dataadmin.controller;
 
 import com.example.common.response.ApiResponse;
+import com.example.common.response.PageResult;
+import com.example.dataadmin.vo.visualization.FepFileListItemVO;
 import com.example.dataadmin.dto.IdRequest;
 import com.example.dataadmin.dto.IdStatusRequest;
 import com.example.dataadmin.dto.visualization.WidgetItemSaveRequest;
@@ -101,6 +103,18 @@ public class DataVisualizationController {
         getOwnedWidget(widgetId);
         return ApiResponse.success(
                 visualizationService.listWidgetItems(widgetId));
+    }
+
+    /** 按图片或文件组件类型分页查询已上传文件。 */
+    @GetMapping("/widgets/{widgetId}/files")
+    public ApiResponse<PageResult<FepFileListItemVO>> pageFiles(
+            @PathVariable Long widgetId,
+            @RequestParam String taskId,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        // 服务层同时校验任务、当前用户和组件类型。
+        return ApiResponse.success(visualizationService.pageFiles(taskId, widgetId,
+                LoginUserContext.getRequired().getUserId(), pageNum, pageSize));
     }
 
     /** 查询组件数据项详情。 */

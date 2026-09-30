@@ -30,26 +30,30 @@ public class TelemetryFilterService {
     private final TelemetrySystemConfigMapper systemMapper;
     private final TelemetryParseRuleConfigMapper ruleMapper;
     private final ProcessedTelemetryFilterSelectionMapper selectionMapper;
+    private final TelemetrySelectionScopeService scopeService;
 
     public TelemetryFilterService(DeviceSatelliteMapper deviceMapper,
             TelemetrySystemConfigMapper systemMapper,
             TelemetryParseRuleConfigMapper ruleMapper,
-            ProcessedTelemetryFilterSelectionMapper selectionMapper) {
+            ProcessedTelemetryFilterSelectionMapper selectionMapper,
+            TelemetrySelectionScopeService scopeService) {
         this.deviceMapper = deviceMapper;
         this.systemMapper = systemMapper;
         this.ruleMapper = ruleMapper;
         this.selectionMapper = selectionMapper;
+        this.scopeService = scopeService;
     }
 
     /** 按当前展开位置返回直属节点，设备级参数排在系统节点前面。 */
     public List<TelemetryFilterNodeVO> list(String taskId, Long deviceId, Long systemId,
-            String telemetryCode) {
+            String telemetryCode, Integer selectionType, Long targetId) {
         requireTask(taskId);
+        long scopeId = scopeService.require(taskId, selectionType, targetId);
         if (telemetryCode != null && !telemetryCode.trim().isEmpty()) {
             if (deviceId != null || systemId != null) {
                 throw new IllegalArgumentException("按遥测代号搜索时不能同时指定设备卫星或所属系统");
             }
-            return search(taskId, telemetryCode);
+            return search(taskId, telemetryCode, selectionType, scopeId);
         }
         List<TelemetryFilterNodeVO> nodes = new ArrayList<>();
         if (deviceId == null) {
@@ -69,7 +73,8 @@ public class TelemetryFilterService {
             throw new IllegalArgumentException("当前设备下不存在有效的所属系统");
         }
         // 一次取得当前设备已选代号，再只查询当前展开层级直属参数。
-        Set<String> selected = new HashSet<>(selectionMapper.findSelectedCodes(taskId, deviceId));
+        Set<String> selected = new HashSet<>(selectionMapper.findSelectedCodes(
+                taskId, deviceId, selectionType, scopeId));
         for (TelemetryParseRuleConfig rule : ruleMapper.findDirectBySystem(taskId, deviceId, systemId)) {
             String name = rule.getTelemetryName() == null ? "" : rule.getTelemetryName();
             nodes.add(TelemetryFilterNodeVO.of(rule.getId(),
@@ -85,18 +90,21 @@ public class TelemetryFilterService {
     }
 
     /** 遥测代号搜索直接返回当前任务全部匹配的可勾选参数。 */
-    private List<TelemetryFilterNodeVO> search(String taskId, String telemetryCode) {
-        // 转义通配符，保证用户输入始终按字面量前缀搜索。
-        String prefix = telemetryCode.trim().replace("\\", "\\\\")
-                .replace("%", "\\%").replace("_", "\\_") + "%";
+    private List<TelemetryFilterNodeVO> search(String taskId, String telemetryCode,
+            int selectionType, long targetId) {
+        // 去除输入两端空白后按完整遥测代号查询。
+        String code = telemetryCode.trim();
         List<TelemetryFilterNodeVO> nodes = new ArrayList<>();
-        for (TelemetryFilterSearchRecord record : ruleMapper.searchByTelemetryCode(taskId, prefix)) {
+        for (TelemetryFilterSearchRecord record : ruleMapper.searchByTelemetryCode(
+                taskId, code, selectionType, targetId)) {
             String name = record.getTelemetryName() == null ? "" : record.getTelemetryName();
             TelemetryFilterNodeVO node = TelemetryFilterNodeVO.of(record.getId(),
                     name + "/" + record.getTelemetryCode(), TelemetryFilterNodeType.PARAMETER,
                     Boolean.TRUE.equals(record.getChecked()), false);
             node.setDeviceSatelliteId(record.getDeviceSatelliteId());
             node.setDeviceSatelliteName(record.getDeviceSatelliteName());
+            // 直接使用导入时保存的完整系统路径，不逐条查询系统表。
+            node.setSystemName(record.getSystemName());
             nodes.add(node);
         }
         return nodes;
@@ -136,13 +144,16 @@ public class TelemetryFilterService {
     @Transactional(rollbackFor = Exception.class)
     public void update(TelemetryFilterSelectionRequest request) {
         requireTask(request.getTaskId());
+        long scopeId = scopeService.require(request.getTaskId(),
+                request.getSelectionType(), request.getTargetId());
         TelemetryParseRuleConfig rule = ruleMapper.findActiveById(
                 request.getTaskId(), request.getParseRuleId());
         if (rule == null) {
             throw new IllegalArgumentException("当前任务下不存在有效的遥测参数");
         }
         selectionMapper.save(request.getTaskId(), rule.getDeviceSatelliteId(),
-                rule.getTelemetryCode(), Boolean.TRUE.equals(request.getChecked()) ? 0 : 1);
+                rule.getTelemetryCode(), request.getSelectionType(), scopeId,
+                Boolean.TRUE.equals(request.getChecked()) ? 0 : 1);
     }
 
     private void requireTask(String taskId) {

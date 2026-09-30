@@ -15,7 +15,7 @@ public final class PdxpSimulatorConfig {
     public static final String FILE_PATH =
             SimulatorEnvironment.text(
                     "PDXP_FILE_PATH",
-                    "D:\\工作文档\\数据处理软件\\模拟源文件\\temp916_cut.dat");
+                    "D:\\工作文档\\数据处理软件\\模拟源文件\\temp916_10000.dat");
     /** UDP目标地址。 */
     public static final String TARGET_HOST = SimulatorEnvironment.text(
             "PDXP_TARGET_HOST", "127.0.0.1");

@@ -1,9 +1,17 @@
 package com.example.dataadmin.service.impl;
 
-import com.example.dataadmin.entity.*;
-import com.example.dataadmin.mapper.*;
+import com.example.dataadmin.entity.MonitorDashboardWidget;
+import com.example.dataadmin.entity.MonitorWidgetConfigItem;
+import com.example.dataadmin.mapper.FepFileListMapper;
+import com.example.dataadmin.mapper.MonitorDashboardWidgetMapper;
+import com.example.dataadmin.mapper.MonitorWidgetConfigItemMapper;
+import com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper;
 import com.example.dataadmin.service.DataVisualizationService;
-import com.example.dataadmin.service.VisualizationParameterSyncService;
+import com.example.dataadmin.service.TelemetryFilterService;
+import com.example.dataadmin.dto.processing.TelemetryFilterSelectionRequest;
+import com.example.dataadmin.enums.BusinessEnums;
+import com.example.common.response.PageResult;
+import com.example.dataadmin.vo.visualization.FepFileListItemVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,16 +30,23 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     private final MonitorDashboardWidgetMapper widgetMapper;
     /** MonitorWidgetConfigItem数据访问组件。 */
     private final MonitorWidgetConfigItemMapper itemMapper;
-    /** 可视化参数筛选项同步服务。 */
-    private final VisualizationParameterSyncService parameterSyncService;
+    /** 遥测参数勾选由统一场景表保存。 */
+    private final TelemetryFilterService selectionService;
+    private final ProcessedTelemetryFilterSelectionMapper selectionMapper;
+    /** 文件分页查询只读取已上传至对象存储的接收记录。 */
+    private final FepFileListMapper fileListMapper;
 
     public DataVisualizationServiceImpl(
             MonitorDashboardWidgetMapper widgetMapper,
             MonitorWidgetConfigItemMapper itemMapper,
-            VisualizationParameterSyncService parameterSyncService) {
+            TelemetryFilterService selectionService,
+            ProcessedTelemetryFilterSelectionMapper selectionMapper,
+            FepFileListMapper fileListMapper) {
         this.widgetMapper = widgetMapper;
         this.itemMapper = itemMapper;
-        this.parameterSyncService = parameterSyncService;
+        this.selectionService = selectionService;
+        this.selectionMapper = selectionMapper;
+        this.fileListMapper = fileListMapper;
     }
 
     /** 查询当前用户在指定试验任务下的全部页面组件。 */
@@ -50,14 +65,10 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Override
     @Transactional
     public Long createWidget(MonitorDashboardWidget widget) {
+        // 组件类型必须来自统一枚举，任务编号不能为空。
+        requireWidgetConfig(widget);
         widgetMapper.insert(widget);
-        if (widget.getWidgetType() != null
-                && (widget.getWidgetType() == 1
-                || widget.getWidgetType() == 2)) {
-            // 组件晚于解析规则创建时，也要立即装载任务已有参数。
-            parameterSyncService.synchronizeTaskParameters(
-                    widget.getTaskId());
-        }
+        // 新组件的遥测参数由按需筛选树勾选，不复制任务下全部解析配置。
         return widget.getId();
     }
 
@@ -65,6 +76,16 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Override
     @Transactional
     public boolean updateWidget(MonitorDashboardWidget widget) {
+        // 修改布局时保持原任务和组件类型，避免已保存勾选失去归属。
+        MonitorDashboardWidget existing = widgetMapper.findById(widget.getId());
+        if (existing == null) { return false; }
+        if (widget.getTaskId() != null && !widget.getTaskId().equals(existing.getTaskId())) {
+            throw new IllegalArgumentException("组件所属试验任务不能修改");
+        }
+        if (widget.getWidgetType() != null
+                && !widget.getWidgetType().equals(existing.getWidgetType())) {
+            throw new IllegalArgumentException("组件类型不能修改");
+        }
         return widgetMapper.update(widget) > 0;
     }
 
@@ -73,6 +94,9 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Transactional
     public boolean deleteWidget(Long id) {
         // 先清理组件下的数据项，避免残留无法归属的配置记录。
+        MonitorDashboardWidget widget = widgetMapper.findById(id);
+        if (widget == null) { return false; }
+        selectionMapper.deleteByTarget(widget.getTaskId(), id);
         itemMapper.deleteByWidgetId(id);
         return widgetMapper.delete(id) > 0;
     }
@@ -93,7 +117,15 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Override
     @Transactional
     public Long createWidgetItem(MonitorWidgetConfigItem item) {
+        // 未明确勾选的遥测参数默认保持未选中，避免重新运行迁移脚本时误勾选。
+        if (item.getParseRuleId() != null && item.getIsSelected() == null) {
+            item.setIsSelected(0);
+        }
         itemMapper.insert(item);
+        // 新增遥测配置项时同步用户明确提交的勾选状态。
+        if (item.getParseRuleId() != null && item.getIsSelected() != null) {
+            saveParameterSelection(item, item.getIsSelected() == 1);
+        }
         return item.getId();
     }
 
@@ -101,13 +133,38 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Override
     @Transactional
     public boolean updateWidgetItem(MonitorWidgetConfigItem item) {
-        return itemMapper.update(item) > 0;
+        MonitorWidgetConfigItem before = itemMapper.findById(item.getId());
+        if (before == null) { return false; }
+        // 参数关联变化时清理原参数勾选，再保存新参数的勾选状态。
+        boolean changedRule = item.getParseRuleId() != null
+                && !item.getParseRuleId().equals(before.getParseRuleId());
+        if (changedRule && before.getParseRuleId() != null
+                && Integer.valueOf(1).equals(before.getIsSelected())) {
+            saveParameterSelection(before, false);
+        }
+        boolean updated = itemMapper.update(item) > 0;
+        if (updated && (item.getIsSelected() != null || changedRule)) {
+            MonitorWidgetConfigItem effective = itemMapper.findById(item.getId());
+            if (effective.getParseRuleId() != null) {
+                boolean checked = item.getIsSelected() == null
+                        ? Integer.valueOf(1).equals(before.getIsSelected())
+                        : item.getIsSelected() == 1;
+                saveParameterSelection(effective, checked);
+            }
+        }
+        return updated;
     }
 
     /** 删除组件数据项配置。 */
     @Override
     @Transactional
     public boolean deleteWidgetItem(Long id) {
+        MonitorWidgetConfigItem item = itemMapper.findById(id);
+        if (item == null) { return false; }
+        // 遥测参数项删除时取消对应组件的勾选。
+        if (item.getParseRuleId() != null) {
+            saveParameterSelection(item, false);
+        }
         return itemMapper.delete(id) > 0;
     }
 
@@ -115,7 +172,73 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Override
     @Transactional
     public boolean updateItemSelected(Long id, Integer isSelected) {
-        return itemMapper.updateSelected(id, isSelected) > 0;
+        MonitorWidgetConfigItem item = itemMapper.findById(id);
+        if (item == null) { return false; }
+        // 只有非遥测参数项继续使用组件项自身的勾选列。
+        if (item.getParseRuleId() == null) {
+            return itemMapper.updateSelected(id, isSelected) > 0;
+        }
+        saveParameterSelection(item, isSelected == 1);
+        return true;
+    }
+
+    /** 将可视化组件参数项的勾选写入统一场景表。 */
+    private void saveParameterSelection(MonitorWidgetConfigItem item, boolean checked) {
+        MonitorDashboardWidget widget = widgetMapper.findById(item.getWidgetId());
+        if (widget == null || widget.getWidgetType() == null
+                || (widget.getWidgetType() != 1 && widget.getWidgetType() != 2)) {
+            throw new IllegalArgumentException("可视化组件不支持遥测参数勾选");
+        }
+        TelemetryFilterSelectionRequest request = new TelemetryFilterSelectionRequest();
+        request.setTaskId(widget.getTaskId());
+        request.setParseRuleId(item.getParseRuleId());
+        request.setChecked(checked);
+        request.setSelectionType(widget.getWidgetType() == 1
+                ? BusinessEnums.SelectionType.VISUALIZATION_CURVE.getCode()
+                : BusinessEnums.SelectionType.VISUALIZATION_TABLE.getCode());
+        request.setTargetId(widget.getId());
+        selectionService.update(request);
+    }
+
+    /** 新增组件时校验任务和已有枚举类型。 */
+    private void requireWidgetConfig(MonitorDashboardWidget widget) {
+        if (widget.getTaskId() == null || widget.getTaskId().trim().isEmpty()) {
+            throw new IllegalArgumentException("试验任务编号不能为空");
+        }
+        for (BusinessEnums.WidgetType type : BusinessEnums.WidgetType.values()) {
+            if (type.getValue().equals(widget.getWidgetType())) { return; }
+        }
+        throw new IllegalArgumentException("组件类型无效");
+    }
+
+    /** 按图片或文件组件类型查询，避免前端绕过组件类型筛选其他文件。 */
+    @Override
+    public PageResult<FepFileListItemVO> pageFiles(String taskId, Long widgetId,
+            Long userId, Integer pageNum, Integer pageSize) {
+        if (taskId == null || taskId.trim().isEmpty()) {
+            throw new IllegalArgumentException("试验任务编号不能为空");
+        }
+        MonitorDashboardWidget widget = widgetMapper.findById(widgetId);
+        if (widget == null || !taskId.trim().equals(widget.getTaskId())
+                || !userId.equals(widget.getUserId())
+                || widget.getWidgetType() == null
+                || (widget.getWidgetType() != 4 && widget.getWidgetType() != 5)) {
+            throw new IllegalArgumentException("当前任务下不存在图片或文件组件");
+        }
+        if (pageNum == null || pageNum < 1 || pageSize == null
+                || pageSize < 1 || pageSize > 200) {
+            throw new IllegalArgumentException("分页参数不正确");
+        }
+        long offset = (long) (pageNum - 1) * pageSize;
+        if (offset > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("分页范围过大");
+        }
+        boolean image = widget.getWidgetType() == 4;
+        long total = fileListMapper.count(taskId.trim(), image);
+        List<FepFileListItemVO> records = total == 0
+                ? java.util.Collections.emptyList()
+                : fileListMapper.findPage(taskId.trim(), image, (int) offset, pageSize);
+        return new PageResult<>(pageNum, pageSize, total, records);
     }
 
 }

@@ -29,6 +29,7 @@ public interface MonitorWidgetConfigItemMapper {
     int deleteObsoleteParseRuleItems(@Param("taskId") String taskId);
     /** 将已有筛选项重新绑定到当前有效解析规则并更新参数信息。 */
     int bindActiveParseRuleItems(@Param("taskId") String taskId);
-    /** 将任务下缺少的解析参数补充到曲线和实时数据组件。 */
-    int insertMissingParseRuleItems(@Param("taskId") String taskId);
+    /** 仅同步本批参数所关联的组件项，保留用户的勾选状态。 */
+    int updateChangedParseRuleItems(@Param("taskId") String taskId,
+                                    @Param("parseRuleIds") List<Long> parseRuleIds);
 }

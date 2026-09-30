@@ -19,7 +19,7 @@ public class MonitorDashboardWidget {
     private Long userId;
     /** 组件唯一标识，同一用户同一试验任务内唯一。 */
     private String widgetKey;
-    /** 组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像。 */
+    /** 组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像 5文件表格。 */
     private Integer widgetType;
     /** 组件显示标题。 */
     private String widgetTitle;

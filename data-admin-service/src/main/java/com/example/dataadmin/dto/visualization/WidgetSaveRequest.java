@@ -11,7 +11,7 @@ public class WidgetSaveRequest {
     private String taskId;
     /** 组件唯一标识。 */
     private String widgetKey;
-    /** 组件类型：1 实时曲线，2 实时数据，3 实时告警，4 载荷图像。 */
+    /** 组件类型：1 实时曲线，2 实时数据，3 实时告警，4 载荷图像，5 文件表格。 */
     private Integer widgetType;
     /** 页面显示标题。 */
     private String widgetTitle;

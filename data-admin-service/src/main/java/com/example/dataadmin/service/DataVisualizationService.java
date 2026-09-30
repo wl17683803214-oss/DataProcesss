@@ -1,6 +1,8 @@
 package com.example.dataadmin.service;
 
 import com.example.dataadmin.entity.*;
+import com.example.common.response.PageResult;
+import com.example.dataadmin.vo.visualization.FepFileListItemVO;
 
 import java.util.List;
 
@@ -32,4 +34,7 @@ public interface DataVisualizationService {
     boolean deleteWidgetItem(Long id);
     /** 更新组件数据项的勾选状态。 */
     boolean updateItemSelected(Long id, Integer isSelected);
+    /** 按组件类型分页读取当前任务的图片或其他文件。 */
+    PageResult<FepFileListItemVO> pageFiles(String taskId, Long widgetId, Long userId,
+            Integer pageNum, Integer pageSize);
 }

@@ -38,9 +38,11 @@ public class TelemetryFilterController {
             @RequestParam String taskId,
             @RequestParam(required = false) Long deviceSatelliteId,
             @RequestParam(required = false) Long systemId,
-            @RequestParam(required = false) String telemetryCode) {
+            @RequestParam(required = false) String telemetryCode,
+            @RequestParam Integer selectionType,
+            @RequestParam Long targetId) {
         return ApiResponse.success(service.list(taskId, deviceSatelliteId, systemId,
-                telemetryCode));
+                telemetryCode, selectionType, targetId));
     }
 
     /** 勾选或取消勾选时立即保存当前遥测参数。 */

@@ -24,6 +24,8 @@ public class TelemetryFilterNodeVO {
     private Long deviceSatelliteId;
     /** 搜索结果所属设备卫星名称。 */
     private String deviceSatelliteName;
+    /** 搜索结果所属系统完整路径；未分类时为空。 */
+    private String systemName;
 
     public static TelemetryFilterNodeVO of(Long id, String label,
             TelemetryFilterNodeType type, boolean checked, boolean hasChildren) {
@@ -49,4 +51,6 @@ public class TelemetryFilterNodeVO {
     public void setDeviceSatelliteId(Long value) { this.deviceSatelliteId = value; }
     public String getDeviceSatelliteName() { return deviceSatelliteName; }
     public void setDeviceSatelliteName(String value) { this.deviceSatelliteName = value; }
+    public String getSystemName() { return systemName; }
+    public void setSystemName(String value) { this.systemName = value; }
 }

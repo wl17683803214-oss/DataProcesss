@@ -478,22 +478,55 @@ CREATE INDEX IF NOT EXISTS idx_parse_rule_device_page
     ON telemetry_parse_rule_config (task_id, device_satellite_id, id)
     WHERE is_deleted = 0;
 
--- 参数筛选勾选结果由当前任务共享，不与登录用户绑定。
+-- 固定页面勾选按任务共享；可视化组件勾选按组件主键隔离。
 CREATE TABLE IF NOT EXISTS processed_telemetry_filter_selection (
     id BIGSERIAL PRIMARY KEY,
     task_id VARCHAR(100) NOT NULL,
     device_satellite_id BIGINT NOT NULL,
     telemetry_code VARCHAR(100) NOT NULL,
+    selection_type SMALLINT NOT NULL DEFAULT 1,
+    target_id BIGINT NOT NULL DEFAULT 0,
     is_deleted SMALLINT NOT NULL DEFAULT 0,
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (task_id, device_satellite_id, telemetry_code)
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-COMMENT ON TABLE processed_telemetry_filter_selection IS '处理后遥测参数筛选勾选记录';
+-- 已有勾选记录归入处理后数据表格，再复制给处理后数据曲线。
+ALTER TABLE processed_telemetry_filter_selection
+    ADD COLUMN IF NOT EXISTS selection_type SMALLINT NOT NULL DEFAULT 1;
+ALTER TABLE processed_telemetry_filter_selection
+    ADD COLUMN IF NOT EXISTS target_id BIGINT NOT NULL DEFAULT 0;
+DO $$
+DECLARE old_constraint RECORD;
+BEGIN
+    FOR old_constraint IN
+        SELECT conname FROM pg_constraint
+        WHERE conrelid = 'processed_telemetry_filter_selection'::regclass
+          AND contype = 'u'
+          AND pg_get_constraintdef(oid) = 'UNIQUE (task_id, device_satellite_id, telemetry_code)'
+    LOOP
+        EXECUTE 'ALTER TABLE processed_telemetry_filter_selection DROP CONSTRAINT '
+                || quote_ident(old_constraint.conname);
+    END LOOP;
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_telemetry_selection_scope
+    ON processed_telemetry_filter_selection
+       (task_id, selection_type, target_id, device_satellite_id, telemetry_code);
+CREATE INDEX IF NOT EXISTS idx_telemetry_selection_task_device
+    ON processed_telemetry_filter_selection (task_id, device_satellite_id, telemetry_code);
+INSERT INTO processed_telemetry_filter_selection
+    (task_id, device_satellite_id, telemetry_code, selection_type, target_id, is_deleted)
+SELECT task_id, device_satellite_id, telemetry_code, 2, 0, is_deleted
+FROM processed_telemetry_filter_selection
+WHERE selection_type = 1 AND target_id = 0
+ON CONFLICT (task_id, selection_type, target_id, device_satellite_id, telemetry_code)
+DO NOTHING;
+COMMENT ON TABLE processed_telemetry_filter_selection IS '处理后数据及可视化组件遥测参数勾选记录';
 COMMENT ON COLUMN processed_telemetry_filter_selection.id IS '主键';
 COMMENT ON COLUMN processed_telemetry_filter_selection.task_id IS '外部试验任务编号';
 COMMENT ON COLUMN processed_telemetry_filter_selection.device_satellite_id IS '设备卫星主键';
 COMMENT ON COLUMN processed_telemetry_filter_selection.telemetry_code IS '遥测代号';
+COMMENT ON COLUMN processed_telemetry_filter_selection.selection_type IS '勾选场景：1处理后数据表格 2处理后数据曲线 3数据可视化表格 4数据可视化曲线';
+COMMENT ON COLUMN processed_telemetry_filter_selection.target_id IS '固定页面为0，数据可视化页面为组件主键';
 COMMENT ON COLUMN processed_telemetry_filter_selection.is_deleted IS '是否取消勾选：0否，1是';
 COMMENT ON COLUMN processed_telemetry_filter_selection.create_time IS '创建时间';
 COMMENT ON COLUMN processed_telemetry_filter_selection.update_time IS '更新时间';
@@ -632,6 +665,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_fep_file_transfer_identity
 CREATE INDEX IF NOT EXISTS idx_fep_file_transfer_retry
     ON fep_file_transfer_record (
         process_status, next_retry_time, update_time);
+-- 按任务、上传状态和接收时间分页展示图片与文件。
+CREATE INDEX IF NOT EXISTS idx_fep_file_transfer_task_time
+    ON fep_file_transfer_record (task_id, process_status, completed_time DESC, id DESC);
 
 -- 系统日志表
 CREATE TABLE IF NOT EXISTS sys_runtime_log (
@@ -682,7 +718,7 @@ COMMENT ON COLUMN monitor_dashboard_widget.id IS '组件主键ID';
 COMMENT ON COLUMN monitor_dashboard_widget.task_id IS '外部试验任务编号';
 COMMENT ON COLUMN monitor_dashboard_widget.user_id IS '用户ID，对应系统用户ID';
 COMMENT ON COLUMN monitor_dashboard_widget.widget_key IS '组件唯一标识，同一用户同一试验任务内唯一';
-COMMENT ON COLUMN monitor_dashboard_widget.widget_type IS '组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像';
+COMMENT ON COLUMN monitor_dashboard_widget.widget_type IS '组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像 5文件表格';
 COMMENT ON COLUMN monitor_dashboard_widget.widget_title IS '组件显示标题';
 COMMENT ON COLUMN monitor_dashboard_widget.grid_x IS '组件左上角横向网格位置，从0开始';
 COMMENT ON COLUMN monitor_dashboard_widget.grid_y IS '组件左上角纵向网格位置，从0开始';
@@ -725,7 +761,7 @@ COMMENT ON COLUMN monitor_widget_config_item.interface_id IS '采集接口ID；�
 COMMENT ON COLUMN monitor_widget_config_item.protocol_config_id IS '协议配置ID；解析参数自动同步项为空';
 COMMENT ON COLUMN monitor_widget_config_item.item_code IS '数据项编码，如T001、A001、V001或C001';
 COMMENT ON COLUMN monitor_widget_config_item.item_name IS '数据项名称，如温度、姿态角X、电压或电流';
-COMMENT ON COLUMN monitor_widget_config_item.is_selected IS '是否勾选：0未勾选 1已勾选';
+COMMENT ON COLUMN monitor_widget_config_item.is_selected IS '非遥测数据项勾选状态；遥测参数以场景勾选表为准';
 COMMENT ON COLUMN monitor_widget_config_item.create_time IS '创建时间';
 COMMENT ON COLUMN monitor_widget_config_item.update_time IS '更新时间';
 
@@ -738,5 +774,18 @@ CREATE INDEX IF NOT EXISTS idx_monitor_config_item_parse_rule_id
 COMMENT ON INDEX idx_monitor_config_item_widget_id IS '用于按组件加载采集接口、协议和数据项配置';
 COMMENT ON INDEX idx_monitor_config_item_parse_rule_id IS '用于按参数解析配置同步可视化筛选项';
 
+-- 将已有可视化组件选中的遥测参数归入组件自己的勾选场景。
+INSERT INTO processed_telemetry_filter_selection
+    (task_id, device_satellite_id, telemetry_code, selection_type, target_id, is_deleted)
+SELECT widget.task_id, rule_config.device_satellite_id, rule_config.telemetry_code,
+       CASE WHEN widget.widget_type = 1 THEN 4 ELSE 3 END, widget.id, 0
+FROM monitor_widget_config_item item
+JOIN monitor_dashboard_widget widget ON widget.id = item.widget_id
+JOIN telemetry_parse_rule_config rule_config
+  ON rule_config.id = item.parse_rule_id AND rule_config.task_id = widget.task_id
+WHERE widget.widget_type IN (1, 2) AND item.is_selected = 1
+  AND rule_config.is_deleted = 0
+ON CONFLICT (task_id, selection_type, target_id, device_satellite_id, telemetry_code)
+DO NOTHING;
 
 COMMIT;

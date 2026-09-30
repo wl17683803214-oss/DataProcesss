@@ -4,9 +4,11 @@ import com.example.common.response.PageResult;
 import com.example.common.tool.IoTDBPathTool;
 import com.example.dataadmin.entity.DataProcessLog;
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
+import com.example.dataadmin.entity.ProcessedTelemetryFilterSelection;
 import com.example.dataadmin.entity.DeviceSatellite;
 import com.example.dataadmin.entity.TelemetrySystemConfig;
 import com.example.dataadmin.entity.CollectProtocolConfig;
+import com.example.dataadmin.dto.processing.TelemetryParseRuleBatchUpdateRequest;
 import com.example.dataadmin.mapper.TelemetrySystemConfigMapper;
 import com.example.dataadmin.mapper.CollectProtocolConfigMapper;
 import com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper;
@@ -38,6 +40,7 @@ import com.github.pagehelper.PageInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -48,12 +51,15 @@ import org.apache.tsfile.utils.Binary;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.sql.Timestamp;
 
 /**
@@ -276,15 +282,19 @@ public class DataProcessingServiceImpl implements DataProcessingService {
 
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public List<ProcessedTelemetryVO> listProcessedTelemetry(String taskId) {
-        return processedTelemetryQueryService.latest(requireIoTDBTaskId(taskId));
+    public List<ProcessedTelemetryVO> listProcessedTelemetry(String taskId,
+            Integer selectionType, Long targetId) {
+        return processedTelemetryQueryService.latest(
+                requireIoTDBTaskId(taskId), selectionType, targetId);
     }
 
     /** 与最新值使用同一批勾选参数，分别查询各参数的最近曲线点。 */
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public List<ProcessedTelemetryCurveVO> listProcessedTelemetryCurves(String taskId) {
-        return processedTelemetryQueryService.curves(requireIoTDBTaskId(taskId));
+    public List<ProcessedTelemetryCurveVO> listProcessedTelemetryCurves(String taskId,
+            Integer selectionType, Long targetId) {
+        return processedTelemetryQueryService.curves(
+                requireIoTDBTaskId(taskId), selectionType, targetId);
     }
     @Override
     public PageResult<InvalidTelemetryFrame> pageInvalidTelemetryFrames(
@@ -585,6 +595,169 @@ public class DataProcessingServiceImpl implements DataProcessingService {
                         systemId, normalizedPageSize,
                         (long) (normalizedPageNum - 1) * normalizedPageSize);
         return new PageResult<>(normalizedPageNum, normalizedPageSize, total, records);
+    }
+
+    /** 先验证整批最终数据，再在同一事务中修改参数和勾选记录。 */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int batchUpdateParseRules(TelemetryParseRuleBatchUpdateRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("批量修改请求不能为空");
+        }
+        String taskId = request.getTaskId();
+        requireTaskId(taskId);
+        List<TelemetryParseRuleBatchUpdateRequest.Item> items = request.getItems();
+        if (items == null || items.isEmpty() || items.size() > 200) {
+            throw new IllegalArgumentException("单次必须修改1到200条遥测参数");
+        }
+        // 第一步：按任务串行化导入与编辑，并一次加载本批次原始记录。
+        lockTask(taskId);
+        List<Long> ids = new ArrayList<>(items.size());
+        Set<Long> distinctIds = new HashSet<>();
+        for (TelemetryParseRuleBatchUpdateRequest.Item item : items) {
+            if (item == null || item.getId() == null || item.getDeviceSatelliteId() == null
+                    || !distinctIds.add(item.getId())) {
+                throw new IllegalArgumentException("参数主键或设备主键无效，或批次中存在重复参数");
+            }
+            ids.add(item.getId());
+        }
+        Map<Long, TelemetryParseRuleConfig> originalById = new HashMap<>();
+        for (TelemetryParseRuleConfig original : parseRuleMapper.findActiveByIds(taskId, ids)) {
+            originalById.put(original.getId(), original);
+        }
+        if (originalById.size() != items.size()) {
+            throw new IllegalArgumentException("批次中存在不属于当前任务的有效参数");
+        }
+
+        // 第二步：复用导入校验，并从当前设备系统树生成完整所属系统路径。
+        Map<Long, Map<Long, TelemetrySystemConfig>> systemsByDevice = new HashMap<>();
+        Map<Long, List<TelemetryParseRuleConfig>> updatesByDevice = new HashMap<>();
+        for (TelemetryParseRuleBatchUpdateRequest.Item item : items) {
+            TelemetryParseRuleConfig original = originalById.get(item.getId());
+            if (!item.getDeviceSatelliteId().equals(original.getDeviceSatelliteId())) {
+                throw new IllegalArgumentException("参数不能移动到其他设备卫星：" + item.getId());
+            }
+            TelemetryParseRuleConfig update = new TelemetryParseRuleConfig();
+            BeanUtils.copyProperties(item, update);
+            update.setTaskId(taskId);
+            update.setSystemName(systemPath(taskId, update.getDeviceSatelliteId(),
+                    update.getSystemId(), systemsByDevice));
+            workbookParser.validate(update);
+            updatesByDevice.computeIfAbsent(update.getDeviceSatelliteId(),
+                    ignored -> new ArrayList<>()).add(update);
+        }
+
+        // 第三步：检查批内重复值及批外已有值，避免数据库在写入中间态报唯一键冲突。
+        for (Map.Entry<Long, List<TelemetryParseRuleConfig>> group : updatesByDevice.entrySet()) {
+            List<Long> batchIds = new ArrayList<>();
+            List<String> tableIndexes = new ArrayList<>();
+            List<String> telemetryCodes = new ArrayList<>();
+            Set<String> uniqueIndexes = new HashSet<>();
+            Set<String> uniqueCodes = new HashSet<>();
+            for (TelemetryParseRuleConfig update : group.getValue()) {
+                batchIds.add(update.getId());
+                tableIndexes.add(update.getTableIndex());
+                telemetryCodes.add(update.getTelemetryCode());
+                if (!uniqueIndexes.add(update.getTableIndex())
+                        || !uniqueCodes.add(update.getTelemetryCode())) {
+                    throw new IllegalArgumentException("同一设备卫星的序号或遥测代号不能重复");
+                }
+            }
+            if (parseRuleMapper.findBatchConflict(taskId, group.getKey(), batchIds,
+                    tableIndexes, telemetryCodes) != null) {
+                throw new IllegalArgumentException("修改后的序号或遥测代号与已有参数重复");
+            }
+        }
+
+        // 第四步：先为整批记录腾出唯一键，再写入每条记录的最终业务字段。
+        Map<Long, List<ProcessedTelemetryFilterSelection>> selectedByDevice = new HashMap<>();
+        for (Long deviceId : updatesByDevice.keySet()) {
+            selectedByDevice.put(deviceId,
+                    selectionMapper.findSelectedByDevice(taskId, deviceId));
+        }
+        for (TelemetryParseRuleBatchUpdateRequest.Item item : items) {
+            TelemetryParseRuleConfig temporary = new TelemetryParseRuleConfig();
+            temporary.setId(item.getId());
+            temporary.setDeviceSatelliteId(item.getDeviceSatelliteId());
+            String suffix = UUID.randomUUID().toString();
+            temporary.setTableIndex("__batch_index_" + suffix);
+            temporary.setTelemetryCode("__batch_code_" + suffix);
+            if (parseRuleMapper.updateTemporaryKeys(taskId, temporary) != 1) {
+                throw new IllegalStateException("暂存遥测参数唯一键失败：" + item.getId());
+            }
+        }
+        for (List<TelemetryParseRuleConfig> group : updatesByDevice.values()) {
+            for (TelemetryParseRuleConfig update : group) {
+                if (parseRuleMapper.updateOne(taskId, update) != 1) {
+                    throw new IllegalStateException("修改遥测参数失败：" + update.getId());
+                }
+            }
+        }
+
+        // 第五步：清除变化前后的代号勾选，再把原参数的勾选状态关联到新代号。
+        Map<TelemetryParseRuleConfig, List<ProcessedTelemetryFilterSelection>> selectedRenames =
+                new LinkedHashMap<>();
+        for (List<TelemetryParseRuleConfig> group : updatesByDevice.values()) {
+            for (TelemetryParseRuleConfig update : group) {
+                String oldCode = originalById.get(update.getId()).getTelemetryCode();
+                if (!oldCode.equals(update.getTelemetryCode())) {
+                    selectionMapper.markDeleted(taskId, update.getDeviceSatelliteId(), oldCode);
+                    selectionMapper.markDeleted(taskId, update.getDeviceSatelliteId(),
+                            update.getTelemetryCode());
+                    for (ProcessedTelemetryFilterSelection selected
+                            : selectedByDevice.get(update.getDeviceSatelliteId())) {
+                        if (oldCode.equals(selected.getTelemetryCode())) {
+                            selectedRenames.computeIfAbsent(update,
+                                    ignored -> new ArrayList<>()).add(selected);
+                        }
+                    }
+                }
+            }
+        }
+        for (Map.Entry<TelemetryParseRuleConfig,
+                List<ProcessedTelemetryFilterSelection>> rename : selectedRenames.entrySet()) {
+            TelemetryParseRuleConfig update = rename.getKey();
+            for (ProcessedTelemetryFilterSelection selected : rename.getValue()) {
+                selectionMapper.save(taskId, update.getDeviceSatelliteId(),
+                        update.getTelemetryCode(), selected.getSelectionType(),
+                        selected.getTargetId(), 0);
+            }
+        }
+        // 第六步：只刷新本批可视化筛选项；运行中的采集快照保持不变。
+        parameterSyncService.synchronizeChangedParameters(taskId, ids);
+        return items.size();
+    }
+
+    /** 根据选中的系统主键恢复从根系统到当前系统的完整名称路径。 */
+    private String systemPath(String taskId, Long deviceId, Long systemId,
+            Map<Long, Map<Long, TelemetrySystemConfig>> systemsByDevice) {
+        if (systemId == null) {
+            return null;
+        }
+        if (systemId <= 0) {
+            throw new IllegalArgumentException("所属系统主键不正确");
+        }
+        Map<Long, TelemetrySystemConfig> systems = systemsByDevice.computeIfAbsent(deviceId,
+                id -> {
+                    Map<Long, TelemetrySystemConfig> values = new HashMap<>();
+                    for (TelemetrySystemConfig system : systemMapper.findByDevice(taskId, id)) {
+                        values.put(system.getId(), system);
+                    }
+                    return values;
+                });
+        List<String> names = new ArrayList<>();
+        Set<Long> visited = new HashSet<>();
+        long currentId = systemId;
+        while (currentId != 0) {
+            TelemetrySystemConfig system = systems.get(currentId);
+            if (system == null || !visited.add(currentId)) {
+                throw new IllegalArgumentException("当前设备下不存在有效的所属系统：" + systemId);
+            }
+            names.add(system.getSystemName());
+            currentId = system.getParentId();
+        }
+        Collections.reverse(names);
+        return String.join("\\", names);
     }
 
     /** 先校验全部Excel页签或TXT内容，再原子替换当前任务内的同类型设备及参数。 */

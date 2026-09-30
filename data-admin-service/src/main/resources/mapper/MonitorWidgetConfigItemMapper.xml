@@ -5,18 +5,43 @@
     <!-- 公共查询字段。 -->
     <sql id="columns">id, widget_id, parse_rule_id, interface_id, protocol_config_id, item_code, item_name, is_selected, create_time, update_time</sql>
 
+    <!-- 参数项以场景勾选表为准，其他数据项沿用自身勾选状态。 -->
+    <sql id="selectedColumns">
+        item.id, item.widget_id, item.parse_rule_id, item.interface_id,
+        item.protocol_config_id, item.item_code, item.item_name,
+        case when item.parse_rule_id is null then item.is_selected
+             when selection.id is null then 0 else 1 end as is_selected,
+        item.create_time, item.update_time
+    </sql>
+    <!-- 按组件类型匹配遥测场景，组件数据项的选择只在此处读取。 -->
+    <sql id="selectionJoins">
+        inner join monitor_dashboard_widget widget on widget.id = item.widget_id
+        left join telemetry_parse_rule_config rule_config
+          on rule_config.id = item.parse_rule_id and rule_config.task_id = widget.task_id
+        left join processed_telemetry_filter_selection selection
+          on selection.task_id = widget.task_id and selection.target_id = widget.id
+         and selection.selection_type = case when widget.widget_type = 1 then 4 else 3 end
+         and selection.device_satellite_id = rule_config.device_satellite_id
+         and selection.telemetry_code = rule_config.telemetry_code
+         and selection.is_deleted = 0
+    </sql>
     <!-- 按页面组件查询数据项配置。 -->
     <select id="findAllByWidgetId" resultType="com.example.dataadmin.entity.MonitorWidgetConfigItem">
-        select <include refid="columns"/> from monitor_widget_config_item
+        select <include refid="selectedColumns"/>
+        from monitor_widget_config_item item
+        <include refid="selectionJoins"/>
         <where>
-            <if test="widgetId != null">widget_id = #{widgetId}</if>
+            <if test="widgetId != null">item.widget_id = #{widgetId}</if>
         </where>
-        order by id
+        order by item.id
     </select>
 
     <!-- 按主键查询详情。 -->
     <select id="findById" resultType="com.example.dataadmin.entity.MonitorWidgetConfigItem">
-        select <include refid="columns"/> from monitor_widget_config_item where id = #{id}
+        select <include refid="selectedColumns"/>
+        from monitor_widget_config_item item
+        <include refid="selectionJoins"/>
+        where item.id = #{id}
     </select>
 
     <!-- 新增记录并通过序列生成主键。 -->
@@ -129,44 +154,20 @@
                or item.item_code = rule_config.telemetry_code)
     </update>
 
-    <!--
-        将解析参数补充到实时曲线、实时数据组件的筛选项。
-        新增参数默认不勾选，避免一次导入大量参数后直接绘制全部曲线。
-    -->
-    <insert id="insertMissingParseRuleItems">
-        insert into monitor_widget_config_item
-            (id, widget_id, parse_rule_id, interface_id, protocol_config_id,
-             item_code, item_name, is_selected)
-        select nextval('monitor_widget_config_item_id_seq'),
-               widget.id,
-               rule_config.id,
-               null,
-               null,
-               rule_config.telemetry_code,
-               rule_config.telemetry_name,
-               0
-        from monitor_dashboard_widget widget
-        cross join (
-            select current_rule.id,
-                   current_rule.telemetry_code,
-                   current_rule.telemetry_name
-            from telemetry_parse_rule_config current_rule
-            inner join (
-                select telemetry_code, max(id) as id
-                from telemetry_parse_rule_config
-                where task_id = #{taskId} and is_deleted = 0
-                group by telemetry_code
-            ) latest_rule on latest_rule.id = current_rule.id
-        ) rule_config
-        where widget.task_id = #{taskId}
+    <!-- 批量编辑只更新关联指定参数主键的组件项，不扫描全部解析配置。 -->
+    <update id="updateChangedParseRuleItems">
+        update monitor_widget_config_item item
+        set item_code = rule_config.telemetry_code,
+            item_name = rule_config.telemetry_name,
+            update_time = current_timestamp
+        from telemetry_parse_rule_config rule_config,
+             monitor_dashboard_widget widget
+        where widget.id = item.widget_id and widget.task_id = #{taskId}
           and widget.widget_type in (1, 2)
-          and not exists (
-              select 1
-              from monitor_widget_config_item existing_item
-              where existing_item.widget_id = widget.id
-                and (existing_item.parse_rule_id = rule_config.id
-                     or existing_item.item_code = rule_config.telemetry_code)
-          )
-    </insert>
+          and item.parse_rule_id = rule_config.id
+          and rule_config.task_id = #{taskId} and rule_config.is_deleted = 0
+          and rule_config.id in
+          <foreach collection="parseRuleIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
 
 </mapper>

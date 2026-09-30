@@ -56,6 +56,7 @@ public final class ControllerEnumData {
         EnumData.add(data, "storeFlag", BusinessEnums.YesNo.values());
         EnumData.add(data, "alarmFlag", BusinessEnums.YesNo.values());
         EnumData.add(data, "deviceSatelliteType", DeviceSatelliteType.values());
+        EnumData.add(data, "selectionType", BusinessEnums.SelectionType.values());
         return data;
     }
 
@@ -95,6 +96,7 @@ public final class ControllerEnumData {
         EnumData.add(data, "widgetType", BusinessEnums.WidgetType.values());
         EnumData.add(data, "enabled", BusinessEnums.Visible.values());
         EnumData.add(data, "isSelected", BusinessEnums.Selected.values());
+        EnumData.add(data, "selectionType", BusinessEnums.SelectionType.values());
         return data;
     }
 

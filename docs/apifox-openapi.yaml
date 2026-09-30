@@ -313,9 +313,10 @@ paths:
                 code: 200
                 message: "操作成功"
                 data:
-                  widgetType: [{ value: 1, label: "实时曲线" }, { value: 2, label: "实时数据" }, { value: 3, label: "实时告警" }, { value: 4, label: "载荷图像" }]
+                  widgetType: [{ value: 1, label: "实时曲线" }, { value: 2, label: "实时数据" }, { value: 3, label: "实时告警" }, { value: 4, label: "载荷图像" }, { value: 5, label: "文件表格" }]
                   enabled: [{ value: 0, label: "隐藏" }, { value: 1, label: "显示" }]
                   isSelected: [{ value: 0, label: "未选中" }, { value: 1, label: "已选中" }]
+                  selectionType: [{ value: 1, label: "处理后数据表格" }, { value: 2, label: "处理后数据曲线" }, { value: 3, label: "数据可视化表格" }, { value: 4, label: "数据可视化曲线" }]
 
   /processing/findData:
     get:
@@ -334,6 +335,7 @@ paths:
                   logLevel: [{ value: 1, label: "信息" }, { value: 2, label: "警告" }, { value: 3, label: "错误" }]
                   ruleEnabled: [{ value: 0, label: "禁用" }, { value: 1, label: "启用" }]
                   storeFlag: [{ value: 0, label: "否" }, { value: 1, label: "是" }]
+                  selectionType: [{ value: 1, label: "处理后数据表格" }, { value: 2, label: "处理后数据曲线" }, { value: 3, label: "数据可视化表格" }, { value: 4, label: "数据可视化曲线" }]
 
   /calibration/findData:
     get:
@@ -2200,12 +2202,13 @@ paths:
                   description: "可视化组件唯一标识"
                 widgetType:
                   type: integer
-                  description: "组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像。枚举：1 实时曲线，2 实时数据，3 实时告警，4 载荷图像"
+                  description: "组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像 5文件表格"
                   enum:
                     - 1
                     - 2
                     - 3
                     - 4
+                    - 5
                   x-apifox-enum:
                     - value: 1
                       name: "实时曲线"
@@ -2219,6 +2222,9 @@ paths:
                     - value: 4
                       name: "载荷图像"
                       description: "4 表示载荷图像"
+                    - value: 5
+                      name: "文件表格"
+                      description: "5 表示文件表格"
                 widgetTitle:
                   type: string
                   description: "可视化组件显示标题"
@@ -2284,12 +2290,13 @@ paths:
                   description: "可视化组件唯一标识"
                 widgetType:
                   type: integer
-                  description: "组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像。枚举：1 实时曲线，2 实时数据，3 实时告警，4 载荷图像"
+                  description: "组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像 5文件表格"
                   enum:
                     - 1
                     - 2
                     - 3
                     - 4
+                    - 5
                   x-apifox-enum:
                     - value: 1
                       name: "实时曲线"
@@ -2303,6 +2310,9 @@ paths:
                     - value: 4
                       name: "载荷图像"
                       description: "4 表示载荷图像"
+                    - value: 5
+                      name: "文件表格"
+                      description: "5 表示文件表格"
                 widgetTitle:
                   type: string
                   description: "可视化组件显示标题"
@@ -2371,7 +2381,7 @@ paths:
     get:
       tags: [数据可视化]
       summary: 查询组件数据项
-      description: 返回组件全部参数筛选项及isSelected勾选状态。parseRuleId关联参数解析配置；自动同步项的interfaceId和protocolConfigId为空。
+      description: 返回组件已有数据项及isSelected状态；遥测参数勾选以按需筛选树为准，新参数不会自动复制为组件数据项。parseRuleId关联参数解析配置。
       parameters:
         - name: widgetId
           description: "可视化组件 ID"
@@ -2383,6 +2393,70 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Success041'
+
+  /visualization/widgets/{widgetId}/files:
+    get:
+      tags: [数据可视化]
+      summary: 分页查询组件的图片或文件
+      description: 载荷图像组件只返回图片后缀文件，文件表格组件返回其他及无后缀文件。只查询当前任务已经上传至对象存储的文件；采集接口已被删除时interfaceName可以为空。
+      parameters:
+        - $ref: '#/components/parameters/RequiredTaskId'
+        - name: widgetId
+          in: path
+          required: true
+          description: 当前登录用户的图片或文件组件主键
+          schema: { type: integer, format: int64 }
+        - $ref: '#/components/parameters/PageNum'
+        - name: pageSize
+          in: query
+          required: false
+          description: 每页条数，默认20，最多200
+          schema: { type: integer, default: 20, minimum: 1, maximum: 200 }
+      responses:
+        '200':
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      pageNum: { type: integer }
+                      pageSize: { type: integer }
+                      total: { type: integer, format: int64 }
+                      records:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer, format: int64 }
+                            interfaceId: { type: integer, format: int64 }
+                            interfaceName: { type: string, nullable: true }
+                            fileName: { type: string }
+                            fileType: { type: string, nullable: true, description: 文件小写后缀 }
+                            fileLength: { type: integer, format: int64, description: 文件字节数 }
+                            fileUrl: { type: string, description: 对外访问地址 }
+                            completedTime: { type: string, format: date-time }
+              example:
+                code: 200
+                message: 操作成功
+                data:
+                  pageNum: 1
+                  pageSize: 20
+                  total: 1
+                  records:
+                    - id: 128
+                      interfaceId: 6
+                      interfaceName: 载荷文件接收接口
+                      fileName: 载荷图像001.png
+                      fileType: png
+                      fileLength: 245760
+                      fileUrl: http://10.126.100.61:9002/fep-files/example.png
+                      completedTime: '2026-09-29T10:30:15'
 
   /visualization/items/{id}:
     get:
@@ -2429,7 +2503,7 @@ paths:
                   description: "组件数据项名称"
                 isSelected:
                   type: integer
-                  description: "是否勾选：0未勾选 1已勾选。枚举：0 未选中，1 已选中"
+                  description: "是否勾选：0未选中 1已选中；遥测参数项同步组件场景勾选表"
                   enum:
                     - 0
                     - 1
@@ -2491,7 +2565,7 @@ paths:
                   description: "组件数据项名称"
                 isSelected:
                   type: integer
-                  description: "是否勾选：0未勾选 1已勾选。枚举：0 未选中，1 已选中"
+                  description: "是否勾选：0未选中 1已选中；遥测参数项同步组件场景勾选表"
                   enum:
                     - 0
                     - 1
@@ -2540,6 +2614,7 @@ paths:
     post:
       tags: [数据可视化]
       summary: 修改组件数据项勾选状态
+      description: 遥测参数项写入组件对应的统一勾选场景；其他数据项仍修改自身的勾选字段。
       requestBody:
         required: true
         content:
@@ -2553,7 +2628,7 @@ paths:
                   format: int64
                 status:
                   type: integer
-                  description: "启用状态。枚举：0 停用，1 启用"
+                  description: "勾选状态：0未选中，1已选中"
                   enum:
                     - 0
                     - 1
@@ -2641,9 +2716,19 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最新数据
-      description: 只传taskId，自动查询当前任务全部有效勾选参数，并发读取每个参数最新一条；没有历史值的参数返回空值。
+      description: 按表格场景查询已勾选参数的最新值；不传场景时默认处理后数据表格。数据可视化表格传selectionType=3及组件主键targetId。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
+        - name: selectionType
+          in: query
+          required: false
+          description: 1处理后数据表格，3数据可视化表格；默认1
+          schema: { type: integer, enum: [1, 3], default: 1 }
+        - name: targetId
+          in: query
+          required: false
+          description: 固定页面为0；数据可视化表格为组件主键
+          schema: { type: integer, format: int64, default: 0 }
       responses:
         '200':
           $ref: '#/components/responses/ProcessedTelemetryList'
@@ -2652,9 +2737,19 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最近曲线
-      description: 只传taskId，自动查询当前任务全部有效勾选参数，并发读取每个参数最新最多120个原始点；各曲线携带自己的毫秒时间戳数组，不限制时间范围。
+      description: 按曲线场景查询已勾选参数最近最多120个原始点；不传场景时默认处理后数据曲线。数据可视化曲线传selectionType=4及组件主键targetId。各曲线携带自己的毫秒时间戳数组。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
+        - name: selectionType
+          in: query
+          required: false
+          description: 2处理后数据曲线，4数据可视化曲线；默认2
+          schema: { type: integer, enum: [2, 4], default: 2 }
+        - name: targetId
+          in: query
+          required: false
+          description: 固定页面为0；数据可视化曲线为组件主键
+          schema: { type: integer, format: int64, default: 0 }
       responses:
         '200':
           $ref: '#/components/responses/ProcessedTelemetryCurveList'
@@ -2771,9 +2866,19 @@ paths:
     get:
       tags: [数据处理]
       summary: 按需展开遥测参数筛选树
-      description: 仅传taskId返回设备；增加deviceSatelliteId返回直属参数和根系统；同时增加systemId返回该系统直属参数和子系统。传非空telemetryCode时按代号前缀搜索当前任务全部匹配的参数，直接返回可勾选节点和所属设备；此时不能传deviceSatelliteId或systemId。接口不分页，且不返回children字段。
+      description: 必须传taskId、selectionType和targetId以确定独立的勾选场景。仅传这三个参数返回设备；增加deviceSatelliteId返回直属参数和根系统；同时增加systemId返回该系统直属参数和子系统。传非空telemetryCode时按完整代号精确查询当前任务全部匹配的参数，直接返回可勾选节点和所属设备；此时不能传deviceSatelliteId或systemId。接口不分页，且不返回children字段。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
+        - name: selectionType
+          in: query
+          required: true
+          description: 1处理后数据表格，2处理后数据曲线，3数据可视化表格，4数据可视化曲线
+          schema: { type: integer, enum: [1, 2, 3, 4] }
+        - name: targetId
+          in: query
+          required: true
+          description: 固定页面为0；数据可视化页面为组件主键
+          schema: { type: integer, format: int64 }
         - name: deviceSatelliteId
           in: query
           required: false
@@ -2785,7 +2890,7 @@ paths:
         - name: telemetryCode
           in: query
           required: false
-          description: 遥测代号前缀；传入非空值时不能同时传deviceSatelliteId或systemId，返回全部匹配参数
+          description: 完整遥测代号，精确匹配；传入非空值时不能同时传deviceSatelliteId或systemId，返回全部匹配参数
           schema: { type: string }
       responses:
         '200':
@@ -2811,6 +2916,7 @@ paths:
                         hasChildren: { type: boolean }
                         deviceSatelliteId: { type: integer, format: int64, description: "搜索结果所属设备卫星主键" }
                         deviceSatelliteName: { type: string, description: "搜索结果所属设备卫星名称" }
+                        systemName: { type: string, description: "搜索结果所属系统完整路径，未分类时不返回" }
               examples:
                 expand:
                   summary: 展开设备层级
@@ -2847,6 +2953,7 @@ paths:
                         hasChildren: false
                         deviceSatelliteId: 12
                         deviceSatelliteName: XX12卫星
+                        systemName: '测控系统\姿态控制'
         '400':
           description: 遥测代号搜索与设备或系统展开参数不能同时使用
           content:
@@ -2865,12 +2972,14 @@ paths:
           application/json:
             schema:
               type: object
-              required: [taskId, parseRuleId, checked]
+              required: [taskId, parseRuleId, checked, selectionType, targetId]
               properties:
                 taskId: { type: string }
                 parseRuleId: { type: integer, format: int64 }
                 checked: { type: boolean }
-            example: { taskId: TASK-20260908-001, parseRuleId: 81, checked: true }
+                selectionType: { type: integer, enum: [1, 2, 3, 4] }
+                targetId: { type: integer, format: int64 }
+            example: { taskId: TASK-20260908-001, parseRuleId: 81, checked: true, selectionType: 3, targetId: 205 }
       responses:
         '200':
           description: 操作成功
@@ -2979,6 +3088,80 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Success056'
+
+  /processing/rules/batch-update:
+    post:
+      tags: [数据处理]
+      summary: 批量修改遥测参数解析配置
+      description: 同一任务一次完整修改1到200条参数；每条参数可属于不同设备。系统名称按systemId生成，遥测代号变化时保留原勾选状态；任意参数校验失败则整批回滚。运行中的采集接口在下一次同步时加载修改后的解析字段。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [taskId, items]
+              properties:
+                taskId: { type: string, description: "当前试验任务编号" }
+                items:
+                  type: array
+                  minItems: 1
+                  maxItems: 200
+                  items:
+                    type: object
+                    required: [id, deviceSatelliteId, tableIndex, bitWidth, telemetryName, telemetryCode, formulaType]
+                    properties:
+                      id: { type: integer, format: int64, description: "参数解析配置主键" }
+                      deviceSatelliteId: { type: integer, format: int64, description: "原设备卫星主键，不允许更换设备" }
+                      systemId: { type: integer, format: int64, nullable: true, description: "所属系统主键；空值表示直属设备" }
+                      tableIndex: { type: string, description: "大表序号，同设备内唯一" }
+                      bitWidth: { type: string, description: "位宽" }
+                      telemetryName: { type: string, description: "遥测名称" }
+                      telemetryCode: { type: string, description: "遥测代号，同设备内唯一" }
+                      formulaType: { type: string, description: "公式类型" }
+                      formulaDesc: { type: string, nullable: true, description: "处理公式" }
+                      processParam: { type: string, nullable: true, description: "处理参数" }
+                      decimalPlaces: { type: string, nullable: true, description: "小数位数" }
+                      alarmFlag: { type: string, enum: ["0", "1"], description: "是否报警：0否、1是；空值按0保存" }
+                      normalValue: { type: string, nullable: true, description: "正常值范围" }
+                      warningValue: { type: string, nullable: true, description: "预警值范围" }
+                      stateChangeInfo: { type: string, nullable: true, description: "状态跳变信息" }
+                      commandCode: { type: string, nullable: true, description: "相关命令" }
+                      controlChannel: { type: string, nullable: true, description: "控制波道" }
+                      mergeChannelCount: { type: string, nullable: true, description: "合并波道" }
+                      delayChannel: { type: string, nullable: true, description: "延时波道" }
+                      storeFlag: { type: string, enum: ["0", "1"], description: "存储遥测：0否、1是；空值按0保存" }
+                      calibrationFormula: { type: string, nullable: true, description: "校准公式" }
+            example:
+              taskId: TASK-20260908-001
+              items:
+                - id: 81
+                  deviceSatelliteId: 12
+                  systemId: 22
+                  tableIndex: '1'
+                  bitWidth: '32'
+                  telemetryName: 电压
+                  telemetryCode: TMK1001
+                  formulaType: '300'
+                  formulaDesc: 'y=a*x+b'
+                  processParam: '0.02/1'
+                  decimalPlaces: '2'
+                  alarmFlag: '1'
+                  normalValue: '加电:[41,43]'
+                  warningValue: null
+                  stateChangeInfo: null
+                  commandCode: null
+                  controlChannel: null
+                  mergeChannelCount: null
+                  delayChannel: null
+                  storeFlag: '1'
+                  calibrationFormula: null
+      responses:
+        '200':
+          description: 返回成功修改的参数条数
+          content:
+            application/json:
+              example: { code: 200, message: 操作成功, data: 1 }
 
   /processing/rules/import:
     "post":
@@ -6842,12 +7025,13 @@ components:
                       description: "可视化组件唯一标识"
                     widgetType:
                       type: integer
-                      description: "组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像。枚举：1 实时曲线，2 实时数据，3 实时告警，4 载荷图像"
+                      description: "组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像 5文件表格"
                       enum:
                         - 1
                         - 2
                         - 3
                         - 4
+                        - 5
                       x-apifox-enum:
                         - value: 1
                           name: "实时曲线"
@@ -6861,6 +7045,9 @@ components:
                         - value: 4
                           name: "载荷图像"
                           description: "4 表示载荷图像"
+                        - value: 5
+                          name: "文件表格"
+                          description: "5 表示文件表格"
                     widgetTitle:
                       type: string
                       description: "可视化组件显示标题"
@@ -6938,12 +7125,13 @@ components:
                     description: "可视化组件唯一标识"
                   widgetType:
                     type: integer
-                    description: "组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像。枚举：1 实时曲线，2 实时数据，3 实时告警，4 载荷图像"
+                    description: "组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像 5文件表格"
                     enum:
                       - 1
                       - 2
                       - 3
                       - 4
+                      - 5
                     x-apifox-enum:
                       - value: 1
                         name: "实时曲线"
@@ -6957,6 +7145,9 @@ components:
                       - value: 4
                         name: "载荷图像"
                         description: "4 表示载荷图像"
+                      - value: 5
+                        name: "文件表格"
+                        description: "5 表示文件表格"
                   widgetTitle:
                     type: string
                     description: "可视化组件显示标题"
@@ -7103,7 +7294,7 @@ components:
                       description: "组件数据项名称"
                     isSelected:
                       type: integer
-                      description: "是否勾选：0未勾选 1已勾选。枚举：0 未选中，1 已选中"
+                      description: "实际勾选状态：遥测参数项来自组件场景勾选表，其他项来自组件数据项"
                       enum:
                         - 0
                         - 1
@@ -7172,7 +7363,7 @@ components:
                     description: "组件数据项名称"
                   isSelected:
                     type: integer
-                    description: "是否勾选：0未勾选 1已勾选。枚举：0 未选中，1 已选中"
+                    description: "实际勾选状态：遥测参数项来自组件场景勾选表，其他项来自组件数据项"
                     enum:
                       - 0
                       - 1

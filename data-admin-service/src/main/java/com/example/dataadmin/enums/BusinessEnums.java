@@ -113,12 +113,35 @@ public final class BusinessEnums {
         REALTIME_CURVE(1, "实时曲线"),
         REALTIME_DATA(2, "实时数据"),
         REALTIME_ALARM(3, "实时告警"),
-        PAYLOAD_IMAGE(4, "载荷图像");
+        PAYLOAD_IMAGE(4, "载荷图像"),
+        FILE_TABLE(5, "文件表格");
         private final int value;
         private final String label;
         WidgetType(int value, String label) { this.value = value; this.label = label; }
         public Object getValue() { return value; }
         public String getLabel() { return label; }
+    }
+
+    /** 遥测参数勾选的使用场景。 */
+    public enum SelectionType implements LabeledEnum {
+        PROCESSED_TABLE(1, "处理后数据表格"),
+        PROCESSED_CURVE(2, "处理后数据曲线"),
+        VISUALIZATION_TABLE(3, "数据可视化表格"),
+        VISUALIZATION_CURVE(4, "数据可视化曲线");
+        private final int value;
+        private final String label;
+        SelectionType(int value, String label) { this.value = value; this.label = label; }
+        public Object getValue() { return value; }
+        public String getLabel() { return label; }
+        public int getCode() { return value; }
+
+        /** 根据编码确定场景，拒绝未知编码。 */
+        public static SelectionType fromCode(Integer code) {
+            for (SelectionType type : values()) {
+                if (code != null && type.value == code) { return type; }
+            }
+            throw new IllegalArgumentException("参数勾选类型无效");
+        }
     }
 
     /** 组件数据项选择状态。 */

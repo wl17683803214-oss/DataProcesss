@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper">
-    <!-- 勾选状态按任务和设备隔离。 -->
+    <!-- 勾选状态按任务、设备、场景和组件隔离。 -->
     <select id="findSelectedCodes" resultType="string">
         select telemetry_code
         from processed_telemetry_filter_selection
         where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+          and selection_type = #{selectionType} and target_id = #{targetId}
           and is_deleted = 0
     </select>
     <!-- 只返回当前任务仍有效的设备和参数，避免重新导入后查询失效路径。 -->
     <select id="findSelected" resultType="com.example.dataadmin.entity.ProcessedTelemetryFilterSelection">
         select selection.task_id, selection.device_satellite_id, selection.telemetry_code,
+               selection.selection_type, selection.target_id,
                rule_config.telemetry_name
         from processed_telemetry_filter_selection selection
         inner join device_satellite device
@@ -22,16 +24,38 @@
          and rule_config.telemetry_code = selection.telemetry_code
          and rule_config.is_deleted = 0
         where selection.task_id = #{taskId} and selection.is_deleted = 0
+          and selection.selection_type = #{selectionType} and selection.target_id = #{targetId}
         order by selection.device_satellite_id, selection.telemetry_code
+    </select>
+    <!-- 保留同一参数在多个组件中的独立勾选，用于批量修改遥测代号。 -->
+    <select id="findSelectedByDevice" resultType="com.example.dataadmin.entity.ProcessedTelemetryFilterSelection">
+        select task_id, device_satellite_id, telemetry_code, selection_type, target_id
+        from processed_telemetry_filter_selection
+        where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+          and is_deleted = 0
     </select>
     <!-- 唯一键冲突时原地更新状态，重复点击仍保持幂等。 -->
     <insert id="save">
         insert into processed_telemetry_filter_selection
-            (task_id, device_satellite_id, telemetry_code, is_deleted)
-        values (#{taskId}, #{deviceSatelliteId}, #{telemetryCode}, #{deleted})
-        on conflict (task_id, device_satellite_id, telemetry_code)
+            (task_id, device_satellite_id, telemetry_code, selection_type, target_id, is_deleted)
+        values (#{taskId}, #{deviceSatelliteId}, #{telemetryCode},
+                #{selectionType}, #{targetId}, #{deleted})
+        on conflict (task_id, selection_type, target_id, device_satellite_id, telemetry_code)
         do update set is_deleted = excluded.is_deleted, update_time = current_timestamp
     </insert>
+    <!-- 删除组件时只清理该组件的两种遥测参数勾选。 -->
+    <delete id="deleteByTarget">
+        delete from processed_telemetry_filter_selection
+        where task_id = #{taskId} and target_id = #{targetId}
+          and selection_type in (3, 4)
+    </delete>
+    <!-- 批量修改代号时先取消原勾选，再按新代号恢复勾选。 -->
+    <update id="markDeleted">
+        update processed_telemetry_filter_selection
+        set is_deleted = 1, update_time = current_timestamp
+        where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+          and telemetry_code = #{telemetryCode} and is_deleted = 0
+    </update>
     <!-- 只清除本次导入类型中已不存在的参数，保留仍在新表中的勾选。 -->
     <update id="removeMissing">
         update processed_telemetry_filter_selection selection

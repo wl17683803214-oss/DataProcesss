@@ -3,6 +3,7 @@ package com.example.dataadmin.controller;
 import com.example.common.response.ApiResponse;
 import com.example.common.response.PageResult;
 import com.example.dataadmin.dto.processing.ProcessingRuleConfigRequest;
+import com.example.dataadmin.dto.processing.TelemetryParseRuleBatchUpdateRequest;
 import com.example.dataadmin.entity.DataProcessLog;
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.entity.ProcessingRuleConfig;
@@ -86,17 +87,23 @@ public class DataProcessingController {
     /** 查询当前任务全部已勾选参数的最新处理结果。 */
     @GetMapping("/processed")
     public ApiResponse<List<ProcessedTelemetryVO>> listProcessedTelemetry(
-            @RequestParam String taskId) {
-        // 设备和遥测代号从已保存的有效勾选记录自动取得。
-        return ApiResponse.success(processingService.listProcessedTelemetry(taskId));
+            @RequestParam String taskId,
+            @RequestParam(defaultValue = "1") Integer selectionType,
+            @RequestParam(defaultValue = "0") Long targetId) {
+        // 按表格场景取得已勾选参数；可视化表格传自己的组件主键。
+        return ApiResponse.success(processingService.listProcessedTelemetry(
+                taskId, selectionType, targetId));
     }
 
     /** 查询当前任务全部已勾选参数的最近曲线点。 */
     @GetMapping("/processed/curve")
     public ApiResponse<List<ProcessedTelemetryCurveVO>> listProcessedTelemetryCurves(
-            @RequestParam String taskId) {
-        // 每条曲线各自携带时间轴，以保留实际采样时间。
-        return ApiResponse.success(processingService.listProcessedTelemetryCurves(taskId));
+            @RequestParam String taskId,
+            @RequestParam(defaultValue = "2") Integer selectionType,
+            @RequestParam(defaultValue = "0") Long targetId) {
+        // 每条曲线按自己的组件勾选查询，并保留实际采样时间轴。
+        return ApiResponse.success(processingService.listProcessedTelemetryCurves(
+                taskId, selectionType, targetId));
     }
 
     /** 按任务和页面条件分页查询IoTDB中帧检查异常的遥测原始帧。 */
@@ -167,6 +174,13 @@ public class DataProcessingController {
             @RequestParam(defaultValue = "20") Integer pageSize) {
         return ApiResponse.success(processingService.pageParseRules(
                 taskId, deviceSatelliteId, systemId, pageNum, pageSize));
+    }
+
+    /** 在当前任务下原子修改多条遥测参数解析配置。 */
+    @PostMapping("/rules/batch-update")
+    public ApiResponse<Integer> batchUpdateRules(
+            @Valid @RequestBody TelemetryParseRuleBatchUpdateRequest request) {
+        return ApiResponse.success(processingService.batchUpdateParseRules(request));
     }
 
     /** 从Excel页签或制表符TXT导入设备卫星及参数，按当前任务和类型替换。 */

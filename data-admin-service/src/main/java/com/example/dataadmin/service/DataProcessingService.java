@@ -11,6 +11,7 @@ import com.example.dataadmin.vo.processing.RealtimeTelemetryFrameVO;
 import com.example.dataadmin.vo.processing.ProcessedTelemetryVO;
 import com.example.dataadmin.vo.processing.ProcessedTelemetryCurveVO;
 import com.example.dataadmin.entity.InvalidTelemetryFrame;
+import com.example.dataadmin.dto.processing.TelemetryParseRuleBatchUpdateRequest;
 
 import java.util.List;
 
@@ -33,9 +34,11 @@ public interface DataProcessingService {
             Integer pageNum,
             Integer pageSize);
     /** 查询当前任务全部已勾选参数的最新处理结果。 */
-    List<ProcessedTelemetryVO> listProcessedTelemetry(String taskId);
+    List<ProcessedTelemetryVO> listProcessedTelemetry(String taskId,
+            Integer selectionType, Long targetId);
     /** 查询当前任务全部已勾选参数的最近曲线点。 */
-    List<ProcessedTelemetryCurveVO> listProcessedTelemetryCurves(String taskId);
+    List<ProcessedTelemetryCurveVO> listProcessedTelemetryCurves(String taskId,
+            Integer selectionType, Long targetId);
     /** 按任务和页面条件分页筛选帧检查异常的遥测原始帧。 */
     PageResult<InvalidTelemetryFrame> pageInvalidTelemetryFrames(
             String taskId,
@@ -62,6 +65,8 @@ public interface DataProcessingService {
     /** 分页查询全部参数或指定所属系统及其后代参数。 */
     PageResult<TelemetryParseRuleConfig> pageParseRules(String taskId, Long deviceSatelliteId,
             Long systemId, Integer pageNum, Integer pageSize);
+    /** 同一事务内完整修改当前任务的多条参数解析配置。 */
+    int batchUpdateParseRules(TelemetryParseRuleBatchUpdateRequest request);
     /** 从Excel或制表符TXT批量导入遥测解析规则，返回成功导入数量。 */
     int importParseRules(
             String taskId,

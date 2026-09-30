@@ -253,19 +253,16 @@ roleIds=20,21
     {
       "label": "总览",
       "icon": "dashboard",
-      "path": "/dashboard",
-      "hidden": false
+      "path": "/dashboard"
     },
     {
       "label": "系统配置",
       "icon": "setting",
-      "hidden": false,
       "children": [
         {
           "label": "用户管理",
           "icon": "user",
-          "path": "/system/user",
-          "hidden": false
+          "path": "/system/user"
         }
       ]
     }
@@ -746,8 +743,9 @@ roleIds=20,21
         "transferProtocol": 2, // 传输协议：1 JSON、2 PDXP、3 Protobuf、4 FEP
         "transferProtocolName": "PDXP", // 传输协议名称
         "protocolConfigId": 21, // 本地处理和RPC处理都必须关联协议配置
-        "host": "192.168.1.10", // 远端主机 IP 地址或域名
-        "port": 9001, // 远端服务端口号
+        "host": "192.168.1.10", // 数据处理服务本机监听网卡IP地址
+        "port": 9001, // 数据处理服务本机监听端口
+        "multicastIp": "239.1.1.1", // UDP组播地址；为空时按单播接收
         "status": 1, // 采集接口运行状态。枚举：0 离线，1 在线，2 异常
         "enabled": 1, // 是否启用通道：0否 1是。枚举：0 禁用，1 启用
         "rpcEnabled": 1, // 是否启用RPC处理：0否 1是
@@ -783,8 +781,9 @@ roleIds=20,21
     "transferProtocolName": "PDXP", // 传输协议名称
     "protocolConfigId": 21, // 本地处理和RPC处理都关联的协议配置
     "protocolConfigName": "遥测RPC协议配置", // 详情展示名称，未关联或协议已删除时为空
-    "host": "192.168.1.10", // 远端主机 IP 地址或域名
-    "port": 9001, // 远端服务端口号
+    "host": "192.168.1.10", // 数据处理服务本机监听网卡IP地址
+    "port": 9001, // 数据处理服务本机监听端口
+    "multicastIp": "239.1.1.1", // UDP组播地址；为空时按单播接收
     "status": 1, // 采集接口运行状态。枚举：0 离线，1 在线，2 异常
     "enabled": 1, // 是否启用通道：0否 1是。枚举：0 禁用，1 启用
     "rpcEnabled": 1, // 是否启用RPC处理：0否 1是
@@ -809,8 +808,9 @@ roleIds=20,21
   "transferType": 1, // 传输方式：1UDP 2TCP 3HTTP。枚举：1 UDP，2 TCP，3 HTTP
   "transferProtocol": 2, // 传输协议：1 JSON、2 PDXP、3 Protobuf、4 FEP
   "protocolConfigId": 21, // 本地处理和RPC处理都必须关联协议配置
-  "host": "192.168.1.10", // 远端主机 IP 地址或域名
-  "port": 9001, // 远端服务端口号
+  "host": "192.168.1.10", // 数据处理服务本机监听网卡IP地址
+  "port": 9001, // 数据处理服务本机监听端口
+  "multicastIp": "239.1.1.1", // UDP组播地址；为空时按单播接收
   "status": 0, // 采集接口运行状态。枚举：0 离线，1 在线，2 异常
   "enabled": 1, // 是否启用通道：0否 1是。枚举：0 禁用，1 启用
   "rpcEnabled": 1, // 是否启用RPC处理：0否 1是
@@ -843,8 +843,9 @@ roleIds=20,21
   "transferType": 1, // 传输方式：1UDP 2TCP 3HTTP。枚举：1 UDP，2 TCP，3 HTTP
   "transferProtocol": 2, // 传输协议：1 JSON、2 PDXP、3 Protobuf、4 FEP
   "protocolConfigId": 21, // 本地处理和RPC处理都必须关联协议配置
-  "host": "192.168.1.11", // 远端主机 IP 地址或域名
-  "port": 9001, // 远端服务端口号
+  "host": "192.168.1.11", // 数据处理服务本机监听网卡IP地址
+  "port": 9001, // 数据处理服务本机监听端口
+  "multicastIp": "239.1.1.1", // UDP组播地址；为空时按单播接收
   "status": 1, // 采集接口运行状态。枚举：0 离线，1 在线，2 异常
   "enabled": 1, // 是否启用通道：0否 1是。枚举：0 禁用，1 启用
   "rpcEnabled": 1, // 是否启用RPC处理：0否 1是
@@ -862,6 +863,7 @@ roleIds=20,21
 ```
 
 本地处理和RPC处理都必须选择协议配置，区别仅由 `rpcEnabled` 决定。
+UDP接口填写 `multicastIp` 时通过 `host` 指定的本机网卡加入该组播地址；`multicastIp` 为空时使用 `host` 和 `port` 接收单播数据。TCP接口不允许填写 `multicastIp`。
 
 ```json
 {
@@ -872,6 +874,7 @@ roleIds=20,21
   "transferProtocol": 2,
   "host": "0.0.0.0",
   "port": 9001,
+  "multicastIp": null,
   "rpcEnabled": 0,
   "protocolConfigId": 21
 }
@@ -2542,4 +2545,12 @@ GET /system/logs/sources?taskId=TASK-20260908-001
 {"interfaceId":12,"time":"2026-09-20T12:00:00","satelliteCode":"SAT-003","satelliteName":"试验卫星三号","channelCode":"CH-01","channelName":"发控台","rawLength":3,"rawFrame":"41 42 43","checkResult":1,"checkResultName":"正确"}
 ```
 
-正常整帧的批量入库与单独原码入库均将Proto的satName写入satelliteName、channelCode写入同名测点，类型均为TEXT。channelName继续表示通道名称，channelCode表示通道编码。历史记录的新测点缺失时返回null；新消息未提供这两个字段时保存空字符串。当前本地处理未配置这两个字段的来源，因此保持为空；RPC消息按实际返回值保存。接口参数保持不变。
+正常整帧的批量入库与单独原码入库均将Proto的satName写入satelliteName、channelCode写入同名测点，类型均为TEXT。channelName继续表示通道名称，channelCode表示通道编码。历史记录的新测点缺失时返回null；新消息未提供这两个字段时保存空字符串。当前本地处理未配置这两个字段的来源，因此保持为空；RPC消息按实际返回值保存。
+
+### IoTDB帧检查字段与页面分页
+
+正常帧和异常帧在同一个`_frame`设备结构中统一保存`checkResult`和`checkResultName`，编码为0未知、1正确、2错误。上游`frameCheckStatus`为true时转换为正确，为false时转换为错误；实时遥测查询继续兼容历史记录中的`frameCheckStatus`。异常帧返回字段增加`satelliteName`和`channelName`，历史记录缺少对应测点时返回null。
+
+`GET /processing/realtime/telemetry`、`GET /processing/processed`和`GET /processing/realtime/invalid`均增加`pageNum`和`pageSize`，默认分别为1和20，`pageSize`最大为200。响应`data`统一包含`pageNum`、`pageSize`、`total`和`records`。处理后参数查询使用所有参数统一保存的`valueText`作为`parameterValue`，避免不同物理量数据类型在IoTDB跨设备查询时发生冲突。
+
+IoTDB设备路径将任务编号和采集接口编号放在卫星之前，统一格式为`root.db.task_{taskId}.interface_{interfaceId}.{satelliteCode}.tms.{channelCode}.{tmType}.{node}`。整帧节点使用`_frame`，参数节点使用参数代号`tmSymbol`。查询端直接使用任务和接口路径前缀缩小设备范围，不再展开整个`root.db`后通过测点筛选任务和接口。

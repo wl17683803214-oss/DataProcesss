@@ -5,6 +5,8 @@ import com.example.dataadmin.service.VisualizationParameterSyncService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * 可视化参数筛选项同步服务实现。
  */
@@ -23,8 +25,8 @@ public class VisualizationParameterSyncServiceImpl
     /**
      * 同步任务参数筛选项。
      *
-     * 同步顺序不能调整：先重新绑定当前规则，再清理失效项，最后补充新增项。
-     * 全量导入会生成新的规则ID，通过遥测编码重新绑定可以保留原勾选状态。
+     * 仅维护已有组件数据项，新增参数通过按需筛选树展示。
+     * 全量导入会生成新的规则ID，通过遥测编码重新绑定已有组件数据项。
      */
     @Override
     @Transactional
@@ -39,7 +41,17 @@ public class VisualizationParameterSyncServiceImpl
         // 步骤2：删除解析配置中已经不存在的自动同步筛选项。
         itemMapper.deleteObsoleteParseRuleItems(taskId);
 
-        // 步骤3：补充新参数，默认设置为未勾选。
-        itemMapper.insertMissingParseRuleItems(taskId);
+        // 新参数不批量写入所有组件，避免大量无用配置项。
+    }
+
+    /** 已有参数只更新对应组件项，避免批量编辑时扫描整张任务参数表。 */
+    @Override
+    @Transactional
+    public void synchronizeChangedParameters(String taskId, List<Long> parseRuleIds) {
+        if (taskId == null || taskId.trim().isEmpty()
+                || parseRuleIds == null || parseRuleIds.isEmpty()) {
+            throw new IllegalArgumentException("试验任务和待同步参数不能为空");
+        }
+        itemMapper.updateChangedParseRuleItems(taskId, parseRuleIds);
     }
 }

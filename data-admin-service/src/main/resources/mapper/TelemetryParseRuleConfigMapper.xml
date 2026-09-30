@@ -96,11 +96,73 @@
           and rule_config.is_deleted = 0
     </select>
 
-    <!-- 搜索只扫描有效参数，联结勾选状态后按设备和遥测代号返回。 -->
+    <!-- 按任务一次取得整批有效参数，并排除已删除的所属设备。 -->
+    <select id="findActiveByIds" resultType="com.example.dataadmin.entity.TelemetryParseRuleConfig">
+        select <include refid="columns"/>
+        from telemetry_parse_rule_config rule_config
+        inner join device_satellite device
+          on device.id = rule_config.device_satellite_id
+         and device.task_id = rule_config.task_id and device.is_deleted = 0
+        where rule_config.task_id = #{taskId} and rule_config.is_deleted = 0
+          and rule_config.id in
+          <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+    <!-- 排除本次修改的记录，利用设备内唯一索引查找已有键冲突。 -->
+    <select id="findBatchConflict" resultType="long">
+        select id from telemetry_parse_rule_config
+        where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+          and is_deleted = 0
+          and id not in
+          <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+          and (table_index in
+          <foreach collection="tableIndexes" item="value" open="(" separator="," close=")">#{value}</foreach>
+          or telemetry_code in
+          <foreach collection="telemetryCodes" item="value" open="(" separator="," close=")">#{value}</foreach>)
+        limit 1
+    </select>
+
+    <!-- 先腾出整批唯一键，避免两条参数互换序号或代号时触发中间态冲突。 -->
+    <update id="updateTemporaryKeys">
+        update telemetry_parse_rule_config
+        set table_index = #{rule.tableIndex}, telemetry_code = #{rule.telemetryCode},
+            update_time = current_timestamp
+        where task_id = #{taskId} and id = #{rule.id}
+          and device_satellite_id = #{rule.deviceSatelliteId} and is_deleted = 0
+    </update>
+
+    <!-- 只更新可编辑业务列，任务和设备归属保持不变。 -->
+    <update id="updateOne">
+        update telemetry_parse_rule_config
+        set system_id = #{rule.systemId,jdbcType=BIGINT},
+            table_index = #{rule.tableIndex}, bit_width = #{rule.bitWidth},
+            telemetry_name = #{rule.telemetryName}, telemetry_code = #{rule.telemetryCode},
+            formula_type = #{rule.formulaType},
+            formula_desc = #{rule.formulaDesc,jdbcType=VARCHAR},
+            process_param = #{rule.processParam,jdbcType=VARCHAR},
+            decimal_places = #{rule.decimalPlaces,jdbcType=VARCHAR},
+            alarm_flag = #{rule.alarmFlag},
+            normal_value = #{rule.normalValue,jdbcType=VARCHAR},
+            warning_value = #{rule.warningValue,jdbcType=VARCHAR},
+            state_change_info = #{rule.stateChangeInfo,jdbcType=VARCHAR},
+            command_code = #{rule.commandCode,jdbcType=VARCHAR},
+            system_name = #{rule.systemName,jdbcType=VARCHAR},
+            control_channel = #{rule.controlChannel,jdbcType=VARCHAR},
+            merge_channel_count = #{rule.mergeChannelCount,jdbcType=VARCHAR},
+            delay_channel = #{rule.delayChannel,jdbcType=VARCHAR},
+            store_flag = #{rule.storeFlag},
+            calibration_formula = #{rule.calibrationFormula,jdbcType=VARCHAR},
+            update_time = current_timestamp
+        where task_id = #{taskId} and id = #{rule.id}
+          and device_satellite_id = #{rule.deviceSatelliteId} and is_deleted = 0
+    </update>
+
+    <!-- 搜索只扫描有效参数，直接返回导入的系统路径与勾选状态。 -->
     <select id="searchByTelemetryCode" resultType="com.example.dataadmin.entity.TelemetryFilterSearchRecord">
         select rule_config.id, rule_config.device_satellite_id,
                device.name as device_satellite_name,
-               rule_config.telemetry_name, rule_config.telemetry_code,
+               rule_config.system_name, rule_config.telemetry_name,
+               rule_config.telemetry_code,
                case when selection.id is null then false else true end as checked
         from telemetry_parse_rule_config rule_config
         inner join device_satellite device
@@ -110,9 +172,11 @@
           on selection.task_id = rule_config.task_id
          and selection.device_satellite_id = rule_config.device_satellite_id
          and selection.telemetry_code = rule_config.telemetry_code
+         and selection.selection_type = #{selectionType}
+         and selection.target_id = #{targetId}
          and selection.is_deleted = 0
         where rule_config.task_id = #{taskId} and rule_config.is_deleted = 0
-          and rule_config.telemetry_code like #{codePrefix} escape '\'
+          and rule_config.telemetry_code = #{telemetryCode}
         order by rule_config.device_satellite_id, rule_config.telemetry_code
     </select>
 

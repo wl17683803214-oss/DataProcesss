@@ -14,9 +14,24 @@ public interface TelemetryParseRuleConfigMapper {
             @Param("deviceSatelliteId") Long deviceSatelliteId, @Param("systemId") Long systemId);
     /** 按主键和任务查验待勾选参数。 */
     TelemetryParseRuleConfig findActiveById(@Param("taskId") String taskId, @Param("id") Long id);
-    /** 按遥测代号前缀查找当前任务的有效参数及其勾选状态。 */
+    /** 一次读取本次提交的全部有效参数并校验任务范围。 */
+    List<TelemetryParseRuleConfig> findActiveByIds(@Param("taskId") String taskId,
+            @Param("ids") List<Long> ids);
+    /** 排除本批次记录后检查最终序号和代号是否与其他参数冲突。 */
+    Long findBatchConflict(@Param("taskId") String taskId,
+            @Param("deviceSatelliteId") Long deviceSatelliteId,
+            @Param("ids") List<Long> ids, @Param("tableIndexes") List<String> tableIndexes,
+            @Param("telemetryCodes") List<String> telemetryCodes);
+    /** 暂存唯一键以支持同一批次交换序号或遥测代号。 */
+    int updateTemporaryKeys(@Param("taskId") String taskId,
+            @Param("rule") TelemetryParseRuleConfig rule);
+    /** 写回完整的参数业务字段。 */
+    int updateOne(@Param("taskId") String taskId,
+            @Param("rule") TelemetryParseRuleConfig rule);
+    /** 按完整遥测代号查找当前任务的有效参数及其勾选状态。 */
     List<TelemetryFilterSearchRecord> searchByTelemetryCode(@Param("taskId") String taskId,
-            @Param("codePrefix") String codePrefix);
+            @Param("telemetryCode") String telemetryCode,
+            @Param("selectionType") int selectionType, @Param("targetId") Long targetId);
     /** 统计设备及可选系统子树中的有效参数。 */
     long countPage(@Param("taskId") String taskId,
             @Param("deviceSatelliteId") Long deviceSatelliteId,

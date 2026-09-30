@@ -1,6 +1,6 @@
 package com.example.dataadmin.entity;
 
-/** 当前任务共享的已勾选遥测参数。 */
+/** 当前任务及场景下已勾选的遥测参数。 */
 public class ProcessedTelemetryFilterSelection {
     /** 当前试验任务编号。 */
     private String taskId;
@@ -8,6 +8,10 @@ public class ProcessedTelemetryFilterSelection {
     private Long deviceSatelliteId;
     /** 遥测代号。 */
     private String telemetryCode;
+    /** 勾选场景。 */
+    private Integer selectionType;
+    /** 固定页面为零，可视化页面为组件主键。 */
+    private Long targetId;
     /** 当前有效解析配置中的遥测名称。 */
     private String telemetryName;
 
@@ -17,6 +21,10 @@ public class ProcessedTelemetryFilterSelection {
     public void setDeviceSatelliteId(Long value) { this.deviceSatelliteId = value; }
     public String getTelemetryCode() { return telemetryCode; }
     public void setTelemetryCode(String value) { this.telemetryCode = value; }
+    public Integer getSelectionType() { return selectionType; }
+    public void setSelectionType(Integer value) { this.selectionType = value; }
+    public Long getTargetId() { return targetId; }
+    public void setTargetId(Long value) { this.targetId = value; }
     public String getTelemetryName() { return telemetryName; }
     public void setTelemetryName(String value) { this.telemetryName = value; }
 }
