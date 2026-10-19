@@ -9,7 +9,12 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 /** 将可预期错误转为中文响应，数据库细节仅保留在日志中。 */
@@ -19,9 +24,29 @@ public class SimulatorExceptionHandler {
 
     /** 请求校验统一使用中文提示，避免框架默认英文消息。 */
     @ExceptionHandler({MethodArgumentNotValidException.class, HttpMessageNotReadableException.class,
-            MethodArgumentTypeMismatchException.class})
+            MethodArgumentTypeMismatchException.class, MissingServletRequestPartException.class,
+            MultipartException.class})
     public ResponseEntity<ApiResponse<Void>> invalidRequest(Exception exception) {
         return ResponseEntity.badRequest().body(ApiResponse.fail(400, "请求字段缺失、格式错误或超出允许范围"));
+    }
+
+    /** 上传超过文件或请求大小限制时，前端保留原来已选中的有效文件。 */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> uploadTooLarge(MaxUploadSizeExceededException exception) {
+        return ResponseEntity.status(413).body(ApiResponse.fail(413, "上传文件或请求大小超过服务允许上限"));
+    }
+
+    /** 上传文件需要使用表单格式，创建和修改模拟源继续使用JSON。 */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> unsupportedContentType(HttpMediaTypeNotSupportedException exception) {
+        return ResponseEntity.status(415).body(ApiResponse.fail(415, "请求类型不支持，文件上传请使用multipart/form-data"));
+    }
+
+    /** 文件无法读取或保存时返回明确中文提示，具体异常留在服务日志。 */
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<ApiResponse<Void>> fileAccessFailure(IOException exception) {
+        LOGGER.error("模拟源文件读写失败，请检查文件权限、上传目录和磁盘空间", exception);
+        return ResponseEntity.status(500).body(ApiResponse.fail(500, "模拟源文件读写失败，请检查文件权限和磁盘空间"));
     }
 
     /** 参数和业务状态错误分别返回明确状态码。 */

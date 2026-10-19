@@ -3,11 +3,11 @@
   "info": {
     "title": "独立模拟源管理服务",
     "version": "1.0.0",
-    "description": "支持PDXP/UDP和FEP/TCP，多模拟源独立并发。默认端口8085。发送端不自动启停接收服务。"
+    "description": "支持PDXP/UDP和FEP/TCP，多模拟源独立并发；支持先上传文件再创建或修改模拟源。默认端口8084。发送端不自动启停接收服务。"
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:8085",
+      "url": "http://127.0.0.1:8084",
       "description": "本地独立服务"
     }
   ],
@@ -1190,6 +1190,133 @@
           }
         }
       }
+    },
+    "/simulator/files/upload": {
+      "post": {
+        "summary": "上传模拟源文件",
+        "description": "先上传文件，再将返回的filePath用于创建或修改。PDXP和FEP共用此接口；保留原文件名，同名上传互不覆盖。默认单文件上限1GB，以服务实际配置为准；允许0字节文件用于FEP，PDXP在启动时继续校验非空及帧长度。文件不会在取消表单、替换文件或删除模拟源时自动删除。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "待上传的单个数据文件，不限制扩展名；文件名不能携带路径或非法字符"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "文件已完整保存",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "example": 200
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "操作成功"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UploadedFile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "文件字段缺失、文件名非法或表单格式错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误提示"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "文件或整个请求超过服务配置上限",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误提示"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "上传接口需要multipart/form-data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误提示"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "文件无法读取或保存，请展示后端中文提示",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "中文错误提示"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1320,7 +1447,7 @@
           },
           "filePath": {
             "type": "string",
-            "description": "服务所在机器上的文件路径",
+            "description": "文件上传成功返回的filePath，创建或修改时原样提交；已有配置兼容原服务器路径，不是浏览器下载地址",
             "maxLength": 1000
           },
           "targetHost": {
@@ -1398,7 +1525,7 @@
           },
           "filePath": {
             "type": "string",
-            "description": "服务所在机器上的文件路径",
+            "description": "文件上传成功返回的filePath，创建或修改时原样提交；已有配置兼容原服务器路径，不是浏览器下载地址",
             "maxLength": 1000
           },
           "targetHost": {
@@ -1689,6 +1816,35 @@
             }
           }
         }
+      },
+      "UploadedFile": {
+        "type": "object",
+        "description": "上传成功后的文件信息，filePath用于创建或修改模拟源，不能作为浏览器下载地址。",
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "description": "保留原始文件名，用于页面展示",
+            "example": "图片.png"
+          },
+          "fileSize": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "description": "实际文件大小，单位字节，允许0字节文件用于FEP",
+            "example": 239977
+          },
+          "filePath": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "上传成功返回的服务器文件路径，创建或编辑时原样提交，不拼接、不填写客户端本地路径",
+            "example": "/DataPro/simulator/data/simulator/uploads/file-123456789/图片.png"
+          }
+        },
+        "required": [
+          "fileName",
+          "fileSize",
+          "filePath"
+        ]
       }
     }
   }

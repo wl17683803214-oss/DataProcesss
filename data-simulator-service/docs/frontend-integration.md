@@ -1,6 +1,6 @@
 # 模拟源管理：前端开发与接口对接说明
 
-适用模块：`data-simulator-service`。核对日期：2026年9月29日。
+适用模块：`data-simulator-service`。核对日期：2026年10月19日。
 
 本文以当前后端实现为准，说明页面如何组织、字段如何填写、接口如何调用。页面布局和交互属于前端实现建议，不代表已经提供前端页面；接口路径、字段和校验规则为已实现约定。不限定前端框架，可接入现有项目的表格、表单、抽屉和请求封装。
 
@@ -19,15 +19,15 @@
 
 支持多个模拟源同时运行，包括PDXP/UDP、FEP/TCP混合运行。操作加载状态应按行管理，不要启动一行就锁住整张表。
 
-当前没有文件上传、服务器文件浏览、批量启停、暂停续跑、运行中修改或WebSocket推送接口，页面不要展示这些可操作入口。文件路径使用文本输入，指向服务端机器上的文件，不是浏览器用户电脑上的文件。
+文件选择改为上传控件，先调用上传接口，再用返回的 `filePath` 创建或修改模拟源；不再让用户填写文件路径。服务器文件浏览、批量启停、暂停续跑、运行中修改或WebSocket推送接口暂未提供。
 
 ## 2. 服务地址与请求封装
 
-默认服务地址：`http://127.0.0.1:8085`，实际部署地址由前端环境配置或网关路由提供。所有接口前缀为 `/simulator`，不要发往原管理服务端口。
+默认服务地址：`http://127.0.0.1:8084`，实际部署地址由前端环境配置或网关路由提供。所有接口前缀为 `/simulator`，不要发往原管理服务端口。
 
 建议开发代理或网关把 `/simulator` 转发到新服务，并完整保留路径。后端没有额外配置跨域处理，浏览器跨端口直连可能受跨域限制，应优先通过同源代理对接。当前模块未新增登录接口，若现有网关要求鉴权，沿用项目已有请求头。
 
-POST请求统一使用 `Content-Type: application/json`，字段使用驼峰命名。
+创建、修改和启停等POST请求使用 `Content-Type: application/json`。文件上传使用 `multipart/form-data`，文件字段名为 `file`；浏览器使用 `FormData` 时不要手动填写包含boundary的请求头，也不要把文件对象JSON序列化。
 
 成功响应示例：
 
@@ -61,6 +61,8 @@ POST请求统一使用 `Content-Type: application/json`，字段使用驼峰命�
 |---|---|
 | HTTP 200且`code=200` | 读取`data`，执行刷新等后续交互 |
 | HTTP 400 | 展示后端`message`，保留用户填写内容 |
+| HTTP 413 | 提示文件超限，允许重新选择较小文件；保留此前有效文件 |
+| HTTP 415 | 检查上传请求是否使用FormData和正确的请求类型 |
 | HTTP 409 | 展示冲突原因，刷新当前记录；不能只依赖旧列表状态 |
 | HTTP 500 | 展示后端错误说明，允许用户手动刷新 |
 | 超时、网络断开、非JSON响应 | 提示“连接异常，操作结果待确认”，重新查询状态 |
@@ -77,6 +79,7 @@ HTTP 409不再把所有数据库错误混在同一条提示中：名称重复提
 
 | 方法 | 路径 | 用途 | 成功返回的`data` |
 |---|---|---|---|
+| POST | `/simulator/files/upload` | 上传模拟源数据文件 | `fileName`、`fileSize`、`filePath` |
 | GET | `/simulator/findData` | 枚举与默认参数 | 枚举对象 |
 | GET | `/simulator/sources` | 分页列表 | 分页对象 |
 | GET | `/simulator/sources/{id}` | 配置详情 | 完整配置对象 |
@@ -155,7 +158,7 @@ GET /simulator/sources?name=遥测&status=2&pageNum=1&pageSize=20
         "sourceName": "遥测模拟源一",
         "transferProtocol": 2,
         "transferType": 1,
-        "filePath": "D:/模拟数据/telemetry.dat",
+        "filePath": "/DataPro/simulator/data/simulator/uploads/file-123456789/telemetry.dat",
         "targetHost": "127.0.0.1",
         "targetPort": 9001,
         "sendIntervalMillis": 500,
@@ -176,7 +179,7 @@ GET /simulator/sources?name=遥测&status=2&pageNum=1&pageSize=20
 }
 ```
 
-列表建议列：名称、协议、目标地址/端口、文件路径、发送间隔、是否循环、状态、本次发送单元数、操作。名称和文件路径支持省略与完整提示。
+列表建议列：名称、协议、目标地址/端口、文件名、发送间隔、是否循环、状态、本次发送单元数、操作。文件名可从返回的 `filePath` 最后一段提取，兼容 `/` 和 `\` 分隔符；不把文件路径当作可下载地址。
 
 重要说明：
 
@@ -195,7 +198,7 @@ GET /simulator/sources?name=遥测&status=2&pageNum=1&pageSize=20
 | `sourceName` | 文本框 | 必填，去首尾空格，最多100字符；名称冲突以服务端返回为准 |
 | `transferProtocol` | 下拉框 | 必填；新建可选，编辑禁用 |
 | `transferType` | 只读展示 | 随协议确定，不能任意组合 |
-| `filePath` | 文本框 | 必填，最多1000字符，服务端本地路径 |
+| `filePath` | 上传控件维护的隐藏字段 | 必填，使用上传接口返回值；不允许手填或拼接 |
 | `targetHost` | 文本框 | 必填，最多100字符，默认127.0.0.1；不应只允许IPv4格式 |
 | `targetPort` | 整数输入 | 1～65535，按协议填默认值 |
 | `sendIntervalMillis` | 整数输入 | 0～86400000，单位毫秒；0表示连续发送 |
@@ -265,17 +268,61 @@ FEP只显示基础配置，隐藏并从提交对象中移除整个 `pdxp` 字段
 
 FEP分块大小、连接超时和应答超时由Nacos配置维护，仓库配置文件位于根目录 `nacos-config/data-simulator-service.yaml`，发布配置后重启服务生效。当前表单不编辑这些值。默认分别为4096字节、5000毫秒和10000毫秒，实际执行值可在运行快照的 `fep` 对象查看。
 
-FEP无需512字节对齐，支持空文件；文件长度上限为2147483647字节。开启循环代表完整文件交换成功后再次发送，接收端可能因文件已存在而不重复接收数据。接收端需使用匹配的分块长度。
+FEP无需512字节对齐，支持空文件；协议文件长度上限为2147483647字节，但通过上传入口选择文件还受上传大小限制，默认单文件1GB。开启循环代表完整文件交换成功后再次发送，接收端可能因文件已存在而不重复接收数据。接收端需使用匹配的分块长度。
 
 ### 6.5 文件检查时机
 
-前端无法直接检查服务端文件是否存在。保存成功只代表配置通过校验，不代表文件能发送。后端在启动时检查文件存在、可读及协议约束；PDXP文件必须非空且大小为配置输入帧长度的整数倍。
+上传成功表示文件已保存，保存模拟源配置和启动仍是两个独立操作。PDXP在启动时继续检查文件非空且大小为配置输入帧长度的整数倍；FEP还会检查原文件名是否符合协议64字节字段约束。
 
-建议文件路径下方提示：“请填写模拟源服务所在机器上的文件路径，启动时检查文件是否可用。”
+建议上传控件下方提示：“请上传模拟数据文件，上传成功后可保存；启动时检查协议格式。”
+
+### 6.6 上传控件对接
+
+1. 选择文件后，调用 `POST /simulator/files/upload`，表单字段为 `file`。上传过程中禁用保存，展示上传状态和进度。
+2. 成功后展示 `data.fileName` 和 `data.fileSize`，将 `data.filePath` 原样写入创建或编辑请求。不要提交原始 `File` 对象、浏览器本地路径或上传结果中的其他字段。
+3. 新建时必须上传成功后才能保存。编辑时保留详情的原 `filePath`，没有重新选文件就直接沿用；重新上传成功后才替换原值。
+4. 上传失败或取消选择时，不清空编辑表单原来有效的文件。新选择上传成功后提示替换完成。
+5. 上传接口不限制扩展名，默认单文件上限1GB，以服务端实际配置为准；允许0字节文件用于FEP，不要在前端统一禁止空文件。
+6. 同名文件上传互不覆盖。取消整个表单、替换文件或删除模拟源，不调用文件删除接口；当前没有上传文件删除、下载或浏览接口。
+
+上传示例：
+
+```javascript
+const form = new FormData();
+form.append("file", selectedFile);
+const response = await fetch("/simulator/files/upload", {
+  method: "POST",
+  body: form
+});
+const result = await response.json();
+if (!response.ok || result.code !== 200) {
+  throw new Error(result.message || "文件上传失败");
+}
+formModel.filePath = result.data.filePath;
+selectedFileName = result.data.fileName;
+```
+
+成功响应：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "fileName": "图片.png",
+    "fileSize": 239977,
+    "filePath": "/DataPro/simulator/data/simulator/uploads/file-123456789/图片.png"
+  }
+}
+```
+
+`filePath` 只作为后续请求的文件引用使用，不进行URL编码或路径转换，也不能用于图片预览。
 
 ## 7. 保存请求示例与编辑流程
 
 ### 7.1 新建PDXP
+
+以下示例中的 `filePath` 均使用上传接口实际返回值，不要照抄示例路径。
 
 `POST /simulator/sources/create`，不传 `id`：
 
@@ -284,7 +331,7 @@ FEP无需512字节对齐，支持空文件；文件长度上限为2147483647字�
   "sourceName": "遥测模拟源一",
   "transferProtocol": 2,
   "transferType": 1,
-  "filePath": "D:/模拟数据/telemetry.dat",
+  "filePath": "/DataPro/simulator/data/simulator/uploads/file-123456789/telemetry.dat",
   "targetHost": "127.0.0.1",
   "targetPort": 9001,
   "sendIntervalMillis": 500,
@@ -315,7 +362,7 @@ FEP无需512字节对齐，支持空文件；文件长度上限为2147483647字�
   "sourceName": "文件模拟源一",
   "transferProtocol": 3,
   "transferType": 2,
-  "filePath": "D:/模拟数据/example.dat",
+  "filePath": "/DataPro/simulator/data/simulator/uploads/file-987654321/example.dat",
   "targetHost": "127.0.0.1",
   "targetPort": 19003,
   "sendIntervalMillis": 10,

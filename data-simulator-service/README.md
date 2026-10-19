@@ -7,7 +7,7 @@
 1. 在金仓PostgreSQL兼容模式数据库执行仓库根目录的 [sql/data-simulator-service.sql](../sql/data-simulator-service.sql)。同一文件用于新库建表、已有模拟源表补字段、删除全部业务CHECK及历史FEP编码4迁移为3；主键、外键、非空及唯一索引保留。不修改旧模块数据表，不再单独维护升级脚本。
 2. 将仓库根目录的 [nacos-config/data-simulator-service.yaml](../nacos-config/data-simulator-service.yaml) 内容导入Nacos：配置标识为 `data-simulator-service.yaml`，分组默认为 `DEFAULT_GROUP`，格式为YAML。直接按环境填写数据库连接、账号和密码，不使用环境变量占位符。默认数据库地址为 `jdbc:kingbase8://127.0.0.1:54321/data_processing`，用户名为 `system`，密码按配置文件当前值读取，部署时核对实际凭据。
 3. 在仓库根目录执行 `mvn -pl data-simulator-service -am package -DskipTests`。
-4. 执行 `java -jar data-simulator-service/target/data-simulator-service-1.0.0-SNAPSHOT.jar`，默认端口8085，需调整时修改Nacos配置中的 `server.port`。
+4. 执行 `java -jar data-simulator-service/target/data-simulator-service-1.0.0-SNAPSHOT.jar`，默认端口8084，需调整时修改Nacos配置中的 `server.port`。
 5. 将 `docs/apifox-openapi.json` 导入Apifox，调用 `/simulator/findData` 获取枚举与默认参数。
 
 模块内仅保留 `src/main/resources/bootstrap.yml` 作为Nacos引导配置，连接信息直接填写明确值：地址默认 `127.0.0.1:8848`，账号和密码默认均为本地开发值 `nacos`，命名空间默认空字符串（公共命名空间），分组默认 `DEFAULT_GROUP`。指定其他命名空间时填写其ID；修改地址、命名空间或分组时，同步调整配置读取与服务注册对应字段。
@@ -34,6 +34,16 @@ Nacos配置应在启动前发布，模块不再内置业务配置兜底。为保
 
 分页列表可按名称和状态筛选。状态筛选值：0未启动、1启动中、2运行中、3停止中、4已停止、5已完成、6异常；查询响应中的 `runStatus` 为中文。协议和传输编码保持与旧模块一致，新模块只定义支持的组合，不依赖旧管理服务的业务枚举类。
 
+## 模拟数据文件上传
+
+先调用 `POST /simulator/files/upload`，使用 `multipart/form-data`，文件字段名为 `file`。成功后将返回的 `data.filePath` 原样用于创建或修改模拟源，前端展示 `fileName` 和以字节为单位的 `fileSize`。已有服务器文件路径仍兼容，无需迁移数据库。
+
+上传目录配置为 `simulator.upload-directory: ./data/simulator/uploads`，相对路径以服务启动目录为基准。每次上传创建独立子目录，保留原文件名，不覆盖同名文件。文件持久保存，不因取消表单、替换文件、删除模拟源或发送完成而自动删除，部署时应将目录放在持久磁盘上；后续修改上传目录不会移动已有文件。
+
+仓库 `nacos-config/data-simulator-service.yaml` 中 `spring.servlet.multipart.max-file-size` 默认1024MB，`max-request-size` 默认1025MB。发布配置并重启服务后生效；网关上传大小与超时也需按实际部署匹配。流式写入文件，上传失败只清理本次创建的未完成文件。上传接口允许0字节文件用于FEP，PDXP继续在启动时校验非空和帧长度。FEP原文件名仍受协议64字节限制。
+
+上传成功不创建模拟源或启动发送；上传文件删除、下载和目录浏览不在本次接口范围内。配置示例中的文件路径应替换为上传接口的实际返回值。
+
 ## PDXP配置示例
 
 向 `POST /simulator/sources/create` 提交：
@@ -43,7 +53,7 @@ Nacos配置应在启动前发布，模块不再内置业务配置兜底。为保
   "sourceName": "遥测模拟源一",
   "transferProtocol": 2,
   "transferType": 1,
-  "filePath": "D:/模拟数据/telemetry.dat",
+  "filePath": "/DataPro/simulator/data/simulator/uploads/file-123456789/telemetry.dat",
   "targetHost": "127.0.0.1",
   "targetPort": 9001,
   "sendIntervalMillis": 500,
@@ -79,7 +89,7 @@ Nacos配置应在启动前发布，模块不再内置业务配置兜底。为保
   "sourceName": "文件模拟源一",
   "transferProtocol": 3,
   "transferType": 2,
-  "filePath": "D:/模拟数据/example.dat",
+  "filePath": "/DataPro/simulator/data/simulator/uploads/file-987654321/example.dat",
   "targetHost": "127.0.0.1",
   "targetPort": 19003,
   "sendIntervalMillis": 10,
@@ -95,6 +105,7 @@ FEP不允许提交PDXP参数，不创建PDXP参数记录。公共参数位于Nac
 
 | 方法与路径 | 说明 |
 |---|---|
+| POST /simulator/files/upload | multipart/form-data上传，文件字段file，返回fileName、fileSize、filePath |
 | GET /simulator/sources | 分页，参数name、status、pageNum、pageSize |
 | GET /simulator/sources/{id} | 完整详情 |
 | POST /simulator/sources/create | 新建，返回模拟源编号 |

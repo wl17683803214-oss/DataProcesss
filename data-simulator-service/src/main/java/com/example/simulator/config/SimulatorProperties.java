@@ -18,6 +18,9 @@ public class SimulatorProperties {
     private int responseTimeoutMillis = 10000;
     @NotBlank
     private String lockFile = "./data-simulator-service.lock";
+    /** 上传文件持久化目录，相对路径以服务启动目录为基准。 */
+    @NotBlank
+    private String uploadDirectory = "./data/simulator/uploads";
 
     /** 读取公共配置。 */
     public int getMaxConcurrent() {
@@ -62,6 +65,16 @@ public class SimulatorProperties {
     /** 绑定配置文件中的配置值。 */
     public void setLockFile(String value) {
         this.lockFile = value;
+    }
+
+    /** 读取模拟源上传文件保存目录。 */
+    public String getUploadDirectory() {
+        return uploadDirectory;
+    }
+
+    /** 绑定上传文件保存目录，已有文件不会随配置修改而移动。 */
+    public void setUploadDirectory(String value) {
+        this.uploadDirectory = value;
     }
 }
 

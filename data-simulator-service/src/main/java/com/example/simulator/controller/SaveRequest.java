@@ -14,7 +14,8 @@ public class SaveRequest {
     @NotNull(message = "协议不能为空")
     public Integer transferProtocol;
     public Integer transferType;
-    @NotBlank(message = "文件路径不能为空") @Size(max = 1000)
+    /** 上传成功返回的文件路径，已有模拟源仍兼容原服务器路径。 */
+    @NotBlank(message = "请先上传或选择有效的模拟源文件") @Size(max = 1000)
     public String filePath;
     @NotBlank(message = "目标地址不能为空") @Size(max = 100)
     public String targetHost = "127.0.0.1";

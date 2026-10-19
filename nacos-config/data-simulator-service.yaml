@@ -4,6 +4,14 @@ server:
   # 模拟源管理接口的监听端口。
   port: 8084
 spring:
+  servlet:
+    multipart:
+      # 单个上传文件最大为1GB，按模拟数据实际大小调整。
+      max-file-size: 1024MB
+      # 请求上限额外预留1MB用于文件名和表单边界。
+      max-request-size: 1025MB
+      # 上传内容直接使用临时磁盘文件，避免大文件长期占用堆内存。
+      file-size-threshold: 0B
   datasource:
     # 金仓数据库连接信息，按部署环境修改。
     driver-class-name: com.kingbase8.Driver
@@ -21,6 +29,8 @@ mybatis:
     # 将数据库下划线字段映射为实体的驼峰属性。
     map-underscore-to-camel-case: true
 simulator:
+  # 上传文件持久化目录，相对路径以模拟源服务启动目录为基准。
+  upload-directory: ./data/simulator/uploads
   # 同一组模拟源表仅部署一个服务进程；运行目录锁防止本机重复启动。
   lock-file: ./data-simulator-service.lock
   # 同时发送的模拟源数量上限，允许1到256。
