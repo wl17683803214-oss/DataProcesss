@@ -5,6 +5,7 @@ import com.example.common.enums.DataAlarmType;
 import com.example.dataprocess.alarm.DataAlarmRecorder;
 import com.example.dataprocess.config.DataProcessingThreadPoolConfig;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
+import com.example.dataprocess.logging.PdxpFrameLogContext;
 import com.example.dataprocess.service.IoTDBTelemetryStorageService;
 import com.example.dataprocess.service.TelemetryMessageService;
 import com.example.dataprocess.tool.PdxpParser;
@@ -91,7 +92,9 @@ public class TelemetryResultDispatcher {
                         storageService.saveProcessedParameters(snapshot, message, rawFrame));
         boolean messageAccepted = execute(messageExecutor, snapshot, sequenceNumber,
                 DataAlarmType.MESSAGE_FAILURE, "遥测消息发送", () ->
-                        messageService.send(message.toByteArray()));
+                        // 使用当前运行接口的原子标记，配置快照仍用于异常和存储上下文。
+                        PdxpFrameLogContext.runWithInterface(config,
+                                () -> messageService.send(message.toByteArray())));
         return storageAccepted && messageAccepted;
     }
 

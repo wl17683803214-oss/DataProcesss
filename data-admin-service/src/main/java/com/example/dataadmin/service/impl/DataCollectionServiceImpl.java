@@ -288,7 +288,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         if (interfaceMapper.updateEnabled(id, enabled) == 0) {
             throw new IllegalArgumentException("采集接口启用状态修改失败");
         }
-        // 启用开关提交后立即同步，启用时启动任务，禁用时停止任务。
+        // 启用开关提交后由后台同步运行状态，当前请求不等待任务启动或停止。
         interfaceRuntimeSyncService.syncAfterCommit();
     }
 

@@ -4,10 +4,26 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 
 /** 数据处理服务运行采集接口所需的配置快照。 */
 public class CollectInterfaceRuntimeConfig {
+
+    /** 同一次接口启动只记录第一条处理完成日志，并发处理时原子判断。 */
+    private final AtomicBoolean pdxpProcessingLogged = new AtomicBoolean();
+    /** 同一次接口启动只记录第一条消息发送成功日志。 */
+    private final AtomicBoolean pdxpMessageLogged = new AtomicBoolean();
+
+    /** 已运行接口复用当前对象，重新启动创建新对象并重新允许首帧日志。 */
+    public boolean markFirstPdxpProcessingLog() {
+        return pdxpProcessingLogged.compareAndSet(false, true);
+    }
+
+    /** 消息发送完成后再标记，失败日志仍由结果调度组件逐次记录。 */
+    public boolean markFirstPdxpMessageLog() {
+        return pdxpMessageLogged.compareAndSet(false, true);
+    }
 
     /** 采集接口主键。 */
     private Long interfaceId;

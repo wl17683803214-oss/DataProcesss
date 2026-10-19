@@ -167,7 +167,7 @@ public class OperationLogAdvice extends RequestBodyAdviceAdapter
         }
         boolean failedSync = Boolean.TRUE.equals(request.getAttribute(SYNC_FAILED));
         Object syncResult = request.getAttribute(SYNC_RESULT);
-        if (syncResult != null) { detail += "\n实际运行结果：" + syncResult; }
+        if (syncResult != null) { detail += "\n运行同步情况：" + syncResult; }
         SystemLogLevel level = Integer.valueOf(200).equals(result.getCode())
                 ? (failedSync ? SystemLogLevel.WARN : SystemLogLevel.INFO)
                 : (result.getCode() != null && result.getCode() >= 500 ? SystemLogLevel.ERROR : SystemLogLevel.WARN);

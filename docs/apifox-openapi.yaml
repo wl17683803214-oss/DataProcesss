@@ -1730,7 +1730,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 修改采集接口启用状态
-      description: 'HTTP启用时复核JSON配置与接收路径，但当前通用HTTP入口不读取启用状态；UDP/TCP按既有监听配置校验冲突并同步任务。HTTP不进入套接字监听列表。'
+      description: '保存启用或禁用设置后立即返回，实际运行状态由后台串行同步；连续操作合并并按最新配置执行。成功仅表示配置已保存，不保证监听已启动或停止，执行结果查看运行日志和采集告警。HTTP启用时复核JSON配置与接收路径，但当前通用HTTP入口不读取启用状态；HTTP不进入套接字监听列表。请求和响应字段保持不变。'
       requestBody:
         required: true
         content:
@@ -1744,7 +1744,7 @@ paths:
                   format: int64
                 enabled:
                   type: integer
-                  description: "是否启用通道：0否 1是。枚举：0 禁用，1 启用"
+                  description: "是否启用采集接口：0否 1是。枚举：0 禁用，1 启用"
                   enum:
                     - 0
                     - 1

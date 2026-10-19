@@ -262,10 +262,6 @@ public class CollectInterfaceManager implements DisposableBean {
 
     /** 启动新接口，关键运行配置变化时先停止再重新启动。 */
     private void startOrRestart(CollectInterfaceRuntimeConfig config) {
-        // 基线查询在启动或同步线程完成，采集和处理线程仅接收查询结果。
-        if (satelliteDirectory != null) {
-            config.setBaselineSatellites(satelliteDirectory.load(config));
-        }
         RunningInterface current = runningInterfaces.get(config.getInterfaceId());
         if (current != null
                 && current.getConfig().hasSameRuntimeSettings(config)) {
@@ -274,12 +270,15 @@ public class CollectInterfaceManager implements DisposableBean {
                     config.getCalibrationConfigMap());
             current.getConfig().setParameterRangeCheckEnabled(
                     config.getParameterRangeCheckEnabled());
-            // 不重启监听时也刷新目录，后续帧使用最新名称快照。
-            current.getConfig().setBaselineSatellites(config.getBaselineSatellites());
+            // 已有接口复用启动时的基线目录，其他接口启停不触发重复远程查询。
             current.getConfig().setDeviceSatelliteId(config.getDeviceSatelliteId());
             current.getConfig().setDeviceSatelliteName(config.getDeviceSatelliteName());
             current.getConfig().setPdxpFields(config.getPdxpFields());
             return;
+        }
+        // 只有新启动或运行配置变化的接口才查询基线，查询失败仍沿用容错规则。
+        if (satelliteDirectory != null) {
+            config.setBaselineSatellites(satelliteDirectory.load(config));
         }
         if (current != null) {
             stopInterface(config.getInterfaceId(), "接口运行配置发生变化");

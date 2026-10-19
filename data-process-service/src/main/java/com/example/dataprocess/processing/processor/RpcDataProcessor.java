@@ -130,14 +130,17 @@ public class RpcDataProcessor implements DataProcessor {
             result = fillNames(config, result);
             long elapsedMillis =
                     (System.nanoTime() - startNanos) / 1_000_000L;
-            LOGGER.info(
-                    "远程处理完成，接口编号：{}，包序号：{}，参数数量：{}，"
-                            + "返回数据长度：{}，处理耗时：{}毫秒",
-                    config.getInterfaceId(),
-                    packet.getSequenceNumber(),
-                    result.getTelemetriesCount(),
-                    responseData.length,
-                    elapsedMillis);
+            // 运行配置对象保存并发安全的首帧标记，其他接口启停不会重置。
+            if (config.markFirstPdxpProcessingLog()) {
+                LOGGER.info(
+                        "远程处理完成，接口编号：{}，包序号：{}，参数数量：{}，"
+                                + "返回数据长度：{}，处理耗时：{}毫秒",
+                        config.getInterfaceId(),
+                        packet.getSequenceNumber(),
+                        result.getTelemetriesCount(),
+                        responseData.length,
+                        elapsedMillis);
+            }
             return Optional.of(result);
         } catch (InvalidProtocolBufferException exception) {
             // 返回内容不合法时只提示并结束当前帧，不构造虚假遥测消息。

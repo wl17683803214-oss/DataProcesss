@@ -46,10 +46,13 @@ public class BaselineSatelliteDirectory {
         if (!Integer.valueOf(1).equals(config.getRpcEnabled())) {
             return Collections.emptyMap();
         }
+        // 固定本次查询上下文，失败时也能打印请求参数、耗时和完整异常链。
+        long started = System.nanoTime();
+        String satelliteCode = "";
+        String channel = "";
+        String url = baseUrl;
         try {
             // 第一步：与RPC请求采用相同字段解析顺序，同名配置以后项为准。
-            String satelliteCode = "";
-            String channel = "";
             for (RpcProtocolField field : parser.parseFields(
                     config.getProtocolConfigParams(), RpcProtocolField.class)) {
                 String value = field.getValue() == null ? "" : String.valueOf(field.getValue()).trim();
@@ -63,14 +66,23 @@ public class BaselineSatelliteDirectory {
                 throw new IllegalArgumentException("基线服务地址或协议卫星编码未配置");
             }
             // 第二步：固定取第一页十条卫星记录，通道不作为查询过滤条件。
-            String url = UriComponentsBuilder.fromHttpUrl(
+            url = UriComponentsBuilder.fromHttpUrl(
                             baseUrl.trim().replaceAll("/+$", "") + LIST_PATH)
                     .queryParam("pageNum", 1).queryParam("pageSize", 10)
                     .queryParam("satelliteCode", satelliteCode)
                     .build().encode().toUriString();
             JsonNode response = http.get(url, JsonNode.class);
-            if (response == null || response.path("code").asInt() != 200
-                    || !response.path("data").path("rows").isArray()) {
+            if (response == null) {
+                throw new IllegalStateException("基线卫星查询未返回响应内容");
+            }
+            if (response.path("code").asInt() != 200) {
+                // 只记录业务返回码和提示，不输出整个卫星目录或请求认证信息。
+                throw new IllegalStateException("基线卫星查询业务失败，返回码："
+                        + response.path("code").asText("未提供")
+                        + "，提示：" + response.path("message").asText(
+                                response.path("msg").asText("未提供")));
+            }
+            if (!response.path("data").path("rows").isArray()) {
                 throw new IllegalStateException("基线卫星查询失败或返回结构不正确");
             }
             // 第三步：将列表转为只读索引，每颗卫星独立保存自己的通道信息。
@@ -93,13 +105,15 @@ public class BaselineSatelliteDirectory {
                 satellites.put(code, new BaselineSatelliteInfo(
                         row.path("satelliteName").asText(""), channels));
             }
-            LOGGER.info("基线卫星目录加载完成，接口编号：{}，卫星编码：{}，配置通道：{}，记录数：{}",
-                    config.getInterfaceId(), satelliteCode, channel, satellites.size());
+            LOGGER.info("基线卫星目录加载完成，接口编号：{}，卫星编码：{}，配置通道：{}，记录数：{}，耗时：{}毫秒",
+                    config.getInterfaceId(), satelliteCode, channel, satellites.size(),
+                    (System.nanoTime() - started) / 1_000_000L);
             return Collections.unmodifiableMap(satellites);
         } catch (RuntimeException exception) {
             // 目录不可用时继续采集，处理器保留RPC返回值。
-            LOGGER.warn("基线卫星目录加载失败，接口编号：{}，原因：{}",
-                    config.getInterfaceId(), exception.getMessage());
+            LOGGER.warn("基线卫星目录加载失败，接口编号：{}，请求地址：{}，卫星编码：{}，配置通道：{}，耗时：{}毫秒，原因：{}",
+                    config.getInterfaceId(), url, satelliteCode, channel,
+                    (System.nanoTime() - started) / 1_000_000L, exception.getMessage(), exception);
             return Collections.emptyMap();
         }
     }

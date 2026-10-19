@@ -171,9 +171,9 @@ data-processing:
   http:
     scheme: http
   interface-sync-url: http://127.0.0.1:8083/internal/collection/interfaces/sync
-  # 内部接口连接超时时间，单位毫秒。
+  # 后台同步调用的连接超时时间，单位毫秒，不阻塞启用按钮的返回。
   interface-sync-connect-timeout-millis: 5000
-  # 内部接口响应读取超时时间，单位毫秒。
+  # 后台同步调用的响应读取超时时间，单位毫秒，失败写入运行日志和告警。
   interface-sync-read-timeout-millis: 10000
 
 # 业务数据过期删除配置；不填或留空不删除，填写正整数时按天保留。

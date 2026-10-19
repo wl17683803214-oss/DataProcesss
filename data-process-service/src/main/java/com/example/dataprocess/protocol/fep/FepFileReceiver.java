@@ -186,8 +186,11 @@ public final class FepFileReceiver {
         boolean completed = isTransferCompleted(remainingLength, unitData.length);
         if (!completed) {
             session.nextUnitNumber++;
-            LOGGER.info("FEP文件数据单元接收完成，文件名：{}，数据单元号：{}，数据长度：{}",
-                    session.fileName, packet.getUnitNumber(), unitData.length);
+            // 只记录本次接收的首个单元，续传时以会话起始单元为准。
+            if (packet.getUnitNumber() == session.initialUnitNumber) {
+                LOGGER.info("FEP文件首个数据单元接收完成，文件名：{}，数据单元号：{}，数据长度：{}",
+                        session.fileName, packet.getUnitNumber(), unitData.length);
+            }
             return DataReceiveResult.receiving(
                     session.fileName,
                     session.fileId,
@@ -202,8 +205,15 @@ public final class FepFileReceiver {
         // 第七步：构造03结束确认包，通知发送方文件已经完整接收。
         byte[] confirmationPacket =
                 FepProtocolTool.buildFinishConfirmation(session.fileId);
-        LOGGER.info("FEP文件接收完成，文件名：{}，文件标识：{}，文件长度：{}",
-                session.fileName, session.fileId, session.fileLength);
+        // 首个单元同时结束传输时只记录首单元，否则记录最后一个单元。
+        if (packet.getUnitNumber() == session.initialUnitNumber) {
+            LOGGER.info("FEP文件首个数据单元接收完成，文件名：{}，数据单元号：{}，数据长度：{}",
+                    session.fileName, packet.getUnitNumber(), unitData.length);
+        } else {
+            LOGGER.info("FEP文件接收完成，文件名：{}，文件标识：{}，文件长度：{}，末尾数据单元号：{}，数据长度：{}",
+                    session.fileName, session.fileId, session.fileLength,
+                    packet.getUnitNumber(), unitData.length);
+        }
         return DataReceiveResult.completed(
                 session.fileName,
                 session.fileId,
@@ -533,6 +543,8 @@ public final class FepFileReceiver {
         private final int fileLength;
         private final Path temporaryFile;
         private final Path targetFile;
+        /** 本次会话的起始单元号，支持断点续传时识别首个单元。 */
+        private final int initialUnitNumber;
         private int nextUnitNumber;
 
         private ReceiveSession(
@@ -545,6 +557,8 @@ public final class FepFileReceiver {
             this.fileId = fileId;
             this.fileName = fileName;
             this.fileLength = fileLength;
+            // 保存会话起点，仅用于控制首尾单元日志输出。
+            this.initialUnitNumber = nextUnitNumber;
             this.nextUnitNumber = nextUnitNumber;
             this.temporaryFile = temporaryFile;
             this.targetFile = targetFile;

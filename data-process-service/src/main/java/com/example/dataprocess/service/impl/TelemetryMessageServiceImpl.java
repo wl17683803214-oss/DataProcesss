@@ -2,6 +2,7 @@ package com.example.dataprocess.service.impl;
 
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import com.example.dataprocess.service.TelemetryMessageService;
+import com.example.dataprocess.logging.PdxpFrameLogContext;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
@@ -66,7 +67,10 @@ public class TelemetryMessageServiceImpl implements TelemetryMessageService {
         // 将遥测Proto原始字节同步发送到结果主题，不再添加19字节消息头。
         SendResult sendResult = rocketMQTemplate.syncSend(destination, protobufData);
 
-        // 记录服务端确认的消息定位信息，便于在RocketMQ Dashboard中核对实际集群和消息。
+        // 每个PDXP采集接口仅打印首次成功发送的定位信息，后续消息仍正常发送。
+        if (!PdxpFrameLogContext.shouldLogMessageSuccess()) {
+            return;
+        }
         LOGGER.info(
                 "遥测消息发送成功，名称服务：{}，目标主题：{}，目标标签：{}，"
                         + "消息标识：{}，偏移消息标识：{}，代理：{}，队列编号：{}，"

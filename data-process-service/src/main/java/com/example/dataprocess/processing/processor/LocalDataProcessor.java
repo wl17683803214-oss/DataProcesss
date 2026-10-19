@@ -159,14 +159,17 @@ public class LocalDataProcessor implements DataProcessor {
         // 第四步：构造结果并记录本帧本地处理完成信息。
         TelemetryMessage result = message.build();
         long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000L;
-        LOGGER.info(
-                "本地处理完成，接口编号：{}，包序号：{}，参数数量：{}，"
-                        + "原始数据长度：{}，处理耗时：{}毫秒",
-                config.getInterfaceId(),
-                packet.getSequenceNumber(),
-                result.getTelemetriesCount(),
-                data.length,
-                elapsedMillis);
+        // 每次启动仅记录本接口第一帧处理完成信息，后续帧不重复打印常规日志。
+        if (config.markFirstPdxpProcessingLog()) {
+            LOGGER.info(
+                    "本地处理完成，接口编号：{}，包序号：{}，参数数量：{}，"
+                            + "原始数据长度：{}，处理耗时：{}毫秒",
+                    config.getInterfaceId(),
+                    packet.getSequenceNumber(),
+                    result.getTelemetriesCount(),
+                    data.length,
+                    elapsedMillis);
+        }
         return Optional.of(result);
     }
 
