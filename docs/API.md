@@ -290,7 +290,7 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 原始帧与异常帧接口的查询参数为必填 `taskId`、可选 `interfaceId`、`pageNum`、`pageSize`。接口主键必须大于零；对应关系由任务路径隔离，正数但在当前任务下没有数据的接口返回空页。响应仍保留设备卫星、通道、时间、原码及检查结果，不新增 `interfaceId`、`interfaceName`。旧整帧不自动迁移，缺少接口层级时不推断来源，仅在不筛选接口时返回。
 
-`/processing/processed` 和 `/processing/processed/curve` 仍按taskId、selectionType、targetId读取已保存勾选；实际IoTDB查询按勾选所属类型分支：设备使用当前任务、设备主键与遥测代号，卫星使用当前任务、rpc_前缀身份与遥测代号。类型复用DeviceSatelliteType枚举并从已有设备卫星资料读取；卫星资料主键不用于拼接RPC存储路径。同一代号在各自范围内存在多个路径时按时间取最新一条或最近120个有效点。勾选目录、保存机制和返回结构保持现有约定。完整前端改动见[遥测代号查询与整帧接口筛选](前端对接-遥测代号查询与整帧接口筛选.md)。
+`/processing/processed` 和 `/processing/processed/curve` 仍按taskId、selectionType、targetId读取已保存勾选；实际GreptimeDB查询按勾选所属类型分支：设备使用当前任务、local来源、设备主键身份与遥测代号，卫星使用当前任务、rpc来源与遥测代号。类型复用DeviceSatelliteType枚举并从已有设备卫星资料读取；卫星资料主键不用于拼接RPC存储路径。同一代号在各自范围内存在多个身份或遥测类型时按时间取最新一条或最近120个有效点。勾选目录、保存机制和返回结构保持现有约定。完整前端改动见[遥测代号查询与整帧接口筛选](前端对接-遥测代号查询与整帧接口筛选.md)。
 
 | 方法 | 地址 | 说明 | 参数 |
 | --- | --- | --- | --- |
@@ -300,13 +300,15 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 | POST | `/processing/rule-config/update` | 保存处理规则开关 | `ProcessingRuleConfigRequest` |
 | GET | `/processing/device-satellites` | 设备卫星筛选列表 | `taskId` 必填，`type` 可选；类型为空时查询全部；返回 `id`、`code`、`name`、`type` |
 | GET | `/processing/rules` | 分页查询遥测解析规则 | 必填：`taskId`、`deviceSatelliteId`；可选：`systemId`、`pageNum`、`pageSize`；传入系统主键时只查询该系统直属参数，不传时查询当前设备全部参数 |
-| POST | `/processing/rules/import` | Excel或TXT按类型替换导入 | `multipart/form-data`：`taskId`、`type`、`file` |
+| POST | `/processing/rules/import` | Excel或TXT按类型同名替换导入 | `multipart/form-data`：`taskId`、`type`、`file` |
 
 处理日志中的 `logLevel` 返回稳定枚举编码（1 信息、2 警告、3 错误），`logLevelName` 返回对应中文名称。
 
 `ProcessingRuleConfigRequest` 只包含 `taskId` 和 `parameterRangeCheckEnabled`（0关闭、1开启）。查询时如果该任务尚无配置，系统会先插入参数值范围检查关闭的默认配置，再返回数据库记录。数据库表保留其他规则字段，但查询和保存接口不再读取或修改这些字段。
 
-上传.xls、.xlsx或.txt文件（最大20MB），前端选择type，整份文件使用相同类型。Excel按Sheet页签分别创建设备卫星；TXT使用制表符分隔，一次表示一个设备卫星，使用去掉扩展名的文件名填写code和name，并自动兼容UTF-8和GBK编码。第一行必须包含全部19个中文表头：序号、位宽、遥测名称、遥测代号、公式类型、处理公式、处理参数、小数位数、是否报警、正常值范围、预警值范围、状态跳变信息、相关命令、所属系统、控制波道、合并波道、延时波道、存储遥测、校准公式；旧TXT最后一列表头和内容为反斜线时按空校准公式处理。每个设备至少有一条有效数据，空行忽略，序号不能重复。完整校验后在同一事务中逻辑删除当前taskId下同类型设备卫星及关联参数，回填设备卫星主键到参数的deviceSatelliteId。其他任务和另一类型不受影响，任意失败整体回滚。业务单元格按文本保存，是否报警和存储遥测空白时为0。返回导入的参数总条数。
+上传.xls、.xlsx或.txt文件（最大20MB），前端选择type，整份文件使用相同类型。Excel按Sheet页签分别创建设备卫星；TXT使用制表符分隔，一次表示一个设备卫星，使用去掉扩展名的文件名填写code和name，并自动兼容UTF-8和GBK编码。第一行必须包含全部19个中文表头：序号、位宽、遥测名称、遥测代号、公式类型、处理公式、处理参数、小数位数、是否报警、正常值范围、预警值范围、状态跳变信息、相关命令、所属系统、控制波道、合并波道、延时波道、存储遥测、校准公式；旧TXT最后一列表头和内容为反斜线时按空校准公式处理。每个设备至少有一条有效数据，空行忽略，序号不能重复。完整校验后按当前任务、类型和名称匹配，仅替换同名设备卫星的系统和参数并保留设备主键；不同名新增，未上传的设备卫星及配置保留。任意失败整体回滚。业务单元格按文本保存，是否报警和存储遥测空白时为0。返回导入的参数总条数。
+
+新增 `POST /processing/rules/delete?deviceSatelliteId=12`，只传设备卫星主键，删除目录、系统和参数并清理页面关联；仍被有效本地PDXP协议引用时拒绝。详见 `前端对接-参数解析配置删除.md`。
 
 参数解析配置统一通过Excel或制表符TXT导入维护；导入完成后同步实时曲线和实时数据组件的参数筛选项。
 
@@ -372,9 +374,9 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 ### 遥测整帧异常记录
 
-本地处理新写入的IoTDB整帧路径为 `root.db.task_<任务节点>.interface_<采集接口ID>.device_<设备卫星ID>.tms.<遥测类型>._frame`，只保存 `deviceSatelliteName`、`channelName`、`raw`、`checkResultName` 四个测点；raw保存当前完整采集帧，顺序为传输头、PDXP包头、自定义数据、遥测数据、遥测帧头，时间使用帧时间。参数节点的raw仍保存参数原码，Proto的frame_raw_data仍保留去头数据域定义。成功生成Proto时，RPC返回的 `frame_check_status=false` 对应 `checkResultName=异常`，返回true时为正常；本地成功解析的结果为正常。参数越限和校准野值不改变整帧检查结果。
+遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，接口原码、分页、设备身份和中文检查结果字段保持不变。
 
-RPC整帧使用 `root.db.task_<任务节点>.interface_<采集接口ID>.rpc_<卫星通道身份节点>.tms.<遥测类型>._frame`，卫星通道身份由RPC返回编码生成。参数路径继续位于任务下原有设备或RPC身份节点，不增加接口层级。整帧查询改用可选interfaceId筛选，不再接收deviceSatelliteId作为筛选条件；不传interfaceId时包含当前任务新旧路径的本地与RPC整帧，传入时只查该interface_节点；RPC记录的 `deviceSatelliteId` 返回 `null`，`deviceSatelliteName` 为返回的卫星名称或代号。历史RPC设备节点数据仍保留，不自动迁移。
+遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，接口原码、分页、设备身份和中文检查结果字段保持不变。
 
 本地参数解析失败或未生成结果时，若PDXP包和数据域已正确拆分，并且采集配置具有有效任务编号、设备卫星ID及“通道名称_业务标识”格式的设备名称，则允许没有Proto而保存异常整帧。设备名称来自运行配置，通道名称取首个下划线前的内容，原码保存包含传输头、PDXP包头、自定义数据和遥测帧头的当前完整采集帧，类型节点为 `device`，时间使用PDXP包头发送时间。该分支复用遥测入库线程池，只写完整异常 `_frame`，不写任何参数，不发布遥测消息，不计入成功处理量。身份不完整、无法拆分数据域、RPC调用失败及校准失败不使用此回退；入库队列满或写入失败会保留原始解析错误并另外记录存储告警。
 
@@ -435,13 +437,13 @@ OpenAPI 文件已为各模块请求 DTO 配置独立 Schema，包括字段类型
 
 ## 数据保留与过期清理
 
-保留天数统一使用Nacos中的 `data-retention` 配置，不填或留空不删除，填写正整数N时删除早于当前时间减N天的数据；0和负数不合法。管理服务按分类分批物理删除金仓记录，处理服务删除IoTDB中同一截止时间之前的参数和整帧测点，每小时第15分钟执行。原固定7天清理不再使用。
+保留天数统一使用Nacos中的 `data-retention` 配置，不填或留空不删除，填写正整数N时删除早于当前时间减N天的数据；0和负数不合法。管理服务按分类分批物理删除金仓记录，处理服务删除GreptimeDB中同一截止时间之前的参数和整帧记录，每小时第15分钟执行。原固定7天清理不再使用。
 
 采集接口累计量及处理累计去重数按仍保留的统计记录计算，清理后可减少。遥测参数曲线仍查询最近120条已有数据，查询 `range` 与保留天数互相独立。校准只删除野值详情，保留汇总记录、ID和历史累计数量；详情分页total是当前保留的详情条数，允许小于汇总的outlierCount。文件图片只清理数据库记录，不删除MinIO对象；超期未完成的记录也删除，之后不再被数据库重试扫描选中。系统告警和数据告警包含已处理、未处理或仍活动的过期记录。配置项、配置所属服务和时间依据详见 `docs/数据保留与过期清理配置说明.md`。
 
 ## PDXP接收附加长度配置
 
-处理服务通过 `data-processing.pdxp.transport-header-length`、`custom-data-length`、`telemetry-header-length` 统一读取传输头、数据域开头自定义数据和数据域末尾遥测帧头的字节数，默认分别为2、5、4，0表示没有。PDXP标准包头仍固定32字节，遥测数据按实际长度读取。本地处理只解析中间遥测数据；RPC请求data为遥测帧头加遥测数据；IoTDB整帧raw保留实际完整接收帧，异常帧校验复用相同长度配置。配置适用于所有PDXP采集接口，修改后重启处理服务生效，模拟源发送格式应匹配。接口入参和出参字段不变，详见 `docs/PDXP附加头长度配置说明.md`。
+处理服务通过 `data-processing.pdxp.transport-header-length`、`custom-data-length`、`telemetry-header-length` 统一读取传输头、数据域开头自定义数据和数据域末尾遥测帧头的字节数，默认分别为2、5、4，0表示没有。PDXP标准包头仍固定32字节，遥测数据按实际长度读取。本地处理只解析中间遥测数据；RPC请求data为遥测帧头加遥测数据；GreptimeDB整帧raw保留实际完整接收帧，异常帧校验复用相同长度配置。配置适用于所有PDXP采集接口，修改后重启处理服务生效，模拟源发送格式应匹配。接口入参和出参字段不变，详见 `docs/PDXP附加头长度配置说明.md`。
 
 
 ## HTTP采集统一接收入口

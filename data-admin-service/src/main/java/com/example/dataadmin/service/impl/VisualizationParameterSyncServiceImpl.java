@@ -44,6 +44,14 @@ public class VisualizationParameterSyncServiceImpl
         // 新参数不批量写入所有组件，避免大量无用配置项。
     }
 
+    /** 删除配置后只清理失效组件项。 */
+    @Override
+    @Transactional
+    public void removeObsoleteParameters(String taskId) {
+        // 复用已有清理语句，不重新绑定同代号的其他设备参数。
+        itemMapper.deleteObsoleteParseRuleItems(taskId);
+    }
+
     /** 已有参数只更新对应组件项，避免批量编辑时扫描整张任务参数表。 */
     @Override
     @Transactional

@@ -12,9 +12,9 @@ public class PdxpConfig {
     public Integer telemetryHeaderLength = 4;
     /** 自定义数据字节长度，零表示不附加自定义数据。 */
     public Integer customDataLength = 5;
-    /** 与传输头长度匹配的十六进制内容。 */
+    /** 与传输头长度匹配的十六进制内容，长度为零时忽略并归一为空字符串。 */
     public String transportHeader = "1234";
-    /** 与自定义数据长度匹配的十六进制内容。 */
+    /** 与自定义数据长度匹配的十六进制内容，长度为零时忽略并归一为空字符串。 */
     public String customData = "0102030405";
     /** 版本。 */
     public String ver = "80";

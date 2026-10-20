@@ -391,13 +391,20 @@ public final class PdxpParser {
      * @throws IOException 接收数据或协议解析失败
      */
     public static List<PdxpPacket> receiveTcp(InputStream inputStream) throws IOException {
+        // 保留旧工具不带传输头的默认约定。
+        return receiveTcp(inputStream, 0);
+    }
+
+    /** 接收TCP定界帧，按指定传输头长度拆分应用层报文。 */
+    public static List<PdxpPacket> receiveTcp(InputStream inputStream,
+            int transportHeaderLength) throws IOException {
         // 校验输入流，避免将连接配置错误表现为空指针异常。
         if (inputStream == null) {
             throw new IllegalArgumentException("TCP 输入流不能为空");
         }
 
         // TCP 没有消息边界，必须读取到首尾两个 7E 后才交给解析器。
-        return parseTcp(readTcpFrame(inputStream));
+        return parseTcpFrames(readTcpFrame(inputStream), transportHeaderLength);
     }
 
     /**
@@ -582,6 +589,13 @@ public final class PdxpParser {
 
     /** 解析带定界符和转义的 TCP 数据。 */
     private static List<PdxpPacket> parseTcpFrames(byte[] tcpData) throws IOException {
+        // 文件和旧工具入口继续使用不带传输头的格式。
+        return parseTcpFrames(tcpData, 0);
+    }
+
+    /** 反转义后按当前处理模式的传输头长度解析，保留完整原码。 */
+    private static List<PdxpPacket> parseTcpFrames(byte[] tcpData,
+            int transportHeaderLength) throws IOException {
         // 保存从 TCP 字节流恢复出的所有应用层数据包。
         List<PdxpPacket> packets = new ArrayList<PdxpPacket>();
         ByteArrayOutputStream frame = null;
@@ -592,7 +606,8 @@ public final class PdxpParser {
             if (current == TCP_DELIMITER) {
                 // 遇到结束定界符时，解析已经收集到的完整帧。
                 if (frame != null && frame.size() > 0) {
-                    List<PdxpPacket> framePackets = parseBinary(unescapeTcp(frame.toByteArray()));
+                    List<PdxpPacket> framePackets = parseTransportUdp(
+                            unescapeTcp(frame.toByteArray()), transportHeaderLength);
                     if (framePackets.size() != 1) {
                         throw new IOException("一个 TCP 定界帧必须且只能包含一个 PDXP 数据包");
                     }

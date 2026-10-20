@@ -13,6 +13,23 @@
     <artifactId>common</artifactId>
 
     <dependencies>
+        <!-- 独立时序连接池不注册为金仓数据源，两个服务复用相同存储映射。 -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </dependency>
+        <!-- 遥测读写通过独立会话和XML绑定参数执行。 -->
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis</artifactId>
+            <version>3.5.9</version>
+        </dependency>
+        <!-- 使用兼容Java 8的MySQL协议驱动连接时序服务。 -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- 公共HTTP工具使用Spring统一完成请求体转换和响应处理。 -->
         <dependency>
             <groupId>org.springframework</groupId>

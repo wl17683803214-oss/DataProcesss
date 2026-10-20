@@ -127,7 +127,9 @@ public class PdxpProtocolHandler implements ProtocolHandler {
             TcpTool.TcpConnection connection,
             BooleanSupplier running) throws IOException {
         while (running.getAsBoolean() && connection.isOpen()) {
-            PdxpParser.PdxpPacket packet = connection.receivePdxpPacket();
+            // TCP恢复完整帧时使用与后续业务处理一致的传输头长度。
+            PdxpParser.PdxpPacket packet = connection.receivePdxpPacket(
+                    framingProperties.select(config.getRpcEnabled()).getTransportHeaderLength());
             submit(config, packet.getRawPacket(), "TCP");
         }
     }
@@ -153,13 +155,14 @@ public class PdxpProtocolHandler implements ProtocolHandler {
     public void handle(ReceivedDatagram datagram) {
         List<PdxpParser.PdxpPacket> packets;
         try {
-            // PDXP解析只在数据处理线程中执行。
+            // 数据处理线程按接口模式拆帧，TCP接收端已完成定界及反转义。
             packets = PdxpParser.parseTransportUdp(datagram.getData(),
-                    framingProperties.getTransportHeaderLength());
+                    framingProperties.select(datagram.getInterfaceConfig().getRpcEnabled())
+                            .getTransportHeaderLength());
         } catch (Exception exception) {
             alarm(datagram.getInterfaceConfig(), com.example.common.enums.DataAlarmType.PACKET_PARSE,
                     "报文长度：" + datagram.getData().length + "；解析失败：" + exception.getMessage());
-            LOGGER.error("PDXP报文解析失败，异常帧暂未写入IoTDB，接口编号：{}",
+            LOGGER.error("PDXP报文解析失败，异常帧暂未写入GreptimeDB，接口编号：{}",
                     datagram.getInterfaceConfig().getInterfaceId(), exception);
             return;
         }
@@ -167,7 +170,7 @@ public class PdxpProtocolHandler implements ProtocolHandler {
         if (packets.isEmpty()) {
             alarm(datagram.getInterfaceConfig(), com.example.common.enums.DataAlarmType.PACKET_PARSE,
                     "报文长度：" + datagram.getData().length + "；未形成完整报文，当前数据不进入处理链路");
-            LOGGER.warn("PDXP报文结构不完整，异常帧暂未写入IoTDB，接口编号：{}",
+            LOGGER.warn("PDXP报文结构不完整，异常帧暂未写入GreptimeDB，接口编号：{}",
                     datagram.getInterfaceConfig().getInterfaceId());
             return;
         }
@@ -190,12 +193,13 @@ public class PdxpProtocolHandler implements ProtocolHandler {
         // 告警组件随后报错时也不重复提交同一异常整帧。
         boolean abnormalFrameAttempted = false;
         try {
-            // 第一步：拆分自定义数据、遥测原始数据和遥测帧头。
+            // 第一步：按接口处理模式选择长度，再拆分数据域。
+            PdxpFramingProperties.Framing framing = framingProperties.select(config.getRpcEnabled());
             PdxpDataPayload payload = PdxpDataPayloadParser.parse(
-                    packet.getData(), framingProperties.getCustomDataLength(),
-                    framingProperties.getTelemetryHeaderLength());
+                    packet.getData(), framing.getCustomDataLength(),
+                    framing.getTelemetryHeaderLength());
             payloadParsed = true;
-            // 第二步：rpc_enabled只决定正常PDXP帧后的业务处理分支。
+            // 第二步：业务处理器与拆帧长度均使用同一远程开关选择。
             DataProcessor processor = Integer.valueOf(1).equals(
                     config.getRpcEnabled()) ? rpcProcessor : localProcessor;
             stage = Integer.valueOf(1).equals(config.getRpcEnabled())

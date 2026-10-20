@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** 处理服务读取遥测数据保留天数，未配置时不清理IoTDB。 */
+/** 处理服务读取遥测数据保留天数，未配置时不清理时序数据库。 */
 @Configuration
 public class DataRetentionConfig {
     @Bean

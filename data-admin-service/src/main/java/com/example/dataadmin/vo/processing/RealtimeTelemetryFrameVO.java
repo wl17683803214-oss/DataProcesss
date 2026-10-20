@@ -2,9 +2,9 @@ package com.example.dataadmin.vo.processing;
 
 import java.time.LocalDateTime;
 
-/** IoTDB完整采集帧，包括正常处理结果及已入库的异常帧。 */
+/** GreptimeDB完整采集帧，包括正常处理结果及已入库的异常帧。 */
 public class RealtimeTelemetryFrameVO {
-    /** 本地设备卫星主键，来自IoTDB路径；RPC独立身份没有此主键，返回空值。 */
+    /** 本地设备卫星主键，由本地source_identity还原；RPC独立身份没有此主键，返回空值。 */
     private Long deviceSatelliteId;
     /** 消息时间。 */
     private LocalDateTime time;

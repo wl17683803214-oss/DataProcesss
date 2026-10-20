@@ -48,26 +48,49 @@ system-monitor:
   # RocketMQ消息积压数量告警阈值，单位条。
   queue-warning-depth: 1000
 
-# IoTDB 客户端版本应与服务端版本保持一致；未配置时默认不写入。
-iotdb:
-  # 是否启用IoTDB连接和数据写入；关闭后其他处理流程继续运行。
+# 遥测存储连接；先准备服务和可访问数据库，表由启动代码自动创建。
+greptime:
+  # 关闭后不连接时序服务；处理服务仍可解析和发送消息，查询接口报告未启用。
   enabled: true
-  host: 127.0.0.1
-  port: 6667
-  username: root
-  password: root
+  # 使用MySQL协议；保持北京时间和毫秒精度，避免时间偏移。
+  url: "jdbc:mysql://127.0.0.1:4002/public?useSSL=false&useServerPrepStmts=false&connectTimeout=10000&socketTimeout=30000&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true"
+  # 按服务端认证配置填写，默认本机无认证环境使用空值。
+  username: ""
+  password: ""
+  # 独立连接池上限，至少为2；管理服务查询并发为此值减一。
   max-pool-size: 5
+  # 等待连接的最长毫秒数。
+  connection-timeout-millis: 10000
+  # 单条语句超时秒数。
+  query-timeout-seconds: 30
+  # 参数分批写入数量，避免报文过大。
+  batch-size: 500
+  # 包含首次写入在内的尝试次数，稳定主键避免重试新增时间点。
+  write-attempts: 3
+  # 启动时自动建表，不覆盖已有表或迁移旧库历史数据。
+  auto-create-tables: true
 
 # 数据采集接口和数据处理公共配置。
 data-processing:
-  # 系统级PDXP拆帧配置，所有PDXP采集接口共用；修改后重启处理服务生效。
+  # PDXP按接口rpc_enabled选择本地或远程配置；修改后重启处理服务生效。
+  # 旧平级长度项需迁移到以下分组，不再作为分组的回退值。
   pdxp:
-    # 报文最前面的传输头字节数，0表示没有；未配置默认2。
-    transport-header-length: 2
-    # PDXP数据域开头的自定义数据字节数，0表示没有；未配置默认5。
-    custom-data-length: 5
-    # PDXP数据域末尾的遥测帧头字节数，0表示没有；未配置默认4。
-    telemetry-header-length: 4
+    # 本地处理配置，未开启远程时生效。
+    local:
+      # 报文最前面的传输头字节数，0表示没有；未配置默认2。
+      transport-header-length: 0
+      # PDXP数据域开头的自定义数据字节数，0表示没有；未配置默认5。
+      custom-data-length: 0
+      # PDXP数据域末尾的遥测帧头字节数，0表示没有；未配置默认4。
+      telemetry-header-length: 0
+    # 远程处理配置，仅rpc_enabled为1时生效。
+    rpc:
+      # 报文最前面的传输头字节数，0表示没有；未配置默认2。
+      transport-header-length: 2
+      # PDXP数据域开头的自定义数据字节数，0表示没有；未配置默认5。
+      custom-data-length: 5
+      # PDXP数据域末尾的遥测帧头字节数，0表示没有；未配置默认4。
+      telemetry-header-length: 4
   # UDP采集线程池固定线程数，超过该数量的接口会明确启动失败。
   collect-thread-count: 64
   # 遥测数据处理线程池固定线程数。
@@ -76,9 +99,9 @@ data-processing:
   process-queue-capacity: 2048
   # 遥测结果异步处理配置，入库与消息任务各自排队，不占用处理线程。
   result:
-    # IoTDB入库固定线程数，应结合连接池大小调整。
+    # GreptimeDB入库固定线程数，应结合连接池大小调整。
     storage-thread-count: 4
-    # IoTDB待入库任务上限，队列满时记录告警并拒绝任务。
+    # GreptimeDB待入库任务上限，队列满时记录告警并拒绝任务。
     storage-queue-capacity: 2048
     # RocketMQ发送固定线程数。
     message-thread-count: 4
@@ -135,7 +158,7 @@ baseline:
     connect-timeout-millis: 5000
     read-timeout-millis: 10000
 
-# IoTDB业务数据过期删除配置；不填或留空不删除，只接受正整数天数。
+# GreptimeDB业务数据过期删除配置；不填或留空不删除，只接受正整数天数。
 data-retention:
   # 遥测参数、正常帧、异常帧和遥测曲线共用保留天数，以帧时间为准。
   # 每小时第15分钟删除早于截止时间的数据；变更后重启处理服务生效。

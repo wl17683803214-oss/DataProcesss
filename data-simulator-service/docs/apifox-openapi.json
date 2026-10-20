@@ -1326,15 +1326,15 @@
         "properties": {
           "transportHeader": {
             "type": "string",
-            "description": "传输头十六进制内容，字符数必须等于transportHeaderLength乘2",
-            "pattern": "^(?:[0-9a-fA-F]{2})*$",
-            "default": "1234"
+            "description": "传输头十六进制内容；transportHeaderLength为0时忽略内容，允许null、空字符串、不传或保留旧内容，后端归一为空字符串；长度大于0时必须为对应字节长度两倍的十六进制字符",
+            "default": "1234",
+            "nullable": true
           },
           "customData": {
             "type": "string",
-            "description": "自定义数据十六进制内容，字符数必须等于customDataLength乘2",
-            "pattern": "^(?:[0-9a-fA-F]{2})*$",
-            "default": "0102030405"
+            "description": "自定义数据十六进制内容；customDataLength为0时忽略内容，允许null、空字符串、不传或保留旧内容，后端归一为空字符串；长度大于0时必须为对应字节长度两倍的十六进制字符",
+            "default": "0102030405",
+            "nullable": true
           },
           "ver": {
             "type": "string",
@@ -1387,7 +1387,7 @@
           },
           "transportHeaderLength": {
             "minimum": 0,
-            "description": "传输头字节长度，零时内容为空字符串",
+            "description": "传输头字节长度，零表示省略并忽略对应内容",
             "maximum": 65475,
             "type": "integer",
             "default": 2
@@ -1401,7 +1401,7 @@
           },
           "customDataLength": {
             "minimum": 0,
-            "description": "自定义数据字节长度，零时内容为空字符串",
+            "description": "自定义数据字节长度，零表示省略并忽略对应内容",
             "maximum": 65475,
             "type": "integer",
             "default": 5

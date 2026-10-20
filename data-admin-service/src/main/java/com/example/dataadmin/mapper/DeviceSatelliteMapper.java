@@ -7,6 +7,10 @@ import java.util.List;
 
 /** 设备卫星数据访问。 */
 public interface DeviceSatelliteMapper {
+    /** 按任务和设备卫星主键逻辑删除当前有效记录。 */
+    int deleteByDevice(@Param("taskId") String taskId, @Param("deviceSatelliteId") Long deviceSatelliteId);
+    /** 根据唯一主键定位有效设备卫星及其所属任务。 */
+    DeviceSatellite findActiveById(@Param("id") Long id);
     /** 锁定当前试验任务，防止同时导入产生两套有效数据。 */
     String lockForReplacement(@Param("taskId") String taskId);
     /** 查询指定任务和类型的筛选项。 */

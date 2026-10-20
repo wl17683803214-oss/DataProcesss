@@ -7,6 +7,8 @@ import java.util.List;
 
 /** 参数配置数据访问，任务ID始终参与查询和修改。 */
 public interface TelemetryParseRuleConfigMapper {
+    /** 按任务和设备卫星主键逻辑删除当前有效记录。 */
+    int deleteByDevice(@Param("taskId") String taskId, @Param("deviceSatelliteId") Long deviceSatelliteId);
     /** 查询当前任务所选设备卫星的参数。 */
     List<TelemetryParseRuleConfig> findAllByTaskId(@Param("taskId") String taskId, @Param("deviceSatelliteId") Long deviceSatelliteId);
     /** 查询当前层级直属的有效遥测参数。 */

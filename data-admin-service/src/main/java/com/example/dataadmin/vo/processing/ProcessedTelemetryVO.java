@@ -2,11 +2,11 @@ package com.example.dataadmin.vo.processing;
 
 import java.time.LocalDateTime;
 
-/** IoTDB处理后参数的页面返回结构。 */
+/** GreptimeDB处理后参数的页面返回结构。 */
 public class ProcessedTelemetryVO {
     /** 已保存勾选记录所属的设备卫星主键。 */
     private Long deviceSatelliteId;
-    /** 路径末级遥测代号。 */
+    /** 参数表中的遥测代号。 */
     private String telemetryCode;
     /** Proto参数名称。 */
     private String parameter;

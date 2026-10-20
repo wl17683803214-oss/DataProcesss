@@ -20,13 +20,15 @@ import java.util.List;
  * 负责组织页面所需的查询和写入操作，数据库访问由对应Mapper完成。
  */
 public interface DataProcessingService {
+    /** 仅使用设备卫星主键删除目录及关联参数配置。 */
+    void deleteParseRules(Long deviceSatelliteId);
     /** 查询数据处理页面使用的已启用采集接口筛选项。 */
     List<CollectInterfaceOptionVO> listEnabledCollectInterfaces();
     /** 查询数据处理页面顶部统计数据。 */
     DataProcessingOverviewVO getOverview(String taskId);
     /** 查询数据处理页面实时监控指标。 */
     DataProcessingRealtimeVO getRealtime(String taskId);
-    /** 按任务和设备卫星分页筛选IoTDB中的数据域整帧。 */
+    /** 按任务和设备卫星分页筛选GreptimeDB中的数据域整帧。 */
     PageResult<RealtimeTelemetryFrameVO> pageRealtimeTelemetryFrames(
             String taskId,
             Long interfaceId,

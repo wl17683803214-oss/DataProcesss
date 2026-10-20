@@ -14,6 +14,9 @@ public interface VisualizationParameterSyncService {
      */
     void synchronizeTaskParameters(String taskId);
 
+    /** 删除时仅清理失效组件项，避免重新绑定其他设备。 */
+    void removeObsoleteParameters(String taskId);
+
     /** 仅更新本次修改参数对应的可视化组件名称和代号。 */
     void synchronizeChangedParameters(String taskId, List<Long> parseRuleIds);
 }

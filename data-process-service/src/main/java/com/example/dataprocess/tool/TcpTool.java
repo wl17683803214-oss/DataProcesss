@@ -258,10 +258,16 @@ public final class TcpTool {
          * @throws IOException TCP接收、定界、反转义或PDXP解析失败
          */
         public PdxpParser.PdxpPacket receivePdxpPacket() throws IOException {
+            // 保留旧工具入口不带传输头的约定。
+            return receivePdxpPacket(0);
+        }
+
+        /** 按处理模式指定的传输头长度恢复一个完整TCP帧。 */
+        public PdxpParser.PdxpPacket receivePdxpPacket(int transportHeaderLength) throws IOException {
             // 与普通接收共用同一把锁，避免多个线程同时读取同一输入流导致帧错乱。
             synchronized (receiveLock) {
                 // 复用PDXP解析器现有的TCP流接收逻辑，统一处理7E定界和7D反转义。
-                List<PdxpParser.PdxpPacket> packets = PdxpParser.receiveTcp(inputStream);
+                List<PdxpParser.PdxpPacket> packets = PdxpParser.receiveTcp(inputStream, transportHeaderLength);
                 if (packets.size() != 1) {
                     throw new IOException("一个TCP PDXP帧必须且只能解析出一个数据包");
                 }

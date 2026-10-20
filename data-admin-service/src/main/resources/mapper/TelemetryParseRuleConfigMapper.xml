@@ -234,4 +234,15 @@
           )
     </update>
 
+    <!-- 任务和设备主键共同限定删除范围，缺少条件时禁止更新。 -->
+    <update id="deleteByDevice">
+        update telemetry_parse_rule_config set is_deleted = 1, update_time = current_timestamp
+        where is_deleted = 0
+        <choose>
+            <when test="taskId != null and taskId != '' and deviceSatelliteId != null">
+                and task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+            </when>
+            <otherwise>and 1 = 0</otherwise>
+        </choose>
+    </update>
 </mapper>

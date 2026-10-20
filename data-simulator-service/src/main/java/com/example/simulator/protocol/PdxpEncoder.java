@@ -52,6 +52,11 @@ public class PdxpEncoder {
 
     /** 校验字段长度并统一大写。 */
     private static String normalize(String value, int length) {
+        // 长度为零表示省略该段，兼容数据库空值、未传内容及模型默认内容。
+        if (length == 0) {
+            return "";
+        }
+        // 非零长度仍要求完整十六进制内容，避免发送缺失或错误的协议字段。
         if (value == null || !value.matches("[0-9a-fA-F]{" + length * 2 + "}")) {
             throw new IllegalArgumentException("协议字段必须是" + length * 2 + "位十六进制文本");
         }

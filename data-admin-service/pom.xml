@@ -103,11 +103,6 @@
             <artifactId>kingbase8</artifactId>
             <version>${kingbase.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.iotdb</groupId>
-            <artifactId>iotdb-session</artifactId>
-            <version>${iotdb.version}</version>
-        </dependency>
         <!-- 提供卫星目录管理gRPC客户端使用的网络连接实现。 -->
         <dependency>
             <groupId>io.grpc</groupId>

@@ -94,11 +94,6 @@
             <version>${grpc.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.iotdb</groupId>
-            <artifactId>iotdb-session</artifactId>
-            <version>${iotdb.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.example</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>

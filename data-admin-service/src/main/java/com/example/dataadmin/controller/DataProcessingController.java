@@ -70,14 +70,14 @@ public class DataProcessingController {
         return ApiResponse.success(processingService.getRealtime(taskId));
     }
 
-    /** 按任务分页查询IoTDB中最新的遥测帧。 */
+    /** 按任务分页查询GreptimeDB中最新的遥测帧。 */
     @GetMapping("/realtime/telemetry")
     public ApiResponse<PageResult<RealtimeTelemetryFrameVO>> pageRealtimeTelemetry(
             @RequestParam String taskId,
             @RequestParam(required = false) Long interfaceId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
-        // 查询参数统一交给业务层校验并转换为IoTDB分页范围。
+        // 查询参数统一交给业务层校验并转换为GreptimeDB分页范围。
         return ApiResponse.success(
                 processingService.pageRealtimeTelemetryFrames(
                         taskId, interfaceId, pageNum, pageSize));
@@ -105,14 +105,14 @@ public class DataProcessingController {
                 taskId, selectionType, targetId));
     }
 
-    /** 按任务和页面条件分页查询IoTDB中帧检查异常的遥测原始帧。 */
+    /** 按任务和页面条件分页查询GreptimeDB中帧检查异常的遥测原始帧。 */
     @GetMapping("/realtime/invalid")
     public ApiResponse<PageResult<InvalidTelemetryFrame>> pageInvalidTelemetry(
             @RequestParam String taskId,
             @RequestParam(required = false) Long interfaceId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
-        // 查询参数统一交给业务层校验并转换为IoTDB分页范围。
+        // 查询参数统一交给业务层校验并转换为GreptimeDB分页范围。
         return ApiResponse.success(
                 processingService.pageInvalidTelemetryFrames(
                         taskId,
@@ -166,7 +166,15 @@ public class DataProcessingController {
         return ApiResponse.success(processingService.batchUpdateParseRules(request));
     }
 
-    /** 从Excel页签或制表符TXT导入设备卫星及参数，按当前任务和类型替换。 */
+    /** 根据设备卫星主键删除目录及全部关联参数配置。 */
+    @PostMapping("/rules/delete")
+    public ApiResponse<Void> deleteRules(@RequestParam Long deviceSatelliteId) {
+        // 复用业务服务执行事务删除并返回统一成功响应。
+        processingService.deleteParseRules(deviceSatelliteId);
+        return ApiResponse.success();
+    }
+
+    /** 从Excel页签或制表符TXT导入设备卫星及参数，仅替换同名配置。 */
     @PostMapping(value = "/rules/import", consumes = "multipart/form-data")
     public ApiResponse<Integer> importRules(
             @RequestParam String taskId,

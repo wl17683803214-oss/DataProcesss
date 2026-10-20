@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS simulator_pdxp_config (
     transport_header_length INT NOT NULL DEFAULT 2,
     telemetry_header_length INT NOT NULL DEFAULT 4,
     custom_data_length INT NOT NULL DEFAULT 5,
-    transport_header TEXT NOT NULL,
-    custom_data TEXT NOT NULL,
+    transport_header TEXT,
+    custom_data TEXT,
     ver VARCHAR(2) NOT NULL,
     mid VARCHAR(4) NOT NULL,
     sid VARCHAR(8) NOT NULL,
@@ -54,14 +54,17 @@ ALTER TABLE simulator_pdxp_config ADD COLUMN IF NOT EXISTS telemetry_header_leng
 ALTER TABLE simulator_pdxp_config ADD COLUMN IF NOT EXISTS custom_data_length INT NOT NULL DEFAULT 5;
 ALTER TABLE simulator_pdxp_config ALTER COLUMN transport_header TYPE TEXT;
 ALTER TABLE simulator_pdxp_config ALTER COLUMN custom_data TYPE TEXT;
+-- 零长度字段允许空值，兼容将空字符串视为空值的数据库模式。
+ALTER TABLE simulator_pdxp_config ALTER COLUMN transport_header DROP NOT NULL;
+ALTER TABLE simulator_pdxp_config ALTER COLUMN custom_data DROP NOT NULL;
 COMMENT ON TABLE simulator_pdxp_config IS 'PDXP专用参数';
 COMMENT ON COLUMN simulator_pdxp_config.source_id IS '所属模拟源';
 COMMENT ON COLUMN simulator_pdxp_config.input_frame_length IS '每次从文件读取的帧长度，默认512字节';
 COMMENT ON COLUMN simulator_pdxp_config.transport_header_length IS '传输头长度，默认2字节，零表示省略';
 COMMENT ON COLUMN simulator_pdxp_config.telemetry_header_length IS '原帧开头移动到末尾的长度，默认4字节';
 COMMENT ON COLUMN simulator_pdxp_config.custom_data_length IS '自定义数据长度，默认5字节，零表示省略';
-COMMENT ON COLUMN simulator_pdxp_config.transport_header IS '十六进制协议字段';
-COMMENT ON COLUMN simulator_pdxp_config.custom_data IS '十六进制协议字段';
+COMMENT ON COLUMN simulator_pdxp_config.transport_header IS '传输头十六进制内容，长度为零时允许为空并忽略内容';
+COMMENT ON COLUMN simulator_pdxp_config.custom_data IS '自定义数据十六进制内容，长度为零时允许为空并忽略内容';
 COMMENT ON COLUMN simulator_pdxp_config.ver IS '十六进制协议字段';
 COMMENT ON COLUMN simulator_pdxp_config.mid IS '十六进制协议字段';
 COMMENT ON COLUMN simulator_pdxp_config.sid IS '十六进制协议字段';

@@ -1639,9 +1639,9 @@ file=@TMtable-A.txt
 
 支持.xls、.xlsx和.txt文件（最大20MB）。Excel按Sheet页签分别创建设备卫星；TXT一次表示一个设备卫星，使用去掉扩展名的文件名填写code和name，自动兼容UTF-8和GBK编码。第一行必须包含19个中文表头，TXT按制表符分列；旧TXT最后一列使用反斜线时按空校准公式处理。每个设备至少有一条有效数据，空行忽略，序号不能重复。完整校验后在同一事务中替换当前taskId下同类型数据，任意失败整体回滚。
 
-如果导入文件未包含仍被PDXP协议配置引用的设备或卫星，返回400，并提示协议配置名称及缺少的设备或卫星名称。例如：`导入文件缺少协议配置【遥测PDXP解析配置】正在使用的设备【设备A】`。
+上传仅替换当前任务同类型同名设备卫星的系统和参数，文件未包含的设备卫星及其配置全部保留。
 
-示例：工作簿含“卫星一号”和“卫星二号”两页，分别创建设备卫星，参数关联各自的新ID。再次导入 `taskId=TASK-20260908-001&type=1` 时，只逻辑删除任务TASK-20260908-001的原卫星及参数；任务TASK-20260908-001的设备和其他任务全部保留。
+示例：工作簿含“卫星一号”和“卫星二号”两页，分别创建设备卫星，参数关联各自的新ID。再次导入 `taskId=TASK-20260908-001&type=1` 时，只替换文件中同名卫星的系统和参数，保留卫星主键，未上传的卫星全部保留；任务TASK-20260908-001的设备和其他任务全部保留。
 
 ```json
 {"code":200,"message":"操作成功","data":5}
@@ -2250,9 +2250,9 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
 
 每行生成一个 `Telemetry`，汇总为一帧 `TelemetryMessage`：`table_index` 对应 `tableIndex`，`tm_symbol` 和字典键对应 `telemetryCode`，`tm_name` 对应 `telemetryName`。该未配置公式类型的示例中，`value_type` 使用原码枚举；`value_text` 保存精确十进制值，`value` 使用协议的双精度数值（大整数可能产生舍入）；`raw_data` 保存低位对齐的小端字段原码，末字节高位补零。TM002的原码为 `79 01`。
 
-每个字段必须携带参数解析配置 `id`，处理时据此关联当前任务下的设备卫星信息；设备卫星 `code` 写入 `sat_code`，`name` 第一个 `_` 前写入 `channel_name`，后面写入 `bussiness_id`。每个字段自己的 `calibrationFormula` 写入对应遥测参数的 `calibration_formula`，不再作为帧级通道编号使用。消息头主题固定为试验数据，子主题固定为遥测物理值，消息来源为“数据处理”，任务主键来自当前采集接口，遥测类型固定为设备遥测。本地参数配置或解析失败时停止本帧后续处理；身份完整且数据域已成功拆分时只保存包含各类头的异常整帧，否则不写IoTDB。同一帧存在相同遥测代号时保留最后一项，并把该参数的 `is_dep_value` 设置为 `true`。`frame_raw_data` 只保存去掉自定义头和遥测头后的中间遥测原码，时间使用PDXP发送时间，配置未覆盖的尾部位不生成参数。
+每个字段必须携带参数解析配置 `id`，处理时据此关联当前任务下的设备卫星信息；设备卫星 `code` 写入 `sat_code`，`name` 第一个 `_` 前写入 `channel_name`，后面写入 `bussiness_id`。每个字段自己的 `calibrationFormula` 写入对应遥测参数的 `calibration_formula`，不再作为帧级通道编号使用。消息头主题固定为试验数据，子主题固定为遥测物理值，消息来源为“数据处理”，任务主键来自当前采集接口，遥测类型固定为设备遥测。本地参数配置或解析失败时停止本帧后续处理；身份完整且数据域已成功拆分时只保存包含各类头的异常整帧，否则不写GreptimeDB。同一帧存在相同遥测代号时保留最后一项，并把该参数的 `is_dep_value` 设置为 `true`。`frame_raw_data` 只保存去掉自定义头和遥测头后的中间遥测原码，时间使用PDXP发送时间，配置未覆盖的尾部位不生成参数。
 
-正常PDXP帧业务处理成功后，整帧记录和全部遥测参数通过一次 `insertRecords` 批量写入IoTDB，入库与MQ发布由独立结果线程池执行。整帧仅保存 `deviceSatelliteName`、`channelName`、`raw`、`checkResultName`；参数仅保存 `tmName`、`value`、`raw`、`stateName`、`processedAt`。任务编号和设备卫星ID位于路径中，不再作为测点重复保存。RPC帧检查失败写“异常”；本地参数解析失败只回退保存包含各类头的异常整帧，保留完整采集帧、不写参数、不发送遥测Proto。`GET /processing/processed` 将参数的 `stateName` 作为 `status` 返回；帧检查结果与参数状态、野值判定独立。
+正常帧的参数分批写入`telemetry_parameter`后再写入`telemetry_frame`，两张表使用相同源时间和身份。GreptimeDB不支持跨表事务，写入失败按相同主键和时间有限重试，最终失败沿用异步入库告警。参数同时保存value、value_text、value_type、raw、state_name、state_type、state_index和processed_at；新增存储字段不改变页面响应。
 
 ### 本地公式与类型示例
 
@@ -2287,7 +2287,7 @@ RPC消息的frame_check_status=false时，checkResultName写“异常”；true�
 {"deviceSatelliteId":11,"receiveTime":"2026-10-13T10:00:00","deviceSatelliteName":"设备通道_001","channelName":"设备通道","rawLength":46,"rawFrame":"34 12 80 01 00 01 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 37 26 00 2A 75 15 0C 00 05 04 03 02 01 41 42 43 01 00 00 00","checkResultName":"异常"}
 ```
 
-两个整帧查询接口均支持pageNum、pageSize，采集接口ID即interfaceId可选，不再以deviceSatelliteId筛选。新整帧IoTDB路径为`root.db.task_728101.interface_14.device_11.tms.device._frame`，测点仅为deviceSatelliteName、channelName、raw、checkResultName；rawLength和十六进制rawFrame由包含各类头的完整帧派生。参数节点raw仍是参数原码，发送Proto的frame_raw_data仍是去头数据域。旧记录保持原有字节，不自动补头。任务节点含特殊字符时使用路径工具转换后的实际名称。处理后参数和曲线查询仍使用taskId、selectionType、targetId，并按已保存勾选参数及其所属类型并发查询：设备使用taskId、设备主键和遥测代号，卫星使用taskId、rpc_前缀节点和遥测代号，不接收整帧分页参数。同一代号多个路径按时间取最新一条或最近120个有效点。原始帧响应字段保持现有结构，不新增接口主键或名称。
+遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，接口原码、分页、设备身份和中文检查结果字段保持不变。
 
 ### `GET /alarms/findData`
 

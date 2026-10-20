@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.common.greptime.GreptimeMapper">
+    <!-- 两个服务使用同一份建表定义，重复启动不修改已有表。 -->
+    <update id="createFrameTable">
+        CREATE TABLE IF NOT EXISTS telemetry_frame (
+            source_time TIMESTAMP(3) COMMENT '源时间',
+            task_id STRING NOT NULL INVERTED INDEX COMMENT '任务编号',
+            interface_id BIGINT NOT NULL COMMENT '采集接口主键',
+            source_type STRING NOT NULL COMMENT '来源类型',
+            source_identity STRING NOT NULL INVERTED INDEX COMMENT '设备或远程组合身份',
+            telemetry_type STRING NOT NULL COMMENT '遥测类型',
+            device_satellite_name STRING COMMENT '设备卫星名称',
+            channel_name STRING COMMENT '通道名称',
+            `raw` BINARY COMMENT '完整采集报文',
+            check_status STRING INVERTED INDEX COMMENT '帧检查状态编码',
+            TIME INDEX (source_time),
+            PRIMARY KEY (task_id, interface_id, source_type, source_identity, telemetry_type)
+        ) WITH ('append_mode'='false', 'merge_mode'='last_row', 'ttl'='forever')
+    </update>
+    <update id="createParameterTable">
+        CREATE TABLE IF NOT EXISTS telemetry_parameter (
+            source_time TIMESTAMP(3) COMMENT '源时间',
+            task_id STRING NOT NULL INVERTED INDEX COMMENT '任务编号',
+            source_type STRING NOT NULL COMMENT '来源类型',
+            source_identity STRING NOT NULL INVERTED INDEX COMMENT '设备或远程组合身份',
+            telemetry_type STRING NOT NULL COMMENT '遥测类型',
+            telemetry_code STRING NOT NULL INVERTED INDEX COMMENT '遥测代号',
+            telemetry_name STRING COMMENT '参数名称',
+            value_type STRING COMMENT '遥测值类型编码',
+            `value` DOUBLE COMMENT '遥测数值',
+            value_text STRING COMMENT '遥测值文本原文',
+            `raw` BINARY COMMENT '参数原码',
+            state_name STRING COMMENT '参数状态名称原文',
+            state_type STRING COMMENT '参数状态类型编码',
+            state_index INT COMMENT '参数状态索引',
+            processed_at TIMESTAMP(3) COMMENT '处理时间',
+            TIME INDEX (source_time),
+            PRIMARY KEY (task_id, source_type, source_identity, telemetry_type, telemetry_code)
+        ) WITH ('append_mode'='false', 'merge_mode'='last_row', 'ttl'='forever')
+    </update>
+    <!-- 整帧与参数全部使用绑定变量，二进制不转换为文本。 -->
+    <insert id="insertFrame">
+        INSERT INTO telemetry_frame (source_time, task_id, interface_id, source_type, source_identity, telemetry_type, device_satellite_name, channel_name, `raw`, check_status)
+        VALUES (#{sourceTime,jdbcType=TIMESTAMP}, #{taskId,jdbcType=VARCHAR}, #{interfaceId,jdbcType=BIGINT}, #{sourceType,jdbcType=VARCHAR}, #{sourceIdentity,jdbcType=VARCHAR}, #{telemetryType,jdbcType=VARCHAR}, #{deviceSatelliteName,jdbcType=VARCHAR}, #{channelName,jdbcType=VARCHAR}, #{raw,jdbcType=VARBINARY}, #{checkStatus,jdbcType=VARCHAR})
+    </insert>
+    <insert id="insertParameters">
+        INSERT INTO telemetry_parameter (source_time, task_id, source_type, source_identity, telemetry_type, telemetry_code, telemetry_name, value_type, `value`, value_text, `raw`, state_name, state_type, state_index, processed_at)
+        VALUES
+        <foreach collection="rows" item="row" separator=",">
+            (#{row.sourceTime,jdbcType=TIMESTAMP}, #{row.taskId,jdbcType=VARCHAR}, #{row.sourceType,jdbcType=VARCHAR}, #{row.sourceIdentity,jdbcType=VARCHAR}, #{row.telemetryType,jdbcType=VARCHAR}, #{row.telemetryCode,jdbcType=VARCHAR}, #{row.telemetryName,jdbcType=VARCHAR}, #{row.valueType,jdbcType=VARCHAR}, #{row.value,jdbcType=DOUBLE}, #{row.valueText,jdbcType=VARCHAR}, #{row.raw,jdbcType=VARBINARY}, #{row.stateName,jdbcType=VARCHAR}, #{row.stateType,jdbcType=VARCHAR}, #{row.stateIndex,jdbcType=INTEGER}, #{row.processedAt,jdbcType=TIMESTAMP})
+        </foreach>
+    </insert>
+    <!-- 必填任务也判断空值，缺少身份时拒绝扩大查询范围。 -->
+    <sql id="frameCondition">
+        <where>
+            <choose>
+                <when test="taskId != null and taskId != ''">task_id = #{taskId}</when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+            <if test="interfaceId != null">AND interface_id = #{interfaceId}</if>
+            <choose>
+                <when test="checkStatus != null and checkStatus != ''">AND check_status = #{checkStatus}</when>
+                <otherwise>AND 1 = 0</otherwise>
+            </choose>
+        </where>
+    </sql>
+    <select id="frames" resultType="com.example.common.greptime.TelemetryFrameRecord">
+        SELECT source_time, task_id, interface_id, source_type, source_identity, telemetry_type, device_satellite_name, channel_name, `raw`, check_status
+        FROM telemetry_frame
+        <include refid="frameCondition"/>
+        ORDER BY source_time DESC, interface_id ASC, source_type ASC, source_identity ASC, telemetry_type ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    <select id="countFrames" resultType="long">
+        SELECT COUNT(`raw`) FROM telemetry_frame
+        <include refid="frameCondition"/>
+    </select>
+    <!-- 本地限定设备身份，远程保持任务下全部远程身份的现有查询范围。 -->
+    <sql id="parameterCondition">
+        <where>
+            <choose>
+                <when test="taskId != null and taskId != '' and telemetryCode != null and telemetryCode != '' and sourceType != null and sourceType != ''">
+                    task_id = #{taskId} AND telemetry_code = #{telemetryCode} AND source_type = #{sourceType}
+                </when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+            <if test="sourceIdentity != null and sourceIdentity != ''">AND source_identity = #{sourceIdentity}</if>
+            AND `value` IS NOT NULL
+        </where>
+    </sql>
+    <select id="latest" resultType="com.example.common.greptime.TelemetryParameterRecord">
+        SELECT telemetry_name, `value`, state_name, state_type, processed_at
+        FROM telemetry_parameter
+        <include refid="parameterCondition"/>
+        ORDER BY source_time DESC, source_identity ASC, telemetry_type ASC LIMIT 1
+    </select>
+    <select id="curve" resultType="com.example.common.greptime.TelemetryParameterRecord">
+        SELECT source_time, `value` FROM telemetry_parameter
+        <include refid="parameterCondition"/>
+        ORDER BY source_time DESC, source_identity ASC, telemetry_type ASC LIMIT 120
+    </select>
+    <!-- 分表清理失败后可以重入；不使用持续生效的过期策略，保留留空即停止的约定。 -->
+    <delete id="deleteFramesBefore">
+        DELETE FROM telemetry_frame
+        <where>
+            <choose>
+                <when test="beforeTime != null">source_time &lt; #{beforeTime,jdbcType=TIMESTAMP}</when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+        </where>
+    </delete>
+    <delete id="deleteParametersBefore">
+        DELETE FROM telemetry_parameter
+        <where>
+            <choose>
+                <when test="beforeTime != null">source_time &lt; #{beforeTime,jdbcType=TIMESTAMP}</when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+        </where>
+    </delete>
+</mapper>

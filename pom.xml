@@ -36,7 +36,6 @@
         <minio.version>8.5.17</minio.version>
         <!-- MinIO 8.5.17要求使用4.11.0及以上版本的OkHttp。 -->
         <okhttp.version>4.12.0</okhttp.version>
-        <iotdb.version>1.3.7</iotdb.version>
         <springdoc.version>1.8.0</springdoc.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

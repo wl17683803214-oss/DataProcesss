@@ -212,7 +212,7 @@ insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
 values (50,0,'数据校准','i-lucide-sliders-horizontal','/calibration',0,6,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
-values (60,0,'告警管理','i-lucide-bell-ring','/alarms',0,7,0);
+values (60,0,'告警管理','i-lucide-bell-ring','/alarm',0,7,0);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
 values (1,0,'系统配置','i-lucide-settings',null,0,8,0);

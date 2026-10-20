@@ -2,6 +2,7 @@ openapi: 3.0.3
 info:
   title: 数据处理软件接口
   description: |
+    遥测存储已切换为GreptimeDB，服务启动时自动创建telemetry_frame和telemetry_parameter两张表。参数额外保存Proto的value_type、value_text、state_type、state_index，状态名称保存为state_name；telemetry_type仍来自消息级tm_type。新增存储字段不增加接口入参或出参。
     data-admin-service 后台管理接口文档。
     查询接口统一使用 GET，写操作统一使用 POST；普通写操作使用 JSON DTO，文件导入使用 multipart/form-data。
     登录成功后，请在 Apifox 中配置 Bearer Token。
@@ -12,7 +13,7 @@ info:
     预期返回 HTTP 200，Access-Control-Allow-Origin 回显请求 Origin，Access-Control-Allow-Credentials 为 true；前端来源地址仅为示例，请按实际页面地址替换。
     本地类型示例：300或301在x=100、formulaDesc=y=a*x+b、processParam=0.02/1、decimalPlaces=2时，value为3，valueText为3.00；302按UTF-8解码至valueText，不执行公式；303的value为从2000-01-01 12:00:00起的0.1毫秒整数计数，valueText格式为yyyy-MM-dd HH:mm:ss.SSSS，计数10001对应2000-01-01 12:00:01.0001；不进行时区偏移。
     PDXP本地处理：rpcEnabled=0时，通过protocolConfigId取得configParams.fields，按tableIndex数字升序和bitWidth连续解码并组装遥测Protobuf消息；alarmFlag为1时命中状态范围写正常类型、stateIndex和stateName，未命中只写报警类型。
-    通过fields中的参数解析配置id关联当前任务下的设备卫星信息，本地处理不填写satCode，设备名称第一个下划线前后分别写入channelName和bussinessId；Proto的frame_raw_data按data-processing.pdxp配置去掉数据域开头自定义数据和末尾遥测帧头，默认5和4字节，配置0表示没有；传输头默认2字节，也可配置为0或其他长度，PDXP标准包头固定32字节，IoTDB整帧raw则保留完整采集帧及各类头，按小端低位优先读取无符号原始整数x，按formulaType设置valueType：300为FLOAT、301为DOUBLE、302为TEXT、303为TIME，其他类型保留RAW。数值按formulaDesc计算，processParam用斜线分隔并依次绑定a、b等参数，decimalPlaces指定四舍五入小数位数。
+    通过fields中的参数解析配置id关联当前任务下的设备卫星信息，本地处理不填写satCode，设备名称第一个下划线前后分别写入channelName和bussinessId；Proto的frame_raw_data按data-processing.pdxp配置去掉数据域开头自定义数据和末尾遥测帧头，默认5和4字节，配置0表示没有；传输头默认2字节，也可配置为0或其他长度，PDXP标准包头固定32字节，GreptimeDB整帧表raw则保留完整采集帧及各类头，按小端低位优先读取无符号原始整数x，按formulaType设置valueType：300为FLOAT、301为DOUBLE、302为TEXT、303为TIME，其他类型保留RAW。数值按formulaDesc计算，processParam用斜线分隔并依次绑定a、b等参数，decimalPlaces指定四舍五入小数位数。
     示例：遥测数据为CD AB，三行配置(tableIndex, telemetryCode, bitWidth)为(1, TM001, 3)、(2, TM002, 9)、(3, TM003, 4)，对应原始值为5、377、10，汇总为一帧TelemetryMessage。
     每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；未配置公式类型时value为原始数值、value_text为精确十进制文本、value_type为原码；配置300至303时按对应规则生成物理量或文本，raw_data为低位对齐的小端字段字节。
   version: 2.8.0
@@ -2934,7 +2935,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询实时处理监控
-      description: 查询当前任务下所有接口的PDXP帧处理速率之和，各接口按业务处理完成且IoTDB与MQ异步任务均提交成功的帧数除以实际采样秒数计算，不代表异步入库或消息发送成功；CPU和物理内存复用系统告警的管理服务所在机器采集逻辑。三个字段均直接包含展示单位，处理速率最多保留两位小数。
+      description: 查询当前任务下所有接口的PDXP帧处理速率之和，各接口按业务处理完成且GreptimeDB与MQ异步任务均提交成功的帧数除以实际采样秒数计算，不代表异步入库或消息发送成功；CPU和物理内存复用系统告警的管理服务所在机器采集逻辑。三个字段均直接包含展示单位，处理速率最多保留两位小数。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
       responses:
@@ -2954,13 +2955,13 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询实时遥测数据
-      description: "查询IoTDB整帧，包括正常处理结果及本地参数解析失败时保存的完整异常帧。RPC的frame_check_status=false写异常，true写正常；本地成功解析写正常。本地参数解析失败只保存异常整帧，不写参数、不发布消息，前提是PDXP包、数据域及任务设备通道身份完整。"
+      description: "查询GreptimeDB整帧，包括正常处理结果及本地参数解析失败时保存的完整异常帧。RPC的frame_check_status=false写异常，true写正常；本地成功解析写正常。本地参数解析失败只保存异常整帧，不写参数、不发布消息，前提是PDXP包、数据域及任务设备通道身份完整。"
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - name: interfaceId
           in: query
           required: false
-          description: 采集接口主键，必须大于零；不传时查询当前任务全部本地及RPC整帧，包含无接口层级的旧记录。传入时只查询对应interface_节点，不推断旧记录的来源。
+          description: 采集接口主键，必须大于零；不传时查询当前任务全部本地及RPC整帧，以interface_id筛选新整帧表；旧IoTDB历史数据需另行迁移，不自动跨库查询。
           schema: { type: integer, format: int64, minimum: 1 }
         - $ref: '#/components/parameters/PageNum'
         - $ref: '#/components/parameters/IoTDBPageSize'
@@ -2972,13 +2973,13 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询帧检查异常数据
-      description: "仅查询checkResultName不为正常的整帧，包含RPC帧检查失败及已入库的本地参数解析失败帧；缺少有效身份或无法正确拆分数据域的报文不会按此结构入库。历史非正常名称仍可查出。"
+      description: "仅查询check_status为abnormal的整帧，响应checkResultName为异常，包含RPC帧检查失败及已入库的本地参数解析失败帧；缺少有效身份或无法正确拆分数据域的报文不会按此结构入库。数据库check_status保存英文枚举，响应checkResultName仍返回中文。"
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - name: interfaceId
           in: query
           required: false
-          description: 采集接口主键，必须大于零；不传时查询当前任务全部本地及RPC整帧，包含无接口层级的旧记录。传入时只查询对应interface_节点，不推断旧记录的来源。
+          description: 采集接口主键，必须大于零；不传时查询当前任务全部本地及RPC整帧，以interface_id筛选新整帧表；旧IoTDB历史数据需另行迁移，不自动跨库查询。
           schema: { type: integer, format: int64, minimum: 1 }
         - $ref: '#/components/parameters/PageNum'
         - $ref: '#/components/parameters/IoTDBPageSize'
@@ -2990,7 +2991,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最新数据
-      description: 按表格场景查询已保存勾选参数的最新值，设备按当前taskId、勾选记录的设备主键和遥测代号查询device_路径；卫星按当前taskId、rpc_开头的身份节点和遥测代号查询，不用卫星资料主键拼接存储路径。设备卫星类型由已勾选参数所属资料读取，前端不新增类型入参。同一代号存在多个路径时按时间取最新一条。筛选树、勾选保存、返回字段及默认场景不变。数据可视化表格传selectionType=3及组件主键targetId。
+      description: 按表格场景查询已保存勾选参数的最新值，设备按task_id、local来源、设备主键身份和telemetry_code查询参数表；卫星按task_id、rpc来源和telemetry_code查询全部远程身份，不使用卫星资料主键作为存储身份。设备卫星类型由已勾选参数所属资料读取，前端不新增类型入参。同一代号存在多个来源身份或遥测类型时按时间取最新一条。筛选树、勾选保存、返回字段及默认场景不变。数据可视化表格传selectionType=3及组件主键targetId。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - name: selectionType
@@ -3468,12 +3469,33 @@ paths:
             application/json:
               example: { code: 200, message: 操作成功, data: 1 }
 
+  /processing/rules/delete:
+    post:
+      tags: [数据处理]
+      summary: 删除设备卫星及其参数解析配置
+      description: 只传设备卫星主键，由后端确定任务，事务删除目录、系统和全部参数并清理关联组件项与勾选；仍被有效本地PDXP协议引用时拒绝删除。
+      parameters:
+        - name: deviceSatelliteId
+          in: query
+          required: true
+          description: 设备卫星目录主键，不是参数或系统主键
+          schema: { type: integer, format: int64, minimum: 1 }
+          example: 12
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              example: { code: 200, message: 操作成功 }
+        '400':
+          description: 编号非法、记录不存在或仍被协议引用
+
   /processing/rules/import:
     "post":
       "tags":
         - "数据处理"
       "summary": "按任务和类型导入Excel或TXT设备卫星及参数"
-      "description": "按任务和类型全量导入Excel或TXT。每个Sheet沿用已有设备卫星主键；所属系统按反斜线逐层建立并写入参数systemId；仍被PDXP协议引用的设备或卫星不能从文件移除，失败时提示协议配置名称和实际设备或卫星名称；仍存在的遥测代号保留勾选状态。全部操作在同一事务中完成。"
+      "description": "按当前任务、类型和名称仅替换同名设备卫星的系统和参数，保留设备主键；不同名新增，未上传的设备卫星及配置保留；所属系统按反斜线逐层建立；仍存在的遥测代号保留勾选状态。全部操作在同一事务中完成。"
       "requestBody":
         "required": true
         "content":
@@ -3518,12 +3540,12 @@ paths:
                 "message": "操作成功"
                 "data": 5
         "400":
-          "description": "文件校验失败，或导入文件缺少PDXP协议配置正在使用的设备或卫星"
+          "description": "文件格式、表头或参数校验失败"
           "content":
             "application/json":
               "example":
                 "code": 400
-                "message": "导入文件缺少协议配置【遥测PDXP解析配置】正在使用的设备【设备A】"
+                "message": "工作表【设备A】第2行：序号、位宽、遥测名称、遥测代号、公式类型不能为空"
 
   /calibration/overview:
     get:
@@ -5502,7 +5524,7 @@ components:
         maximum: 100
     IoTDBPageSize:
       name: pageSize
-      description: "IoTDB页面每页记录数量，最大200条"
+      description: "GreptimeDB页面每页记录数量，最大200条"
       in: query
       schema:
         type: integer

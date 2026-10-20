@@ -6,6 +6,8 @@ import java.util.List;
 
 /** 所属系统层级数据访问。 */
 public interface TelemetrySystemConfigMapper {
+    /** 按任务和设备卫星主键逻辑删除当前有效记录。 */
+    int deleteByDevice(@Param("taskId") String taskId, @Param("deviceSatelliteId") Long deviceSatelliteId);
     /** 插入节点并回填主键。 */
     int insert(TelemetrySystemConfig system);
     /** 替换前删除同类型设备的旧系统。 */

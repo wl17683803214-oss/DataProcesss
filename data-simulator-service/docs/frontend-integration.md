@@ -517,3 +517,10 @@ GET /simulator/sources/12/runs?pageNum=1&pageSize=20
 - 删除后列表刷新正确，已打开的历史仍可按模拟源ID查询。
 
 本文为文档交付，未新增前端源代码或修改后端接口；页面联调需在前端实现后执行。
+
+
+### 零长度PDXP字段兼容规则
+
+`transportHeaderLength=0` 或 `customDataLength=0` 时，对应段不发送，后端忽略对应内容并归一为空字符串，支持内容为 null、空字符串、不传或保留原内容。前端可禁用对应内容输入框，不需要为了关闭该段强制提交空字符串。长度大于0时仍严格要求对应字节长度两倍的十六进制字符。`telemetryHeaderLength=0` 时不移动原帧头，PDXP标准包头仍固定32字节。
+
+已有数据库必须执行 `sql/data-simulator-service.sql` 中取消 `transport_header` 和 `custom_data` 非空约束的语句。
