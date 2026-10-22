@@ -10,8 +10,8 @@ public class ProcessedTelemetryVO {
     private String telemetryCode;
     /** Proto参数名称。 */
     private String parameter;
-    /** Proto数值。 */
-    private Double parameterValue;
+    /** 文本类型返回字符串，其他类型返回数值；未采集时为空。 */
+    private Object parameterValue;
     /** Proto状态中文名称。 */
     private String status;
     /** 实际处理时间。 */
@@ -23,8 +23,10 @@ public class ProcessedTelemetryVO {
     public void setTelemetryCode(String value) { this.telemetryCode = value; }
     public String getParameter() { return parameter; }
     public void setParameter(String value) { this.parameter = value; }
-    public Double getParameterValue() { return parameterValue; }
-    public void setParameterValue(Double value) { this.parameterValue = value; }
+    /** 返回按遥测值类型选择的文本或数值。 */
+    public Object getParameterValue() { return parameterValue; }
+    /** 保存按遥测值类型选择的文本或数值。 */
+    public void setParameterValue(Object value) { this.parameterValue = value; }
     public String getStatus() { return status; }
     public void setStatus(String value) { this.status = value; }
     public LocalDateTime getProcessTime() { return processTime; }

@@ -1,5 +1,6 @@
 package com.example.dataadmin.service;
 
+import SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType;
 import com.example.common.greptime.GreptimeProperties;
 import com.example.common.greptime.GreptimeStore;
 import com.example.common.greptime.TelemetryIdentity;
@@ -105,7 +106,9 @@ public class ProcessedTelemetryQueryService {
             if (row.getTelemetryName() != null && !row.getTelemetryName().trim().isEmpty()) {
                 result.setParameter(row.getTelemetryName());
             }
-            result.setParameterValue(row.getValue());
+            // 文本类型返回原始文本，其余类型保持数值返回，复用协议已有值类型枚举。
+            result.setParameterValue(ValueType.VALUE_TYPE_TEXT.name().equals(row.getValueType())
+                    ? row.getValueText() : row.getValue());
             result.setStatus(row.getStateName());
             if (row.getProcessedAt() != null) {
                 result.setProcessTime(row.getProcessedAt().toLocalDateTime());

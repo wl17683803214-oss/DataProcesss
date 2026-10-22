@@ -38,6 +38,7 @@ public enum OperationAction {
     PROCESSING_RULE_CONFIG_UPDATE("/processing/rule-config/update", SystemLogSource.PROCESSING, "修改任务处理规则"),
     PROCESSING_RULES_BATCH_UPDATE("/processing/rules/batch-update", SystemLogSource.PROCESSING, "批量修改遥测参数配置"),
     PROCESSING_RULES_IMPORT("/processing/rules/import", SystemLogSource.PROCESSING, "导入遥测参数配置"),
+    PROCESSING_RULES_SYNC_BASELINE("/processing/rules/sync-baseline", SystemLogSource.PROCESSING, "同步基线卫星参数配置"),
     SATELLITE_MANAGEMENT_TABLES_UPLOAD("/satellite-management/tables/upload", SystemLogSource.SATELLITE_CATALOG, "上传卫星参数表"),
     VISUALIZATION_ITEMS_SELECTED("/visualization/items/selected", SystemLogSource.VISUALIZATION, "修改组件数据项勾选"),
     ALARMS_DATA_STATUS("/alarms/data/status", SystemLogSource.ALARM_MANAGEMENT, "修改数据告警处理状态"),

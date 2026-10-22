@@ -2,6 +2,7 @@ openapi: 3.0.3
 info:
   title: 数据处理软件接口
   description: |
+    系统健康遥测：管理服务默认每秒采样并更新Redis，独立周期向运行中的任务分别发送TelemetryMessage原始Protobuf字节，主题topic_yc_out_sjcl，bussiness=8，bussiness_id=sjcl，channel_name=sjcl。参数为SJCL001至SJCL010，不包含消息积压数；字段见SystemHealthTelemetryMqMessage模型。没有运行任务、快照过期或采样不完整时不发送。
     遥测存储已切换为GreptimeDB，服务启动时自动创建telemetry_frame和telemetry_parameter两张表。参数额外保存Proto的value_type、value_text、state_type、state_index，状态名称保存为state_name；telemetry_type仍来自消息级tm_type。新增存储字段不增加接口入参或出参。
     data-admin-service 后台管理接口文档。
     查询接口统一使用 GET，写操作统一使用 POST；普通写操作使用 JSON DTO，文件导入使用 multipart/form-data。
@@ -1305,7 +1306,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 新增采集接口
-      description: 'HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。UDP/TCP按既有启用监听配置校验冲突。HTTP另有统一接收入口，当前仅确认收到JSON，不查询配置、不处理业务、不入库、不统计。'
+      description: 'HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP另有统一接收入口，当前仅确认收到JSON，不查询配置、不处理业务、不入库、不统计。'
       requestBody:
         required: true
         content:
@@ -1392,7 +1393,7 @@ paths:
                   format: int64
                 host:
                   type: string
-                  description: "UDP/TCP本机监听地址；HTTP对外接收IP或域名，不包含访问协议、路径、端口，不允许通配地址"
+                  description: "UDP单播支持0.0.0.0监听全部IPv4网卡，具体地址须属于本机；UDP组播填写实际网卡地址；TCP为本机监听地址；HTTP对外接收IP或域名，不包含协议、路径、端口，不允许通配地址"
                 port:
                   type: integer
                   description: "UDP/TCP本机监听端口；HTTP对外接收端口，范围1到65535"
@@ -1503,7 +1504,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 修改采集接口
-      description: 'taskId必须与采集接口原所属试验任务编号一致，修改任务编号返回参数错误；累计采集量不会因编辑接口而清零。HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。UDP/TCP按既有启用监听配置校验冲突。HTTP另有统一接收入口，当前仅确认收到JSON，不查询配置、不处理业务、不入库、不统计。'
+      description: '已启用的采集接口禁止修改，请先通过启用状态接口禁用；修改请求同时传enabled=0也不能绕过。taskId必须与采集接口原所属试验任务编号一致，修改任务编号返回参数错误；累计采集量不会因编辑接口而清零。HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP另有统一接收入口，当前仅确认收到JSON，不查询配置、不处理业务、不入库、不统计。'
       requestBody:
         required: true
         content:
@@ -1594,7 +1595,7 @@ paths:
                   format: int64
                 host:
                   type: string
-                  description: "UDP/TCP本机监听地址；HTTP对外接收IP或域名，不包含访问协议、路径、端口，不允许通配地址"
+                  description: "UDP单播支持0.0.0.0监听全部IPv4网卡，具体地址须属于本机；UDP组播填写实际网卡地址；TCP为本机监听地址；HTTP对外接收IP或域名，不包含协议、路径、端口，不允许通配地址"
                 port:
                   type: integer
                   description: "UDP/TCP本机监听端口；HTTP对外接收端口，范围1到65535"
@@ -3490,6 +3491,56 @@ paths:
         '400':
           description: 编号非法、记录不存在或仍被协议引用
 
+  /processing/rules/sync-baseline:
+    post:
+      tags: [数据处理]
+      summary: 同步基线全部卫星遥测参数
+      description: 不传卫星和通道筛选，使用pageSize=99999查询基线并按total继续翻页。解析telemetryData的全部工作表，按当前任务和卫星编码匹配，仅替换本次具有有效遥测数据的卫星参数及系统层级，名称取satelliteName，编码取satelliteCode；缺少校准公式按空值处理，反斜线列忽略。空遥测跳过并保留旧数据，未返回的卫星和设备不受影响。全部数据校验成功后统一事务入库，任一校验或入库失败整体不更新；已有参数勾选按遥测代号保留，运行接口快照在下次接口同步时更新。
+      parameters:
+        - name: taskId
+          in: query
+          required: true
+          description: 需要接收基线卫星参数的外部试验任务编号
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 全部同步完成
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      queriedSatelliteCount:
+                        type: integer
+                        description: 基线实际返回的卫星数，包含跳过项
+                      syncedSatelliteCount:
+                        type: integer
+                        description: 成功导入参数的卫星数
+                      skippedSatelliteCount:
+                        type: integer
+                        description: telemetryData为空而跳过的卫星数
+                      importedParameterCount:
+                        type: integer
+                        description: 导入参数总数
+              example:
+                code: 200
+                message: 操作成功
+                data:
+                  queriedSatelliteCount: 2
+                  syncedSatelliteCount: 1
+                  skippedSatelliteCount: 1
+                  importedParameterCount: 30201
+        '400':
+          description: 任务、基线响应、卫星身份或遥测参数校验失败，不更新已有配置
+
   /processing/rules/import:
     "post":
       "tags":
@@ -4623,6 +4674,83 @@ components:
       bearerFormat: JWT
 
   schemas:
+    SystemHealthTelemetryMqMessage:
+      type: object
+      description: 健康MQ遥测的字段说明，实际发送Protobuf字节，无额外消息头，不是HTTP接口。快照采样时间按北京时间解释，整帧原码35字节，小端编码。
+      properties:
+        proto_head:
+          type: object
+          properties:
+            topic_type:
+              type: integer
+              description: TEST_DATA_TYPE协议枚举
+            bussiness:
+              type: integer
+              enum: [8]
+              description: 测试测量，DATA_SUBSYSTEM_CSCL_PHYVALUE
+            task_id:
+              type: string
+              description: 当前运行中的试验任务编号，每个任务分别发送
+            msg_source:
+              type: string
+              example: 数据处理
+            msg_time:
+              type: object
+              description: 消息组装时刻的Protobuf时间戳，包含seconds和nanos
+        time:
+          type: object
+          description: 快照采样时刻的Protobuf时间戳，包含seconds和nanos
+        channel_name:
+          type: string
+          example: sjcl
+        bussiness_id:
+          type: string
+          example: sjcl
+        tm_type:
+          type: integer
+          enum: [4]
+          description: 设备遥测，TM_TYPE_DEVICE_TM
+        frame_check_status:
+          type: boolean
+          example: true
+        frame_raw_data:
+          type: string
+          format: byte
+          description: 按SJCL001至SJCL010顺序拼接原码，位宽依次8、64、32、32、32、8、32、32、32、8，总计35字节。使用率原码为百分比乘100，其余为整数。
+        telemetries:
+          type: object
+          description: 遥测代号作为键；SJCL001服务状态、002运行秒数、003已启用接口数、004接口总数、005数据库耗时毫秒、006心跳状态、007CPU百分比、008内存百分比、009磁盘百分比、010健康评分。状态编码见Excel和上报说明文档。
+          additionalProperties:
+            type: object
+            properties:
+              table_index:
+                type: integer
+                description: 参数表序号，1至10
+              tm_symbol:
+                type: string
+                example: SJCL007
+              tm_name:
+                type: string
+                example: CPU使用率
+              system_name:
+                type: string
+                example: 数据处理
+              value_type:
+                type: integer
+                enum: [4]
+                description: 双精度数值，VALUE_TYPE_DOUBLE，对应公式类型301
+              value:
+                type: number
+                format: double
+                example: 23.45
+              value_text:
+                type: string
+                description: 状态参数为中文枚举标签，其他参数为数值文本
+                example: '23.45'
+              raw_data:
+                type: string
+                format: byte
+                description: 该参数的固定长度无符号小端原码；CPU为23.45时原码2345，字节为29090000
     RpcProtocolField:
       type: object
       description: "RPC配置字段；固定字段不可删除或修改标识，自定义字段可增删改；不再使用dataType"
@@ -6829,7 +6957,7 @@ components:
                           format: int64
                         host:
                           type: string
-                          description: "UDP/TCP本机监听地址；HTTP对外接收IP或域名，不包含访问协议、路径、端口，不允许通配地址"
+                          description: "UDP单播支持0.0.0.0监听全部IPv4网卡，具体地址须属于本机；UDP组播填写实际网卡地址；TCP为本机监听地址；HTTP对外接收IP或域名，不包含协议、路径、端口，不允许通配地址"
                         port:
                           type: integer
                           description: "UDP/TCP本机监听端口；HTTP对外接收端口，范围1到65535"
@@ -7020,7 +7148,7 @@ components:
                     description: '关联协议配置名称，未关联或协议已删除时为空，禁用协议仍返回名称'
                   host:
                     type: string
-                    description: "UDP/TCP本机监听地址；HTTP对外接收IP或域名，不包含访问协议、路径、端口，不允许通配地址"
+                    description: "UDP单播支持0.0.0.0监听全部IPv4网卡，具体地址须属于本机；UDP组播填写实际网卡地址；TCP为本机监听地址；HTTP对外接收IP或域名，不包含协议、路径、端口，不允许通配地址"
                   port:
                     type: integer
                     description: "UDP/TCP本机监听端口；HTTP对外接收端口，范围1到65535"
@@ -8217,7 +8345,12 @@ components:
                     deviceSatelliteId: { type: integer, format: int64, description: "设备卫星主键" }
                     telemetryCode: { type: string, description: "遥测代号" }
                     parameter: { type: string, description: "遥测参数名称" }
-                    parameterValue: { type: number, format: double, nullable: true, description: "Proto的value数值，无数据时为空" }
+                    parameterValue:
+                      nullable: true
+                      description: "VALUE_TYPE_TEXT类型返回value_text字符串，其他类型返回value数值；无数据时为空。曲线接口不变。"
+                      oneOf:
+                        - { type: number, format: double }
+                        - { type: string }
                     status: { type: string, nullable: true, description: "Proto状态中文名称，无数据时为空" }
                     processTime: { type: string, format: date-time, nullable: true, description: "处理时间，无数据时为空" }
           example:
@@ -8229,6 +8362,12 @@ components:
                 parameter: "温度"
                 parameterValue: 36.88
                 status: "加电"
+                processTime: "2026-08-07T10:30:00"
+              - deviceSatelliteId: 12
+                telemetryCode: "FKT007"
+                parameter: "字符串类"
+                parameterValue: "T001"
+                status: ""
                 processTime: "2026-08-07T10:30:00"
 
     ProcessedTelemetryCurveList:

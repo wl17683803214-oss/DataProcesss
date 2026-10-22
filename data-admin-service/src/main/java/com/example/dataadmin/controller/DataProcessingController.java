@@ -7,6 +7,9 @@ import com.example.dataadmin.dto.processing.TelemetryParseRuleBatchUpdateRequest
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.entity.ProcessingRuleConfig;
 import com.example.dataadmin.service.DataProcessingService;
+import com.example.dataadmin.service.BaselineSatelliteSyncService;
+import com.example.dataadmin.vo.processing.BaselineSatelliteSyncVO;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.example.dataadmin.vo.processing.DataProcessingOverviewVO;
 import com.example.dataadmin.vo.processing.DataProcessingRealtimeVO;
 import com.example.dataadmin.vo.processing.CollectInterfaceOptionVO;
@@ -37,6 +40,17 @@ import java.util.Map;
 public class DataProcessingController {
 
     private final DataProcessingService processingService;
+    /** 基线卫星参数同步服务。 */
+    @Autowired
+    private BaselineSatelliteSyncService baselineSatelliteSyncService;
+
+    /** 将基线全部卫星遥测参数同步到当前任务。 */
+    @PostMapping("/rules/sync-baseline")
+    public ApiResponse<BaselineSatelliteSyncVO> syncBaselineRules(
+            @RequestParam String taskId) {
+        // 远程查询和完整校验成功后才进入参数替换事务。
+        return ApiResponse.success(baselineSatelliteSyncService.synchronize(taskId));
+    }
 
     public DataProcessingController(DataProcessingService processingService) {
         this.processingService = processingService;

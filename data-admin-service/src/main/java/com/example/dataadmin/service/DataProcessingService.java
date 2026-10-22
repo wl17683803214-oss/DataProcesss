@@ -20,6 +20,10 @@ import java.util.List;
  * 负责组织页面所需的查询和写入操作，数据库访问由对应Mapper完成。
  */
 public interface DataProcessingService {
+    /** 在独立写事务内按卫星编码替换已校验的基线参数。 */
+    int importBaselineRules(String taskId,
+            java.util.Map<String, List<TelemetryParseRuleConfig>> rules,
+            java.util.Map<String, String> names);
     /** 仅使用设备卫星主键删除目录及关联参数配置。 */
     void deleteParseRules(Long deviceSatelliteId);
     /** 查询数据处理页面使用的已启用采集接口筛选项。 */

@@ -86,11 +86,11 @@
                 <otherwise>1 = 0</otherwise>
             </choose>
             <if test="sourceIdentity != null and sourceIdentity != ''">AND source_identity = #{sourceIdentity}</if>
-            AND `value` IS NOT NULL
         </where>
     </sql>
     <select id="latest" resultType="com.example.common.greptime.TelemetryParameterRecord">
-        SELECT telemetry_name, `value`, state_name, state_type, processed_at
+        <!-- 最新值同时读取类型和文本，允许仅有文本而没有数值的参数。 -->
+        SELECT telemetry_name, value_type, `value`, value_text, state_name, state_type, processed_at
         FROM telemetry_parameter
         <include refid="parameterCondition"/>
         ORDER BY source_time DESC, source_identity ASC, telemetry_type ASC LIMIT 1
@@ -98,6 +98,8 @@
     <select id="curve" resultType="com.example.common.greptime.TelemetryParameterRecord">
         SELECT source_time, `value` FROM telemetry_parameter
         <include refid="parameterCondition"/>
+        <!-- 曲线继续只读取数值非空的数据点，保持原有筛选语义。 -->
+        AND `value` IS NOT NULL
         ORDER BY source_time DESC, source_identity ASC, telemetry_type ASC LIMIT 120
     </select>
     <!-- 分表清理失败后可以重入；不使用持续生效的过期策略，保留留空即停止的约定。 -->

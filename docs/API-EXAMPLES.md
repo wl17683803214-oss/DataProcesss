@@ -4,6 +4,8 @@
 
 ## 阅读说明
 
+`GET /processing/processed` 的 `parameterValue` 支持字符串或数值：`VALUE_TYPE_TEXT` 从 `value_text` 返回，例如 `{"telemetryCode":"FKT007","parameter":"字符串类","parameterValue":"T001"}`；其他类型继续返回数值，无记录时为空。曲线接口保持原有数值格式。
+
 `GET /visualization/widgets/{widgetId}/files` 返回的 `fileUrl` 是临时签名读取地址，默认3600秒有效，完整参数必须保留，过期后重新查询列表。前端调用及部署配置见[图片与文件访问地址](前端对接-图片与文件访问地址.md)。MQ文件消息中的持久地址沿用原有格式。
 
 可视化配置导入导出新增三个接口：`GET /visualization/config/export`、`POST /visualization/config/import/preview`和`POST /visualization/config/import`。导出成功返回JSON附件本身，检查和导入按`multipart/form-data`上传`file`并通过查询参数提供`taskId`，成功结果使用统一响应。完整配置文件、检查结果及前端调用流程见[可视化配置导入导出对接](前端对接-可视化配置导入导出.md)。
@@ -877,6 +879,8 @@ roleIds=20,21
 处理（`rpcEnabled=0`）只能选择PDXP配置（`protocolType=2`）；转发（`rpcEnabled=1`）只能选择RPC配置（`protocolType=4`）。HTTP固定JSON并选择当前任务下已启用JSON配置；非HTTP、非FEP的两种方式必须选择对应协议配置，类型不匹配时后端拒绝保存。
 UDP接口填写 `multicastIp` 时通过 `host` 指定的本机网卡加入该组播地址；`multicastIp` 为空时使用 `host` 和 `port` 接收单播数据。TCP接口不允许填写 `multicastIp`。
 
+UDP单播的 `host` 支持 `0.0.0.0`，表示监听服务所在运行环境的全部IPv4网卡，不依赖容器当前IP；组播仍填写实际网卡地址。已启用的UDP单播接口跨任务检查冲突：端口相同且地址相同或任意一方为 `0.0.0.0` 时禁止重复启用，不同具体地址或不同端口允许；TCP和组播规则保持原样。禁用配置允许重复保存。已启用的采集接口禁止修改，必须先通过启用状态接口禁用；修改请求同时传 `enabled=0` 也不能绕过。禁用后编辑保存时仍可按 `enabled` 决定是否重新启用。Docker桥接部署仍需映射实际使用的UDP端口。
+
 ```json
 {
   "taskId": "TASK-20260908-001",
@@ -1614,6 +1618,30 @@ FEP文件上传对象存储后发送的文件完成消息：
   ]
 }
 ```
+
+### `POST /processing/rules/sync-baseline`
+
+同步基线全部卫星参数，仅传目标任务编号，无需上传文件：
+
+```http
+POST /processing/rules/sync-baseline?taskId=TASK-20260908-001
+Authorization: Bearer <登录令牌>
+```
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "queriedSatelliteCount": 2,
+    "syncedSatelliteCount": 1,
+    "skippedSatelliteCount": 1,
+    "importedParameterCount": 30201
+  }
+}
+```
+
+按卫星编码匹配当前任务内的卫星并替换参数，缺少校准公式按空值处理；所属系统连续反斜线统一为单个层级分隔符。遥测为空时跳过且保留已有参数，任何非空遥测解析失败或入库失败均不提交本次同步。运行中的接口快照需下次接口同步后更新。
 
 ### `POST /processing/rules/import`
 

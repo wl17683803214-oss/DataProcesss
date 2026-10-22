@@ -19,7 +19,7 @@ import com.example.dataadmin.enums.DeviceSatelliteType;
 import com.example.dataadmin.enums.EnumData;
 import com.example.dataadmin.enums.BusinessEnums;
 import com.example.dataadmin.service.support.ParameterWorkbookParser;
-import com.example.dataadmin.service.support.SystemResourceMetrics;
+import com.example.dataadmin.service.monitor.support.SystemResourceMetrics;
 import com.example.dataadmin.vo.processing.DeviceSatelliteOptionVO;
 import com.example.dataadmin.entity.ProcessingRuleConfig;
 import com.example.dataadmin.entity.InvalidTelemetryFrame;
@@ -608,12 +608,31 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         DeviceSatelliteType.requireValid(type);
         Map<String, List<TelemetryParseRuleConfig>> sheets =
                 workbookParser.parse(taskId, fileName, content);
+        return persistImportedRules(taskId, type, sheets, null);
+    }
+
+    /** 基线查询和校验完成后才开启写事务，避免网络请求持有数据库锁。 */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int importBaselineRules(String taskId,
+            Map<String, List<TelemetryParseRuleConfig>> rules, Map<String, String> names) {
+        // 复用现有任务校验、替换锁、系统层级和页面同步逻辑。
+        requireTaskId(taskId);
+        return persistImportedRules(taskId, DeviceSatelliteType.SATELLITE.getValue(), rules, names);
+    }
+
+    /** 文件导入按名称匹配，基线同步按编码匹配，统一维护参数和所属系统。 */
+    private int persistImportedRules(String taskId, String type,
+            Map<String, List<TelemetryParseRuleConfig>> sheets, Map<String, String> names) {
         // 第一步：锁定替换过程，防止并发导入或编辑留下多套有效记录。
         lockTask(taskId);
-        // 第二步：只匹配当前任务同类型同名设备，未上传的设备保持原有配置。
+        // 第二步：文件按名称匹配，基线按卫星编码匹配，未返回项保留原有配置。
         Map<String, DeviceSatellite> existing = new HashMap<>();
         for (DeviceSatellite device : deviceSatelliteMapper.findByType(taskId, type)) {
-            existing.put(device.getName(), device);
+            String key = names == null ? device.getName() : device.getCode();
+            if (existing.put(key, device) != null && names != null) {
+                throw new IllegalArgumentException("当前任务存在重复卫星编码：" + key);
+            }
         }
 
         int count = 0;
@@ -625,10 +644,15 @@ public class DataProcessingServiceImpl implements DataProcessingService {
                 device.setTaskId(taskId);
                 device.setType(type);
                 device.setCode(sheet.getKey());
-                device.setName(sheet.getKey());
+                device.setName(names == null ? sheet.getKey() : names.get(sheet.getKey()));
                 deviceSatelliteMapper.insert(device);
             } else {
-                // 同名设备保留主键，仅替换该设备的旧参数和系统。
+                // 基线卫星改名时保留主键和编码，仅更新显示名称。
+                if (names != null) {
+                    device.setName(names.get(sheet.getKey()));
+                    deviceSatelliteMapper.updateName(device);
+                }
+                // 匹配成功后保留主键，仅替换该设备或卫星的旧参数和系统。
                 parseRuleMapper.deleteByDevice(taskId, device.getId());
                 systemMapper.deleteByDevice(taskId, device.getId());
             }

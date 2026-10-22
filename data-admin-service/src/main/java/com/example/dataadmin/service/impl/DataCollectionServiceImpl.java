@@ -235,6 +235,10 @@ public class DataCollectionServiceImpl implements DataCollectionService {
             Long id,
             InterfaceSaveRequest request) {
         CollectInterfaceConfig current = getInterfaceConfig(id);
+        // 已启用接口必须先通过启停入口禁用，禁止编辑请求同时禁用来绕过限制。
+        if (Integer.valueOf(1).equals(current.getEnabled())) {
+            throw new IllegalArgumentException("请先禁用采集接口，再执行修改");
+        }
         validateInterfaceRequest(request);
         // 第一步：接口累计量按原任务长期保存，编辑时不允许更换任务编号。
         if (!Objects.equals(current.getTaskId(), request.getTaskId())) {
@@ -665,7 +669,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
                 excludeId);
         if (conflictCount > 0) {
             throw new IllegalArgumentException(
-                    "相同传输方式、监听地址、端口和组播地址的采集接口已经启用");
+                    "采集接口监听配置与其他已启用接口冲突，请检查监听地址、端口和组播配置");
         }
     }
 

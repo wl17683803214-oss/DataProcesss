@@ -3,6 +3,7 @@ package com.example.dataadmin.service.support;
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.enums.BusinessEnums;
 import com.example.dataadmin.enums.EnumData;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
@@ -25,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +36,52 @@ import java.util.Set;
 /** 读取Excel工作簿或制表符TXT，校验完成前不访问数据库。 */
 @Component
 public class ParameterWorkbookParser {
+    /** 解析基线遥测对象，跨工作表合并并统一检查序号，缺少校准公式时留空。 */
+    public List<TelemetryParseRuleConfig> parseBaseline(
+            String taskId, String satelliteName, JsonNode data) {
+        // 第一步：检查工作表结构，禁止错误响应覆盖已有参数。
+        JsonNode sheets = data.path("sheets");
+        if (!sheets.isObject() || sheets.size() == 0) {
+            throw new IllegalArgumentException("卫星【" + satelliteName + "】遥测工作表为空或格式错误");
+        }
+        List<TelemetryParseRuleConfig> rules = new ArrayList<>();
+        Set<String> serials = new HashSet<>();
+        Iterator<Map.Entry<String, JsonNode>> entries = sheets.fields();
+        // 第二步：按照现有中文字段映射转换，忽略基线多余列。
+        while (entries.hasNext()) {
+            Map.Entry<String, JsonNode> sheet = entries.next();
+            if (!sheet.getValue().isArray()) {
+                throw new IllegalArgumentException("卫星【" + satelliteName + "】工作表格式错误：" + sheet.getKey());
+            }
+            int rowIndex = 0;
+            for (JsonNode row : sheet.getValue()) {
+                rowIndex++;
+                if (!row.isObject()) {
+                    throw new IllegalArgumentException("卫星【" + satelliteName + "】遥测记录必须为对象");
+                }
+                List<String> values = new ArrayList<>();
+                for (String[] column : COLUMNS) {
+                    JsonNode value = row.get(column[0]);
+                    if (value != null && value.isContainerNode()) {
+                        throw new IllegalArgumentException("卫星【" + satelliteName + "】字段格式错误：" + column[0]);
+                    }
+                    String text = value == null || value.isNull() ? "" : value.asText();
+                    // 基线系统路径可能使用连续反斜线，统一为本地层级分隔符。
+                    if ("systemName".equals(column[1])) {
+                        while (text.contains("\\\\")) {
+                            text = text.replace("\\\\", "\\");
+                        }
+                    }
+                    values.add(text);
+                }
+                addRule(taskId, values, rules, serials,
+                        "卫星【" + satelliteName + "】工作表【" + sheet.getKey() + "】第" + rowIndex + "条");
+            }
+        }
+        // 第三步：复用现有必填、枚举和重复序号校验后的结果。
+        requireRules(satelliteName, rules);
+        return rules;
+    }
     /** 单个导入文件最大字节数。 */
     private static final int MAX_FILE_SIZE = 20 * 1024 * 1024;
     /** TXT兼容的GBK字符集。 */

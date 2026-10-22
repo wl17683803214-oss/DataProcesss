@@ -1,4 +1,4 @@
-package com.example.dataadmin.service;
+package com.example.dataadmin.service.monitor;
 
 import com.example.dataadmin.config.RocketMqMonitorProperties;
 import org.apache.rocketmq.acl.common.AclClientRPCHook;

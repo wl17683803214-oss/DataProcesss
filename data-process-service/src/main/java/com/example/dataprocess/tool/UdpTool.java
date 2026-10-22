@@ -24,7 +24,7 @@ public final class UdpTool {
     /**
      * 创建可以连续发送和接收单播报文的 UDP 端点。
      *
-     * @param localAddress 本机绑定地址，例如192.168.1.10；为空时绑定全部本机网卡
+     * @param localAddress 本机绑定地址，例如192.168.1.10；为空或0.0.0.0时绑定全部IPv4网卡
      * @param localPort 本机绑定端口，取值范围为1到65535
      * @param timeoutMillis 接收超时时间，单位毫秒，0表示一直等待
      * @return 可重复调用发送和接收方法的 UDP 单播端点
@@ -185,6 +185,10 @@ public final class UdpTool {
 
         // 指定地址必须属于当前计算机的某个网络接口。
         InetAddress address = InetAddress.getByName(localAddress.trim());
+        // IPv4通配地址不属于具体网卡，直接交给套接字监听全部IPv4网卡。
+        if ("0.0.0.0".equals(address.getHostAddress())) {
+            return new InetSocketAddress(address, localPort);
+        }
         if (NetworkInterface.getByInetAddress(address) == null) {
             throw new IOException("UDP 绑定地址不是本机地址：" + localAddress);
         }

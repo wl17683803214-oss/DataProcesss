@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.dataadmin.mapper.DeviceSatelliteMapper">
+    <!-- 基线同步仅修改已定位的有效卫星，缺少条件时禁止更新。 -->
+    <update id="updateName">
+        update device_satellite set name = #{name}, update_time = current_timestamp
+        where is_deleted = 0
+        <choose>
+            <when test="taskId != null and taskId != '' and id != null and name != null and name != ''">
+                and task_id = #{taskId} and id = #{id}
+            </when>
+            <otherwise>and 1 = 0</otherwise>
+        </choose>
+    </update>
     <!-- 复用试验任务主记录加锁，首次导入也可串行化，其他任务互不阻塞。 -->
     <select id="lockForReplacement" resultType="string" useCache="false" flushCache="true">
         select task_id

@@ -100,11 +100,11 @@ data-processing:
   # 遥测结果异步处理配置，入库与消息任务各自排队，不占用处理线程。
   result:
     # GreptimeDB入库固定线程数，应结合连接池大小调整。
-    storage-thread-count: 4
+    storage-thread-count: 42
     # GreptimeDB待入库任务上限，队列满时记录告警并拒绝任务。
     storage-queue-capacity: 2048
     # RocketMQ发送固定线程数。
-    message-thread-count: 4
+    message-thread-count: 42
     # RocketMQ待发送任务上限，队列满时记录告警并拒绝任务。
     message-queue-capacity: 2048
     # 服务关闭时两个线程池共享的最大等待时间，单位秒。

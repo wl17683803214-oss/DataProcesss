@@ -228,7 +228,19 @@
         select count(1)
         from collect_interface_config
         where transfer_type = #{transferType}
-          and host = #{host}
+        <!-- UDP单播的通配地址覆盖全部IPv4网卡，同端口与具体地址互斥；组播和其他传输方式沿用精确匹配。 -->
+        <choose>
+            <when test="transferType != null and transferType == @com.example.dataadmin.enums.BusinessEnums$TransferType@UDP.getValue() and (multicastIp == null or multicastIp == '')">
+                <if test="host != null and host != ''">
+                    and (host = #{host} or host = '0.0.0.0' or #{host} = '0.0.0.0')
+                </if>
+            </when>
+            <otherwise>
+                <if test="host != null and host != ''">
+                    and host = #{host}
+                </if>
+            </otherwise>
+        </choose>
           and port = #{port}
         <choose>
             <when test="multicastIp != null and multicastIp != ''">
@@ -315,6 +327,8 @@
             update_time = current_timestamp
         where id = #{id}
           and is_deleted = 0
+        <!-- 数据库更新时再次确认接口未启用，避免读取后被其他请求启用仍可编辑。 -->
+          and enabled = 0
         <!-- 更新条件同时核对原任务归属，避免并发请求改变接口关联任务。 -->
         <choose>
             <when test="taskId != null">

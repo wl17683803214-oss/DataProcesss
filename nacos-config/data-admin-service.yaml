@@ -115,6 +115,14 @@ springdoc:
 # 调度系统任务生命周期消息接收配置。
 rocketmq:
   name-server: "10.126.100.201:9876;10.126.100.201:10876;10.126.100.201:11876;10.126.100.201:12876;10.126.100.201:13876;10.126.100.201:14876"
+  producer:
+    # 健康遥测使用独立的生产者组。
+    group: data-admin-system-health
+    # 单次发送等待上限，单位毫秒。
+    send-message-timeout: 5000
+    # 使用与当前消息服务一致的生产者认证信息。
+    access-key: SJCLMQ
+    secret-key: SJCLMQ123
   consumer:
     # 填写有效的消费认证信息。
     access-key: SJCLMQ
@@ -128,6 +136,27 @@ task-lifecycle:
   consumer-group: data-processing-task-lifecycle
 
 system-monitor:
+  # 健康采样和Redis快照更新周期，单位毫秒，修改后重启服务生效。
+  sample-interval-millis: 1000
+  # 快照批量写入数据库的周期，单位毫秒。
+  snapshot-flush-interval-millis: 30000
+  # 连续超限达到此时长后触发健康告警，单位毫秒。
+  alarm-duration-millis: 15000
+  mq-report:
+    # 是否向运行中的试验任务发送健康遥测，没有运行任务时不发送。
+    enabled: true
+    # 每轮发送完成后的等待间隔，单位毫秒；独立线程不会阻塞健康采样。
+    interval-millis: 1000
+    # 根据采样时间判断快照最大有效年龄，单位毫秒。
+    max-snapshot-age-millis: 5000
+    # 与设备遥测共用结果主题，消息体为原始Protobuf字节。
+    topic: topic_yc_out_sjcl
+    # 为空时不指定消息标签。
+    tag: ""
+    # 当前暂用测试测量的协议业务枚举，值为8。
+    business: DATA_SUBSYSTEM_CSCL_PHYVALUE
+    # 当前约定的健康参数表业务标识。
+    business-id: sjcl
   # 处理服务心跳正常判断时限，单位毫秒，应大于处理服务写入间隔。
   process-heartbeat-timeout-millis: 15000
   # CPU 使用率告警阈值，单位：百分比。

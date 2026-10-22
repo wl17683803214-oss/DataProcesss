@@ -7,6 +7,8 @@ import java.util.List;
 
 /** 设备卫星数据访问。 */
 public interface DeviceSatelliteMapper {
+    /** 按任务和主键更新基线卫星名称。 */
+    int updateName(DeviceSatellite device);
     /** 按任务和设备卫星主键逻辑删除当前有效记录。 */
     int deleteByDevice(@Param("taskId") String taskId, @Param("deviceSatelliteId") Long deviceSatelliteId);
     /** 根据唯一主键定位有效设备卫星及其所属任务。 */

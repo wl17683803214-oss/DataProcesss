@@ -1,4 +1,4 @@
-package com.example.dataadmin.service.support;
+package com.example.dataadmin.service.monitor.support;
 
 import java.lang.management.ManagementFactory;
 import org.springframework.stereotype.Component;

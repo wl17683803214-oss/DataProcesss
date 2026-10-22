@@ -177,6 +177,8 @@ Authorization: Bearer <token>
 
 `InterfaceSaveRequest`：`id`、`taskId`、`interfaceName`、`interfaceType`、`sendFrom`、`messageContent`、`transferType`、`transferProtocol`、`protocolConfigId`、`host`、`port`、`receivePath`、`enabled`、`rpcEnabled`、`remark`。其中 `transferProtocol` 为整数枚举：1 JSON、2 PDXP、3 FEP；`port` 范围为 1～65535；`rpcEnabled` 为 0 时使用本地处理，为 1 时进入 RPC 处理流程。FEP（`transferProtocol=3`）无需传 `rpcEnabled` 和 `protocolConfigId`，后端固定保存为 `0` 和 `null`，切换到FEP或提交旧值时也会清理。HTTP（`transferType=3`）固定JSON传输协议，必须传当前任务下已启用JSON配置的 `protocolConfigId` 和接收路径 `receivePath`；处理开关固定为0，组播地址保存为空，路径在所有未删除HTTP配置中唯一。列表和详情计算返回 `receiveUrl`，访问协议读取 `data-processing.http.scheme`，默认http。HTTP统一入口 `POST /collection/receive/**` 已提供，当前只解析JSON并确认收到请求，不关联采集配置、不校验任务或启用状态、不处理业务、不入库、不统计。其他非HTTP、非FEP协议的两种处理方式都必须传 `protocolConfigId`：处理（`rpcEnabled=0`）只能选 PDXP（`protocolType=2`），转发（`rpcEnabled=1`）只能选 RPC（`protocolType=4`），类型不匹配时后端拒绝保存。采集接口不再接收或返回 `sheetName`。
 
+UDP单播的 `host` 支持 `0.0.0.0`，表示监听服务所在运行环境的全部IPv4网卡，不依赖容器当前IP；组播仍填写实际网卡地址。已启用的UDP单播接口跨任务检查冲突：端口相同且地址相同或任意一方为 `0.0.0.0` 时禁止重复启用，不同具体地址或不同端口允许；TCP和组播规则保持原样。禁用配置允许重复保存。已启用的采集接口禁止修改，必须先通过启用状态接口禁用；修改请求同时传 `enabled=0` 也不能绕过。禁用后编辑保存时仍可按 `enabled` 决定是否重新启用。Docker桥接部署仍需映射实际使用的UDP端口。
+
 采集接口新增、修改不再接收 `status`，前端只提交 `enabled`；未传 `enabled` 时沿用默认启用。列表和详情返回的 `status`、`statusName` 完全由启用开关决定：`enabled=1` 返回 `status=1`、`statusName=在线`，禁用返回 `status=0`、`statusName=离线`，不提供异常状态。列表的可选 `status` 筛选仅接受 `0`、`1`，实际按 `enabled` 查询，`0` 不会被忽略。`/collection/findData`、`/dashboard/findData` 的状态枚举同步为离线、在线。首页采集总览的在线接口数量按启用接口统计，发送方聚合行有任一启用接口即显示在线、全部禁用显示离线；Redis中的历史状态不影响这些结果。数据库 `status` 列保留兼容，旧记录无需迁移。
 
 `ProtocolSaveRequest`：`id`、`taskId`、`configName`、`protocolType`（1 JSON/2 PDXP/3 Protobuf/4 RPC）、`configDesc`、`configParams`、`parserClass`、`enabled`。数据源分类已删除，不提交或返回 `dataSourceType`、`dataSourceTypeName`；`configParams` 为对象，前端普通多行文本框填写标准JSON，解析后提交对象，编辑时格式化回填。
@@ -287,6 +289,8 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 | GET | `/experiment/tasks` | 查询调度系统下发的全部试验任务生命周期快照，使用字符串 `taskId` 作为主键 | 无 |
 
 ## 8. 数据处理
+
+`GET /processing/processed` 的 `parameterValue` 按已有值类型返回：`VALUE_TYPE_TEXT` 返回数据库 `value_text` 字符串（例如 `FKT007` 返回 `"T001"`），其他类型继续返回 `value` 数值，无记录时为 `null`。查询支持数值为空的文本记录，取身份范围内最新记录。此规则同时适用于处理后表格和可视化表格；`/processing/processed/curve` 的数值查询及响应保持不变。
 
 原始帧与异常帧接口的查询参数为必填 `taskId`、可选 `interfaceId`、`pageNum`、`pageSize`。接口主键必须大于零；对应关系由任务路径隔离，正数但在当前任务下没有数据的接口返回空页。响应仍保留设备卫星、通道、时间、原码及检查结果，不新增 `interfaceId`、`interfaceName`。旧整帧不自动迁移，缺少接口层级时不推断来源，仅在不筛选接口时返回。
 
