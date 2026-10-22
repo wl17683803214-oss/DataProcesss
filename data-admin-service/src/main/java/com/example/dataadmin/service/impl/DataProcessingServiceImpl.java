@@ -621,7 +621,17 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         return persistImportedRules(taskId, DeviceSatelliteType.SATELLITE.getValue(), rules, names);
     }
 
-    /** 文件导入按名称匹配，基线同步按编码匹配，统一维护参数和所属系统。 */
+    /** 设备同步沿用文件导入的同名匹配方式，并固定使用设备枚举。 */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int importBaselineDeviceRules(String taskId,
+            Map<String, List<TelemetryParseRuleConfig>> rules) {
+        // 远程查询与全部参数校验结束后才加锁，整批设备统一提交。
+        requireTaskId(taskId);
+        return persistImportedRules(taskId, DeviceSatelliteType.DEVICE.getValue(), rules, null);
+    }
+
+    /** 文件及设备同步按名称匹配，卫星同步按编码匹配，统一维护参数和所属系统。 */
     private int persistImportedRules(String taskId, String type,
             Map<String, List<TelemetryParseRuleConfig>> sheets, Map<String, String> names) {
         // 第一步：锁定替换过程，防止并发导入或编辑留下多套有效记录。

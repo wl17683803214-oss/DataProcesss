@@ -350,7 +350,7 @@ roleIds=20,21
   "phone": "13800000001", // 联系电话
   "email": "operator@example.com", // 联系邮箱
   "status": 1, // 启用状态。枚举：0 停用，1 启用
-  "roleId": 2 // 分配给用户或权限关系的角色 ID
+  "roleIds": [2, 3] // 完整角色编号列表，空数组清空，未传保留原关联
 }
 ```
 
@@ -385,7 +385,7 @@ roleIds=20,21
   "phone": "13800000002", // 联系电话
   "email": "operator@example.com", // 联系邮箱
   "status": 1, // 启用状态。枚举：0 停用，1 启用
-  "roleId": 2 // 分配给用户或权限关系的角色 ID
+  "roleIds": [2, 3] // 完整角色编号列表，空数组清空，未传保留原关联
 }
 ```
 
@@ -706,6 +706,8 @@ roleIds=20,21
 }
 ```
 
+
+用户列表、详情及保存结果返回 `roleIds`、`roles` 完整集合。旧 `roleId`、`roleName`、`roleKey` 仅表示按编号升序的首个角色，不用于多角色编辑。
 
 ## 3. 数据采集
 
@@ -1170,7 +1172,7 @@ FEP文件上传对象存储后发送的文件完成消息：
 
 ### `POST /collection/protocols/delete`
 
-删除前检查所有未删除采集接口的绑定关系，不区分启用状态。存在绑定时不删除，提示例如：`协议配置已被采集接口【接口A、接口B】绑定，不能删除`。已删除的采集接口不阻止删除。
+协议配置已启用时禁止删除，提示：`请先禁用协议配置，再执行删除`。禁用后检查所有未删除采集接口的绑定关系，不区分接口启用状态。存在绑定时不删除，提示例如：`协议配置已被采集接口【接口A、接口B】绑定，不能删除`。已删除的采集接口不阻止删除。
 
 存在绑定时返回 HTTP 400：
 
@@ -1618,6 +1620,34 @@ FEP文件上传对象存储后发送的文件完成消息：
   ]
 }
 ```
+
+### 基线同步接口路径配置
+
+卫星列表路径配置项为 `baseline.sso.satellite-list-path`，管理服务与处理服务均需配置。
+
+### `POST /processing/rules/sync-baseline-devices`
+
+同步设备遥测参数，沿用现有Excel导入的Sheet设备身份规则：
+
+```http
+POST /processing/rules/sync-baseline-devices?taskId=TASK-20260908-001
+Authorization: Bearer <登录令牌>
+```
+
+```json
+{
+  "code": 200,
+  "message": "操作成功",
+  "data": {
+    "queriedTableCount": 2,
+    "syncedDeviceCount": 3,
+    "skippedTableCount": 1,
+    "importedParameterCount": 150
+  }
+}
+```
+
+基线设备接口路径配置项为 `baseline.sso.trial-param-table-list-path`，请求使用POST JSON分页，不传额外筛选。读取 `paramData.sheets`，每个Sheet作为一个设备，Sheet名必须为 `通道名称_业务标识`。外层 `tableName`、`fileName` 不作为设备身份。缺少校准公式允许留空，参数仍须包含位宽、遥测名称、遥测代号和公式类型等必填字段；指令表不能作为遥测参数导入。跨参数表同名设备报错，避免相互覆盖。空参数数据跳过，整批校验成功后事务入库，不删除未返回设备，不修改卫星。
 
 ### `POST /processing/rules/sync-baseline`
 

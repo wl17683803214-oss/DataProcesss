@@ -334,7 +334,11 @@ public class DataCollectionServiceImpl implements DataCollectionService {
             Long id,
             ProtocolSaveRequest request) {
         // 先锁定协议行，再核对HTTP绑定，避免类型或任务在绑定过程中发生并发变化。
-        getProtocolEntityForUpdate(id);
+        CollectProtocolConfig current = getProtocolEntityForUpdate(id);
+        // 已启用协议必须先通过启停入口禁用，禁止编辑请求同时禁用来绕过限制。
+        if (Integer.valueOf(1).equals(current.getEnabled())) {
+            throw new IllegalArgumentException("请先禁用协议配置，再执行修改");
+        }
         CollectProtocolConfig config = buildProtocolConfig(id, request);
         // 已绑定HTTP接口的配置必须继续满足JSON类型、所属任务及启用约束。
         validateHttpProtocolBindings(config);
@@ -348,10 +352,14 @@ public class DataCollectionServiceImpl implements DataCollectionService {
     @Override
     @Transactional
     public void deleteProtocolConfig(Long id) {
-        // 第一步：确认协议存在，再检查所有未删除采集接口的绑定关系。
-        getProtocolEntityForUpdate(id);
+        // 第一步：锁定协议并检查当前状态，已启用协议必须先通过启停入口禁用。
+        CollectProtocolConfig current = getProtocolEntityForUpdate(id);
+        if (Integer.valueOf(1).equals(current.getEnabled())) {
+            throw new IllegalArgumentException("请先禁用协议配置，再执行删除");
+        }
+        // 第二步：禁用后仍需检查所有未删除采集接口的绑定关系。
         requireProtocolUnbound(id);
-        // 第二步：无绑定时执行逻辑删除，数据库同时再次检查绑定条件。
+        // 第三步：无绑定时执行逻辑删除，数据库同时再次检查绑定条件。
         if (protocolMapper.delete(id) == 0) {
             // 删除条件发生变化时重新取得接口名称，返回明确的绑定提示。
             requireProtocolUnbound(id);

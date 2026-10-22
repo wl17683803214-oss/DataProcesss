@@ -58,6 +58,10 @@ auth:
 # 基线平台统一登录接口配置。
 baseline:
   sso:
+    # 卫星列表接口路径，与基线根地址拼接使用。
+    satellite-list-path: /rpc-api/knowledge/knowledge/satellite/list
+    # 设备试验参数表列表接口路径，使用POST请求。
+    trial-param-table-list-path: /rpc-api/knowledge/knowledge/trialParamTable/list
     # 需要替换为部署环境的基线平台内部接口根地址，可以包含/prod-api前缀。
     api-base-url: http://10.126.100.249:16001/prod-api
     # 需要替换为基线平台分配给数据交互子系统的客户端编号。

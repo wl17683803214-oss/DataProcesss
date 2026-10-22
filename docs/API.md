@@ -96,11 +96,11 @@ Content-Type: application/json
 | POST | `/system/users/status` | 启用或禁用用户 | JSON：`id`、`status`（0 禁用/1 启用） |
 | POST | `/system/users/reset-password` | 重置密码 | JSON：`id`、`password` |
 
-`UserSaveRequest`：`id`、`username`、`password`、`nickname`、`phone`、`email`、`status`（0 停用/1 启用）、`roleId`。
+`UserSaveRequest`：`id`、`username`、`password`、`nickname`、`phone`、`email`、`status`（0 停用/1 启用）、`roleIds`（角色编号列表）、`roleId`（旧版兼容）。
 
 修改用户支持保存登录用户名 `username`：未传时保留原值；传入时去除首尾空格，不能为空或超过64个字符，不能与其他用户重名。管理员用户名不能修改，其他账号不能改名为 `admin`（不区分大小写）。修改成功后接口返回新用户名，后续使用新用户名和原密码登录；用户编号和基线平台绑定保持不变。
 
-用户列表和详情返回 `phone`、`email`、`baselineUserId`、`roleId`、`roleName`、`roleKey`，不会返回密码。新增或修改用户传入 `roleId` 时，服务会校验角色存在且启用；删除用户会同步清理用户角色关系。用户名为 `admin` 的本地管理员账号不能删除、停用或解除超级管理员关系。
+用户列表、详情及新增修改结果返回 `roleIds` 和 `roles` 完整角色集合，同一用户仅返回一条；旧字段 `roleId`、`roleName`、`roleKey` 为按编号升序的首个角色，无角色时为空。`roles` 保留已停用角色用于回显，权限仅取有效角色。`roleIds` 优先于 `roleId`，重复编号去重，空列表清空角色；两者均未提供或为null则保留原关联。新增绑定必须为启用角色，已有停用角色允许保留。不会返回密码；删除用户会同步清理用户角色关系。用户名为 `admin` 的本地管理员账号不能删除、停用或解除超级管理员关系。
 
 ### 4.1 角色与菜单权限管理
 
@@ -169,8 +169,8 @@ Authorization: Bearer <token>
 | GET | `/collection/protocols` | 分页查询协议配置 | 查询：`taskId?`、`protocolType?`、`configName?`（名称模糊匹配）、`enabled?`（0禁用1启用）、`pageNum=1`、`pageSize=10`（最大100） |
 | GET | `/collection/protocols/{id}` | 协议配置详情 | 路径：`id` |
 | POST | `/collection/protocols/create` | 新增协议配置 | `ProtocolSaveRequest` |
-| POST | `/collection/protocols/update` | 修改协议配置 | `ProtocolSaveRequest`，`id` 必填 |
-| POST | `/collection/protocols/delete` | 删除协议配置；存在未删除采集接口绑定时禁止删除，提示绑定接口名称，不区分启用状态 | JSON：`id` |
+| POST | `/collection/protocols/update` | 修改协议配置；协议已启用时须先通过启停入口禁用，编辑请求同时传禁用状态不能绕过 | `ProtocolSaveRequest`，`id` 必填 |
+| POST | `/collection/protocols/delete` | 删除协议配置；协议已启用时须先禁用；禁用后存在未删除采集接口绑定时仍禁止删除，提示绑定接口名称，不区分接口启用状态 | JSON：`id` |
 | POST | `/collection/protocols/enabled` | 启用/禁用协议配置 | JSON：`id`、`enabled`（0/1） |
 
 采集事件列表中的 `logLevel` 返回稳定枚举编码，`logLevelName` 返回对应中文名称（调试、信息、警告、错误）。
@@ -305,6 +305,8 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 | GET | `/processing/device-satellites` | 设备卫星筛选列表 | `taskId` 必填，`type` 可选；类型为空时查询全部；返回 `id`、`code`、`name`、`type` |
 | GET | `/processing/rules` | 分页查询遥测解析规则 | 必填：`taskId`、`deviceSatelliteId`；可选：`systemId`、`pageNum`、`pageSize`；传入系统主键时只查询该系统直属参数，不传时查询当前设备全部参数 |
 | POST | `/processing/rules/import` | Excel或TXT按类型同名替换导入 | `multipart/form-data`：`taskId`、`type`、`file` |
+| POST | `/processing/rules/sync-baseline` | 同步基线全部卫星遥测参数 | 查询参数：`taskId` |
+| POST | `/processing/rules/sync-baseline-devices` | 按现有Sheet规则同步基线全部设备遥测参数 | 查询参数：`taskId` |
 
 处理日志中的 `logLevel` 返回稳定枚举编码（1 信息、2 警告、3 错误），`logLevelName` 返回对应中文名称。
 

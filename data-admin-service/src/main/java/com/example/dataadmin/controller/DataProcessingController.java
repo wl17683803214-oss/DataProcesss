@@ -8,6 +8,8 @@ import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.entity.ProcessingRuleConfig;
 import com.example.dataadmin.service.DataProcessingService;
 import com.example.dataadmin.service.BaselineSatelliteSyncService;
+import com.example.dataadmin.service.BaselineDeviceSyncService;
+import com.example.dataadmin.vo.processing.BaselineDeviceSyncVO;
 import com.example.dataadmin.vo.processing.BaselineSatelliteSyncVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.dataadmin.vo.processing.DataProcessingOverviewVO;
@@ -43,6 +45,16 @@ public class DataProcessingController {
     /** 基线卫星参数同步服务。 */
     @Autowired
     private BaselineSatelliteSyncService baselineSatelliteSyncService;
+    /** 基线设备参数表同步服务。 */
+    @Autowired
+    private BaselineDeviceSyncService baselineDeviceSyncService;
+
+    /** 将基线设备参数表按现有工作表导入规则同步到当前任务。 */
+    @PostMapping("/rules/sync-baseline-devices")
+    public ApiResponse<BaselineDeviceSyncVO> syncBaselineDevices(@RequestParam String taskId) {
+        // 先查询并校验全部参数表，再进入独立写事务。
+        return ApiResponse.success(baselineDeviceSyncService.synchronize(taskId));
+    }
 
     /** 将基线全部卫星遥测参数同步到当前任务。 */
     @PostMapping("/rules/sync-baseline")

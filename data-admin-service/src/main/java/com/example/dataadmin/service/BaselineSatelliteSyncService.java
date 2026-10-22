@@ -21,8 +21,6 @@ import java.util.Set;
 public class BaselineSatelliteSyncService {
     /** 每页请求全部卫星，仍超出时继续翻页。 */
     private static final int PAGE_SIZE = 99999;
-    /** 与处理服务一致的基线卫星列表路径。 */
-    private static final String LIST_PATH = "/rpc-api/knowledge/knowledge/satellite/list";
     /** 复用已有基线地址和超时配置。 */
     private final BaselineSsoProperties properties;
     /** 复用公共请求工具。 */
@@ -56,6 +54,11 @@ public class BaselineSatelliteSyncService {
         if (baseUrl == null || baseUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("基线服务地址未配置");
         }
+        // 卫星同步与采集目录使用相同配置项，不再在代码中固定接口路径。
+        String listPath = properties.getSatelliteListPath();
+        if (listPath == null || !listPath.trim().startsWith("/") || listPath.trim().startsWith("//")) {
+            throw new IllegalArgumentException("基线卫星列表接口路径未配置或格式错误");
+        }
         Map<String, List<TelemetryParseRuleConfig>> rules = new LinkedHashMap<>();
         Map<String, String> names = new LinkedHashMap<>();
         Set<String> seenCodes = new HashSet<>();
@@ -63,7 +66,7 @@ public class BaselineSatelliteSyncService {
         long expectedTotal = -1;
         // 第二步：不传卫星和通道过滤，按基线总数读取全部分页。
         for (int pageNum = 1; ; pageNum++) {
-            String url = UriComponentsBuilder.fromHttpUrl(baseUrl.trim().replaceAll("/+$", "") + LIST_PATH)
+            String url = UriComponentsBuilder.fromHttpUrl(baseUrl.trim().replaceAll("/+$", "") + listPath.trim())
                     .queryParam("pageNum", pageNum).queryParam("pageSize", PAGE_SIZE)
                     .build().encode().toUriString();
             JsonNode response = http.get(url, JsonNode.class);

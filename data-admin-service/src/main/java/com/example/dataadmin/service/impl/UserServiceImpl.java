@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Collections;
 
 /** 系统用户业务实现。 */
 @Service
@@ -47,7 +50,7 @@ public class UserServiceImpl implements UserService {
         user.setUsername(request.getUsername().trim());
         user.setPassword(encoder.encode(request.getPassword()));
         mapper.insert(user);
-        assignRole(user, request.getRoleId());
+        assignRoles(user, request);
         return mapper.findById(user.getId());
     }
 
@@ -76,7 +79,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 角色调整仍与用户资料共用事务，返回重新查询后的最新用户名。
-        assignRole(user, request.getRoleId());
+        assignRoles(user, request);
         return mapper.findById(id);
     }
 
@@ -149,8 +152,8 @@ public class UserServiceImpl implements UserService {
         mapper.resetPassword(id, encoder.encode(password));
     }
 
-    /** 请求提供角色时，以新角色替换用户原有角色。 */
-    private void assignRole(SysUser user, Long roleId) {
+    /** 请求提供角色时，在原有用户事务内更新完整角色集合。 */
+    private void assignRoles(SysUser user, UserSaveRequest request) {
         // 本地admin必须始终绑定超级管理员角色，不能被普通角色替换。
         if (ADMIN_USERNAME.equalsIgnoreCase(user.getUsername())) {
             com.example.dataadmin.entity.SysRole administratorRole =
@@ -163,11 +166,28 @@ public class UserServiceImpl implements UserService {
             mapper.insertUserRole(user.getId(), administratorRole.getId());
             return;
         }
-        if (roleId != null) {
-            if (mapper.countEnabledRole(roleId) == 0) {
-                throw new IllegalArgumentException("角色不存在或已停用");
+        // 第一步：角色列表优先，未提供任何角色参数时保留原关联。
+        List<Long> requested = request.getRoleIds();
+        if (requested == null) {
+            if (request.getRoleId() == null) {
+                return;
             }
-            mapper.deleteUserRoles(user.getId());
+            requested = Collections.singletonList(request.getRoleId());
+        }
+        // 第二步：去重并校验所有编号，已有停用角色允许原样保留。
+        List<Long> roleIds = new ArrayList<Long>(new LinkedHashSet<Long>(requested));
+        List<Long> existingIds = mapper.findById(user.getId()).getRoleIds();
+        for (Long roleId : roleIds) {
+            if (roleId == null || roleId <= 0) {
+                throw new IllegalArgumentException("角色编号必须为正整数且不能为空");
+            }
+            if (mapper.countEnabledRole(roleId) == 0 && !existingIds.contains(roleId)) {
+                throw new IllegalArgumentException("角色不存在或已停用，角色编号：" + roleId);
+            }
+        }
+        // 第三步：全部校验通过后替换绑定，空列表明确清空角色。
+        mapper.deleteUserRoles(user.getId());
+        for (Long roleId : roleIds) {
             mapper.insertUserRole(user.getId(), roleId);
         }
     }

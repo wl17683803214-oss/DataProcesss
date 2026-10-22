@@ -154,6 +154,8 @@ calibration:
 # 基线卫星目录查询与管理服务角色查询使用相同根地址。
 baseline:
   sso:
+    # 采集启动时查询卫星目录的接口路径，与基线根地址拼接使用。
+    satellite-list-path: /rpc-api/knowledge/knowledge/satellite/list
     api-base-url: http://10.126.100.249:16001/prod-api
     connect-timeout-millis: 5000
     read-timeout-millis: 10000

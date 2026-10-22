@@ -6,6 +6,8 @@ import com.example.dataadmin.enums.EnumData;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /** 系统用户实体，对应人大金仓 dp_user 表。 */
 public class SysUser {
@@ -44,7 +46,7 @@ public class SysUser {
     /** 最后更新时间。 */
     private LocalDateTime updateTime;
 
-    /** 当前用户分配的角色主键。当前管理界面按单角色维护。 */
+    /** 兼容旧客户端的首个角色主键，按角色编号升序选取。 */
     private Long roleId;
 
     /** 当前角色名称。 */
@@ -52,6 +54,24 @@ public class SysUser {
 
     /** 当前角色权限标识。 */
     private String roleKey;
+
+    /** 完整角色集合，包含已停用但未删除的绑定，供编辑回显。 */
+    private List<SysRole> roles = new ArrayList<SysRole>();
+
+    /** 返回全部角色信息。 */
+    public List<SysRole> getRoles() { return roles; }
+
+    /** 保存查询到的角色集合。 */
+    public void setRoles(List<SysRole> roles) { this.roles = roles; }
+
+    /** 返回多选控件使用的角色编号，未分配时返回空列表。 */
+    public List<Long> getRoleIds() {
+        List<Long> ids = new ArrayList<Long>();
+        for (SysRole role : roles) {
+            ids.add(role.getId());
+        }
+        return ids;
+    }
 
     public Long getId() {
         return id;
@@ -146,10 +166,10 @@ public class SysUser {
         this.updateTime = updateTime;
     }
 
-    public Long getRoleId() { return roleId; }
+    public Long getRoleId() { return roles.isEmpty() ? roleId : roles.get(0).getId(); }
     public void setRoleId(Long roleId) { this.roleId = roleId; }
-    public String getRoleName() { return roleName; }
+    public String getRoleName() { return roles.isEmpty() ? roleName : roles.get(0).getRoleName(); }
     public void setRoleName(String roleName) { this.roleName = roleName; }
-    public String getRoleKey() { return roleKey; }
+    public String getRoleKey() { return roles.isEmpty() ? roleKey : roles.get(0).getRoleKey(); }
     public void setRoleKey(String roleKey) { this.roleKey = roleKey; }
 }

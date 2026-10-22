@@ -1,6 +1,7 @@
 package com.example.dataadmin.dto;
 
 import javax.validation.constraints.Email;
+import java.util.List;
 
 /** 新增或修改用户时使用的请求参数。 */
 public class UserSaveRequest {
@@ -23,6 +24,15 @@ public class UserSaveRequest {
     private Integer status;
     /** 分配的角色 ID。 */
     private Long roleId;
+
+    /** 多角色编号优先于旧版单角色；空列表清空，未提供则保留原关联。 */
+    private List<Long> roleIds;
+
+    /** 返回请求的完整角色编号。 */
+    public List<Long> getRoleIds() { return roleIds; }
+
+    /** 设置多角色分配请求。 */
+    public void setRoleIds(List<Long> roleIds) { this.roleIds = roleIds; }
 
     public Long getId() {
         return id;

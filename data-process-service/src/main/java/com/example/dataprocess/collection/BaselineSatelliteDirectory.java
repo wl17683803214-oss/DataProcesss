@@ -22,7 +22,7 @@ public class BaselineSatelliteDirectory {
     /** 目录加载日志。 */
     private static final Logger LOGGER = LoggerFactory.getLogger(BaselineSatelliteDirectory.class);
     /** 卫星分页查询路径。 */
-    private static final String LIST_PATH = "/rpc-api/knowledge/knowledge/satellite/list";
+    private final String listPath;
     /** 与角色接口一致的基线根地址。 */
     private final String baseUrl;
     /** 公共协议配置解析器。 */
@@ -34,10 +34,12 @@ public class BaselineSatelliteDirectory {
     public BaselineSatelliteDirectory(
             ProtocolConfigParser parser,
             @Value("${baseline.sso.api-base-url:}") String baseUrl,
+            @Value("${baseline.sso.satellite-list-path:}") String listPath,
             @Value("${baseline.sso.connect-timeout-millis:5000}") int connectTimeout,
             @Value("${baseline.sso.read-timeout-millis:10000}") int readTimeout) {
         this.parser = parser;
         this.baseUrl = baseUrl;
+        this.listPath = listPath;
         this.http = new HttpRequestTool(connectTimeout, readTimeout);
     }
 
@@ -65,9 +67,14 @@ public class BaselineSatelliteDirectory {
             if (satelliteCode.isEmpty() || baseUrl.trim().isEmpty()) {
                 throw new IllegalArgumentException("基线服务地址或协议卫星编码未配置");
             }
+            // 接口路径必须由配置提供，禁止缺失路径时请求基线根地址。
+            if (listPath == null || !listPath.trim().startsWith("/")
+                    || listPath.trim().startsWith("//")) {
+                throw new IllegalArgumentException("基线卫星列表接口路径未配置或格式错误");
+            }
             // 第二步：固定取第一页十条卫星记录，通道不作为查询过滤条件。
             url = UriComponentsBuilder.fromHttpUrl(
-                            baseUrl.trim().replaceAll("/+$", "") + LIST_PATH)
+                            baseUrl.trim().replaceAll("/+$", "") + listPath.trim())
                     .queryParam("pageNum", 1).queryParam("pageSize", 10)
                     .queryParam("satelliteCode", satelliteCode)
                     .build().encode().toUriString();

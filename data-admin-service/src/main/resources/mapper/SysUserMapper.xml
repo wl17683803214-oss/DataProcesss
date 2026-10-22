@@ -4,6 +4,20 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.dataadmin.mapper.SysUserMapper">
 
+    <!-- 按用户主键合并多角色，避免列表重复和详情返回多行。 -->
+    <resultMap id="userWithRoles" type="com.example.dataadmin.entity.SysUser" autoMapping="true">
+        <id property="id" column="id"/>
+        <collection property="roles" ofType="com.example.dataadmin.entity.SysRole"
+                    notNullColumn="assigned_role_id" autoMapping="false">
+            <id property="id" column="assigned_role_id"/>
+            <result property="roleName" column="assigned_role_name"/>
+            <result property="roleKey" column="assigned_role_key"/>
+            <result property="status" column="assigned_role_status"/>
+            <result property="baselineRoleId" column="assigned_baseline_role_id"/>
+            <result property="baselineRoleKey" column="assigned_baseline_role_key"/>
+        </collection>
+    </resultMap>
+
     <!-- 用户表公共字段，登录查询需要包含密码密文。 -->
     <sql id="userColumns">
         id, username, password, baseline_user_id, nickname, phone, email,
@@ -25,22 +39,33 @@
           and deleted = 0
     </select>
 
-    <select id="findAll" resultType="com.example.dataadmin.entity.SysUser">
+    <select id="findAll" resultMap="userWithRoles">
         select u.id, u.username, u.baseline_user_id, u.nickname, u.phone, u.email, u.status, u.deleted,
-               u.create_time, u.update_time, r.id role_id, r.role_name, r.role_key
+               u.create_time, u.update_time, r.id assigned_role_id,
+               r.role_name assigned_role_name, r.role_key assigned_role_key,
+               r.status assigned_role_status, r.baseline_role_id assigned_baseline_role_id,
+               r.baseline_role_key assigned_baseline_role_key
         from dp_user u
         left join dp_user_role ur on ur.user_id = u.id
         left join dp_role r on r.id = ur.role_id and r.deleted = 0
-        where u.deleted = 0 order by u.id
+        where u.deleted = 0 order by u.id, r.id
     </select>
 
-    <select id="findById" parameterType="long" resultType="com.example.dataadmin.entity.SysUser">
+    <select id="findById" parameterType="long" resultMap="userWithRoles">
         select u.id, u.username, u.baseline_user_id, u.nickname, u.phone, u.email, u.status, u.deleted,
-               u.create_time, u.update_time, r.id role_id, r.role_name, r.role_key
+               u.create_time, u.update_time, r.id assigned_role_id,
+               r.role_name assigned_role_name, r.role_key assigned_role_key,
+               r.status assigned_role_status, r.baseline_role_id assigned_baseline_role_id,
+               r.baseline_role_key assigned_baseline_role_key
         from dp_user u
         left join dp_user_role ur on ur.user_id = u.id
         left join dp_role r on r.id = ur.role_id and r.deleted = 0
-        where u.id = #{id} and u.deleted = 0
+        where u.deleted = 0
+        <choose>
+            <when test="id != null">and u.id = #{id}</when>
+            <otherwise>and 1 = 0</otherwise>
+        </choose>
+        order by r.id
     </select>
 
     <!-- 使用人大金仓序列预先生成主键，确保新增后可以直接返回用户信息。 -->

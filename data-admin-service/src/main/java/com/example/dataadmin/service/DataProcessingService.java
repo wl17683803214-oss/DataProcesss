@@ -20,6 +20,9 @@ import java.util.List;
  * 负责组织页面所需的查询和写入操作，数据库访问由对应Mapper完成。
  */
 public interface DataProcessingService {
+    /** 按现有文件导入规则，在独立事务内按设备名称替换基线设备参数。 */
+    int importBaselineDeviceRules(String taskId,
+            java.util.Map<String, List<TelemetryParseRuleConfig>> rules);
     /** 在独立写事务内按卫星编码替换已校验的基线参数。 */
     int importBaselineRules(String taskId,
             java.util.Map<String, List<TelemetryParseRuleConfig>> rules,

@@ -853,9 +853,16 @@ paths:
                     - value: 1
                       name: "启用"
                       description: "1 表示启用"
+                roleIds:
+                  type: array
+                  nullable: true
+                  description: "完整角色编号列表，优先于roleId；去重保存；空列表清空，未传或null时回退roleId，两者均未提供则保留原关联。新增绑定必须为启用角色，已有停用角色可保留；admin固定超级管理员角色。"
+                  items:
+                    type: integer
+                    format: int64
                 roleId:
                   type: integer
-                  description: "分配给用户或权限关系的角色 ID"
+                  description: "兼容旧客户端的单角色编号；roleIds 非空值时优先使用列表"
                   format: int64
             example:
               username: "operator"
@@ -864,7 +871,7 @@ paths:
               phone: "13800000001"
               email: "operator@example.com"
               status: 1
-              roleId: 2
+              roleIds: [2, 3]
       responses:
         '200':
           $ref: '#/components/responses/Success008'
@@ -911,9 +918,16 @@ paths:
                     - value: 1
                       name: "启用"
                       description: "1 表示启用"
+                roleIds:
+                  type: array
+                  nullable: true
+                  description: "完整角色编号列表，优先于roleId；去重保存；空列表清空，未传或null时回退roleId，两者均未提供则保留原关联。新增绑定必须为启用角色，已有停用角色可保留；admin固定超级管理员角色。"
+                  items:
+                    type: integer
+                    format: int64
                 roleId:
                   type: integer
-                  description: "分配给用户或权限关系的角色 ID"
+                  description: "兼容旧客户端的单角色编号；roleIds 非空值时优先使用列表"
                   format: int64
             example:
               id: 2
@@ -922,7 +936,7 @@ paths:
               phone: "13800000002"
               email: "operator@example.com"
               status: 1
-              roleId: 2
+              roleIds: [2, 3]
       responses:
         '200':
           $ref: '#/components/responses/Success009'
@@ -2163,6 +2177,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 修改协议配置
+      description: '已启用的协议配置禁止修改，请先通过启用状态接口禁用；修改请求同时传enabled=0也不能绕过，提示：请先禁用协议配置，再执行修改。'
       requestBody:
         required: true
         content:
@@ -2302,7 +2317,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 删除协议配置
-      description: "逻辑删除协议配置。存在未删除的采集接口绑定时禁止删除，无论接口是否启用；失败提示列出绑定接口名称，例如：协议配置已被采集接口【接口A、接口B】绑定，不能删除。已删除采集接口不阻止删除。"
+      description: "逻辑删除协议配置。协议配置已启用时禁止删除，提示：请先禁用协议配置，再执行删除。禁用后仍需检查绑定关系：存在未删除的采集接口绑定时禁止删除，无论接口是否启用；失败提示列出绑定接口名称，例如：协议配置已被采集接口【接口A、接口B】绑定，不能删除。已删除采集接口不阻止删除。"
       requestBody:
         required: true
         content:
@@ -2320,7 +2335,7 @@ paths:
         '200':
           $ref: '#/components/responses/Success032'
         '400':
-          description: "协议配置存在未删除的采集接口绑定，或协议配置不存在。"
+          description: "协议配置已启用、存在未删除的采集接口绑定，或协议配置不存在。"
           content:
             application/json:
               schema:
@@ -3490,6 +3505,56 @@ paths:
               example: { code: 200, message: 操作成功 }
         '400':
           description: 编号非法、记录不存在或仍被协议引用
+
+  /processing/rules/sync-baseline-devices:
+    post:
+      tags: [数据处理]
+      summary: 同步基线全部设备遥测参数
+      description: 使用baseline.sso.api-base-url和trial-param-table-list-path拼接基线地址，以POST JSON请求pageNum和pageSize=99999，按total继续分页。解析每条记录的paramData.sheets，每个Sheet作为设备，名称和编码均取完整Sheet名，必须符合通道名称_业务标识格式且不超过100个字符。按当前任务和设备类型同名匹配，保留主键并替换参数及系统层级；缺少校准公式按空值处理。空paramData跳过且保留已有数据，未返回设备不删除，卫星不受影响。重复参数表主键、跨表同名设备、分页不完整或参数无效时整体不提交；全部校验成功后在同一事务入库，运行接口快照下次接口同步后更新。
+      parameters:
+        - name: taskId
+          in: query
+          required: true
+          description: 接收设备参数的外部试验任务编号
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 设备参数同步成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      queriedTableCount:
+                        type: integer
+                        description: 基线返回的参数表数量，包含跳过项
+                      syncedDeviceCount:
+                        type: integer
+                        description: 依据Sheet数量成功导入的设备数
+                      skippedTableCount:
+                        type: integer
+                        description: paramData为空而跳过的参数表数
+                      importedParameterCount:
+                        type: integer
+                        description: 成功导入的遥测参数数
+              example:
+                code: 200
+                message: 操作成功
+                data:
+                  queriedTableCount: 2
+                  syncedDeviceCount: 3
+                  skippedTableCount: 1
+                  importedParameterCount: 150
+        '400':
+          description: 任务、接口配置、分页、设备名称或参数校验失败，已有参数不更新
 
   /processing/rules/sync-baseline:
     post:
@@ -4674,6 +4739,19 @@ components:
       bearerFormat: JWT
 
   schemas:
+    UserRoleSummary:
+      type: object
+      description: "用户关联角色，复用系统角色结构"
+      properties:
+        id: {type: integer, format: int64, description: "角色编号"}
+        roleName: {type: string, description: "角色中文名称"}
+        roleKey: {type: string, description: "本地角色标识"}
+        baselineRoleId: {type: string, nullable: true, description: "基线角色编号"}
+        baselineRoleKey: {type: string, nullable: true, description: "基线角色标识"}
+        status: {type: integer, enum: [0, 1], description: "0停用，1启用"}
+        statusName: {type: string, description: "角色状态中文名称"}
+        deleted: {type: integer, nullable: true, description: "未加载时为空"}
+        createTime: {type: string, format: date-time, nullable: true, description: "未加载时为空"}
     SystemHealthTelemetryMqMessage:
       type: object
       description: 健康MQ遥测的字段说明，实际发送Protobuf字节，无额外消息头，不是HTTP接口。快照采样时间按北京时间解释，整帧原码35字节，小端编码。
@@ -5965,6 +6043,30 @@ components:
                         type: integer
                         description: "业务数据主键 ID"
                         format: int64
+                      roleIds:
+                        type: array
+                        description: "完整角色编号，按编号升序；无角色时为空数组"
+                        items:
+                          type: integer
+                          format: int64
+                      roles:
+                        type: array
+                        description: "全部未删除的关联角色，包含停用角色；权限计算仅使用启用角色"
+                        items:
+                          $ref: '#/components/schemas/UserRoleSummary'
+                      roleId:
+                        type: integer
+                        format: int64
+                        nullable: true
+                        description: "旧客户端兼容字段，首个角色编号；无角色时为空"
+                      roleName:
+                        type: string
+                        nullable: true
+                        description: "首个角色中文名称，完整展示请使用roles"
+                      roleKey:
+                        type: string
+                        nullable: true
+                        description: "首个角色标识"
                       username:
                         type: string
                         description: "登录用户名"
@@ -6092,6 +6194,30 @@ components:
                       type: integer
                       description: "业务数据主键 ID"
                       format: int64
+                    roleIds:
+                      type: array
+                      description: "完整角色编号，按编号升序；无角色时为空数组"
+                      items:
+                        type: integer
+                        format: int64
+                    roles:
+                      type: array
+                      description: "全部未删除的关联角色，包含停用角色；权限计算仅使用启用角色"
+                      items:
+                        $ref: '#/components/schemas/UserRoleSummary'
+                    roleId:
+                      type: integer
+                      format: int64
+                      nullable: true
+                      description: "旧客户端兼容字段，首个角色编号；无角色时为空"
+                    roleName:
+                      type: string
+                      nullable: true
+                      description: "首个角色中文名称，完整展示请使用roles"
+                    roleKey:
+                      type: string
+                      nullable: true
+                      description: "首个角色标识"
                     username:
                       type: string
                       description: "登录用户名"
@@ -6143,6 +6269,8 @@ components:
             message: "操作成功"
             data:
               - id: 1
+                roleIds: [1]
+                roles: [{id: 1, roleName: "超级管理员", roleKey: "admin", status: 1, statusName: "启用"}]
                 username: "admin"
                 nickname: "管理员"
                 phone: "13800000000"
@@ -6172,6 +6300,30 @@ components:
                     type: integer
                     description: "业务数据主键 ID"
                     format: int64
+                  roleIds:
+                    type: array
+                    description: "完整角色编号，按编号升序；无角色时为空数组"
+                    items:
+                      type: integer
+                      format: int64
+                  roles:
+                    type: array
+                    description: "全部未删除的关联角色，包含停用角色；权限计算仅使用启用角色"
+                    items:
+                      $ref: '#/components/schemas/UserRoleSummary'
+                  roleId:
+                    type: integer
+                    format: int64
+                    nullable: true
+                    description: "旧客户端兼容字段，首个角色编号；无角色时为空"
+                  roleName:
+                    type: string
+                    nullable: true
+                    description: "首个角色中文名称，完整展示请使用roles"
+                  roleKey:
+                    type: string
+                    nullable: true
+                    description: "首个角色标识"
                   username:
                     type: string
                     description: "登录用户名"
@@ -6223,6 +6375,8 @@ components:
             message: "操作成功"
             data:
               id: 1
+              roleIds: [1]
+              roles: [{id: 1, roleName: "超级管理员", roleKey: "admin", status: 1, statusName: "启用"}]
               username: "admin"
               nickname: "管理员"
               phone: "13800000000"
@@ -6252,6 +6406,30 @@ components:
                     type: integer
                     description: "业务数据主键 ID"
                     format: int64
+                  roleIds:
+                    type: array
+                    description: "完整角色编号，按编号升序；无角色时为空数组"
+                    items:
+                      type: integer
+                      format: int64
+                  roles:
+                    type: array
+                    description: "全部未删除的关联角色，包含停用角色；权限计算仅使用启用角色"
+                    items:
+                      $ref: '#/components/schemas/UserRoleSummary'
+                  roleId:
+                    type: integer
+                    format: int64
+                    nullable: true
+                    description: "旧客户端兼容字段，首个角色编号；无角色时为空"
+                  roleName:
+                    type: string
+                    nullable: true
+                    description: "首个角色中文名称，完整展示请使用roles"
+                  roleKey:
+                    type: string
+                    nullable: true
+                    description: "首个角色标识"
                   username:
                     type: string
                     description: "登录用户名"
@@ -6282,6 +6460,8 @@ components:
             message: "操作成功"
             data:
               id: 2
+              roleIds: [2, 3]
+              roles: [{id: 2, roleName: "操作员", roleKey: "operator", status: 1, statusName: "启用"}, {id: 3, roleName: "审核员", roleKey: "reviewer", status: 1, statusName: "启用"}]
               username: "operator"
               nickname: "操作员"
               phone: "13800000001"
@@ -6308,6 +6488,30 @@ components:
                     type: integer
                     description: "业务数据主键 ID"
                     format: int64
+                  roleIds:
+                    type: array
+                    description: "完整角色编号，按编号升序；无角色时为空数组"
+                    items:
+                      type: integer
+                      format: int64
+                  roles:
+                    type: array
+                    description: "全部未删除的关联角色，包含停用角色；权限计算仅使用启用角色"
+                    items:
+                      $ref: '#/components/schemas/UserRoleSummary'
+                  roleId:
+                    type: integer
+                    format: int64
+                    nullable: true
+                    description: "旧客户端兼容字段，首个角色编号；无角色时为空"
+                  roleName:
+                    type: string
+                    nullable: true
+                    description: "首个角色中文名称，完整展示请使用roles"
+                  roleKey:
+                    type: string
+                    nullable: true
+                    description: "首个角色标识"
                   username:
                     type: string
                     description: "登录用户名"
@@ -6338,6 +6542,8 @@ components:
             message: "操作成功"
             data:
               id: 2
+              roleIds: [2, 3]
+              roles: [{id: 2, roleName: "操作员", roleKey: "operator", status: 1, statusName: "启用"}, {id: 3, roleName: "审核员", roleKey: "reviewer", status: 1, statusName: "启用"}]
               username: "operator_shift"
               nickname: "值班操作员"
               phone: "13800000002"
