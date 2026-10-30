@@ -5,6 +5,7 @@ import com.example.dataadmin.entity.CollectInterfaceStatistics;
 import com.example.dataadmin.entity.DataProcessingStatistics;
 import com.example.dataadmin.enums.BusinessEnums;
 import com.example.dataadmin.enums.DashboardRange;
+import com.example.common.enums.CollectionRateUnit;
 import com.example.dataadmin.enums.EnumData;
 import com.example.dataadmin.mapper.DashboardMapper;
 import com.example.dataadmin.service.DashboardService;
@@ -75,7 +76,10 @@ public class DashboardServiceImpl implements DashboardService {
     summary.setCollectionCount(sum(totals));
     summary.setSenderCount(result.getTable().size());
     summary.setOnlineAgentCount(onlineInterfaceCount(interfaces));
-    summary.setInterfaceRateKbps(round(collectionInterfaceRate(realtime)));
+    // 汇总原始千字节速率后选择单位，数值和单位必须保持一致。
+    double rateKbps = collectionInterfaceRate(realtime);
+    CollectionRateUnit rateUnit = CollectionRateUnit.fromKilobytes(rateKbps);
+    summary.setInterfaceRateKbps(rateUnit.format(rateKbps));
     return result;
   }
 
@@ -224,7 +228,9 @@ public class DashboardServiceImpl implements DashboardService {
       row.setProtocols(new ArrayList<>(group.protocols));
       row.setCollectionCount(totals.getOrDefault(entry.getKey(), 0L));
       row.setPercentage(total == 0 ? 0 : round(row.getCollectionCount() * 100D / total));
-      row.setInterfaceRateKbps(round(group.interfaceRateKbps));
+      // 各发送方独立选择速度单位，先汇总再换算以保留原始精度。
+      CollectionRateUnit rateUnit = CollectionRateUnit.fromKilobytes(group.interfaceRateKbps);
+      row.setInterfaceRateKbps(rateUnit.format(group.interfaceRateKbps));
       row.setStatusName(EnumData.labelOf(BusinessEnums.InterfaceStatus.values(), group.status()));
       result.add(row);
     }

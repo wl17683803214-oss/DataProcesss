@@ -3,7 +3,7 @@
   "info": {
     "title": "独立模拟源管理服务",
     "version": "1.0.0",
-    "description": "支持PDXP/UDP和FEP/TCP，多模拟源独立并发；支持先上传文件再创建或修改模拟源。默认端口8084。发送端不自动启停接收服务。"
+    "description": "支持JSON/HTTP、PDXP/UDP单播或组播、FEP/TCP，多模拟源独立并发。JSON/HTTP直接配置请求路径和正文；PDXP和FEP先上传数据文件。默认端口8084。发送端不自动启停接收服务。"
   },
   "servers": [
     {
@@ -1194,7 +1194,7 @@
     "/simulator/files/upload": {
       "post": {
         "summary": "上传模拟源文件",
-        "description": "先上传文件，再将返回的filePath用于创建或修改。PDXP和FEP共用此接口；保留原文件名，同名上传互不覆盖。默认单文件上限1GB，以服务实际配置为准；允许0字节文件用于FEP，PDXP在启动时继续校验非空及帧长度。文件不会在取消表单、替换文件或删除模拟源时自动删除。",
+        "description": "仅PDXP和FEP需要先上传文件，再将返回的filePath用于创建或修改；HTTP/JSON不需要上传文件。保留原文件名，同名上传互不覆盖。默认单文件上限1GB，以服务实际配置为准；允许0字节文件用于FEP，PDXP在启动时继续校验非空及帧长度。文件不会在取消表单、替换文件或删除模拟源时自动删除。",
         "requestBody": {
           "required": true,
           "content": {
@@ -1413,7 +1413,7 @@
             "format": "int64"
           }
         },
-        "description": "仅PDXP使用。所有长度按实例配置，输入帧长度加传输头长度加32加自定义数据长度不得超过65507；FEP必须省略此对象。"
+        "description": "仅PDXP使用。所有长度按实例配置，输入帧长度加传输头长度加32加自定义数据长度不得超过65507；JSON和FEP必须省略此对象。"
       },
       "SaveRequest": {
         "type": "object",
@@ -1431,47 +1431,75 @@
           },
           "transferProtocol": {
             "type": "integer",
-            "description": "2为PDXP，3为FEP",
+            "description": "1为JSON/HTTP，2为PDXP/UDP，3为FEP/TCP",
             "enum": [
+              1,
               2,
               3
             ]
           },
           "transferType": {
             "type": "integer",
-            "description": "PDXP只允许1（UDP），FEP只允许2（TCP）；省略时按协议设置",
+            "description": "JSON固定3（HTTP），PDXP固定1（UDP），FEP固定2（TCP）；省略时按协议设置",
             "enum": [
               1,
-              2
+              2,
+              3
             ]
           },
           "filePath": {
             "type": "string",
-            "description": "文件上传成功返回的filePath，创建或修改时原样提交；已有配置兼容原服务器路径，不是浏览器下载地址",
+            "description": "PDXP和FEP必填：文件上传成功返回的filePath；HTTP/JSON不需要文件",
+            "nullable": true,
             "maxLength": 1000
+          },
+          "sendMode": {
+            "type": "string",
+            "description": "仅PDXP/UDP使用；省略时为UNICAST。组播时targetHost填写组播组地址",
+            "enum": [
+              "UNICAST",
+              "MULTICAST"
+            ],
+            "default": "UNICAST"
+          },
+          "multicastInterface": {
+            "type": "string",
+            "description": "组播可选：本机出口网卡IPv4地址，不是组播组地址",
+            "maxLength": 100
           },
           "targetHost": {
             "type": "string",
-            "description": "目标地址",
+            "description": "目标主机地址；PDXP组播时填写组播组IP，HTTP时填写接收端主机名或IP",
             "default": "127.0.0.1",
             "maxLength": 100
           },
+          "targetPath": {
+            "type": "string",
+            "description": "HTTP/JSON必填，请求路径，以/开头，不含查询参数",
+            "maxLength": 1000
+          },
+          "messageContent": {
+            "type": "string",
+            "description": "HTTP/JSON必填，作为POST请求体发送的合法JSON文本",
+            "maxLength": 1000000,
+            "example": "{\"temperature\":23.5}"
+          },
           "targetPort": {
             "type": "integer",
-            "description": "PDXP默认9001，FEP默认19003",
+            "description": "JSON/HTTP默认8083，PDXP默认9001，FEP默认19003",
             "minimum": 1,
             "maximum": 65535
           },
           "sendIntervalMillis": {
             "type": "integer",
-            "description": "数据单元发送间隔；PDXP默认500，FEP默认10",
+            "description": "发送间隔；JSON/HTTP默认1000毫秒，PDXP默认500，FEP默认10",
             "minimum": 0,
             "maximum": 86400000,
             "format": "int64"
           },
           "loopEnabled": {
             "type": "integer",
-            "description": "0否1是；PDXP默认1，FEP默认0",
+            "description": "0否1是；JSON/HTTP和PDXP默认1，FEP默认0",
             "enum": [
               0,
               1
@@ -1488,8 +1516,7 @@
         },
         "required": [
           "sourceName",
-          "transferProtocol",
-          "filePath"
+          "transferProtocol"
         ],
         "additionalProperties": false
       },
@@ -1509,34 +1536,73 @@
           },
           "transferProtocol": {
             "type": "integer",
-            "description": "2为PDXP，3为FEP",
+            "description": "1为JSON/HTTP，2为PDXP/UDP，3为FEP/TCP",
             "enum": [
+              1,
               2,
               3
             ]
           },
           "transferType": {
             "type": "integer",
-            "description": "PDXP只允许1（UDP），FEP只允许2（TCP）；省略时按协议设置",
+            "description": "JSON固定3（HTTP），PDXP固定1（UDP），FEP固定2（TCP）；省略时按协议设置",
             "enum": [
               1,
-              2
+              2,
+              3
             ]
           },
           "filePath": {
             "type": "string",
-            "description": "文件上传成功返回的filePath，创建或修改时原样提交；已有配置兼容原服务器路径，不是浏览器下载地址",
+            "description": "PDXP和FEP的数据文件路径；HTTP/JSON配置为空",
+            "nullable": true,
             "maxLength": 1000
+          },
+          "sendMode": {
+            "type": "string",
+            "description": "仅PDXP/UDP使用的发送模式，英文值入库",
+            "enum": [
+              "UNICAST",
+              "MULTICAST"
+            ],
+            "nullable": true
+          },
+          "sendModeName": {
+            "type": "string",
+            "description": "发送模式中文名称",
+            "enum": [
+              "单播",
+              "组播"
+            ],
+            "nullable": true
+          },
+          "multicastInterface": {
+            "type": "string",
+            "description": "组播使用的本机出口网卡地址",
+            "nullable": true,
+            "maxLength": 100
           },
           "targetHost": {
             "type": "string",
-            "description": "目标地址",
+            "description": "目标主机地址；PDXP组播时为组播组IP",
             "default": "127.0.0.1",
             "maxLength": 100
           },
+          "targetPath": {
+            "type": "string",
+            "description": "HTTP请求目标路径",
+            "nullable": true,
+            "maxLength": 1000
+          },
+          "messageContent": {
+            "type": "string",
+            "description": "HTTP POST请求JSON正文",
+            "nullable": true,
+            "maxLength": 1000000
+          },
           "targetPort": {
             "type": "integer",
-            "description": "PDXP默认9001，FEP默认19003",
+            "description": "JSON/HTTP默认8083，PDXP默认9001，FEP默认19003",
             "minimum": 1,
             "maximum": 65535
           },
@@ -1764,6 +1830,19 @@
           }
         }
       },
+      "StringOption": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "英文枚举值"
+          },
+          "label": {
+            "type": "string",
+            "description": "中文展示名称"
+          }
+        }
+      },
       "EnumData": {
         "type": "object",
         "properties": {
@@ -1801,6 +1880,13 @@
                   "description": "默认循环"
                 }
               }
+            }
+          },
+          "sendModes": {
+            "type": "array",
+            "description": "UDP发送模式选项，英文value对应中文label",
+            "items": {
+              "$ref": "#/components/schemas/StringOption"
             }
           },
           "statuses": {

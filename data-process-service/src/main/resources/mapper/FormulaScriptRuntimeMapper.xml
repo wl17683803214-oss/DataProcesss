@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataprocess.mapper.FormulaScriptRuntimeMapper">
+    <!-- 启动或同步时一次加载全部当前脚本，无历史版本和启用状态。 -->
+    <select id="findAll" resultType="com.example.common.formula.FormulaScript">
+        select f.code, f.name, f.source, f.create_time, f.update_time
+        from formula_script f
+        order by f.code
+    </select>
+</mapper>

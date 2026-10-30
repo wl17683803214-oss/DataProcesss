@@ -14,7 +14,7 @@
         <module>common-security</module>
         <module>data-admin-service</module>
         <module>data-process-service</module>
-        <!-- 独立模拟源管理服务，支持多实例PDXP和FEP发送。 -->
+        <!-- 独立模拟源管理服务，支持HTTP/JSON、PDXP单播与组播以及FEP发送。 -->
         <module>data-simulator-service</module>
     </modules>
 

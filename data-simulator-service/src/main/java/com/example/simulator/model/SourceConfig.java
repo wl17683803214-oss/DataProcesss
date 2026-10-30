@@ -1,6 +1,7 @@
 package com.example.simulator.model;
 
 import com.example.simulator.enums.ProtocolProfile;
+import com.example.simulator.enums.SendMode;
 import com.example.simulator.enums.RunStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
@@ -17,10 +18,18 @@ public class SourceConfig {
     public Integer transferType;
     /** 服务器本地文件路径。 */
     public String filePath;
+    /** UDP发送模式；HTTP和FEP不使用该字段。 */
+    public String sendMode = SendMode.UNICAST.value;
+    /** 本机组播出口网卡地址，可空。 */
+    public String multicastInterface;
     /** 目标地址。 */
     public String targetHost = "127.0.0.1";
     /** 目标端口。 */
     public Integer targetPort;
+    /** HTTP请求目标路径。 */
+    public String targetPath;
+    /** HTTP请求JSON正文。 */
+    public String messageContent;
     /** 数据单元发送间隔。 */
     public Long sendIntervalMillis;
     /** 是否循环，沿用零否一是约定。 */
@@ -51,6 +60,13 @@ public class SourceConfig {
     /** 返回传输方式中文名称。 */
     public String getTransferTypeName() {
         return ProtocolProfile.of(transferProtocol).transportLabel;
+    }
+    /** 返回发送模式中文名称。 */
+    public String getSendModeName() {
+        if (!Integer.valueOf(2).equals(transferProtocol)) {
+            return null;
+        }
+        return SendMode.of(sendMode).label;
     }
     /** 返回是否循环的中文名称。 */
     public String getLoopEnabledName() {

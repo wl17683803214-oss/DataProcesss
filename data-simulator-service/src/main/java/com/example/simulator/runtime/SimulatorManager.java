@@ -124,12 +124,16 @@ public class SimulatorManager {
     /** 执行完成后无论成功与否都释放资源，并尝试保存最终统计。 */
     private void execute(PreparedRun prepared, ExecutionContext context) {
         Throwable failure = null;
+        ProtocolProfile profile = ProtocolProfile.of(prepared.config.transferProtocol);
         try {
             context.begin();
             // 发送任务实际开始时记录模拟源及本次运行信息。
-            LOGGER.info("模拟源开始发送，名称：{}，模拟源编号：{}，运行编号：{}，源文件：{}，目标地址：{}:{}",
+            String sourceDescription = profile == ProtocolProfile.JSON
+                    ? "HTTP请求路径：" + prepared.config.targetPath
+                    : "源文件：" + prepared.config.filePath;
+            LOGGER.info("模拟源开始发送，名称：{}，模拟源编号：{}，运行编号：{}，{}，目标地址：{}:{}",
                     prepared.config.sourceName, prepared.config.id, context.record.id,
-                    prepared.config.filePath, prepared.config.targetHost, prepared.config.targetPort);
+                    sourceDescription, prepared.config.targetHost, prepared.config.targetPort);
             flushOne(prepared.config.id, context);
             sender.send(prepared.config, context);
         } catch (Exception exception) {
@@ -142,8 +146,8 @@ public class SimulatorManager {
         } finally {
             context.finish(failure);
             // 按协议说明本次累计发送数量，停止和异常结束也记录实际已发送量。
-            String countUnit = ProtocolProfile.of(prepared.config.transferProtocol) == ProtocolProfile.PDXP
-                    ? "帧" : "个数据单元";
+            String countUnit = profile == ProtocolProfile.PDXP ? "帧"
+                    : profile == ProtocolProfile.JSON ? "次请求" : "个数据单元";
             LOGGER.info("模拟源发送结束，名称：{}，模拟源编号：{}，运行编号：{}，状态：{}，发送数量：{}{}",
                     prepared.config.sourceName, prepared.config.id, context.record.id,
                     RunStatus.of(context.record.statusCode).label,

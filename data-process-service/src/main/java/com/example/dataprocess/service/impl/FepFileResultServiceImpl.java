@@ -9,6 +9,7 @@ import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.entity.FepFileTransferRecord;
 import com.example.dataprocess.enums.FepFileProcessStatus;
 import com.example.dataprocess.mapper.FepFileTransferRecordMapper;
+import com.example.dataprocess.protocol.fep.ImageResolutionReader;
 import com.example.dataprocess.service.FepFileResultService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.minio.BucketExistsArgs;
@@ -158,6 +159,8 @@ public class FepFileResultServiceImpl implements FepFileResultService {
         record.setFileName(fileName);
         record.setFileType(fileType);
         record.setFileLength(fileLength);
+        // 分辨率随完整文件一次登记，识别失败不影响接收、上传和消息发布。
+        record.setResolution(ImageResolutionReader.read(normalizedFile, fileType));
         record.setLocalPath(normalizedFile.toString());
         record.setObjectName(objectName);
         record.setFileUrl("");

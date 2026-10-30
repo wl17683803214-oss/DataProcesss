@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.FormulaScriptMapper">
+    <!-- 列表只加载元数据，完整源码仅用于导出、试算或配置加载。 -->
+    <sql id="metadata">f.code, f.name, f.create_time, f.update_time</sql>
+    <!-- 编号精确匹配，名称模糊匹配，分页和总数保持同一条件。 -->
+    <sql id="filters">
+        <where>
+            <if test="code != null and code != ''">f.code = #{code}</if>
+            <if test="name != null and name != ''">and f.name like concat('%', #{name}, '%')</if>
+        </where>
+    </sql>
+    <select id="countPage" resultType="long">
+        select count(f.code) from formula_script f
+        <include refid="filters"/>
+    </select>
+    <select id="findPage" resultType="com.example.common.formula.FormulaScript">
+        select <include refid="metadata"/> from formula_script f
+        <include refid="filters"/>
+        order by f.code limit #{limit} offset #{offset}
+    </select>
+    <!-- 缺少编号时不允许退化为全表查询。 -->
+    <select id="findByCode" resultType="com.example.common.formula.FormulaScript">
+        select <include refid="metadata"/>, f.source from formula_script f
+        <where>
+            <choose>
+                <when test="code != null and code != ''">f.code = #{code}</when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+        </where>
+    </select>
+    <!-- 导出读取多取一条，超出上限时提示用户选择编号。 -->
+    <select id="findForExport" resultType="com.example.common.formula.FormulaScript">
+        select <include refid="metadata"/>, f.source from formula_script f
+        order by f.code limit #{limit}
+    </select>
+    <!-- 复用项目已有事务级锁，事务结束自动释放。 -->
+    <select id="lockManagement" resultType="string">
+        select pg_advisory_xact_lock(hashtext('处理公式管理'))
+    </select>
+    <!-- 删除事务结束前阻止参数并发写入，消除引用检查期间的写入间隙。 -->
+    <update id="lockParameterReferences">
+        lock table telemetry_parse_rule_config in share mode
+    </update>
+    <!-- 空批次必须不匹配任何公式。 -->
+    <sql id="codeFilter">
+        <choose>
+            <when test="codes != null and codes.size() > 0">
+                code in
+                <foreach collection="codes" item="code" open="(" close=")" separator=",">#{code}</foreach>
+            </when>
+            <otherwise>1 = 0</otherwise>
+        </choose>
+    </sql>
+    <select id="findExistingCodes" resultType="string">
+        select code from formula_script where <include refid="codeFilter"/>
+        order by code
+    </select>
+    <!-- 和运行时一致去除编号两侧空白，检查所有任务的有效参数配置。 -->
+    <select id="findReferencedCodes" resultType="string">
+        select distinct trim(formula_type) as code
+        from telemetry_parse_rule_config
+        where is_deleted = 0
+        <choose>
+            <when test="codes != null and codes.size() > 0">
+                and trim(formula_type) in
+                <foreach collection="codes" item="code" open="(" close=")" separator=",">#{code}</foreach>
+            </when>
+            <otherwise>and 1 = 0</otherwise>
+        </choose>
+        order by code
+    </select>
+    <!-- 复用项目现有冲突更新语法，编号是唯一主键。 -->
+    <insert id="upsert" parameterType="com.example.common.formula.FormulaScript">
+        insert into formula_script(code, name, source, create_time, update_time)
+        values(#{code}, #{name}, #{source}, #{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP})
+        on conflict (code) do update
+        set name = excluded.name, source = excluded.source, update_time = excluded.update_time
+    </insert>
+    <!-- 整批引用检查通过后才物理删除，不保留历史源码。 -->
+    <delete id="deleteByCodes">
+        delete from formula_script where <include refid="codeFilter"/>
+    </delete>
+</mapper>

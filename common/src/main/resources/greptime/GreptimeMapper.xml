@@ -86,6 +86,8 @@
                 <otherwise>1 = 0</otherwise>
             </choose>
             <if test="sourceIdentity != null and sourceIdentity != ''">AND source_identity = #{sourceIdentity}</if>
+            <!-- 类型未指定时查询全部，指定时在排序与条数限制前精确筛选。 -->
+            <if test="telemetryType != null and telemetryType != ''">AND telemetry_type = #{telemetryType}</if>
         </where>
     </sql>
     <select id="latest" resultType="com.example.common.greptime.TelemetryParameterRecord">

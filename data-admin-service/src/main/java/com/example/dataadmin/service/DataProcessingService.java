@@ -43,10 +43,10 @@ public interface DataProcessingService {
             Integer pageSize);
     /** 查询当前任务全部已勾选参数的最新处理结果。 */
     List<ProcessedTelemetryVO> listProcessedTelemetry(String taskId,
-            Integer selectionType, Long targetId);
+            Integer selectionType, Long targetId, String telemetryType);
     /** 查询当前任务全部已勾选参数的最近曲线点。 */
     List<ProcessedTelemetryCurveVO> listProcessedTelemetryCurves(String taskId,
-            Integer selectionType, Long targetId);
+            Integer selectionType, Long targetId, String telemetryType);
     /** 按任务和页面条件分页筛选帧检查异常的遥测原始帧。 */
     PageResult<InvalidTelemetryFrame> pageInvalidTelemetryFrames(
             String taskId,

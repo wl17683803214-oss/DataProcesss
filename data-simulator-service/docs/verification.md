@@ -1,5 +1,11 @@
 # 验证记录
 
+## 2026年10月28日：HTTP/JSON与组播发送
+
+- `mvn -pl data-simulator-service -am -DskipTests package` 编译和打包成功；随后执行 `mvn -pl data-simulator-service -am test`，公共模块3个已有测试通过，模拟源模块没有既有测试，没有新增测试或依赖。
+- Apifox JSON可解析，MyBatis XML结构可解析，`git diff --check`通过。
+- 未启动模拟源服务进行真实HTTP/组播收发联调，未执行数据库升级脚本，未连接或修改业务数据库。
+
 ## 2026年10月19日：模拟源文件上传
 
 - 编译并运行现有测试成功，公共模块3个已有测试通过；模拟源模块当前没有单元测试，未新增测试文件、框架或依赖。

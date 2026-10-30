@@ -162,7 +162,13 @@ public final class TcpTool {
         private final Socket socket;
 
         /** 当前长连接使用的输入流。 */
-        private final InputStream inputStream;
+        private InputStream inputStream;
+
+        /** 在协议开始读取前安装接口共用的限速输入流。 */
+        public void limitReceive(com.example.dataprocess.collection.receive.InterfaceReceiveLimiter limiter) {
+            // 仅包装输入方向，发送响应不受接收限速影响。
+            inputStream = limiter.wrap(inputStream);
+        }
 
         /** 当前长连接使用的输出流。 */
         private final OutputStream outputStream;

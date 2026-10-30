@@ -45,10 +45,9 @@ public class TelemetryParseRuleBatchUpdateRequest {
         /** 遥测代号。 */
         @NotBlank(message = "遥测代号不能为空")
         private String telemetryCode;
-        /** 公式类型。 */
-        @NotBlank(message = "公式类型不能为空")
+        /** Lua公式编号，空值表示原码输出。 */
         private String formulaType;
-        /** 处理公式。 */
+        /** 历史公式描述，仅保留展示，不参与脚本计算。 */
         private String formulaDesc;
         /** 处理参数。 */
         private String processParam;

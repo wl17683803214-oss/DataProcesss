@@ -6,9 +6,13 @@ CREATE TABLE IF NOT EXISTS simulator_source_config (
     source_name VARCHAR(100) NOT NULL,
     transfer_protocol SMALLINT NOT NULL,
     transfer_type SMALLINT NOT NULL,
-    file_path VARCHAR(1000) NOT NULL,
+    file_path VARCHAR(1000),
+    send_mode VARCHAR(16),
+    multicast_interface VARCHAR(100),
     target_host VARCHAR(100) NOT NULL,
     target_port INT NOT NULL,
+    target_path VARCHAR(1000),
+    message_content TEXT,
     send_interval_millis BIGINT NOT NULL,
     loop_enabled SMALLINT NOT NULL,
     remark VARCHAR(500),
@@ -19,9 +23,9 @@ CREATE TABLE IF NOT EXISTS simulator_source_config (
 COMMENT ON TABLE simulator_source_config IS '模拟源配置';
 COMMENT ON COLUMN simulator_source_config.id IS '主键';
 COMMENT ON COLUMN simulator_source_config.source_name IS '模拟源名称';
-COMMENT ON COLUMN simulator_source_config.transfer_protocol IS '传输协议：2为PDXP，3为FEP';
-COMMENT ON COLUMN simulator_source_config.transfer_type IS '传输方式：1为UDP，2为TCP';
-COMMENT ON COLUMN simulator_source_config.file_path IS '服务器文件路径';
+COMMENT ON COLUMN simulator_source_config.transfer_protocol IS '传输协议：1为JSON，2为PDXP，3为FEP';
+COMMENT ON COLUMN simulator_source_config.transfer_type IS '传输方式：1为UDP，2为TCP，3为HTTP';
+COMMENT ON COLUMN simulator_source_config.file_path IS 'PDXP或FEP数据文件路径';
 COMMENT ON COLUMN simulator_source_config.target_host IS '目标地址';
 COMMENT ON COLUMN simulator_source_config.target_port IS '目标端口';
 COMMENT ON COLUMN simulator_source_config.send_interval_millis IS '发送间隔毫秒';
@@ -30,6 +34,20 @@ COMMENT ON COLUMN simulator_source_config.remark IS '备注';
 COMMENT ON COLUMN simulator_source_config.is_deleted IS '是否删除：0否1是';
 COMMENT ON COLUMN simulator_source_config.create_time IS '创建时间';
 COMMENT ON COLUMN simulator_source_config.update_time IS '更新时间';
+
+-- 兼容已有数据库，补充HTTP/JSON和UDP组播所需字段并允许HTTP配置省略文件路径。
+ALTER TABLE simulator_source_config ALTER COLUMN file_path DROP NOT NULL;
+ALTER TABLE simulator_source_config ADD COLUMN IF NOT EXISTS send_mode VARCHAR(16);
+ALTER TABLE simulator_source_config ADD COLUMN IF NOT EXISTS multicast_interface VARCHAR(100);
+ALTER TABLE simulator_source_config ADD COLUMN IF NOT EXISTS target_path VARCHAR(1000);
+ALTER TABLE simulator_source_config ADD COLUMN IF NOT EXISTS message_content TEXT;
+UPDATE simulator_source_config
+SET send_mode = 'UNICAST'
+WHERE transfer_protocol = 2 AND send_mode IS NULL;
+COMMENT ON COLUMN simulator_source_config.send_mode IS 'UDP发送模式：UNICAST单播或MULTICAST组播';
+COMMENT ON COLUMN simulator_source_config.multicast_interface IS '组播发送使用的本机网卡IPv4地址';
+COMMENT ON COLUMN simulator_source_config.target_path IS 'HTTP请求目标路径';
+COMMENT ON COLUMN simulator_source_config.message_content IS 'HTTP请求JSON正文';
 
 CREATE TABLE IF NOT EXISTS simulator_pdxp_config (
     source_id BIGINT PRIMARY KEY REFERENCES simulator_source_config(id),

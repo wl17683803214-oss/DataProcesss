@@ -17,6 +17,8 @@ public final class TcpInterfaceReceiver implements CollectInterfaceReceiver {
             TcpInterfaceReceiver.class);
     /** 接口配置快照。 */
     private final CollectInterfaceRuntimeConfig config;
+    /** 所有重连共用当前接口的限速额度。 */
+    private final InterfaceReceiveLimiter receiveLimiter;
     /** 已绑定本机地址和端口的TCP服务端。 */
     private final TcpTool.TcpServer server;
     /** 当前接口对应的协议会话。 */
@@ -39,6 +41,7 @@ public final class TcpInterfaceReceiver implements CollectInterfaceReceiver {
             TcpTool.TcpServer server,
             ProtocolHandler.TcpSession protocolSession) {
         this.config = config;
+        this.receiveLimiter = new InterfaceReceiveLimiter(config);
         this.server = server;
         this.protocolSession = protocolSession;
     }
@@ -74,6 +77,8 @@ public final class TcpInterfaceReceiver implements CollectInterfaceReceiver {
         while (running && server.isOpen()) {
             try (TcpTool.TcpConnection connection = server.accept()) {
                 currentConnection = connection;
+                // 在协议解析前包装输入流，所有读取分支统一按字节限速。
+                connection.limitReceive(receiveLimiter);
                 LOGGER.info("TCP采集接口已接入发送方连接，接口编号：{}",
                         config.getInterfaceId());
                 protocolSession.receive(connection, () -> running);
@@ -100,6 +105,8 @@ public final class TcpInterfaceReceiver implements CollectInterfaceReceiver {
     @Override
     public void stop() {
         running = false;
+        // 先唤醒额度等待，再关闭套接字解除网络读取阻塞。
+        receiveLimiter.stop();
         closeCurrentConnection();
         closeServer();
     }

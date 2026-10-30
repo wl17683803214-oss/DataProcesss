@@ -14,6 +14,8 @@ public class ExperimentTask {
     private String requirementId;
     /** 试验任务名称。 */
     private String taskName;
+    /** 用户手动填写的试验任务评估内容，未评估时为空。 */
+    private String taskEvaluation;
     /** 任务优先级。 */
     private Integer taskPriority;
     /** 试验方案内部编号。 */
@@ -41,6 +43,10 @@ public class ExperimentTask {
     public void setRequirementId(String value) { requirementId = value; }
     public String getTaskName() { return taskName; }
     public void setTaskName(String value) { taskName = value; }
+    /** 获取试验任务评估内容。 */
+    public String getTaskEvaluation() { return taskEvaluation; }
+    /** 设置试验任务评估内容。 */
+    public void setTaskEvaluation(String value) { taskEvaluation = value; }
     public Integer getTaskPriority() { return taskPriority; }
     public void setTaskPriority(Integer value) { taskPriority = value; }
     public String getPlanId() { return planId; }

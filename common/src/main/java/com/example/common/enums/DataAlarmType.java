@@ -14,6 +14,8 @@ public enum DataAlarmType {
     STORAGE_FAILURE("数据存储失败", DataAlarmSource.PROCESSING, 4),
     MESSAGE_FAILURE("结果消息发送失败", DataAlarmSource.PROCESSING, 4),
     FILE_RESULT("文件结果处理失败", DataAlarmSource.PROCESSING, 2),
+    /** 同帧重复遥测参数被后值覆盖，归属数据校准一般告警。 */
+    CALIBRATION_DEDUP("数据去重", DataAlarmSource.CALIBRATION, 2),
     CALIBRATION_OUTLIER("校准野值", DataAlarmSource.CALIBRATION, 2),
     CALIBRATION_RULE("校准规则异常", DataAlarmSource.CALIBRATION, 4),
     CALIBRATION_CACHE("校准缓存失败", DataAlarmSource.CALIBRATION, 4),

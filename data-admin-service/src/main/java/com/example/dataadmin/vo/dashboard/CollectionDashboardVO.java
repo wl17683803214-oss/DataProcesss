@@ -1,5 +1,6 @@
 package com.example.dataadmin.vo.dashboard;
 
+import com.example.common.enums.CollectionRateUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,8 +66,8 @@ public class CollectionDashboardVO {
     /** 查询时间范围内的采集总条数。 */
     private long collectionCount;
 
-    /** 各采集接口最新接口流量之和，单位KB/s。 */
-    private double interfaceRateKbps;
+    /** 各采集接口最新接口流量之和，数值与自动换算的单位一起返回。 */
+    private String interfaceRateKbps = CollectionRateUnit.KILOBYTES.format(0D);
 
     public long getOnlineAgentCount() {
       return onlineAgentCount;
@@ -92,13 +93,16 @@ public class CollectionDashboardVO {
       collectionCount = v;
     }
 
-    public double getInterfaceRateKbps() {
+    /** 返回包含数值和单位的速度字符串。 */
+    public String getInterfaceRateKbps() {
       return interfaceRateKbps;
     }
 
-    public void setInterfaceRateKbps(double v) {
+    /** 保存包含数值和单位的速度字符串。 */
+    public void setInterfaceRateKbps(String v) {
       interfaceRateKbps = v;
     }
+
   }
 
   /** 折线图横轴和数据序列。 */
@@ -194,8 +198,8 @@ public class CollectionDashboardVO {
     /** 该发送方采集量占总采集量的百分比。 */
     private double percentage;
 
-    /** 该发送方所有接口最新流量之和，单位KB/s。 */
-    private double interfaceRateKbps;
+    /** 该发送方所有接口最新流量之和，数值与自动换算的单位一起返回。 */
+    private String interfaceRateKbps = CollectionRateUnit.KILOBYTES.format(0D);
 
     /** 状态中文名称。 */
     private String statusName;
@@ -235,13 +239,16 @@ public class CollectionDashboardVO {
     public double getPercentage() { return percentage; }
     public void setPercentage(double v) { percentage = v; }
 
-    public double getInterfaceRateKbps() {
+    /** 返回包含数值和单位的速度字符串。 */
+    public String getInterfaceRateKbps() {
       return interfaceRateKbps;
     }
 
-    public void setInterfaceRateKbps(double v) {
+    /** 保存包含数值和单位的速度字符串。 */
+    public void setInterfaceRateKbps(String v) {
       interfaceRateKbps = v;
     }
+
 
     public String getStatusName() {
       return statusName;

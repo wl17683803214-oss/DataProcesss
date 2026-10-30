@@ -9,7 +9,7 @@
         SELECT pg_advisory_unlock(1936289133, 1)
     </select>
     <!-- 明确列名，避免表结构变动影响查询。 -->
-    <sql id="sourceColumns">s.id, s.source_name, s.transfer_protocol, s.transfer_type, s.file_path, s.target_host, s.target_port, s.send_interval_millis, s.loop_enabled, s.remark, s.create_time, s.update_time</sql>
+    <sql id="sourceColumns">s.id, s.source_name, s.transfer_protocol, s.transfer_type, s.file_path, s.send_mode, s.multicast_interface, s.target_host, s.target_port, s.target_path, s.message_content, s.send_interval_millis, s.loop_enabled, s.remark, s.create_time, s.update_time</sql>
     <sql id="runColumns">id, source_id, run_status AS status_code, CAST(config_snapshot AS TEXT) AS config_snapshot, start_time, end_time, sent_unit_count, sent_byte_count, completed_loop_count, last_send_time, error_message, create_time, update_time</sql>
     <sql id="latestJoin">
         LEFT JOIN simulator_run_record r ON r.id = (
@@ -35,15 +35,19 @@
         SELECT COUNT(id) FROM simulator_run_record WHERE source_id = #{id} AND run_status IN (1,2,3)
     </select>
     <insert id="insertSource" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        INSERT INTO simulator_source_config (source_name, transfer_protocol, transfer_type, file_path, target_host, target_port, send_interval_millis, loop_enabled, remark)
-        VALUES (#{sourceName}, #{transferProtocol}, #{transferType}, #{filePath}, #{targetHost}, #{targetPort}, #{sendIntervalMillis}, #{loopEnabled}, #{remark})
+        INSERT INTO simulator_source_config (source_name, transfer_protocol, transfer_type, file_path, send_mode, multicast_interface, target_host, target_port, target_path, message_content, send_interval_millis, loop_enabled, remark)
+        VALUES (#{sourceName}, #{transferProtocol}, #{transferType}, #{filePath}, #{sendMode}, #{multicastInterface}, #{targetHost}, #{targetPort}, #{targetPath}, #{messageContent}, #{sendIntervalMillis}, #{loopEnabled}, #{remark})
     </insert>
     <update id="updateSource">
         UPDATE simulator_source_config SET
         source_name = #{sourceName},
         file_path = #{filePath},
+        send_mode = #{sendMode},
+        multicast_interface = #{multicastInterface},
         target_host = #{targetHost},
         target_port = #{targetPort},
+        target_path = #{targetPath},
+        message_content = #{messageContent},
         send_interval_millis = #{sendIntervalMillis},
         loop_enabled = #{loopEnabled},
         remark = #{remark},

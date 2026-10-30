@@ -2,6 +2,7 @@ package com.example.dataadmin.service.impl;
 
 import com.example.dataadmin.entity.ExperimentTask;
 import com.example.dataadmin.dto.task.TaskLifecycleEvent;
+import com.example.dataadmin.dto.task.TaskEvaluationRequest;
 import com.example.dataadmin.enums.ExperimentTaskStatus;
 import com.example.dataadmin.enums.TaskEndReason;
 import com.example.dataadmin.enums.TaskLifecycleEventType;
@@ -36,6 +37,24 @@ public class ExperimentTaskServiceImpl implements ExperimentTaskService {
     @Override
     public List<ExperimentTask> listTasks() {
         return experimentTaskMapper.findAll();
+    }
+
+    /** 在事务内保存手动评估，不限制任务生命周期状态。 */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void evaluate(TaskEvaluationRequest request) {
+        // 第一步：复用文本校验，防止内部调用绕过接口参数校验。
+        if (request == null) {
+            throw new IllegalArgumentException("试验任务评估参数不能为空");
+        }
+        requireText(request.getTaskId(), "试验任务编号不能为空");
+        requireText(request.getTaskEvaluation(), "试验任务评估不能为空");
+        // 第二步：只更新评估与更新时间，按影响行数判断任务是否存在。
+        int updated = experimentTaskMapper.updateEvaluation(
+                request.getTaskId().trim(), request.getTaskEvaluation().trim());
+        if (updated == 0) {
+            throw new IllegalArgumentException("试验任务不存在");
+        }
     }
 
     /** 按事件类型更新任务快照，并通过数据库条件处理重复和乱序消息。 */

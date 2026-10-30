@@ -38,6 +38,13 @@ public final class ControllerEnumData {
     /** 返回采集管理模块枚举。 */
     public static Map<String, List<EnumOptionVO>> collection() {
         Map<String, List<EnumOptionVO>> data = EnumData.create();
+        // 复用公共采集速率单位，保存英文值并向前端提供单位标签。
+        List<EnumOptionVO> rateUnits = new ArrayList<>();
+        for (com.example.common.enums.CollectionRateUnit unit
+                : com.example.common.enums.CollectionRateUnit.values()) {
+            rateUnits.add(new EnumOptionVO(unit.getValue(), unit.getLabel()));
+        }
+        data.put("receiveRateLimitUnit", rateUnits);
         EnumData.add(data, "interfaceType", BusinessEnums.InterfaceType.values());
         EnumData.add(data, "transferType", BusinessEnums.TransferType.values());
         EnumData.add(data, "transferProtocol", BusinessEnums.TransferProtocol.values());
@@ -50,6 +57,8 @@ public final class ControllerEnumData {
     /** 返回处理管理模块枚举。 */
     public static Map<String, List<EnumOptionVO>> processing() {
         Map<String, List<EnumOptionVO>> data = EnumData.create();
+        // 遥测类型直接复用协议定义，提供英文值和中文选项。
+        data.put("telemetryType", TelemetryTypeOptions.options());
         EnumData.add(data, "taskStatus", BusinessEnums.ProcessTaskStatus.values());
         EnumData.add(data, "ruleEnabled", BusinessEnums.Enabled.values());
         EnumData.add(data, "storeFlag", BusinessEnums.YesNo.values());

@@ -17,6 +17,8 @@ public class FepFileListItemVO {
     private String fileType;
     /** 文件字节数。 */
     private Long fileLength;
+    /** 图片像素分辨率，格式为宽×高，普通文件或未识别时为空。 */
+    private String resolution;
     /** 查询时生成的临时签名地址，默认一小时有效，前端可以直接展示或下载。 */
     private String fileUrl;
     /** 内部签名所需的对象名称，不属于接口出参。 */
@@ -37,6 +39,10 @@ public class FepFileListItemVO {
     public void setFileType(String value) { this.fileType = value; }
     public Long getFileLength() { return fileLength; }
     public void setFileLength(Long value) { this.fileLength = value; }
+    /** 获取图片分辨率。 */
+    public String getResolution() { return resolution; }
+    /** 设置图片分辨率。 */
+    public void setResolution(String value) { resolution = value; }
     public String getFileUrl() { return fileUrl; }
     public void setFileUrl(String value) { this.fileUrl = value; }
     public String getObjectName() { return objectName; }

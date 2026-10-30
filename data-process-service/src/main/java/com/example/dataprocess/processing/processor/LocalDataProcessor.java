@@ -10,14 +10,14 @@ import SatDataCenter.DataExchange.TmTc.Version.ProtoHeadInfo;
 import SatDataCenter.DataExchange.TmTc.Version.SubTopicName;
 import com.example.dataprocess.collection.CollectInterfaceStatistics;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
-import com.example.dataprocess.enums.LocalFormulaType;
+import com.example.common.formula.LuaFormulaEngine;
+import SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType;
 import com.example.dataprocess.mapper.TelemetryCodeMappingMapper;
 import com.example.dataprocess.protocol.rpc.PdxpDataPayload;
 import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 import com.example.dataprocess.protocol.rpc.ProtocolConfigParser;
 import com.example.dataprocess.tool.LittleEndianBitReader;
 import com.example.dataprocess.tool.PdxpParser;
-import com.example.dataprocess.tool.TelemetryFormulaEvaluator;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Timestamp;
 import org.slf4j.Logger;
@@ -28,11 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -55,12 +52,6 @@ public class LocalDataProcessor implements DataProcessor {
         if (alarmRecorder != null) { alarmRecorder.record(config, type, detail); }
     }
 
-    /** 时间参数的计数起点，直接使用协议约定的日历时间，不作时区偏移。 */
-    private static final LocalDateTime PARAMETER_TIME_EPOCH =
-            LocalDateTime.of(2000, 1, 1, 12, 0);
-    /** 四位秒小数完整表达十分之一毫秒精度。 */
-    private static final DateTimeFormatter PARAMETER_TIME_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSS");
     /** 本地数据处理日志。 */
     private static final Logger LOGGER = LoggerFactory.getLogger(
             LocalDataProcessor.class);
@@ -94,6 +85,8 @@ public class LocalDataProcessor implements DataProcessor {
         long startNanos = System.nanoTime();
         // 第一步：解析并校验协议配置字段。
         List<PdxpProtocolField> fields = fields(config.getPdxpFields());
+        // 同帧所有参数使用同一公式版本快照，配置同步不会切换到一半。
+        java.util.Map<String, LuaFormulaEngine.Compiled> formulas = config.getFormulaScripts();
         byte[] data = payload.getData();
         LittleEndianBitReader reader = new LittleEndianBitReader(data);
         Instant time = packet.getSendDate().atStartOfDay()
@@ -124,15 +117,14 @@ public class LocalDataProcessor implements DataProcessor {
         long duplicateCount = 0L;
         for (PdxpProtocolField item : fields) {
             byte[] raw = reader.read(item.getBitWidth());
-            BigInteger value = unsigned(raw);
             String tmSymbol = item.getTelemetryCode().trim();
             boolean duplicate = !decodedSymbols.add(tmSymbol);
             Telemetry.Builder telemetry = Telemetry.newBuilder()
                     .setTableIndex(item.getTableIndex())
                     .setTmSymbol(tmSymbol)
                     .setRawData(ByteString.copyFrom(raw));
-            // 按公式类型计算物理量，同时填写消息字段类型和展示文本。
-            fillValue(telemetry, item, raw, value);
+            // 直接传入原始字节；只有未配置公式时才按小端无符号整数输出原码。
+            BigDecimal stateValue = fillValue(config, formulas, telemetry, item, raw);
             if (duplicate) {
                 // 后出现的同代号参数覆盖前值，并在最终Proto中标记发生过去重。
 //                telemetry.setIsDepValue(true);
@@ -149,8 +141,22 @@ public class LocalDataProcessor implements DataProcessor {
             if (text(item.getSystemName())) {
                 telemetry.setSystemName(item.getSystemName().trim());
             }
-            state(telemetry, item, value);
-            recordState(config, telemetry, item, value);
+            // 数值按计算后的结果判定范围，文本和转换失败的原码不参与数值报警。
+            if (stateValue != null) {
+                try {
+                    state(telemetry, item, stateValue);
+                    recordState(config, telemetry, item, stateValue);
+                    recoverFormula(config, item, true);
+                } catch (RuntimeException exception) {
+                    telemetry.clearStateType();
+                    parameterFailure(config, item, "状态规则解析失败：" + exception.getMessage());
+                }
+            }
+            // 重复参数完成转换后记录覆盖前后信息，复用现有告警合并及异步入库。
+            if (duplicate) {
+                recordDuplicateAlarm(config, packet, time,
+                        message.getTelemetriesMap().get(tmSymbol), telemetry.build());
+            }
             message.putTelemetries(
                     telemetry.getTmSymbol(), telemetry.build());
         }
@@ -173,6 +179,32 @@ public class LocalDataProcessor implements DataProcessor {
         return Optional.of(result);
     }
 
+    /** 将同帧参数覆盖记录为数据校准一般告警，不依赖参数范围检查开关。 */
+    private void recordDuplicateAlarm(CollectInterfaceRuntimeConfig config,
+            PdxpParser.PdxpPacket packet, Instant frameTime,
+            Telemetry previous, Telemetry retained) {
+        // 未注入告警组件的离线解析入口保持可用。
+        if (alarmRecorder == null) {
+            return;
+        }
+        // 优先使用保留参数名称，缺失时沿用被覆盖参数名称，便于定位配置。
+        String parameterName = text(retained.getTmName())
+                ? retained.getTmName() : previous.getTmName();
+        // 摘要优先描述覆盖结果，详情由现有告警组件补充接口和任务上下文。
+        String detail = "同一帧内发现重复遥测参数；包序号：" + packet.getSequenceNumber()
+                + "；已用序号" + retained.getTableIndex() + "的参数覆盖序号"
+                + previous.getTableIndex() + "的参数，保留后出现的参数"
+                + "；数据帧时间：" + frameTime.atOffset(ZoneOffset.ofHours(8))
+                + "；被覆盖参数原码值：" + unsigned(previous.getRawData().toByteArray())
+                + "；被覆盖参数处理后值：" + previous.getValueText()
+                + "；保留参数原码值：" + unsigned(retained.getRawData().toByteArray())
+                + "；保留参数处理后值：" + retained.getValueText();
+        // 使用任务、接口和遥测代号合并同类告警，每次覆盖累计一次触发次数。
+        alarmRecorder.record(config, com.example.common.enums.DataAlarmType.CALIBRATION_DEDUP,
+                retained.getTmSymbol(), parameterName, null,
+                "同一帧内遥测代号相同，按参数序号升序解析，后值覆盖前值", detail);
+    }
+
     /** 根据消息业务标识确定本地处理子主题。 */
     private SubTopicName resolveBusiness(String businessId) {
         // 05开头的业务标识使用测试测量物理量子主题。
@@ -183,61 +215,80 @@ public class LocalDataProcessor implements DataProcessor {
         return SubTopicName.DATA_SUBSYSTEM_CSCL_PHYVALUE;
     }
 
-    /** 将原码转换为配置指定的物理量、字符串或时间。 */
-    private void fillValue(
+    /** 按公式编号执行脚本，失败只保留二进制原码，不生成虚假的计算值。 */
+    private BigDecimal fillValue(
+            CollectInterfaceRuntimeConfig config,
+            java.util.Map<String, LuaFormulaEngine.Compiled> formulas,
             Telemetry.Builder telemetry,
             PdxpProtocolField field,
-            byte[] raw,
-            BigInteger decodedValue) {
-        LocalFormulaType type = LocalFormulaType.fromCode(field.getFormulaType());
-        telemetry.setValueType(type.getValueType());
+            byte[] raw) {
         try {
-            // 字符串保持原始字节顺序，不将文本当作整数或代入公式。
-            if (type == LocalFormulaType.TEXT) {
-                if (field.getBitWidth() % 8 != 0) {
-                    throw new IllegalArgumentException("字符串参数位宽必须是8的整数倍");
-                }
-                telemetry.setValueText(new String(raw, StandardCharsets.UTF_8));
-                return;
-            }
-            // 未约定的旧类型保持已有原码语义，避免改变存量协议行为。
-            if (type == LocalFormulaType.RAW) {
+            if (!text(field.getFormulaType())) {
+                // 空公式是合法的原码输出场景，展示文本保留完整整数精度。
+                BigInteger decodedValue = unsigned(raw);
+                telemetry.setValueType(ValueType.VALUE_TYPE_RAW);
                 telemetry.setValue(decodedValue.doubleValue())
                         .setValueText(decodedValue.toString());
-                return;
+                return new BigDecimal(decodedValue);
             }
-            BigDecimal physicalValue = TelemetryFormulaEvaluator.evaluate(
-                    field.getFormulaDesc(), field.getProcessParam(), new BigDecimal(decodedValue));
-            if (type == LocalFormulaType.TIME) {
-                // 时间值必须是完整计数，禁止舍入掉十分之一毫秒信息。
-                long ticks = physicalValue.longValueExact();
-                if (ticks < -9007199254740992L || ticks > 9007199254740992L) {
-                    throw new IllegalArgumentException("时间计数超出消息数值字段的精确表示范围");
-                }
-                LocalDateTime time = PARAMETER_TIME_EPOCH
-                        .plusSeconds(Math.floorDiv(ticks, 10000L))
-                        .plusNanos(Math.floorMod(ticks, 10000L) * 100000L);
-                telemetry.setValue(ticks).setValueText(time.format(PARAMETER_TIME_FORMAT));
-                return;
+            String code = field.getFormulaType().trim();
+            LuaFormulaEngine.Compiled formula = formulas.get(code);
+            if (formula == null) {
+                throw new IllegalArgumentException("未找到公式" + code + "对应的脚本");
             }
-            // 数值类型按配置的小数位数四舍五入，文本保留末尾零。
-            if (configuredRange(field.getDecimalPlaces())) {
+            LuaFormulaEngine.Result result = LuaFormulaEngine.execute(
+                    formula, raw, field.getBitWidth(), field.getProcessParam());
+            ValueType type = result.getType();
+            telemetry.setValueType(type);
+            if (type == ValueType.VALUE_TYPE_TEXT) {
+                telemetry.setValueText(result.getText());
+                recoverFormula(config, field, false);
+                return null;
+            }
+            BigDecimal physicalValue = result.getValue();
+            // 结果类型由脚本声明，公式编号不参与任何类型分支。
+            if (type != ValueType.VALUE_TYPE_TIME && configuredRange(field.getDecimalPlaces())) {
                 int places = Integer.parseInt(field.getDecimalPlaces().trim());
                 if (places < 0 || places > 340) {
                     throw new IllegalArgumentException("小数位数必须在0到340之间");
                 }
                 physicalValue = physicalValue.setScale(places, RoundingMode.HALF_UP);
             }
-            double value = type == LocalFormulaType.FLOAT
+            double value = type == ValueType.VALUE_TYPE_FLOAT
                     ? (double) physicalValue.floatValue() : physicalValue.doubleValue();
             if (!Double.isFinite(value)) {
-                throw new IllegalArgumentException("物理量超出配置数据类型的有效范围");
+                throw new IllegalArgumentException("物理量超出结果数据类型的有效范围");
             }
-            telemetry.setValue(value).setValueText(physicalValue.toPlainString());
+            telemetry.setValue(value).setValueText(type == ValueType.VALUE_TYPE_TIME
+                    ? result.getText() : physicalValue.toPlainString());
+            return physicalValue;
         } catch (RuntimeException exception) {
-            // 错误配置不能静默生成错误物理量，保留参数身份供上层日志定位。
-            throw new IllegalArgumentException("本地参数转换失败，遥测代号："
-                    + field.getTelemetryCode() + "，原因：" + exception.getMessage(), exception);
+            // 二进制类型明确区分失败与正常原码数值，避免下游将默认零当有效结果。
+            telemetry.clearValue().clearValueText().clearStateType()
+                    .setValueType(ValueType.VALUE_TYPE_BINARY);
+            parameterFailure(config, field, exception.getMessage());
+            return null;
+        }
+    }
+
+    /** 复用现有参数级告警合并和异步入库，不阻断同帧其他参数。 */
+    private void parameterFailure(CollectInterfaceRuntimeConfig config, PdxpProtocolField field, String reason) {
+        if (alarmRecorder != null) {
+            alarmRecorder.record(config, com.example.common.enums.DataAlarmType.PROCESS_CONFIG,
+                    field.getTelemetryCode(), field.getTelemetryName(), null,
+                    "公式编号：" + trim(field.getFormulaType()),
+                    reason + "；当前参数保留原始字节，其他参数继续处理");
+        }
+    }
+
+    /** 后续数据正常计算后恢复该参数的处理告警。 */
+    private void recoverFormula(CollectInterfaceRuntimeConfig config, PdxpProtocolField field, boolean numeric) {
+        if (alarmRecorder != null && (!numeric
+                || !Integer.valueOf(1).equals(config.getParameterRangeCheckEnabled())
+                || !"1".equals(trim(field.getAlarmFlag()))
+                || configuredRange(field.getWarningValue()) || configuredRange(field.getNormalValue()))) {
+            alarmRecorder.recover(config, com.example.common.enums.DataAlarmType.PROCESS_CONFIG,
+                    field.getTelemetryCode(), null);
         }
     }
 
@@ -266,14 +317,14 @@ public class LocalDataProcessor implements DataProcessor {
     }
 
     /** 设置报警状态；报警时完全不写状态索引。 */
-    private void state(Telemetry.Builder telemetry, PdxpProtocolField field, BigInteger value) {
+    private void state(Telemetry.Builder telemetry, PdxpProtocolField field, BigDecimal value) {
         if (!"1".equals(trim(field.getAlarmFlag()))) {
             return;
         }
         // 预警范围未配置或使用横线占位时，继续回退到正常值范围。
         String ranges = configuredRange(field.getWarningValue())
                 ? field.getWarningValue() : field.getNormalValue();
-        StateMatch match = stateMatch(ranges, new BigDecimal(value));
+        StateMatch match = stateMatch(ranges, value);
         if (match == null) {
             telemetry.setStateType(StateType.STATE_TYPE_ALARM);
         } else {
@@ -285,7 +336,7 @@ public class LocalDataProcessor implements DataProcessor {
 
     /** 范围检查关闭时不生成数据告警，缺失规则作为配置异常记录。 */
     private void recordState(CollectInterfaceRuntimeConfig config, Telemetry.Builder telemetry,
-            PdxpProtocolField field, BigInteger value) {
+            PdxpProtocolField field, BigDecimal value) {
         if (alarmRecorder == null || !Integer.valueOf(1).equals(config.getParameterRangeCheckEnabled())
                 || !"1".equals(trim(field.getAlarmFlag()))) { return; }
         String ranges = configuredRange(field.getWarningValue()) ? field.getWarningValue() : field.getNormalValue();
@@ -298,7 +349,7 @@ public class LocalDataProcessor implements DataProcessor {
         } else if (telemetry.getStateType() == StateType.STATE_TYPE_ALARM) {
             alarmRecorder.record(config, com.example.common.enums.DataAlarmType.PARAMETER_RANGE,
                     field.getTelemetryCode(), field.getTelemetryName(), null, ranges,
-                    "判定原码值：" + value + "；未命中允许范围，当前任务继续处理");
+                    "判定结果值：" + value + "；未命中允许范围，当前任务继续处理");
         } else {
             alarmRecorder.recover(config, com.example.common.enums.DataAlarmType.PARAMETER_RANGE,
                     field.getTelemetryCode(), null);

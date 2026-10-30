@@ -455,11 +455,11 @@ public class ParameterWorkbookParser {
         }
         for (String field : Arrays.asList(
                 "tableIndex", "bitWidth", "telemetryName",
-                "telemetryCode", "formulaType")) {
+                "telemetryCode")) {
             String value = (String) bean.getPropertyValue(field);
             if (value == null || value.trim().isEmpty()) {
                 throw new IllegalArgumentException(
-                        "序号、位宽、遥测名称、遥测代号、公式类型不能为空");
+                        "序号、位宽、遥测名称、遥测代号不能为空");
             }
         }
         // 第二步：复用已有枚举，空白开关按否处理，其他内容保持文本原值。

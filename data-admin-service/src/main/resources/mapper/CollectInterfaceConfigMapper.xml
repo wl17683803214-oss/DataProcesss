@@ -71,6 +71,8 @@
         receive_path,
         enabled,
         rpc_enabled,
+        receive_rate_limit,
+        receive_rate_limit_unit,
         data_packet_count,
         remark,
         is_deleted,
@@ -279,6 +281,8 @@
             status,
             enabled,
             rpc_enabled,
+            receive_rate_limit,
+            receive_rate_limit_unit,
             data_packet_count,
             remark,
             is_deleted
@@ -300,6 +304,8 @@
             #{status},
             #{enabled},
             #{rpcEnabled},
+            #{receiveRateLimit},
+            #{receiveRateLimitUnit},
             #{dataPacketCount},
             #{remark},
             #{isDeleted}
@@ -323,6 +329,8 @@
             status = #{status},
             enabled = #{enabled},
             rpc_enabled = #{rpcEnabled},
+            receive_rate_limit = #{receiveRateLimit},
+            receive_rate_limit_unit = #{receiveRateLimitUnit},
             remark = #{remark},
             update_time = current_timestamp
         where id = #{id}

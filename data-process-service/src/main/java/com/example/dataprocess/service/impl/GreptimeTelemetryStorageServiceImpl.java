@@ -113,7 +113,12 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
             row.setTelemetryCode(telemetry.getTmSymbol().trim().isEmpty() ? entry.getKey() : telemetry.getTmSymbol());
             row.setTelemetryName(telemetry.getTmName());
             row.setValueType(telemetry.getValueType().name());
-            row.setValue(telemetry.getValue());
+            // 二进制保留项和文本没有有效数值，写空值，避免曲线出现虚假的零点。
+            boolean withoutNumber = telemetry.getValueType()
+                    == SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType.VALUE_TYPE_BINARY
+                    || telemetry.getValueType()
+                    == SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType.VALUE_TYPE_TEXT;
+            row.setValue(withoutNumber ? null : telemetry.getValue());
             row.setValueText(telemetry.getValueText());
             row.setRaw(telemetry.getRawData().toByteArray());
             row.setStateName(telemetry.getStateName());

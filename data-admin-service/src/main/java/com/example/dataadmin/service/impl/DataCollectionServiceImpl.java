@@ -9,6 +9,7 @@ import com.example.dataadmin.dto.collection.ProtocolSaveRequest;
 import com.example.dataadmin.entity.CollectInterfaceConfig;
 import com.example.dataadmin.entity.CollectProtocolConfig;
 import com.example.dataadmin.enums.BusinessEnums;
+import com.example.common.enums.CollectionRateUnit;
 import com.example.dataadmin.enums.EnumData;
 import com.example.dataadmin.mapper.CollectInterfaceConfigMapper;
 import com.example.dataadmin.mapper.CollectProtocolConfigMapper;
@@ -145,7 +146,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
             if (config.getDataPacketCount() == null) {
                 config.setDataPacketCount(0L);
             }
-            config.setInterfaceRateKbps(0D);
+            config.setInterfaceRateKbps(CollectionRateUnit.KILOBYTES.format(0D));
             taskInterfaces.computeIfAbsent(config.getTaskId(), ignored -> new ArrayList<>())
                     .add(config);
         }
@@ -189,7 +190,9 @@ public class DataCollectionServiceImpl implements DataCollectionService {
                 if (rate != null && rate.isNumber()) {
                     double rateKbps = rate.asDouble();
                     if (Double.isFinite(rateKbps) && rateKbps >= 0) {
-                        records.get(index).setInterfaceRateKbps(rateKbps);
+                        // 复用总览的单位选择和格式化规则，保持单字段返回格式一致。
+                        CollectionRateUnit rateUnit = CollectionRateUnit.fromKilobytes(rateKbps);
+                        records.get(index).setInterfaceRateKbps(rateUnit.format(rateKbps));
                     }
                 }
             } catch (JsonProcessingException ignored) {
@@ -436,6 +439,10 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         // HTTP和文件交换固定关闭RPC处理，其他协议未传开关时使用本地处理。
         config.setRpcEnabled(httpInterface || fepProtocol || request.getRpcEnabled() == null
                 ? 0 : request.getRpcEnabled());
+        // 接收限速仅对套接字接口生效，清空上限即同时清空单位。
+        config.setReceiveRateLimit(httpInterface ? null : request.getReceiveRateLimit());
+        config.setReceiveRateLimitUnit(httpInterface || request.getReceiveRateLimit() == null
+                ? null : request.getReceiveRateLimitUnit());
         config.setRemark(request.getRemark());
         return config;
     }
@@ -444,6 +451,14 @@ public class DataCollectionServiceImpl implements DataCollectionService {
      * 校验接口状态和关联协议配置。
      */
     private void validateInterfaceRequest(InterfaceSaveRequest request) {
+        // 先校验限速数值和单位，HTTP不接受限速配置。
+        if (request.getReceiveRateLimit() != null) {
+            if (isHttp(request.getTransferType())) {
+                throw new IllegalArgumentException("只有UDP和TCP接口支持接收限速");
+            }
+            com.example.common.enums.CollectionRateUnit.require(request.getReceiveRateLimitUnit())
+                    .bytesPerSecond(request.getReceiveRateLimit());
+        }
         validateEnabled(request.getEnabled() == null ? 1 : request.getEnabled());
         // 传输协议必须匹配采集接口使用的固定枚举。
         if (EnumData.labelOf(BusinessEnums.TransferProtocol.values(),

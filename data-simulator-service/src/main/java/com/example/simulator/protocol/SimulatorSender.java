@@ -3,15 +3,19 @@ package com.example.simulator.protocol;
 import com.example.simulator.config.SimulatorProperties;
 import com.example.simulator.model.SourceConfig;
 import com.example.simulator.enums.ProtocolProfile;
+import com.example.simulator.enums.SendMode;
 import com.example.simulator.runtime.ExecutionContext;
 import com.example.common.protocol.fep.FepProtocolTool;
+import java.io.Closeable;
 import java.io.DataInputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.charset.StandardCharsets;
 import java.net.*;
 import java.nio.file.*;
 
-/** 独立模拟源发送实现，FEP编解码直接复用公共模块。 */
+/** 独立模拟源发送实现，FEP编解码复用公共模块。 */
 public class SimulatorSender {
     private final SimulatorProperties properties;
 
@@ -21,7 +25,10 @@ public class SimulatorSender {
 
     /** 根据协议分派，保持每次执行资源隔离。 */
     public void send(SourceConfig config, ExecutionContext context) throws Exception {
-        if (ProtocolProfile.of(config.transferProtocol) == ProtocolProfile.PDXP) {
+        ProtocolProfile profile = ProtocolProfile.of(config.transferProtocol);
+        if (profile == ProtocolProfile.JSON) {
+            sendHttp(config, context);
+        } else if (profile == ProtocolProfile.PDXP) {
             sendPdxp(config, context);
         } else {
             sendFep(config, context);
@@ -33,8 +40,9 @@ public class SimulatorSender {
         PdxpEncoder encoder = new PdxpEncoder(config.pdxp);
         int frameLength = config.pdxp.inputFrameLength;
         InetAddress target = InetAddress.getByName(config.targetHost);
-        try (DatagramSocket socket = new DatagramSocket()) {
-            context.bind(socket);
+        DatagramSocket socket = createUdpSocket(config);
+        try (DatagramSocket closeableSocket = socket) {
+            context.bind(closeableSocket);
             do {
                 context.check();
                 try (RandomAccessFile input = new RandomAccessFile(config.filePath, "r")) {
@@ -47,7 +55,7 @@ public class SimulatorSender {
                         context.check();
                         input.readFully(frame);
                         byte[] packet = encoder.encode(frame);
-                        socket.send(new DatagramPacket(packet, packet.length, target, config.targetPort));
+                        closeableSocket.send(new DatagramPacket(packet, packet.length, target, config.targetPort));
                         context.sent(packet.length, true);
                         context.pause(config.sendIntervalMillis);
                     }
@@ -55,6 +63,83 @@ public class SimulatorSender {
                 context.completeRound();
             } while (config.loopEnabled == 1);
         }
+    }
+
+    /** 按发送模式创建单播或组播UDP套接字。 */
+    private DatagramSocket createUdpSocket(SourceConfig config) throws Exception {
+        if (SendMode.of(config.sendMode) == SendMode.UNICAST) {
+            return new DatagramSocket();
+        }
+        MulticastSocket socket = new MulticastSocket();
+        try {
+            // 组播默认只允许本地网段转发，防止无意跨路由扩散。
+            socket.setTimeToLive(1);
+            if (config.multicastInterface != null) {
+                InetAddress localAddress = InetAddress.getByName(config.multicastInterface);
+                NetworkInterface networkInterface = NetworkInterface.getByInetAddress(localAddress);
+                if (networkInterface == null || !networkInterface.isUp()) {
+                    throw new IllegalArgumentException("找不到可用的组播出口网卡");
+                }
+                socket.setNetworkInterface(networkInterface);
+            }
+            return socket;
+        } catch (Exception exception) {
+            socket.close();
+            throw exception;
+        }
+    }
+
+    /** 将配置的JSON正文按HTTP POST重复发送，并沿用现有循环与统计控制。 */
+    private void sendHttp(SourceConfig config, ExecutionContext context) throws Exception {
+        byte[] body = config.messageContent.getBytes(StandardCharsets.UTF_8);
+        do {
+            context.check();
+            URL target = new URI("http", null, config.targetHost, config.targetPort,
+                    config.targetPath, null, null).toURL();
+            HttpURLConnection connection = (HttpURLConnection) target.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setInstanceFollowRedirects(false);
+            connection.setConnectTimeout(properties.getConnectTimeoutMillis());
+            connection.setReadTimeout(properties.getResponseTimeoutMillis());
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            connection.setRequestProperty("Accept", "application/json");
+            // 将连接登记到运行上下文，停止操作可立即断开当前请求。
+            context.bind(new Closeable() {
+                @Override
+                public void close() {
+                    connection.disconnect();
+                }
+            });
+            try {
+                // 发送本次完整JSON请求体。
+                try (OutputStream output = connection.getOutputStream()) {
+                    output.write(body);
+                    output.flush();
+                }
+                int responseCode = connection.getResponseCode();
+                InputStream response = responseCode >= 400
+                        ? connection.getErrorStream() : connection.getInputStream();
+                if (response != null) {
+                    try (InputStream input = response) {
+                        byte[] buffer = new byte[1024];
+                        while (input.read(buffer) != -1) {
+                            context.check();
+                        }
+                    }
+                }
+                if (responseCode < 200 || responseCode >= 300) {
+                    throw new IllegalStateException("HTTP接收端返回失败状态码：" + responseCode);
+                }
+                context.sent(body.length, true);
+                context.completeRound();
+            } finally {
+                connection.disconnect();
+            }
+            if (config.loopEnabled == 1) {
+                context.pause(Math.max(1, config.sendIntervalMillis));
+            }
+        } while (config.loopEnabled == 1);
     }
 
     /** 每轮建立独立连接，兼容接收端确认后主动断开的行为。 */

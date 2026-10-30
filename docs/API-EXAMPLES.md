@@ -6,6 +6,29 @@
 
 `GET /processing/processed` 的 `parameterValue` 支持字符串或数值：`VALUE_TYPE_TEXT` 从 `value_text` 返回，例如 `{"telemetryCode":"FKT007","parameter":"字符串类","parameterValue":"T001"}`；其他类型继续返回数值，无记录时为空。曲线接口保持原有数值格式。
 
+两个接口均可增加 `telemetryType` 筛选，例如：
+
+```text
+GET /processing/processed?taskId=TASK-20260908-001&selectionType=1&targetId=0&telemetryType=TM_TYPE_REAL_TM
+GET /processing/processed/curve?taskId=TASK-20260908-001&selectionType=2&targetId=0&telemetryType=TM_TYPE_DELAY_TM
+```
+
+前端先调用 `GET /processing/findData`，新增选项如下（其他枚举继续返回）：
+
+```json
+{
+  "telemetryType": [
+    { "value": "TM_TYPE_UNSPECIFIED", "label": "未指定" },
+    { "value": "TM_TYPE_REAL_TM", "label": "实时遥测" },
+    { "value": "TM_TYPE_DELAY_TM", "label": "延时遥测" },
+    { "value": "TM_TYPE_MEMORY_TM", "label": "存储遥测" },
+    { "value": "TM_TYPE_DEVICE_TM", "label": "设备遥测" }
+  ]
+}
+```
+
+以上对象位于统一响应的 `data` 中。筛选参数传选项的英文 `value`，对应 Proto 的 `tm_type`，不传或留空表示全部；`TM_TYPE_UNSPECIFIED` 仅筛选未指定类型。非法类型返回“遥测类型不正确”。无匹配数据时保留勾选参数，最新值为空，曲线时间和数值数组为空。类型条件在取最新记录或最近120个有效曲线点之前生效。
+
 `GET /visualization/widgets/{widgetId}/files` 返回的 `fileUrl` 是临时签名读取地址，默认3600秒有效，完整参数必须保留，过期后重新查询列表。前端调用及部署配置见[图片与文件访问地址](前端对接-图片与文件访问地址.md)。MQ文件消息中的持久地址沿用原有格式。
 
 可视化配置导入导出新增三个接口：`GET /visualization/config/export`、`POST /visualization/config/import/preview`和`POST /visualization/config/import`。导出成功返回JSON附件本身，检查和导入按`multipart/form-data`上传`file`并通过查询参数提供`taskId`，成功结果使用统一响应。完整配置文件、检查结果及前端调用流程见[可视化配置导入导出对接](前端对接-可视化配置导入导出.md)。
@@ -44,9 +67,9 @@ Authorization: Bearer <token>
     "taskId": "TASK-20260908-001", // 外部试验任务编号
     "range": "3h", // 查询时间范围
     "sampleTime": "2026-08-27T10:30:01", // Redis实时指标最后更新时间
-    "summary": { "onlineAgentCount": 6, "senderCount": 7, "collectionCount": 12500, "interfaceRateKbps": 7.81 },
+    "summary": { "onlineAgentCount": 6, "senderCount": 7, "collectionCount": 12500, "interfaceRateKbps": "7.81 KB/s" },
     "lineChart": { "timePoints": ["10:29:50"], "latestWindowStartTime": "2026-08-27T10:24:50", "latestWindowEndTime": "2026-08-27T10:29:50", "series": [{ "systemName": "实验综合控制系统", "values": [12500] }] }, // 仅展示最新点，实际近3小时返回36点
-    "table": [{ "systemName": "实验综合控制系统", "interfaceCount": 3, "protocols": ["UDP", "TCP"], "collectionCount": 12500, "percentage": 100.0, "interfaceRateKbps": 7.81, "statusName": "在线" }]
+    "table": [{ "systemName": "实验综合控制系统", "interfaceCount": 3, "protocols": ["UDP", "TCP"], "collectionCount": 12500, "percentage": 100.0, "interfaceRateKbps": "7.81 KB/s", "statusName": "在线" }]
   }
 }
 ```
@@ -768,6 +791,7 @@ roleIds=20,21
         "rpcEnabled": 1, // 是否启用RPC处理：0否 1是
         "rpcEnabledName": "是", // 是否启用RPC处理中文名称
         "dataPacketCount": 25600, // 仍保留的统计记录累计接收数据包数量
+        "interfaceRateKbps": "128.5 KB/s", // 速率直接包含单位，达到1024 KB/s后自动换算为MB/s，缺失时为0 KB/s
         "remark": "主链路" // 备注信息
       }
     ]
@@ -1647,7 +1671,7 @@ Authorization: Bearer <登录令牌>
 }
 ```
 
-基线设备接口路径配置项为 `baseline.sso.trial-param-table-list-path`，请求使用POST JSON分页，不传额外筛选。读取 `paramData.sheets`，每个Sheet作为一个设备，Sheet名必须为 `通道名称_业务标识`。外层 `tableName`、`fileName` 不作为设备身份。缺少校准公式允许留空，参数仍须包含位宽、遥测名称、遥测代号和公式类型等必填字段；指令表不能作为遥测参数导入。跨参数表同名设备报错，避免相互覆盖。空参数数据跳过，整批校验成功后事务入库，不删除未返回设备，不修改卫星。
+基线设备接口路径配置项为 `baseline.sso.trial-param-table-list-path`，请求使用POST JSON分页，不传额外筛选。读取 `paramData.sheets`，每个Sheet作为一个设备，Sheet名必须为 `通道名称_业务标识`。外层 `tableName`、`fileName` 不作为设备身份。缺少校准公式允许留空，参数仍须包含位宽、遥测名称、遥测代号等必填字段，公式类型允许为空；指令表不能作为遥测参数导入。跨参数表同名设备报错，避免相互覆盖。空参数数据跳过，整批校验成功后事务入库，不删除未返回设备，不修改卫星。
 
 ### `POST /processing/rules/sync-baseline`
 
@@ -2278,6 +2302,7 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
       "taskId": "TASK-20260908-001", // 外部试验任务编号
       "requirementId": "REQ-20260908-001", // 关联需求业务编号
       "taskName": "遥测试验任务", // 试验任务名称
+      "taskEvaluation": "试验数据完整，任务执行符合预期。", // 手动评估内容，未评估时为null
       "taskPriority": 5, // 任务优先级
       "planId": "b38cb6f7-7cb6-4fae-bbb5-d5b55c808143", // 试验方案内部编号
       "planCode": "PLAN-001", // 试验方案业务编码
@@ -2292,11 +2317,35 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
   ]
 }
 ```
+### `POST /experiment/tasks/evaluate`
+
+手动提交评估，不限制任务状态，重复提交覆盖原内容。任务编号和评估内容不能为空白，任务编号最多100个字符，保存时去除两端空白。任务不存在时返回中文错误提示。
+
+入参：
+
+```json
+{
+  "taskId": "TASK-20260908-001",
+  "taskEvaluation": "试验数据完整，任务执行符合预期。"
+}
+```
+
+成功出参：
+
+```json
+{
+  "code": 200,
+  "message": "操作成功"
+}
+```
+
+保存后通过 `GET /experiment/tasks` 获取 `taskEvaluation`。已有数据库先执行 `sql/20261029_add_task_evaluation.sql`。
+
 ## PDXP本地参数解析示例
 
 采集接口选择 `rpcEnabled=0` 时，通过 `protocolConfigId` 取得协议配置，将 `configParams.fields` 按 `tableIndex` 数字升序排列，再按 `bitWidth` 连续解码并组装遥测Protobuf消息。
 
-当字段的 `alarmFlag` 为 `"1"` 时，优先使用 `warningValue` 状态范围，为空时使用 `normalValue`。命中范围后写入 `STATE_TYPE_NORMAL`、从零开始的 `stateIndex` 和范围中文名称 `stateName`；未命中时只写入 `STATE_TYPE_ALARM`，不写入 `stateIndex` 和 `stateName`。本地处理按 `formulaType` 设置 `valueType`：300为 `VALUE_TYPE_FLOAT`，301为 `VALUE_TYPE_DOUBLE`，302为 `VALUE_TYPE_TEXT`，303为 `VALUE_TYPE_TIME`；未约定的旧类型保持 `VALUE_TYPE_RAW`。状态范围仍按解码原始整数判断。
+当字段的 `alarmFlag` 为 `"1"` 时，优先使用 `warningValue` 状态范围，为空时使用 `normalValue`。命中范围后写入 `STATE_TYPE_NORMAL`、从零开始的 `stateIndex` 和范围中文名称 `stateName`；未命中时只写入 `STATE_TYPE_ALARM`。本地处理统一按 `formulaType` 匹配已导入Lua脚本，结果类型由脚本返回，300至303不再内置。公式为空输出 `VALUE_TYPE_RAW`；公式缺失或执行失败只保留 `VALUE_TYPE_BINARY` 原码并产生参数处理告警，其他参数继续。状态范围按处理后的数值判断，文本不参与数值范围判定。
 
 | tableIndex | telemetryCode | bitWidth | 读取位置 | 原始值 |
 | --- | --- | --- | --- | --- |
@@ -2304,7 +2353,7 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
 | 2 | TM002 | 9 | 第3～11位 | 377 |
 | 3 | TM003 | 4 | 第12～15位 | 10 |
 
-上述示例的数据域在去掉前5字节自定义数据和末尾4字节遥测帧头后为十六进制 `CD AB`。每字节低位先读，跨字节连续读取，该取位示例未配置公式类型，按无符号小端整数解释；配置300或301时还会计算处理公式并按小数位数四舍五入。
+上述示例的数据域在去掉前5字节自定义数据和末尾4字节遥测帧头后为十六进制 `CD AB`。每字节低位先读，跨字节连续读取，该取位示例未配置公式类型，按无符号小端整数解释；配置公式编号时将字段字节交给对应Lua脚本，数值结果按小数位数四舍五入。
 
 每行生成一个 `Telemetry`，汇总为一帧 `TelemetryMessage`：`table_index` 对应 `tableIndex`，`tm_symbol` 和字典键对应 `telemetryCode`，`tm_name` 对应 `telemetryName`。该未配置公式类型的示例中，`value_type` 使用原码枚举；`value_text` 保存精确十进制值，`value` 使用协议的双精度数值（大整数可能产生舍入）；`raw_data` 保存低位对齐的小端字段原码，末字节高位补零。TM002的原码为 `79 01`。
 
@@ -2314,19 +2363,19 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
 
 ### 本地公式与类型示例
 
-数值原始字节继续按小端无符号整数解码为x，不按IEEE 754位模式重解释。配置示例：
+原始字段字节统一交给Lua公式，解码方式由公式决定。先导入本项目提供的300脚本，再使用以下配置：
 
 ```json
 {"id":81,"tableIndex":1,"bitWidth":32,"telemetryCode":"TM001","formulaType":"300","formulaDesc":"y=a*x+b","processParam":"0.02/1","decimalPlaces":"2"}
 ```
 
-当x=100时，a=0.02、b=1，得到y=3；Proto的value为3，valueText为“3.00”，valueType为VALUE_TYPE_FLOAT。类型301使用VALUE_TYPE_DOUBLE。value是二进制浮点字段，不保存末尾零；valueText保存修约后的十进制展示。公式支持四则运算、括号、正负号及科学计数法；参数依次绑定a、b等变量，空公式或横线占位符直接使用x。处理公式formulaDesc与用于野值检测的calibrationFormula独立。
+300示例脚本将字节按小端无符号整数解码为x；当x=100时，a=0.02、b=1，得到y=3，Proto的value为3，valueText为“3.00”，valueType为VALUE_TYPE_FLOAT。formulaDesc不再执行，仅保留历史描述。处理参数依次传入脚本params数组，由各公式处理默认值。公式类型为空才直接输出RAW；横线不是空公式，会按未匹配编号告警。calibrationFormula仍独立用于野值检测。
 
-类型302：例如bitWidth=24、字节41 42 43，valueText为“ABC”，valueType为VALUE_TYPE_TEXT，value保持默认值0；按UTF-8解码，位宽必须为8的整数倍，不执行处理公式。
+302示例脚本：例如bitWidth=24、字节41 42 43，valueText为“ABC”，valueType为VALUE_TYPE_TEXT；按UTF-8解码，位宽必须为8的整数倍。文本无有效数值，数据库value存NULL，消息使用方须按value_type读取文本，不能使用默认数值零。
 
-类型303：value保存从2000-01-01 12:00:00开始的0.1毫秒整数计数，valueType为VALUE_TYPE_TIME；例如计数10001对应valueText“2000-01-01 12:00:01.0001”。配置公式时，公式结果必须是整数计数，不按decimalPlaces舍入；直接在约定日历起点上累加，不作时区偏移。格式固定为yyyy-MM-dd HH:mm:ss.SSSS。
+303示例脚本：value保存从2000-01-01 12:00:00开始的0.1毫秒整数计数，valueType为VALUE_TYPE_TIME；计数10001对应valueText“2000-01-01 12:00:01.0001”。时间行为由脚本调用工具选择，不由Java按303编号硬编码，不按decimalPlaces舍入，不作时区偏移。
 
-非法公式、缺少系数、除零、数值溢出或非整数时间计数会终止当前帧后续处理，并记录中文错误上下文；身份完整且数据域可提取时只保存包含各类头的异常整帧；不会用原码伪装成计算成功的物理量。
+找不到公式、参数无效、脚本执行失败或结果不合法时，仅将当前参数保留为BINARY原码，不生成计算值，并写参数处理失败告警；同帧其他参数继续。BINARY不参与数值校准，数据库value存NULL。导入或修复后调用POST /processing/formulas/sync，后续计算正常时自动恢复告警；历史失败数据不自动补算。完整规范及文件见docs/lua-formulas/README.md。
 ### 遥测整帧检查结果与查询
 
 `GET /processing/realtime/telemetry?taskId=728101&interfaceId=14` 查询正常及异常整帧。当前记录示例：
@@ -2681,3 +2730,49 @@ RPC存储按返回卫星和通道代号构造独立身份节点。返回缺少�
 ```
 
 所有前缀下路径统一应答，当前不查询配置、不检查启用状态、不入库、不发布消息、不统计；返回成功仅表示请求已收到且JSON能解析。
+
+## 采集接口接收限速字段片段
+
+POST /collection/interfaces/create 和 POST /collection/interfaces/update 在原完整请求中增加：
+
+```json
+{
+  "receiveRateLimit": 100,
+  "receiveRateLimitUnit": "kilobytes_per_second"
+}
+```
+
+表示100 KB/s，单位选项从 GET /collection/findData 的 data.receiveRateLimitUnit 获取。列表与详情返回 receiveRateLimit、receiveRateLimitUnit、receiveRateLimitUnitName。取消时把两个字段置为null；更新时不传上限也会清除旧配置。仅UDP和TCP支持，HTTP切换时前端清空。TCP等待额度后读取，UDP超限整包丢弃，允许有限突发。完整页面说明见[前端对接文档](前端对接-任务评估与遥测筛选及采集限速.md)。
+
+## 图片接收分辨率返回字段
+
+GET /visualization/widgets/{widgetId}/files 的 data.records 每项新增 resolution，例如：
+
+```json
+{
+  "fileName": "载荷图像001.png",
+  "fileType": "png",
+  "fileLength": 245760,
+  "resolution": "1920×1080"
+}
+```
+
+以上为字段片段，其他返回字段不变。尺寸单位为像素，普通文件、识别失败或历史未识别记录返回null，前端显示“—”；无需增加请求参数。已有数据库执行 sql/20261029_add_file_resolution.sql。
+
+### Lua公式分页、覆盖与批量删除
+
+查询：GET /processing/formulas?pageNum=1&pageSize=20&code=109，支持name按名称模糊匹配。响应示例：
+
+```json
+{"code":200,"message":"操作成功","data":{"pageNum":1,"pageSize":20,"total":1,"records":[{"code":"109","name":"浮点源码线性转换","createTime":"2026-10-30T10:00:00","updateTime":"2026-10-30T10:00:00"}]}}
+```
+
+同编号Lua再次导入会覆盖当前源码，保留createTime并更新updateTime，不再有history或version入参、出参。同源码重复导入不改变更新时间。导入后调用POST /processing/formulas/sync或重新启动接口，才让后续帧使用更新脚本。单脚本导出GET /processing/formulas/export?code=109，文件名109.lua。
+
+批量删除：POST /processing/formulas/batch-delete。
+
+```json
+{"codes":["100","109"]}
+```
+
+成功响应data为删除条数。单次1到100项，重复编号只计一次；任一编号不存在或被任意任务的有效参数配置引用时，返回400并整批不删，错误消息列出对应编号。删除成功后自动提交后台同步，响应并不表示同步已经完成。

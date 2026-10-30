@@ -21,11 +21,11 @@ public class RunRecord {
     public LocalDateTime startTime;
     /** 结束时间。 */
     public LocalDateTime endTime;
-    /** 已发送数据单元数量，包含FEP结束空单元。 */
+    /** 已发送数量：PDXP帧、FEP数据单元或HTTP成功请求。 */
     public long sentUnitCount;
     /** 已发送应用层协议字节数，FEP包含请求包。 */
     public long sentByteCount;
-    /** 已完成文件交换或读取轮数。 */
+    /** 已完成文件读取、文件交换或HTTP请求轮数。 */
     public long completedLoopCount;
     /** 最近发送时间。 */
     public LocalDateTime lastSendTime;

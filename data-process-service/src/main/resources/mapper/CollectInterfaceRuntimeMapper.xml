@@ -16,6 +16,8 @@
             interface_config.transfer_type,
             interface_config.transfer_protocol,
             interface_config.rpc_enabled,
+            interface_config.receive_rate_limit,
+            interface_config.receive_rate_limit_unit,
             interface_config.protocol_config_id,
             protocol_config.config_params as protocol_config_params,
             coalesce(rule_config.parameter_range_check_enabled, 0)

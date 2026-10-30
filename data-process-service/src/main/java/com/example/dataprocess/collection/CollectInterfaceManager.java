@@ -35,6 +35,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 /** 根据数据库配置动态启动和停止采集接口。 */
 @Component
 public class CollectInterfaceManager implements DisposableBean {
+    /** 同一批本地接口共用已编译公式，不在接收线程查库。 */
+    @Autowired
+    private FormulaRuntimeLoader formulaRuntimeLoader;
     /** 告警组件采用独立注入，复用已有离线构造入口。 */
     @org.springframework.beans.factory.annotation.Autowired
     private com.example.dataprocess.alarm.DataAlarmRecorder alarmRecorder;
@@ -183,6 +186,8 @@ public class CollectInterfaceManager implements DisposableBean {
 
     /** 每批同步仅为PDXP本地处理加载设备身份和解析字段。 */
     private void attachPdxpFields(List<CollectInterfaceRuntimeConfig> configs) {
+        // 本批第一次遇到本地PDXP接口才读取公式，其他协议不依赖公式表。
+        Map<String, com.example.common.formula.LuaFormulaEngine.Compiled> formulas = null;
         Map<Long, List<PdxpProtocolField>> fieldsByDevice = new HashMap<>();
         Map<Long, PdxpFrameSource> sourceByDevice = new HashMap<>();
         for (CollectInterfaceRuntimeConfig config : configs) {
@@ -214,6 +219,11 @@ public class CollectInterfaceManager implements DisposableBean {
                 throw new IllegalArgumentException("PDXP协议关联的设备没有有效参数：" + deviceId);
             }
             config.setPdxpFields(fields);
+            if (formulas == null) {
+                formulas = formulaRuntimeLoader == null ? java.util.Collections.emptyMap()
+                        : formulaRuntimeLoader.load();
+            }
+            config.setFormulaScripts(formulas);
         }
     }
 
@@ -274,6 +284,7 @@ public class CollectInterfaceManager implements DisposableBean {
             current.getConfig().setDeviceSatelliteId(config.getDeviceSatelliteId());
             current.getConfig().setDeviceSatelliteName(config.getDeviceSatelliteName());
             current.getConfig().setPdxpFields(config.getPdxpFields());
+            current.getConfig().setFormulaScripts(config.getFormulaScripts());
             return;
         }
         // 只有新启动或运行配置变化的接口才查询基线，查询失败仍沿用容错规则。

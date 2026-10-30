@@ -17,6 +17,12 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
             UdpInterfaceReceiver.class);
     /** 接口配置快照。 */
     private final CollectInterfaceRuntimeConfig config;
+    /** UDP整包接收额度。 */
+    private final InterfaceReceiveLimiter receiveLimiter;
+    /** 超限累计丢包数，仅在汇总日志中输出。 */
+    private long droppedPackets;
+    /** 最近一次汇总日志时间。 */
+    private long lastDropLogNanos;
     /** 已绑定单播监听或加入组播的UDP端点。 */
     private final UdpTool.DatagramEndpoint endpoint;
     /** 当前接口对应的协议会话。 */
@@ -37,6 +43,7 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
             UdpTool.DatagramEndpoint endpoint,
             ProtocolHandler.UdpSession protocolSession) {
         this.config = config;
+        this.receiveLimiter = new InterfaceReceiveLimiter(config);
         this.endpoint = endpoint;
         this.protocolSession = protocolSession;
     }
@@ -75,6 +82,17 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
         try {
             while (running && endpoint.isOpen()) {
                 UdpTool.ReceivedPacket packet = endpoint.receivePacket();
+                // 超限报文整包丢弃，不提交协议解析和后续入库。
+                if (!receiveLimiter.acceptDatagram(packet.getData().length)) {
+                    droppedPackets++;
+                    long now = System.nanoTime();
+                    if (lastDropLogNanos == 0 || now - lastDropLogNanos >= 5000000000L) {
+                        LOGGER.warn("UDP接收超出速率上限，接口编号：{}，累计丢弃报文数：{}",
+                                config.getInterfaceId(), droppedPackets);
+                        lastDropLogNanos = now;
+                    }
+                    continue;
+                }
                 try {
                     protocolSession.handle(packet);
                 } catch (RuntimeException exception) {
@@ -93,6 +111,12 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
                 LOGGER.error("UDP采集接口接收失败，接口编号：{}",
                         config.getInterfaceId(), exception);
             }
+        } finally {
+            // 接口结束时补充最终累计数，避免最后一个汇总窗口的丢包遗漏。
+            if (droppedPackets > 0) {
+                LOGGER.warn("UDP接收任务结束，接口编号：{}，累计超限丢弃报文数：{}",
+                        config.getInterfaceId(), droppedPackets);
+            }
         }
     }
 
@@ -100,6 +124,7 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
     @Override
     public void stop() {
         running = false;
+        receiveLimiter.stop();
         try {
             // 关闭套接字会解除当前采集线程的阻塞接收。
             endpoint.close();

@@ -239,18 +239,20 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<ProcessedTelemetryVO> listProcessedTelemetry(String taskId,
-            Integer selectionType, Long targetId) {
+            Integer selectionType, Long targetId, String telemetryType) {
+        // 将可选协议遥测类型传递到最新值查询条件。
         return processedTelemetryQueryService.latest(
-                requireTelemetryTaskId(taskId), selectionType, targetId);
+                requireTelemetryTaskId(taskId), selectionType, targetId, telemetryType);
     }
 
     /** 与最新值使用同一批勾选参数，分别查询各参数的最近曲线点。 */
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<ProcessedTelemetryCurveVO> listProcessedTelemetryCurves(String taskId,
-            Integer selectionType, Long targetId) {
+            Integer selectionType, Long targetId, String telemetryType) {
+        // 将可选协议遥测类型传递到曲线查询条件。
         return processedTelemetryQueryService.curves(
-                requireTelemetryTaskId(taskId), selectionType, targetId);
+                requireTelemetryTaskId(taskId), selectionType, targetId, telemetryType);
     }
     /** 异常帧继续使用原分页接口和响应字段。 */
     @Override

@@ -114,10 +114,11 @@ public class DataProcessingController {
     public ApiResponse<List<ProcessedTelemetryVO>> listProcessedTelemetry(
             @RequestParam String taskId,
             @RequestParam(defaultValue = "1") Integer selectionType,
-            @RequestParam(defaultValue = "0") Long targetId) {
+            @RequestParam(defaultValue = "0") Long targetId,
+            @RequestParam(required = false) String telemetryType) {
         // 按表格场景取得已勾选参数；可视化表格传自己的组件主键。
         return ApiResponse.success(processingService.listProcessedTelemetry(
-                taskId, selectionType, targetId));
+                taskId, selectionType, targetId, telemetryType));
     }
 
     /** 查询当前任务全部已勾选参数的最近曲线点。 */
@@ -125,10 +126,11 @@ public class DataProcessingController {
     public ApiResponse<List<ProcessedTelemetryCurveVO>> listProcessedTelemetryCurves(
             @RequestParam String taskId,
             @RequestParam(defaultValue = "2") Integer selectionType,
-            @RequestParam(defaultValue = "0") Long targetId) {
+            @RequestParam(defaultValue = "0") Long targetId,
+            @RequestParam(required = false) String telemetryType) {
         // 每条曲线按自己的组件勾选查询，并保留实际采样时间轴。
         return ApiResponse.success(processingService.listProcessedTelemetryCurves(
-                taskId, selectionType, targetId));
+                taskId, selectionType, targetId, telemetryType));
     }
 
     /** 按任务和页面条件分页查询GreptimeDB中帧检查异常的遥测原始帧。 */

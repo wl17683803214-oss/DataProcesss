@@ -13,6 +13,10 @@ public interface ExperimentTaskMapper {
     /** 查询全部试验任务，并按最近事件时间倒序排列。 */
     List<ExperimentTask> findAll();
 
+    /** 仅更新指定任务的手动评估内容和更新时间。 */
+    int updateEvaluation(@Param("taskId") String taskId,
+                         @Param("taskEvaluation") String taskEvaluation);
+
     /** 只查询指定生命周期状态的任务编号，供健康上报使用。 */
     List<String> findTaskIdsByStatus(@Param("status") Integer status);
 

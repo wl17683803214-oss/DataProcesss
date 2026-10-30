@@ -2,6 +2,7 @@ package com.example.simulator.controller;
 
 import com.example.simulator.enums.ProtocolProfile;
 import com.example.simulator.enums.RunStatus;
+import com.example.simulator.enums.SendMode;
 import com.example.common.response.ApiResponse;
 import com.example.common.response.PageResult;
 import com.example.simulator.model.*;
@@ -103,6 +104,14 @@ public class SimulatorController {
             statuses.add(option(status.code, status.label));
         }
         result.put("protocols", protocols);
+        List<Map<String, Object>> sendModes = new ArrayList<>();
+        for (SendMode mode : SendMode.values()) {
+            Map<String, Object> option = new LinkedHashMap<>();
+            option.put("value", mode.value);
+            option.put("label", mode.label);
+            sendModes.add(option);
+        }
+        result.put("sendModes", sendModes);
         result.put("statuses", statuses);
         result.put("yesNo", Arrays.asList(option(0, "否"), option(1, "是")));
         return ApiResponse.success(result);

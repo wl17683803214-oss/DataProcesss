@@ -124,7 +124,7 @@
         set system_id = #{rule.systemId,jdbcType=BIGINT},
             table_index = #{rule.tableIndex}, bit_width = #{rule.bitWidth},
             telemetry_name = #{rule.telemetryName}, telemetry_code = #{rule.telemetryCode},
-            formula_type = #{rule.formulaType},
+            formula_type = #{rule.formulaType,jdbcType=VARCHAR},
             formula_desc = #{rule.formulaDesc,jdbcType=VARCHAR},
             process_param = #{rule.processParam,jdbcType=VARCHAR},
             decimal_places = #{rule.decimalPlaces,jdbcType=VARCHAR},

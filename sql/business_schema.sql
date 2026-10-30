@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS experiment_task (
     task_id VARCHAR(100) PRIMARY KEY,
     requirement_id VARCHAR(100),
     task_name VARCHAR(100) NOT NULL,
+    task_evaluation TEXT,
     task_priority INT,
     plan_id VARCHAR(100),
     plan_code VARCHAR(100),
@@ -25,6 +26,7 @@ COMMENT ON TABLE experiment_task IS '试验任务表';
 COMMENT ON COLUMN experiment_task.task_id IS '调度系统下发的外部试验任务编号';
 COMMENT ON COLUMN experiment_task.requirement_id IS '关联需求业务编号';
 COMMENT ON COLUMN experiment_task.task_name IS '试验任务名称';
+COMMENT ON COLUMN experiment_task.task_evaluation IS '手动填写的试验任务评估内容';
 COMMENT ON COLUMN experiment_task.task_priority IS '任务优先级，取值1至9';
 COMMENT ON COLUMN experiment_task.plan_id IS '试验方案内部编号';
 COMMENT ON COLUMN experiment_task.plan_code IS '试验方案业务编码';
@@ -389,7 +391,7 @@ CREATE TABLE IF NOT EXISTS telemetry_parse_rule_config (
     bit_width VARCHAR(100) NOT NULL,
     telemetry_name VARCHAR(100) NOT NULL,
     telemetry_code VARCHAR(100) NOT NULL,
-    formula_type VARCHAR(100) NOT NULL,
+    formula_type VARCHAR(100),
     formula_desc TEXT,
     process_param TEXT,
     decimal_places VARCHAR(100),
@@ -521,6 +523,8 @@ CREATE TABLE IF NOT EXISTS collect_interface_config (
     receive_path VARCHAR(255),
     status SMALLINT NOT NULL DEFAULT 1,
     enabled SMALLINT NOT NULL DEFAULT 1,
+    receive_rate_limit NUMERIC(10,3),
+    receive_rate_limit_unit VARCHAR(32),
     rpc_enabled SMALLINT NOT NULL DEFAULT 0,
     data_packet_count BIGINT DEFAULT 0,
     remark VARCHAR(500),
@@ -571,6 +575,8 @@ ALTER TABLE collect_interface_config
     ADD COLUMN IF NOT EXISTS rpc_enabled SMALLINT NOT NULL DEFAULT 0;
 
 COMMENT ON COLUMN collect_interface_config.rpc_enabled IS '是否启用RPC处理：0否 1是';
+COMMENT ON COLUMN collect_interface_config.receive_rate_limit IS '接收速率上限，空值不限速，仅UDP和TCP生效';
+COMMENT ON COLUMN collect_interface_config.receive_rate_limit_unit IS '接收速率单位：kilobytes_per_second为KB/s，megabytes_per_second为MB/s';
 
 -- 为已有库补充HTTP接收路径，所有未删除HTTP配置的路径保持唯一。
 ALTER TABLE collect_interface_config
@@ -623,6 +629,7 @@ CREATE TABLE IF NOT EXISTS fep_file_transfer_record (
     file_name VARCHAR(255) NOT NULL,
     file_type VARCHAR(50),
     file_length BIGINT NOT NULL,
+    resolution VARCHAR(32),
     local_path VARCHAR(1000) NOT NULL,
     object_name VARCHAR(1000) NOT NULL,
     file_url VARCHAR(2000),
@@ -639,6 +646,10 @@ CREATE TABLE IF NOT EXISTS fep_file_transfer_record (
 ALTER TABLE fep_file_transfer_record
     ADD COLUMN IF NOT EXISTS file_type VARCHAR(50);
 
+-- 图片分辨率在完整文件接收后自动识别，历史记录保持空值。
+ALTER TABLE fep_file_transfer_record
+    ADD COLUMN IF NOT EXISTS resolution VARCHAR(32);
+
 -- 已有环境允许接收登记阶段的文件地址为空，上传成功后再回填；可重复执行。
 ALTER TABLE fep_file_transfer_record
     ALTER COLUMN file_url DROP NOT NULL;
@@ -650,6 +661,7 @@ COMMENT ON COLUMN fep_file_transfer_record.interface_id IS '采集接口ID';
 COMMENT ON COLUMN fep_file_transfer_record.file_name IS '发送方提供的文件名';
 COMMENT ON COLUMN fep_file_transfer_record.file_type IS '文件后缀，小写且不包含点号';
 COMMENT ON COLUMN fep_file_transfer_record.file_length IS '文件字节长度';
+COMMENT ON COLUMN fep_file_transfer_record.resolution IS '图片像素分辨率，宽×高；普通文件或未识别时为空';
 COMMENT ON COLUMN fep_file_transfer_record.local_path IS '本地完整文件路径';
 COMMENT ON COLUMN fep_file_transfer_record.object_name IS '对象存储中的对象名称';
 COMMENT ON COLUMN fep_file_transfer_record.file_url IS '文件对外访问地址；已接收未上传时允许为空，上传成功后回填';
@@ -805,3 +817,27 @@ COMMIT;
 -- 自动告警查询与合并使用的索引。
 CREATE INDEX IF NOT EXISTS idx_sys_alarm_metric_status ON sys_alarm_event (metric_code, alarm_status, last_alarm_time);
 CREATE INDEX IF NOT EXISTS idx_dm_alarm_dedup_time ON dm_alarm_event (dedup_key, last_trigger_time);
+
+-- 公式表和原有字段约束在同一事务中升级，任一失败整体回滚。
+BEGIN;
+-- 公式编号唯一，同编号导入直接覆盖当前源码，不保留历史版本。
+CREATE TABLE IF NOT EXISTS formula_script (
+    code VARCHAR(20) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    source TEXT NOT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_formula_script PRIMARY KEY (code)
+);
+COMMENT ON TABLE formula_script IS 'Lua处理公式，每个编号只保存当前脚本';
+COMMENT ON COLUMN formula_script.code IS '公式编号，对应参数配置的公式类型';
+COMMENT ON COLUMN formula_script.name IS '公式中文名称';
+COMMENT ON COLUMN formula_script.source IS '完整UTF-8脚本源码，同编号导入覆盖';
+COMMENT ON COLUMN formula_script.create_time IS '首次导入时间';
+COMMENT ON COLUMN formula_script.update_time IS '当前脚本最近修改时间';
+-- 无公式是合法的原码输出配置，允许存储空值。
+ALTER TABLE telemetry_parse_rule_config ALTER COLUMN formula_type DROP NOT NULL;
+-- 处理公式文本仅为兼容保留，不再参与本地公式执行。
+COMMENT ON COLUMN telemetry_parse_rule_config.formula_type IS 'Lua公式编号，空值表示原码输出';
+COMMENT ON COLUMN telemetry_parse_rule_config.formula_desc IS '历史公式描述，仅保留展示，不参与Lua计算';
+COMMIT;

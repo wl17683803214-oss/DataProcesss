@@ -17,6 +17,8 @@ public class FepFileTransferRecord {
     private String fileType;
     /** 文件字节长度。 */
     private Long fileLength;
+    /** 图片像素分辨率，格式为宽×高，未识别时为空。 */
+    private String resolution;
     /** 本地完整文件路径。 */
     private String localPath;
     /** 对象存储中的对象名称。 */
@@ -50,6 +52,10 @@ public class FepFileTransferRecord {
     public void setFileType(String fileType) { this.fileType = fileType; }
     public Long getFileLength() { return fileLength; }
     public void setFileLength(Long fileLength) { this.fileLength = fileLength; }
+    /** 获取图片分辨率。 */
+    public String getResolution() { return resolution; }
+    /** 设置图片分辨率。 */
+    public void setResolution(String resolution) { this.resolution = resolution; }
     public String getLocalPath() { return localPath; }
     public void setLocalPath(String localPath) { this.localPath = localPath; }
     public String getObjectName() { return objectName; }

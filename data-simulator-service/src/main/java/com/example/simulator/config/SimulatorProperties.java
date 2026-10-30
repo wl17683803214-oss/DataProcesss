@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 import javax.validation.constraints.*;
 
-/** 所有实例共用的服务容量和FEP参数。 */
+/** 所有实例共用的服务容量、FEP参数及HTTP超时设置。 */
 @Validated
 @ConfigurationProperties(prefix = "simulator")
 public class SimulatorProperties {

@@ -12,6 +12,25 @@ import java.time.LocalDateTime;
  * 对应数据库表 collect_interface_config，用于承载业务数据和MyBatis查询结果。
  */
 public class CollectInterfaceConfig {
+    /** 接收速率上限，空值表示不限速。 */
+    private java.math.BigDecimal receiveRateLimit;
+    /** 接收速率单位，使用英文单位编码保存。 */
+    private String receiveRateLimitUnit;
+
+    /** 获取接收速率上限。 */
+    public java.math.BigDecimal getReceiveRateLimit() { return receiveRateLimit; }
+    /** 设置接收速率上限。 */
+    public void setReceiveRateLimit(java.math.BigDecimal value) { receiveRateLimit = value; }
+    /** 获取接收速率单位。 */
+    public String getReceiveRateLimitUnit() { return receiveRateLimitUnit; }
+    /** 设置接收速率单位。 */
+    public void setReceiveRateLimitUnit(String value) { receiveRateLimitUnit = value; }
+    /** 返回接收限速单位的前端显示标签。 */
+    public String getReceiveRateLimitUnitName() {
+        return receiveRateLimitUnit == null ? null
+                : com.example.common.enums.CollectionRateUnit.require(receiveRateLimitUnit).getLabel();
+    }
+
     /** 自增主键。 */
     private Long id;
     /** 试验任务ID。 */
@@ -50,8 +69,8 @@ public class CollectInterfaceConfig {
     private Integer rpcEnabled;
     /** 长期累计采集量，PDXP按完整帧、FEP按完整文件计数。 */
     private Long dataPacketCount;
-    /** 分页列表返回的最新采集速率，单位KB/s，不参与配置入库。 */
-    private Double interfaceRateKbps;
+    /** 分页列表返回的最新采集速率，包含自动换算的单位，不参与配置入库。 */
+    private String interfaceRateKbps;
     /** 接口备注。 */
     private String remark;
     /** 是否删除：0否 1是。 */
@@ -250,12 +269,12 @@ public class CollectInterfaceConfig {
 
     /** 仅在分页列表加载实时指标后返回采集速率。 */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Double getInterfaceRateKbps() {
+    public String getInterfaceRateKbps() {
         return interfaceRateKbps;
     }
 
-    /** 回填分页列表的实时采集速率。 */
-    public void setInterfaceRateKbps(Double interfaceRateKbps) {
+    /** 回填分页列表的实时采集速率及单位。 */
+    public void setInterfaceRateKbps(String interfaceRateKbps) {
         this.interfaceRateKbps = interfaceRateKbps;
     }
 

@@ -287,8 +287,15 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 | 方法 | 地址 | 说明 | 参数 |
 | --- | --- | --- | --- |
 | GET | `/experiment/tasks` | 查询调度系统下发的全部试验任务生命周期快照，使用字符串 `taskId` 作为主键 | 无 |
+| POST | `/experiment/tasks/evaluate` | 保存手动输入的试验任务评估，重复提交覆盖原内容，不限制任务状态 | `taskId`、`taskEvaluation` |
+
+试验任务列表新增 `taskEvaluation` 字段，未评估时返回 `null`。评估接口的任务编号和内容均必填且不能全为空白，编号最多100个字符；保存时去除两端空白，任务不存在时返回中文错误提示。生命周期消息更新保留已有评估。已有数据库先执行 `sql/20261029_add_task_evaluation.sql`。
 
 ## 8. 数据处理
+
+`GET /processing/processed` 和 `GET /processing/processed/curve` 均支持可选查询参数 `telemetryType`，对应 Proto 的 `TelemetryType tm_type = 7`，传数据库使用的英文枚举名。不传或留空查询全部类型，非法值返回“遥测类型不正确”。筛选在取最新值或最近120个数值有效点之前生效；无匹配数据时保留原勾选参数，最新值为空、曲线点为空数组。原勾选场景与设备卫星身份范围保持不变，适用于处理后数据和可视化场景。
+
+前端通过 `GET /processing/findData` 的 `data.telemetryType` 获取 `{value, label}` 选项：`TM_TYPE_UNSPECIFIED`（未指定）、`TM_TYPE_REAL_TM`（实时遥测）、`TM_TYPE_DELAY_TM`（延时遥测）、`TM_TYPE_MEMORY_TM`（存储遥测）、`TM_TYPE_DEVICE_TM`（设备遥测）。展示中文 label，查询提交英文 value；“全部”不传参数，不等同于“未指定”。
 
 `GET /processing/processed` 的 `parameterValue` 按已有值类型返回：`VALUE_TYPE_TEXT` 返回数据库 `value_text` 字符串（例如 `FKT007` 返回 `"T001"`），其他类型继续返回 `value` 数值，无记录时为 `null`。查询支持数值为空的文本记录，取身份范围内最新记录。此规则同时适用于处理后表格和可视化表格；`/processing/processed/curve` 的数值查询及响应保持不变。
 
@@ -358,6 +365,8 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 数据告警来源固定为 `COLLECTION` 数据采集、`PROCESSING` 数据处理、`CALIBRATION` 数据校准。`/alarms/findData` 中 `dataAlarmSource` 返回英文 `value` 和中文 `label`；来源筛选使用 `sourceCode`，不接受中文名称。数据库沿用 `source_name` 列保存英文编码，查询返回 `sourceCode` 编码和 `sourceName` 中文名称。旧数据不迁移。列表和详情新增 `eventType`、`eventTypeName`、`interfaceId`、`processTaskId`、`calibChannelId`、`tmSymbol`、`parameterName`、`alarmDetail`、`triggerCount`、`lastTriggerTime`、`recoverTime`。人工 `alarmStatus` 与自动 `recoverTime` 分开维护。数据告警只由后台自动录入，不提供人工创建、内容修改和删除接口；`POST /alarms/data/status` 保留，`status=0` 表示未处理、`status=1` 表示已处理，操作会写入系统日志。
 
+本地解析同一帧内遥测代号重复并发生覆盖时，新增数据校准一般告警：`sourceCode=CALIBRATION`、`eventType=CALIBRATION_DEDUP`、`eventTypeName=数据去重`、`alarmLevel=2`。告警记录接口、参数名称和代号、包序号、数据帧时间、被覆盖及保留参数的序号（`tableIndex`）、原码值和处理后值；同代号值相同也告警。该告警不受参数范围检查开关控制，复用已有同任务、接口、参数的告警合并机制，每次覆盖累计一次触发次数。原有后值覆盖前值和去重数量统计保持不变，不增加RPC内部去重判断。
+
 数据告警列表的 `sourceCode` 为来源编码精确匹配；`keyword` 会模糊匹配来源、告警信息、任务名称、通道编码和触发规则；时间范围使用 ISO 8601 格式并包含起止时间。
 
 系统告警类型 `alarmType` 保存监测指标英文编码，`alarmTypeName` 返回中文名称，类型选项从 `/alarms/findData` 的 `systemAlarmType` 获取。系统告警只由后台自动写入，统一保存到 `sys_alarm_event`，不开放人工创建、修改、删除及恢复接口。列表保留原字段，并返回指标编码/中文名称、当前值、阈值、首次和最近触发时间、恢复时间及触发次数。
@@ -390,7 +399,7 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 ### 采集传输协议编号升级
 
-`transferProtocol` 统一使用 `1 JSON、2 PDXP、3 FEP`。管理服务的传输协议枚举不再返回 Protobuf，创建、修改采集接口不再接受值 `4`；数据处理服务的 FEP 接收分支和模拟源管理服务都使用值 `3`。模拟源仅支持 `2 PDXP、3 FEP`。协议配置的 `protocolType` 是独立字段，保持原有定义。
+采集接口与模拟源的 `transferProtocol` 使用 `1 JSON、2 PDXP、3 FEP`。管理服务的传输协议枚举不再返回 Protobuf，创建、修改采集接口不再接受值 `4`；数据处理服务的 FEP 接收分支和模拟源管理服务都使用值 `3`。模拟源支持JSON/HTTP、PDXP/UDP单播或组播、FEP/TCP；JSON/HTTP使用协议编号1，组播模式存储英文值`MULTICAST`，中文名称由枚举返回。协议配置的 `protocolType` 是独立字段，保持原有定义。
 
 已有环境先停止相关采集与模拟源任务，再执行下面的升级语句，最后重启管理、数据处理及模拟源管理服务。新环境直接使用已更新的建表脚本。以下只把旧 FEP 值 `4` 改为 `3`；旧值 `3` 原来表示 Protobuf，若已有这类采集接口，需根据实际用途重新选择有效协议，不能直接当作 FEP 使用。
 
@@ -407,31 +416,7 @@ COMMENT ON COLUMN collect_interface_config.transfer_protocol IS '传输协议：
 COMMIT;
 ```
 
-已安装模拟源管理模块的环境还需执行以下语句。约束名称对应原 `sql/data-simulator-service.sql` 创建的表；未安装该模块时无需执行此段。
-
-```sql
-BEGIN;
--- 先移除旧编号约束，允许将4更新为3。
-ALTER TABLE simulator_source_config
-    DROP CONSTRAINT IF EXISTS simulator_source_config_transfer_protocol_check;
-ALTER TABLE simulator_source_config
-    DROP CONSTRAINT IF EXISTS simulator_source_config_check;
--- 更新已有FEP模拟源配置。
-UPDATE simulator_source_config
-SET transfer_protocol = 3
-WHERE transfer_protocol = 4;
--- 恢复协议编号及协议与传输方式的约束。
-ALTER TABLE simulator_source_config
-    ADD CONSTRAINT simulator_source_config_transfer_protocol_check
-    CHECK (transfer_protocol IN (2, 3));
-ALTER TABLE simulator_source_config
-    ADD CONSTRAINT simulator_source_config_check
-    CHECK ((transfer_protocol = 2 AND transfer_type = 1)
-        OR (transfer_protocol = 3 AND transfer_type = 2));
--- 同步字段描述。
-COMMENT ON COLUMN simulator_source_config.transfer_protocol IS '传输协议：2为PDXP，3为FEP';
-COMMIT;
-```
+已安装模拟源管理模块的环境，执行仓库根目录完整升级脚本 `sql/data-simulator-service.sql`。脚本会补充HTTP/JSON和组播配置字段、允许HTTP配置不填文件路径、清理旧业务CHECK并把历史FEP编号从4迁移到3；无需手工增加业务CHECK。未安装该模块时无需执行该脚本。
 
 Apifox、Postman 或其他支持 OpenAPI 3.0 的工具可直接导入同目录下的 `apifox-openapi.yaml`。登录后，将返回的 Token 配置为 Bearer Token 即可调用其他接口。
 
@@ -457,3 +442,33 @@ OpenAPI 文件已为各模块请求 DTO 配置独立 Schema，包括字段类型
 数据处理服务提供 `POST /collection/receive/**`，默认服务地址为 `http://localhost:8083`。前缀下所有路径由同一个Controller接收JSON并返回 `{ "code": 200, "message": "操作成功" }`，没有data字段。请求头使用application/json，鉴权沿用现有开关与白名单。
 
 当前不查询采集配置，不检查任务或启用状态，不解析业务、不入库、不统计。空请求体或无法解析的JSON返回400，非POST返回405，内容类型不支持返回415。完整前端联调说明见[前端对接文档](前端对接-HTTP采集与协议配置变更.md)。
+
+### 采集总览速度字段
+
+采集总览的 summary 和 table 每行保留 interfaceRateKbps 字段名，类型由数字改为字符串，直接包含速度数值与单位，不再单独返回单位字段。先按 KB/s 聚合：原始速率小于 1024 时使用 KB/s，达到 1024 时除以 1024 使用 MB/s，换算后最多保留两位小数并去掉末尾零。例如返回 "680.5 KB/s"、"1.5 MB/s"，无流量返回 "0 KB/s"。前端直接展示此字段；采集接口分页 GET /collection/interfaces 同样保留 interfaceRateKbps 字段名，返回相同的带单位字符串；缓存缺失、无效或Redis不可用时返回 "0 KB/s"。
+
+## UDP/TCP接收限速
+
+采集接口创建、修改和查询增加 receiveRateLimit（可空数值，大于0且不超过1000000，最多三位小数）、receiveRateLimitUnit（kilobytes_per_second或megabytes_per_second）；单位显示字段为 receiveRateLimitUnitName（KB/s或MB/s）。GET /collection/findData 的 data.receiveRateLimitUnit 返回英文value及显示label。清空或不传上限表示不限速，更新时也会清除旧配置。HTTP不支持非空上限。按1024换算，TCP先申请字节额度再读取，UDP无额度时整包丢弃，允许有限突发；配置变化触发对应监听重启。已有数据库先执行 sql/20261029_add_receive_rate_limit.sql。
+
+页面交互和全部前端改动见[任务评估、遥测筛选与采集接口配置](前端对接-任务评估与遥测筛选及采集限速.md)。
+
+## 图片接收分辨率
+
+GET /visualization/widgets/{widgetId}/files 的 data.records 增加可空字符串 resolution，如“1920×1080”，表示图片原始宽×高像素。接收完成后自动识别并随记录保存，不增加请求参数；非图片、无法识别格式、历史未识别记录返回null，前端显示“—”。多帧图片使用第一帧尺寸，不进行EXIF方向旋转，不影响文件上传和消息流程。使用运行环境已有ImageIO解码器，不额外增加格式插件。已有数据库先执行 sql/20261029_add_file_resolution.sql。
+
+## Lua处理公式导入导出
+
+前端页面、完整请求响应及交互规则见[Lua脚本公式管理独立对接文档](前端对接-Lua脚本公式管理.md)。
+
+公式类型统一匹配已导入Lua脚本编号，不再内置300至303。公式为空正常输出原码；已填写编号却无脚本或执行失败时，保留二进制原码并记录参数处理失败告警，其他参数继续。公式没有启用或停用状态。
+
+- GET /processing/formulas：分页查询，pageNum默认1、pageSize默认20且最多200；支持code精确及name模糊筛选，data含pageNum、pageSize、total、records。
+- POST /processing/formulas/import：multipart字段file上传.lua或.zip，整批事务导入；同编号覆盖当前源码，不保留历史版本。
+- GET /processing/formulas/export：code必填，下载当前脚本，不支持版本参数。
+- GET /processing/formulas/export-zip：codes为可选逗号分隔编号，下载当前脚本压缩包。
+- POST /processing/formulas/preview：JSON传code、rawHex、bitWidth及可选processParam，使用同一引擎试算，结果类型以中文展示。
+- POST /processing/formulas/sync：提交现有后台同步队列，响应表示已提交；同步后后续帧使用当前脚本。
+- POST /processing/formulas/batch-delete：JSON传codes数组，1到100项；任一编号不存在或被有效参数配置引用时整批不删，成功后自动提交后台同步。
+
+单脚本64KB、上传包8MB、每批100公式。导入不会立即改变运行任务；需同步配置。源码、统一输入输出、原码字节序及六个可导入示例见[lua-formulas/README.md](lua-formulas/README.md)。脚本输入为原始字节、位宽和有序数值参数，formulaDesc仅保留描述，不再执行。

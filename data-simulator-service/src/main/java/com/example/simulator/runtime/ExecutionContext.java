@@ -74,7 +74,7 @@ public class ExecutionContext {
         record.completedLoopCount++;
     }
 
-    /** 每轮之间至少等待一毫秒，避免FEP已存在文件造成空转。 */
+    /** 等待指定间隔，并保证循环发送不会因空操作而持续占用处理器。 */
     public void pause(long millis) throws InterruptedException {
         check();
         if (millis > 0) {
@@ -89,7 +89,7 @@ public class ExecutionContext {
         record.statusCode = cancelled ? RunStatus.STOPPED.code
                 : failure == null ? RunStatus.COMPLETED.code : RunStatus.FAILED.code;
         record.errorMessage = failure != null && !cancelled
-                ? "发送失败，请检查源文件、目标连接及协议应答，详见服务日志" : null;
+                ? "发送失败，请检查数据配置、目标连接及协议应答，详见服务日志" : null;
         record.endTime = LocalDateTime.now();
         worker = null;
     }

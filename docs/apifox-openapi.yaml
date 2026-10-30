@@ -12,11 +12,11 @@ info:
     跨域联调：两个服务的 Nacos 配置 auth.allowed-origin-patterns 均设为 ["*"]，允许任意前端来源；同步线上 Nacos 后重启对应服务生效。
     登录预检示例：向 /auth/login 发送 OPTIONS，携带 Origin: http://192.168.112.55:5173、Access-Control-Request-Method: POST 和 Access-Control-Request-Headers: content-type。
     预期返回 HTTP 200，Access-Control-Allow-Origin 回显请求 Origin，Access-Control-Allow-Credentials 为 true；前端来源地址仅为示例，请按实际页面地址替换。
-    本地类型示例：300或301在x=100、formulaDesc=y=a*x+b、processParam=0.02/1、decimalPlaces=2时，value为3，valueText为3.00；302按UTF-8解码至valueText，不执行公式；303的value为从2000-01-01 12:00:00起的0.1毫秒整数计数，valueText格式为yyyy-MM-dd HH:mm:ss.SSSS，计数10001对应2000-01-01 12:00:01.0001；不进行时区偏移。
+    本地Lua公式：公式类型为已导入脚本编号，不再内置300至303分支。脚本统一接收原始字节、位宽及有序参数，返回结果类型和数值或文本。示例脚本300在原码整数为100、processParam=0.02/1、decimalPlaces=2时输出value=3、valueText=3.00；formulaDesc仅保留描述，不参与计算。
     PDXP本地处理：rpcEnabled=0时，通过protocolConfigId取得configParams.fields，按tableIndex数字升序和bitWidth连续解码并组装遥测Protobuf消息；alarmFlag为1时命中状态范围写正常类型、stateIndex和stateName，未命中只写报警类型。
-    通过fields中的参数解析配置id关联当前任务下的设备卫星信息，本地处理不填写satCode，设备名称第一个下划线前后分别写入channelName和bussinessId；Proto的frame_raw_data按data-processing.pdxp配置去掉数据域开头自定义数据和末尾遥测帧头，默认5和4字节，配置0表示没有；传输头默认2字节，也可配置为0或其他长度，PDXP标准包头固定32字节，GreptimeDB整帧表raw则保留完整采集帧及各类头，按小端低位优先读取无符号原始整数x，按formulaType设置valueType：300为FLOAT、301为DOUBLE、302为TEXT、303为TIME，其他类型保留RAW。数值按formulaDesc计算，processParam用斜线分隔并依次绑定a、b等参数，decimalPlaces指定四舍五入小数位数。
+    通过fields中的参数解析配置id关联当前任务下的设备卫星信息，本地处理不填写satCode，设备名称第一个下划线前后分别写入channelName和bussinessId；Proto的frame_raw_data按data-processing.pdxp配置去掉数据域开头自定义数据和末尾遥测帧头，默认5和4字节，配置0表示没有；传输头默认2字节，也可配置为0或其他长度，PDXP标准包头固定32字节，GreptimeDB整帧表raw保留完整采集帧及各类头。字段按低位优先取位并低位对齐，Lua脚本根据公式编号选择整数或浮点等解码方式；processParam用斜线分隔并按顺序传递，decimalPlaces指定数值四舍五入小数位数，状态范围按计算后的结果判断。
     示例：遥测数据为CD AB，三行配置(tableIndex, telemetryCode, bitWidth)为(1, TM001, 3)、(2, TM002, 9)、(3, TM003, 4)，对应原始值为5、377、10，汇总为一帧TelemetryMessage。
-    每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；未配置公式类型时value为原始数值、value_text为精确十进制文本、value_type为原码；配置300至303时按对应规则生成物理量或文本，raw_data为低位对齐的小端字段字节。
+    每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；公式类型为空时输出小端无符号原码及精确文本。公式缺失或执行失败时保留raw_data，value_type为BINARY，不生成计算值，并记录参数处理失败告警，其他参数继续。BINARY和TEXT不参与数值校准，数据库数值为NULL；后续正常计算自动恢复处理告警。
   version: 2.8.0
 
 servers:
@@ -43,6 +43,197 @@ tags:
   - name: 系统日志
 
 paths:
+  /processing/formulas/sync:
+    post:
+      tags: [数据处理]
+      summary: 提交公式运行配置同步
+      description: 导入脚本或修正参数后调用，复用后台采集接口同步队列。响应只表示已提交，不表示同步完成；完成情况查看运行日志和告警。同步失败时保留已运行接口的旧配置快照。
+      responses:
+        '200':
+          description: 已提交后台同步
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: {type: integer, example: 200}
+                  message: {type: string, example: 操作成功}
+                  data: {type: string, example: 公式配置同步已提交，完成情况请查看运行日志和告警}
+  /processing/formulas:
+    get:
+      tags: [数据处理]
+      summary: 分页查询Lua处理公式
+      description: 每个公式编号只保存当前脚本，无历史版本、启用或停用状态。列表不返回源码，使用导出接口获取源码。
+      parameters:
+        - {name: code, in: query, required: false, schema: {type: string}, description: 公式编号精确匹配}
+        - {name: name, in: query, required: false, schema: {type: string}, description: 公式名称模糊匹配}
+        - {name: pageNum, in: query, required: false, schema: {type: integer, default: 1, minimum: 1}, description: 页码}
+        - {name: pageSize, in: query, required: false, schema: {type: integer, default: 20, minimum: 1, maximum: 200}, description: 每页数量}
+      responses:
+        '200':
+          description: 分页结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: {type: integer, example: 200}
+                  message: {type: string, example: 操作成功}
+                  data:
+                    type: object
+                    properties:
+                      pageNum: {type: integer, example: 1}
+                      pageSize: {type: integer, example: 20}
+                      total: {type: integer, format: int64, example: 6}
+                      records:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            code: {type: string, example: '109'}
+                            name: {type: string, example: 浮点源码线性转换}
+                            createTime: {type: string, format: date-time, description: 首次导入时间}
+                            updateTime: {type: string, format: date-time, description: 最近内容更新时间}
+        '400':
+          description: 页码或每页数量无效
+  /processing/formulas/batch-delete:
+    post:
+      tags: [数据处理]
+      summary: 批量删除Lua处理公式
+      description: 单次1至100个编号，重复编号只计一次。任一编号不存在或被任意任务的有效参数配置引用时整批不删，错误消息列出受影响编号。引用检查与删除在同一事务中执行；成功后提交后台配置同步，响应不表示同步完成，已经开始的帧仍完成当前快照。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [codes]
+              properties:
+                codes:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items: {type: string, pattern: '^[0-9]{1,20}$'}
+                  example: ['100', '109']
+      responses:
+        '200':
+          description: 删除成功，data为实际删除条数
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: {type: integer, example: 200}
+                  message: {type: string, example: 操作成功}
+                  data: {type: integer, example: 2}
+        '400':
+          description: 请求无效、公式不存在或仍被参数引用，整批不删除
+  /processing/formulas/import:
+    post:
+      tags: [数据处理]
+      summary: 导入或覆盖Lua处理公式
+      description: 支持UTF-8的.lua及只含Lua的.zip。单脚本64KB、上传8MB、最多100个公式及200个压缩条目。整批校验后事务保存；同编号覆盖当前源码，不保留历史；相同源码不改变更新时间。导入不切换运行快照，需调用公式同步接口或重新启动采集接口。脚本必须返回code、name和calculate入口。
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary, description: Lua脚本或脚本压缩包}
+      responses:
+        '200':
+          description: 导入成功，data为公式元数据列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: {type: integer, example: 200}
+                  message: {type: string, example: 操作成功}
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code: {type: string, example: '109'}
+                        name: {type: string, example: 浮点源码线性转换}
+                        createTime: {type: string, format: date-time}
+                        updateTime: {type: string, format: date-time}
+        '400':
+          description: 文件、语法、入口或编号校验失败，整批不提交
+  /processing/formulas/export:
+    get:
+      tags: [数据处理]
+      summary: 导出单个Lua公式
+      parameters:
+        - {name: code, in: query, required: true, schema: {type: string}, description: 公式编号}
+      responses:
+        '200':
+          description: 当前脚本的UTF-8源码附件，可再次导入；文件名示例109.lua
+          content:
+            text/plain:
+              schema: {type: string, format: binary}
+        '400':
+          description: 公式不存在或参数无效
+  /processing/formulas/export-zip:
+    get:
+      tags: [数据处理]
+      summary: 批量导出Lua公式
+      description: 导出指定编号的当前脚本，不指定codes则导出全部；数量须为1至100个，源码文件名不带版本。
+      parameters:
+        - name: codes
+          in: query
+          required: false
+          description: 逗号分隔的公式编号，例如100,109
+          style: form
+          explode: false
+          schema: {type: array, items: {type: string}, maxItems: 100}
+      responses:
+        '200':
+          description: 可再次导入的公式压缩包
+          content:
+            application/zip:
+              schema: {type: string, format: binary}
+        '400':
+          description: 指定公式不存在或数量无效
+  /processing/formulas/preview:
+    post:
+      tags: [数据处理]
+      summary: 试算已导入的Lua公式
+      description: 使用数据库中当前脚本试算，不切换运行配置、不产生生产告警。返回舍入前结果，实际遥测另应用decimalPlaces。原码顺序与报文取位结果一致，非整字节字段未用高位必须为零。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, rawHex, bitWidth]
+              properties:
+                code: {type: string, example: '109', description: 已导入公式编号}
+                rawHex: {type: string, example: '3F 80 00 00', maxLength: 196608, description: 十六进制原码，允许空白分隔}
+                bitWidth: {type: integer, minimum: 1, maximum: 524288, example: 32}
+                processParam: {type: string, nullable: true, maxLength: 8192, example: '2/3', description: 斜线分隔的有序数值参数}
+      responses:
+        '200':
+          description: 试算结果，类型展示为中文
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: {type: integer, example: 200}
+                  message: {type: string, example: 操作成功}
+                  data:
+                    type: object
+                    properties:
+                      code: {type: string, example: '109'}
+                      valueType: {type: string, enum: [单精度, 双精度, 文本, 时间, 原码]}
+                      value: {type: number, format: double, nullable: true, example: 5}
+                      valueText: {type: string, nullable: true, example: '5'}
+        '400':
+          description: 公式不存在、输入无效或执行失败
   /rpc-api/knowledge/knowledge/satellite/list:
     get:
       tags: [基线卫星目录]
@@ -295,6 +486,9 @@ paths:
                 code: 200
                 message: "操作成功"
                 data:
+                  receiveRateLimitUnit:
+                  - { value: kilobytes_per_second, label: "KB/s" }
+                  - { value: megabytes_per_second, label: "MB/s" }
                   interfaceType: [{ value: 1, label: "外部接口" }, { value: 2, label: "内部接口" }]
                   transferType: [{ value: 1, label: "UDP" }, { value: 2, label: "TCP" }, { value: 3, label: "HTTP" }]
                   transferProtocol: [{ value: 1, label: "JSON" }, { value: 2, label: "PDXP" }, { value: 3, label: "FEP" }]
@@ -334,6 +528,12 @@ paths:
                 code: 200
                 message: 操作成功
                 data:
+                  telemetryType:
+                  - { value: TM_TYPE_UNSPECIFIED, label: "未指定" }
+                  - { value: TM_TYPE_REAL_TM, label: "实时遥测" }
+                  - { value: TM_TYPE_DELAY_TM, label: "延时遥测" }
+                  - { value: TM_TYPE_MEMORY_TM, label: "存储遥测" }
+                  - { value: TM_TYPE_DEVICE_TM, label: "设备遥测" }
                   taskStatus:
                   - value: 0
                     label: 等待中
@@ -485,6 +685,8 @@ paths:
                     label: 结果消息发送失败
                   - value: FILE_RESULT
                     label: 文件结果处理失败
+                  - value: CALIBRATION_DEDUP
+                    label: 数据去重
                   - value: CALIBRATION_OUTLIER
                     label: 校准野值
                   - value: CALIBRATION_RULE
@@ -639,6 +841,7 @@ paths:
                         taskId: { type: string, description: "外部试验任务编号" }
                         requirementId: { type: string, description: "关联需求业务编号" }
                         taskName: { type: string, description: "试验任务名称" }
+                        taskEvaluation: { type: string, nullable: true, description: "手动填写的试验任务评估内容，未评估时为null" }
                         taskPriority: { type: integer, description: "任务优先级" }
                         planId: { type: string, description: "试验方案内部编号" }
                         planCode: { type: string, description: "试验方案业务编码" }
@@ -656,6 +859,7 @@ paths:
                   - taskId: "TASK-20260908-001"
                     requirementId: "REQ-20260908-001"
                     taskName: "遥测试验任务"
+                    taskEvaluation: "试验数据完整，任务执行符合预期。"
                     taskPriority: 5
                     planId: "b38cb6f7-7cb6-4fae-bbb5-d5b55c808143"
                     planCode: "PLAN-001"
@@ -666,6 +870,39 @@ paths:
                     endReason: null
                     endReasonName: ""
                     eventTime: "2026-09-16T18:00:00"
+
+  /experiment/tasks/evaluate:
+    post:
+      tags: [试验任务]
+      summary: 保存试验任务评估
+      description: 手动填写评估内容，不限制任务状态；重复提交覆盖原评估。任务编号和评估内容会去除两端空白，不能为空，任务不存在时返回业务错误。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [taskId, taskEvaluation]
+              properties:
+                taskId: { type: string, minLength: 1, maxLength: 100, description: "外部试验任务编号，不能为空白" }
+                taskEvaluation: { type: string, minLength: 1, description: "手动输入的试验任务评估内容，不能为空白" }
+            example:
+              taskId: "TASK-20260908-001"
+              taskEvaluation: "试验数据完整，任务执行符合预期。"
+      responses:
+        '200':
+          description: 统一业务响应，具体结果以业务状态码和提示为准
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer, description: "业务状态码，200表示成功" }
+                  message: { type: string, description: "中文处理结果" }
+                  data: { type: object, nullable: true, description: "无返回数据，成功时省略此字段" }
+              example:
+                code: 200
+                message: "操作成功"
 
   /dashboard/collection:
     get:
@@ -1235,7 +1472,7 @@ paths:
     get:
       tags: [数据采集]
       summary: 分页查询采集接口
-      description: '支持按接口名称包含筛选，空白名称不参与筛选；分页记录与总数使用相同条件。dataPacketCount直接读取采集接口表中的长期累计量，五秒统计明细过期删除不会使其减少；PDXP按完整帧、FEP按完整文件计数，新接口初始为0。interfaceRateKbps读取Redis最新采集速率，单位KB/s，缓存有效期5秒，缓存缺失或Redis不可用时返回0。'
+      description: '支持按接口名称包含筛选，空白名称不参与筛选；分页记录与总数使用相同条件。dataPacketCount直接读取采集接口表中的长期累计量，五秒统计明细过期删除不会使其减少；PDXP按完整帧、FEP按完整文件计数，新接口初始为0。interfaceRateKbps读取Redis最新采集速率并返回包含数值与单位的字符串，小于1024 KB/s使用KB/s，达到1024时换算为MB/s，最多两位小数；缓存有效期5秒，缓存缺失或Redis不可用时返回0 KB/s。'
       parameters:
         - $ref: '#/components/parameters/TaskId'
         - name: interfaceName
@@ -1434,6 +1671,21 @@ paths:
                     - value: 1
                       name: "启用"
                       description: "1 表示启用"
+                receiveRateLimit:
+                  type: number
+                  nullable: true
+                  minimum: 0.001
+                  maximum: 1000000
+                  multipleOf: 0.001
+                  description: "接收速率上限，仅UDP和TCP支持；不传或null表示不限速，更新时清空旧配置"
+                receiveRateLimitUnit:
+                  type: string
+                  nullable: true
+                  enum: [kilobytes_per_second, megabytes_per_second]
+                  description: "配置上限时必填；前端从/collection/findData获取单位选项，KB/s或MB/s，按1024换算"
+                  x-apifox-enum:
+                    - { value: kilobytes_per_second, name: "KB/s" }
+                    - { value: megabytes_per_second, name: "MB/s" }
                 rpcEnabled:
                   type: integer
                   nullable: true
@@ -1636,6 +1888,21 @@ paths:
                     - value: 1
                       name: "启用"
                       description: "1 表示启用"
+                receiveRateLimit:
+                  type: number
+                  nullable: true
+                  minimum: 0.001
+                  maximum: 1000000
+                  multipleOf: 0.001
+                  description: "接收速率上限，仅UDP和TCP支持；不传或null表示不限速，更新时清空旧配置"
+                receiveRateLimitUnit:
+                  type: string
+                  nullable: true
+                  enum: [kilobytes_per_second, megabytes_per_second]
+                  description: "配置上限时必填；前端从/collection/findData获取单位选项，KB/s或MB/s，按1024换算"
+                  x-apifox-enum:
+                    - { value: kilobytes_per_second, name: "KB/s" }
+                    - { value: megabytes_per_second, name: "MB/s" }
                 rpcEnabled:
                   type: integer
                   nullable: true
@@ -2730,6 +2997,7 @@ paths:
                             fileName: { type: string }
                             fileType: { type: string, nullable: true, description: 文件小写后缀 }
                             fileLength: { type: integer, format: int64, description: 文件字节数 }
+                            resolution: { type: string, nullable: true, description: "图片像素分辨率，格式为宽×高，例如1920×1080；普通文件、历史未识别记录或当前解析器不支持时为null" }
                             fileUrl: { type: string, description: "临时签名读取地址，默认3600秒有效；直接用于图片展示或下载，过期后重新查询列表，不要修改地址及查询参数" }
                             completedTime: { type: string, format: date-time }
               example:
@@ -2746,6 +3014,7 @@ paths:
                       fileName: 载荷图像001.png
                       fileType: png
                       fileLength: 245760
+                      resolution: "1920×1080"
                       fileUrl: 'http://192.168.112.215:9002/fep-files/2026/10/15/example.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=example%2F20261015%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261015T043000Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=示例签名以实际返回值为准'
                       completedTime: '2026-09-29T10:30:15'
 
@@ -3007,9 +3276,22 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最新数据
-      description: 按表格场景查询已保存勾选参数的最新值，设备按task_id、local来源、设备主键身份和telemetry_code查询参数表；卫星按task_id、rpc来源和telemetry_code查询全部远程身份，不使用卫星资料主键作为存储身份。设备卫星类型由已勾选参数所属资料读取，前端不新增类型入参。同一代号存在多个来源身份或遥测类型时按时间取最新一条。筛选树、勾选保存、返回字段及默认场景不变。数据可视化表格传selectionType=3及组件主键targetId。
+      description: 按表格场景查询已保存勾选参数的最新值，设备按任务、local来源、设备主键身份和遥测代号查询；卫星按任务、rpc来源和遥测代号查询全部远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，在取最新记录前筛选；不传或留空时查询全部类型，非法值返回中文提示。设备卫星类型仍从所属资料读取。无匹配记录时保留已勾选参数身份并返回空值。数据可视化表格传selectionType=3及组件主键targetId。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
+        - name: telemetryType
+          in: query
+          required: false
+          description: "对应Proto的tm_type；不传或留空查询全部。选项取/processing/findData的telemetryType。"
+          schema:
+            type: string
+            enum: [TM_TYPE_UNSPECIFIED, TM_TYPE_REAL_TM, TM_TYPE_DELAY_TM, TM_TYPE_MEMORY_TM, TM_TYPE_DEVICE_TM]
+            x-apifox-enum:
+              - { value: TM_TYPE_UNSPECIFIED, name: "未指定" }
+              - { value: TM_TYPE_REAL_TM, name: "实时遥测" }
+              - { value: TM_TYPE_DELAY_TM, name: "延时遥测" }
+              - { value: TM_TYPE_MEMORY_TM, name: "存储遥测" }
+              - { value: TM_TYPE_DEVICE_TM, name: "设备遥测" }
         - name: selectionType
           in: query
           required: false
@@ -3038,9 +3320,22 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最近曲线
-      description: 按曲线场景读取已保存勾选参数，设备按当前taskId、设备主键和遥测代号查询device_路径；卫星按当前taskId、rpc_开头身份和遥测代号查询，类型从已勾选参数所属资料读取。多个匹配路径统一按时间取最近最多120个有效点，再按时间升序返回。设备卫星按各自身份范围查询，筛选树、勾选保存及返回字段不变。默认处理后数据曲线，可视化曲线传selectionType=4及组件主键targetId，各曲线携带自己的毫秒时间戳数组。
+      description: 按曲线场景读取已保存勾选参数，设备限定当前任务和本地设备身份，卫星限定当前任务的远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，先筛选再取最近最多120个数值有效点并按时间升序返回；不传或留空查询全部类型，非法值返回中文提示。无匹配记录时保留参数身份并返回空曲线。默认处理后数据曲线，可视化曲线传selectionType=4及组件主键targetId，各曲线携带自己的毫秒时间戳数组。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
+        - name: telemetryType
+          in: query
+          required: false
+          description: "对应Proto的tm_type；不传或留空查询全部。选项取/processing/findData的telemetryType。"
+          schema:
+            type: string
+            enum: [TM_TYPE_UNSPECIFIED, TM_TYPE_REAL_TM, TM_TYPE_DELAY_TM, TM_TYPE_MEMORY_TM, TM_TYPE_DEVICE_TM]
+            x-apifox-enum:
+              - { value: TM_TYPE_UNSPECIFIED, name: "未指定" }
+              - { value: TM_TYPE_REAL_TM, name: "实时遥测" }
+              - { value: TM_TYPE_DELAY_TM, name: "延时遥测" }
+              - { value: TM_TYPE_MEMORY_TM, name: "存储遥测" }
+              - { value: TM_TYPE_DEVICE_TM, name: "设备遥测" }
         - name: selectionType
           in: query
           required: false
@@ -3431,7 +3726,7 @@ paths:
                   maxItems: 200
                   items:
                     type: object
-                    required: [id, deviceSatelliteId, tableIndex, bitWidth, telemetryName, telemetryCode, formulaType]
+                    required: [id, deviceSatelliteId, tableIndex, bitWidth, telemetryName, telemetryCode]
                     properties:
                       id: { type: integer, format: int64, description: "参数解析配置主键" }
                       deviceSatelliteId: { type: integer, format: int64, description: "原设备卫星主键，不允许更换设备" }
@@ -3440,8 +3735,8 @@ paths:
                       bitWidth: { type: string, description: "位宽" }
                       telemetryName: { type: string, description: "遥测名称" }
                       telemetryCode: { type: string, description: "遥测代号，同设备内唯一" }
-                      formulaType: { type: string, description: "公式类型" }
-                      formulaDesc: { type: string, nullable: true, description: "处理公式" }
+                      formulaType: { type: string, nullable: true, description: "已导入Lua公式编号，空值或空字符串表示原码输出" }
+                      formulaDesc: { type: string, nullable: true, description: "历史公式描述，仅保留展示，不参与Lua计算" }
                       processParam: { type: string, nullable: true, description: "处理参数" }
                       decimalPlaces: { type: string, nullable: true, description: "小数位数" }
                       alarmFlag: { type: string, enum: ["0", "1"], description: "是否报警：0否、1是；空值按0保存" }
@@ -3661,7 +3956,7 @@ paths:
             "application/json":
               "example":
                 "code": 400
-                "message": "工作表【设备A】第2行：序号、位宽、遥测名称、遥测代号、公式类型不能为空"
+                "message": "工作表【设备A】第2行：序号、位宽、遥测名称、遥测代号不能为空"
 
   /calibration/overview:
     get:
@@ -4816,7 +5111,7 @@ components:
               value_type:
                 type: integer
                 enum: [4]
-                description: 双精度数值，VALUE_TYPE_DOUBLE，对应公式类型301
+                description: 双精度数值，结果类型由匹配的Lua公式返回
               value:
                 type: number
                 format: double
@@ -5222,6 +5517,7 @@ components:
           - STORAGE_FAILURE
           - MESSAGE_FAILURE
           - FILE_RESULT
+          - CALIBRATION_DEDUP
           - CALIBRATION_OUTLIER
           - CALIBRATION_RULE
           - CALIBRATION_CACHE
@@ -5253,6 +5549,8 @@ components:
             label: 结果消息发送失败
           - value: FILE_RESULT
             label: 文件结果处理失败
+          - value: CALIBRATION_DEDUP
+            label: 数据去重
           - value: CALIBRATION_OUTLIER
             label: 校准野值
           - value: CALIBRATION_RULE
@@ -5483,7 +5781,7 @@ components:
             onlineAgentCount: { type: integer, format: int64, description: "当前在线采集接口数量" }
             senderCount: { type: integer, format: int64, description: "发送方系统总数" }
             collectionCount: { type: integer, format: int64, description: "统计时间范围内的采集总条数" }
-            interfaceRateKbps: { type: number, format: double, description: "各采集接口最新接口流量之和，单位KB/s" }
+            interfaceRateKbps: { type: string, description: "包含速度数值与单位；小于1024 KB/s使用KB/s，否则换算为MB/s；最多两位小数，无流量为0 KB/s", example: "1.53 MB/s" }
         lineChart:
           type: object
           description: "按发送方系统聚合的采集量时间曲线"
@@ -5525,7 +5823,7 @@ components:
                 items: { type: string, example: "UDP" }
               collectionCount: { type: integer, format: int64, description: "统计时间范围内的采集条数" }
               percentage: { type: number, format: double, description: "该发送方采集量占总采集量的百分比" }
-              interfaceRateKbps: { type: number, format: double, description: "该发送方所有接口最新流量之和，单位KB/s" }
+              interfaceRateKbps: { type: string, description: "包含速度数值与单位；小于1024 KB/s使用KB/s，否则换算为MB/s；最多两位小数，无流量为0 KB/s", example: "1.53 MB/s" }
               statusName:
                 type: string
                 description: "发送方存在启用接口时在线，全部禁用时离线"
@@ -5789,7 +6087,7 @@ components:
                     onlineAgentCount: 3
                     senderCount: 3
                     collectionCount: 12500
-                    interfaceRateKbps: 1562.5
+                    interfaceRateKbps: "1.53 MB/s"
                   lineChart:
                     # 示例仅展示末尾三个点，实际近三小时返回三十六点。
                     timePoints: ["10:20", "10:25", "10:29:50"]
@@ -5808,21 +6106,21 @@ components:
                       protocols: ["UDP"]
                       collectionCount: 5200
                       percentage: 41.6
-                      interfaceRateKbps: 680.5
+                      interfaceRateKbps: "680.5 KB/s"
                       statusName: "在线"
                     - systemName: "卫星遥测系统"
                       interfaceCount: 1
                       protocols: ["TCP"]
                       collectionCount: 4100
                       percentage: 32.8
-                      interfaceRateKbps: 512.0
+                      interfaceRateKbps: "512 KB/s"
                       statusName: "在线"
                     - systemName: "载荷数据处理系统"
                       interfaceCount: 1
                       protocols: ["HTTP"]
                       collectionCount: 3200
                       percentage: 25.6
-                      interfaceRateKbps: 370.0
+                      interfaceRateKbps: "370 KB/s"
                       statusName: "在线"
             twentyFourHours:
               summary: 近24小时数据
@@ -5837,7 +6135,7 @@ components:
                     onlineAgentCount: 3
                     senderCount: 3
                     collectionCount: 92800
-                    interfaceRateKbps: 1562.5
+                    interfaceRateKbps: "1.53 MB/s"
                   lineChart:
                     # 示例仅展示末尾三个点，实际近二十四小时返回四十八点。
                     timePoints: ["09:30", "10:00", "10:29:50"]
@@ -5856,21 +6154,21 @@ components:
                       protocols: ["UDP"]
                       collectionCount: 38600
                       percentage: 41.59
-                      interfaceRateKbps: 680.5
+                      interfaceRateKbps: "680.5 KB/s"
                       statusName: "在线"
                     - systemName: "卫星遥测系统"
                       interfaceCount: 1
                       protocols: ["TCP"]
                       collectionCount: 30100
                       percentage: 32.44
-                      interfaceRateKbps: 512.0
+                      interfaceRateKbps: "512 KB/s"
                       statusName: "在线"
                     - systemName: "载荷数据处理系统"
                       interfaceCount: 1
                       protocols: ["HTTP"]
                       collectionCount: 24100
                       percentage: 25.97
-                      interfaceRateKbps: 370.0
+                      interfaceRateKbps: "370 KB/s"
                       statusName: "在线"
 
     DashboardProcessingSuccess:
@@ -7213,12 +7511,31 @@ components:
                             - value: 1
                               name: "启用"
                               description: "1 表示启用"
+                        receiveRateLimit:
+                          type: number
+                          nullable: true
+                          minimum: 0.001
+                          maximum: 1000000
+                          multipleOf: 0.001
+                          description: "接收速率上限，仅UDP和TCP支持；不传或null表示不限速，更新时清空旧配置"
+                        receiveRateLimitUnit:
+                          type: string
+                          nullable: true
+                          enum: [kilobytes_per_second, megabytes_per_second]
+                          description: "配置上限时必填；前端从/collection/findData获取单位选项，KB/s或MB/s，按1024换算"
+                          x-apifox-enum:
+                            - { value: kilobytes_per_second, name: "KB/s" }
+                            - { value: megabytes_per_second, name: "MB/s" }
                         rpcEnabled:
                           type: integer
                           description: "处理方式：HTTP和FEP固定返回0；其他协议0处理（选PDXP）、1转发（选RPC）"
                           enum:
                             - 0
                             - 1
+                        receiveRateLimitUnitName:
+                          type: string
+                          nullable: true
+                          description: "接收速率单位显示标签：KB/s或MB/s；不限速时为空"
                         rpcEnabledName:
                           type: string
                           description: "是否启用RPC处理中文名称"
@@ -7227,9 +7544,8 @@ components:
                           format: int64
                           description: "采集接口表保存的长期累计采集量；PDXP为完整帧数，FEP为完整文件数，五秒统计明细过期清理后仍保留"
                         interfaceRateKbps:
-                          type: number
-                          format: double
-                          description: "Redis最新采集速率，单位KB/s，最多两位小数；缓存有效期5秒，缺失或Redis不可用时为0"
+                          type: string
+                          description: "Redis最新采集速率，包含数值和单位，自动切换KB/s与MB/s，最多两位小数；缓存缺失或Redis不可用时返回0 KB/s"
                         remark:
                           type: string
                           description: "备注信息"
@@ -7260,7 +7576,7 @@ components:
                   rpcEnabled: 1
                   rpcEnabledName: "是"
                   dataPacketCount: 25600
-                  interfaceRateKbps: 128.5
+                  interfaceRateKbps: "128.5 KB/s"
                   remark: "主链路"
 
     Success023:
@@ -7404,12 +7720,31 @@ components:
                       - value: 1
                         name: "启用"
                         description: "1 表示启用"
+                  receiveRateLimit:
+                    type: number
+                    nullable: true
+                    minimum: 0.001
+                    maximum: 1000000
+                    multipleOf: 0.001
+                    description: "接收速率上限，仅UDP和TCP支持；不传或null表示不限速，更新时清空旧配置"
+                  receiveRateLimitUnit:
+                    type: string
+                    nullable: true
+                    enum: [kilobytes_per_second, megabytes_per_second]
+                    description: "配置上限时必填；前端从/collection/findData获取单位选项，KB/s或MB/s，按1024换算"
+                    x-apifox-enum:
+                      - { value: kilobytes_per_second, name: "KB/s" }
+                      - { value: megabytes_per_second, name: "MB/s" }
                   rpcEnabled:
                     type: integer
                     description: "处理方式：HTTP和FEP固定返回0；其他协议0处理（选PDXP）、1转发（选RPC）"
                     enum:
                       - 0
                       - 1
+                  receiveRateLimitUnitName:
+                    type: string
+                    nullable: true
+                    description: "接收速率单位显示标签：KB/s或MB/s；不限速时为空"
                   rpcEnabledName:
                     type: string
                     description: "是否启用RPC处理中文名称"

@@ -9,6 +9,7 @@ import com.example.common.greptime.TelemetrySourceType;
 import com.example.dataadmin.entity.ProcessedTelemetryFilterSelection;
 import com.example.dataadmin.enums.BusinessEnums;
 import com.example.dataadmin.enums.DeviceSatelliteType;
+import com.example.dataadmin.enums.TelemetryTypeOptions;
 import com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper;
 import com.example.dataadmin.vo.processing.ProcessedTelemetryCurveVO;
 import com.example.dataadmin.vo.processing.ProcessedTelemetryVO;
@@ -50,24 +51,31 @@ public class ProcessedTelemetryQueryService {
     }
 
     /** 从有效勾选记录取得查询身份，并按记录顺序汇总每个参数的最新值。 */
-    public List<ProcessedTelemetryVO> latest(String taskId, Integer selectionType, Long targetId) {
+    public List<ProcessedTelemetryVO> latest(String taskId, Integer selectionType, Long targetId,
+            String telemetryType) {
+        // 在创建并发查询前校验类型，非法输入直接返回中文提示。
+        String normalizedType = TelemetryTypeOptions.normalize(telemetryType);
         // 最新值仅接受处理后数据表格和数据可视化表格的勾选场景。
         if (selectionType != BusinessEnums.SelectionType.PROCESSED_TABLE.getCode()
                 && selectionType != BusinessEnums.SelectionType.VISUALIZATION_TABLE.getCode()) {
             throw new IllegalArgumentException("最新值查询的勾选类型不正确");
         }
-        return queryInBatches(selected(taskId, selectionType, targetId), this::latestOne);
+        return queryInBatches(selected(taskId, selectionType, targetId),
+                item -> latestOne(item, normalizedType));
     }
 
     /** 从有效勾选记录取得查询身份，并按记录顺序汇总每个参数的曲线。 */
     public List<ProcessedTelemetryCurveVO> curves(String taskId, Integer selectionType,
-            Long targetId) {
+            Long targetId, String telemetryType) {
+        // 曲线和最新值使用相同的类型校验与空白处理规则。
+        String normalizedType = TelemetryTypeOptions.normalize(telemetryType);
         // 曲线仅接受处理后数据曲线和数据可视化曲线的勾选场景。
         if (selectionType != BusinessEnums.SelectionType.PROCESSED_CURVE.getCode()
                 && selectionType != BusinessEnums.SelectionType.VISUALIZATION_CURVE.getCode()) {
             throw new IllegalArgumentException("曲线查询的勾选类型不正确");
         }
-        return queryInBatches(selected(taskId, selectionType, targetId), this::curveOne);
+        return queryInBatches(selected(taskId, selectionType, targetId),
+                item -> curveOne(item, normalizedType));
     }
 
     /** 每批最多提交连接池容量内的查询，不一次创建所有参数的查询任务。 */
@@ -95,13 +103,14 @@ public class ProcessedTelemetryQueryService {
     }
 
     /** 单个参数只读取最新一条，缺少历史值时仍返回参数身份。 */
-    private ProcessedTelemetryVO latestOne(ProcessedTelemetryFilterSelection item) {
+    private ProcessedTelemetryVO latestOne(ProcessedTelemetryFilterSelection item,
+            String telemetryType) {
         ProcessedTelemetryVO result = new ProcessedTelemetryVO();
         result.setDeviceSatelliteId(item.getDeviceSatelliteId());
         result.setTelemetryCode(item.getTelemetryCode());
         result.setParameter(item.getTelemetryName());
         // 只改变数据库读取，未采集到数据时仍返回原有参数身份和空值。
-        TelemetryParameterRecord row = store.latest(query(item));
+        TelemetryParameterRecord row = store.latest(query(item, telemetryType));
         if (row != null) {
             if (row.getTelemetryName() != null && !row.getTelemetryName().trim().isEmpty()) {
                 result.setParameter(row.getTelemetryName());
@@ -118,13 +127,14 @@ public class ProcessedTelemetryQueryService {
     }
 
     /** 先取最近一百二十个有效点，再按时间升序返回。 */
-    private ProcessedTelemetryCurveVO curveOne(ProcessedTelemetryFilterSelection item) {
+    private ProcessedTelemetryCurveVO curveOne(ProcessedTelemetryFilterSelection item,
+            String telemetryType) {
         ProcessedTelemetryCurveVO result = new ProcessedTelemetryCurveVO();
         result.setDeviceSatelliteId(item.getDeviceSatelliteId());
         result.setTelemetryCode(item.getTelemetryCode());
         result.setParameter(item.getTelemetryName());
         // 查询只读取时间和数值，不读取参数原码及文本。
-        for (TelemetryParameterRecord row : store.curve(query(item))) {
+        for (TelemetryParameterRecord row : store.curve(query(item, telemetryType))) {
             if (row.getSourceTime() != null) {
                 result.getTimes().add(row.getSourceTime().getTime());
                 result.getValues().add(row.getValue());
@@ -136,10 +146,13 @@ public class ProcessedTelemetryQueryService {
     }
 
     /** 保留本地设备精确匹配、远程任务范围匹配的既有业务规则。 */
-    private Map<String, Object> query(ProcessedTelemetryFilterSelection item) {
+    private Map<String, Object> query(ProcessedTelemetryFilterSelection item,
+            String telemetryType) {
         Map<String, Object> query = new HashMap<>();
         query.put("taskId", item.getTaskId().trim());
         query.put("telemetryCode", item.getTelemetryCode());
+        // 作为单次请求的局部条件传递，避免不同类型的并发请求相互影响。
+        query.put("telemetryType", telemetryType);
         // 来源枚举复用公共定义，身份不再转义为数据库路径。
         if (DeviceSatelliteType.SATELLITE.getValue().equals(item.getDeviceSatelliteType())) {
             query.put("sourceType", TelemetrySourceType.RPC.getValue());

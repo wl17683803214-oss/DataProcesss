@@ -10,6 +10,20 @@ import javax.validation.constraints.Size;
  * 新增或修改采集接口的请求参数。
  */
 public class InterfaceSaveRequest {
+    /** 接收速率上限，空值表示不限速。 */
+    private java.math.BigDecimal receiveRateLimit;
+    /** 接收速率单位，使用英文单位编码保存。 */
+    private String receiveRateLimitUnit;
+
+    /** 获取接收速率上限。 */
+    public java.math.BigDecimal getReceiveRateLimit() { return receiveRateLimit; }
+    /** 设置接收速率上限。 */
+    public void setReceiveRateLimit(java.math.BigDecimal value) { receiveRateLimit = value; }
+    /** 获取接收速率单位。 */
+    public String getReceiveRateLimitUnit() { return receiveRateLimitUnit; }
+    /** 设置接收速率单位。 */
+    public void setReceiveRateLimitUnit(String value) { receiveRateLimitUnit = value; }
+
 
     /** 采集接口主键 ID；编辑时必填。 */
     private Long id;

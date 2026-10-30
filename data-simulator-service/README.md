@@ -1,10 +1,10 @@
 # 独立模拟源服务
 
-新模块独立管理PDXP/UDP和FEP/TCP模拟源，旧模拟源、管理服务、处理服务保持原样。只依赖公共模块的响应对象、分页对象和FEP编解码工具。
+新模块独立管理JSON/HTTP、PDXP/UDP单播或组播、FEP/TCP模拟源，旧模拟源、管理服务、处理服务保持原样。只依赖公共模块的响应对象、分页对象和FEP编解码工具。
 
 ## 部署
 
-1. 在金仓PostgreSQL兼容模式数据库执行仓库根目录的 [sql/data-simulator-service.sql](../sql/data-simulator-service.sql)。同一文件用于新库建表、已有模拟源表补字段、删除全部业务CHECK及历史FEP编码4迁移为3；主键、外键、非空及唯一索引保留。不修改旧模块数据表，不再单独维护升级脚本。
+1. 在金仓PostgreSQL兼容模式数据库执行仓库根目录的 [sql/data-simulator-service.sql](../sql/data-simulator-service.sql)。同一文件用于新库建表、已有模拟源表补字段、删除全部业务CHECK及历史FEP编码4迁移为3；HTTP可省略文件路径，其他字段约束、主键、外键和唯一索引保留。不修改旧模块数据表，不再单独维护升级脚本。
 2. 将仓库根目录的 [nacos-config/data-simulator-service.yaml](../nacos-config/data-simulator-service.yaml) 内容导入Nacos：配置标识为 `data-simulator-service.yaml`，分组默认为 `DEFAULT_GROUP`，格式为YAML。直接按环境填写数据库连接、账号和密码，不使用环境变量占位符。默认数据库地址为 `jdbc:kingbase8://127.0.0.1:54321/data_processing`，用户名为 `system`，密码按配置文件当前值读取，部署时核对实际凭据。
 3. 在仓库根目录执行 `mvn -pl data-simulator-service -am package -DskipTests`。
 4. 执行 `java -jar data-simulator-service/target/data-simulator-service-1.0.0-SNAPSHOT.jar`，默认端口8084，需调整时修改Nacos配置中的 `server.port`。
@@ -36,13 +36,33 @@ Nacos配置应在启动前发布，模块不再内置业务配置兜底。为保
 
 ## 模拟数据文件上传
 
-先调用 `POST /simulator/files/upload`，使用 `multipart/form-data`，文件字段名为 `file`。成功后将返回的 `data.filePath` 原样用于创建或修改模拟源，前端展示 `fileName` 和以字节为单位的 `fileSize`。已有服务器文件路径仍兼容，无需迁移数据库。
+仅PDXP和FEP需要调用 `POST /simulator/files/upload`，使用 `multipart/form-data`，文件字段名为 `file`。成功后将返回的 `data.filePath` 原样用于创建或修改模拟源，前端展示 `fileName` 和以字节为单位的 `fileSize`。HTTP/JSON直接配置目标路径和JSON正文，不上传文件。已有服务器文件路径仍兼容，无需迁移数据库。
 
 上传目录配置为 `simulator.upload-directory: ./data/simulator/uploads`，相对路径以服务启动目录为基准。每次上传创建独立子目录，保留原文件名，不覆盖同名文件。文件持久保存，不因取消表单、替换文件、删除模拟源或发送完成而自动删除，部署时应将目录放在持久磁盘上；后续修改上传目录不会移动已有文件。
 
 仓库 `nacos-config/data-simulator-service.yaml` 中 `spring.servlet.multipart.max-file-size` 默认1024MB，`max-request-size` 默认1025MB。发布配置并重启服务后生效；网关上传大小与超时也需按实际部署匹配。流式写入文件，上传失败只清理本次创建的未完成文件。上传接口允许0字节文件用于FEP，PDXP继续在启动时校验非空和帧长度。FEP原文件名仍受协议64字节限制。
 
 上传成功不创建模拟源或启动发送；上传文件删除、下载和目录浏览不在本次接口范围内。配置示例中的文件路径应替换为上传接口的实际返回值。
+
+## HTTP/JSON配置示例
+
+HTTP模拟源不上传文件，直接在创建或修改请求中填写目标主机、端口、路径和JSON正文。每轮发送一个HTTP POST请求，成功收到2xx响应后计为一次发送；启用循环时按发送间隔重复请求。
+
+```json
+{
+  "sourceName": "HTTP遥测模拟源",
+  "transferProtocol": 1,
+  "transferType": 3,
+  "targetHost": "127.0.0.1",
+  "targetPort": 8083,
+  "targetPath": "/collection/receive/simulator-demo",
+  "messageContent": "{\"temperature\":23.5}",
+  "sendIntervalMillis": 1000,
+  "loopEnabled": 1
+}
+```
+
+`targetPath`必须以`/`开头且不能包含查询参数；`messageContent`必须是合法JSON文本，发送时使用`Content-Type: application/json; charset=UTF-8`。例如接入处理服务统一入口时，完整目标地址为`http://127.0.0.1:8083/collection/receive/simulator-demo`。
 
 ## PDXP配置示例
 
@@ -77,6 +97,8 @@ Nacos配置应在启动前发布，模块不再内置业务配置兜底。为保
 ```
 
 四个长度均为每个PDXP模拟源的独立配置。文件必须存在、可读、非空且大小为 `inputFrameLength` 的整数倍。组装顺序为：传输头、32字节PDXP包头、自定义数据、原帧剩余部分、原帧开头指定长度的帧头。总长度为 `inputFrameLength + transportHeaderLength + 32 + customDataLength`，PDXP数据域长度为 `inputFrameLength + customDataLength`。默认配置仍每帧读取512字节并发送551字节。
+
+默认`sendMode=UNICAST`保持原单播行为。组播时将`sendMode`设为`MULTICAST`，`targetHost`填写组播组地址，例如`239.1.1.1`；不填写接收方单播IP。`multicastInterface`可选填写本机出口网卡IPv4地址，不填写时使用系统默认网卡。组播TTL固定为1。
 
 `inputFrameLength` 范围1到65475，`telemetryHeaderLength` 范围0到输入帧长度，传输头及自定义数据长度范围0到65475，最终UDP报文总长度不能超过65507。传输头及自定义内容必须恰好包含对应字节长度两倍的十六进制字符；长度为零时忽略对应内容，支持空字符串、null、不传或保留旧内容，后端统一归一为空字符串；数据库允许这两个内容字段为空。已有环境需要执行 `sql/data-simulator-service.sql` 中取消这两个字段非空约束的语句。原帧头移位不改变字节总数。报文较大时可能发生IP分片，应按接收端能力选择长度。
 
@@ -120,11 +142,11 @@ FEP不允许提交PDXP参数，不创建PDXP参数记录。公共参数位于Nac
 
 ## 统计与运行限制
 
-- `sentUnitCount`：PDXP帧数，或FEP文件数据单元数（包括结束空单元）。
-- `sentByteCount`：成功写入套接字的应用层协议字节数，FEP包括发送请求，排除TCP/IP或UDP/IP网络头。
-- `completedLoopCount`：完成文件读取或文件交换轮数。
+- `sentUnitCount`：PDXP帧数、FEP文件数据单元数（包括结束空单元），或HTTP成功响应次数。
+- `sentByteCount`：成功发送的应用层协议字节数；FEP包括发送请求，HTTP统计请求正文长度，不含网络头和HTTP头。
+- `completedLoopCount`：完成文件读取、文件交换或HTTP请求轮数。
 - 统计每2秒保存一次，停止和结束时再次保存；数据库短暂不可用时保留待保存实例重试。强制退出可能损失最后一次保存后的统计。
-- UDP发送成功不代表接收确认，FEP结束确认也不代表接收侧后续入库处理完成。
+- UDP单播或组播发送成功不代表接收确认；HTTP以接收端2xx响应作为一次成功；FEP结束确认也不代表接收侧后续入库处理完成。
 - 默认最多16个并发实例，可在Nacos配置中修改 `simulator.max-concurrent`（1到256），发布并重启服务后生效；达到上限拒绝新启动，不隐式排队。
 - 运行期间不要替换或修改源文件；快照保存配置，不保存源文件内容。
 - 发送间隔允许0到86400000毫秒；目标端口允许1到65535。

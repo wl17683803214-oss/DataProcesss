@@ -7,7 +7,7 @@
     <!-- 按任务、接口、文件名和文件长度查询唯一处理记录。 -->
     <select id="findByIdentity"
             resultType="com.example.dataprocess.entity.FepFileTransferRecord">
-        select id, task_id, interface_id, file_name, file_type, file_length,
+        select id, task_id, interface_id, file_name, file_type, file_length, resolution,
                local_path, object_name, file_url, process_status,
                retry_count, last_error, next_retry_time,
                completed_time, create_time, update_time
@@ -23,11 +23,11 @@
             parameterType="com.example.dataprocess.entity.FepFileTransferRecord"
             useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into fep_file_transfer_record (
-            task_id, interface_id, file_name, file_type, file_length, local_path,
+            task_id, interface_id, file_name, file_type, file_length, resolution, local_path,
             object_name, file_url, process_status, retry_count,
             completed_time, create_time, update_time
         ) values (
-            #{taskId}, #{interfaceId}, #{fileName}, #{fileType}, #{fileLength}, #{localPath},
+            #{taskId}, #{interfaceId}, #{fileName}, #{fileType}, #{fileLength}, #{resolution}, #{localPath},
             #{objectName}, #{fileUrl}, #{processStatus}, 0,
             #{completedTime}, current_timestamp, current_timestamp
         )
@@ -39,6 +39,7 @@
         update fep_file_transfer_record
         set local_path = #{localPath},
             file_type = #{fileType},
+            resolution = #{resolution},
             object_name = #{objectName},
             file_url = #{fileUrl},
             process_status = #{processStatus},
@@ -53,7 +54,7 @@
     <!-- 分批查询当前允许重试的未发布文件。 -->
     <select id="findRetryable"
             resultType="com.example.dataprocess.entity.FepFileTransferRecord">
-        select id, task_id, interface_id, file_name, file_type, file_length,
+        select id, task_id, interface_id, file_name, file_type, file_length, resolution,
                local_path, object_name, file_url, process_status,
                retry_count, last_error, next_retry_time,
                completed_time, create_time, update_time

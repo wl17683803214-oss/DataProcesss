@@ -13,6 +13,12 @@
     <artifactId>data-process-service</artifactId>
 
     <dependencies>
+        <!-- 接收限速复用令牌桶实现，此版本兼容项目使用的Java 8。 -->
+        <dependency>
+            <groupId>com.github.vladimir-bukhtoyarov</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>7.6.0</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>

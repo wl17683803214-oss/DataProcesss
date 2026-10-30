@@ -96,6 +96,12 @@ public class CalibrationProcessingServiceImpl implements CalibrationProcessingSe
         try {
             for (Map.Entry<String, Telemetry> entry : message.getTelemetriesMap().entrySet()) {
                 Telemetry telemetry = entry.getValue();
+                // 公式失败只保留二进制原码，文本也没有数值，均不能以默认零参与野值检测。
+                if (telemetry.getValueType() == SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType.VALUE_TYPE_BINARY
+                        || telemetry.getValueType() == SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType.VALUE_TYPE_TEXT) {
+                    result.putTelemetries(entry.getKey(), telemetry);
+                    continue;
+                }
                 CalibrationChannelRuntimeConfig config = configs.get(
                         trimmed(telemetry.getCalibrationFormula()));
                 Telemetry processed;

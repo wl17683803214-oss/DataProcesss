@@ -10,6 +10,9 @@ import com.example.simulator.mapper.SimulatorMapper;
 import com.example.simulator.protocol.PdxpEncoder;
 import com.example.common.protocol.fep.FepProtocolTool;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import java.net.URI;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.nio.file.*;
@@ -37,16 +40,33 @@ public class RunServiceImpl implements RunService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public PreparedRun prepare(long sourceId) throws Exception {
-        // 在当前事务中锁定配置并检查服务器文件是否可读。
+        // 在当前事务中锁定配置并读取协议发送所需内容。
         SourceConfig config = sources.requireEditable(sourceId);
-        Path path = Paths.get(config.filePath).toAbsolutePath().normalize();
-        if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
-            throw new IllegalArgumentException("源文件不存在或不可读");
-        }
-        config.filePath = path.toString();
-        long length = Files.size(path);
-        // 按协议校验帧长度或文件交换约束。
         ProtocolProfile profile = ProtocolProfile.of(config.transferProtocol);
+        Path path = null;
+        long length = 0;
+        if (profile == ProtocolProfile.JSON) {
+            // HTTP配置在启动前校验目标地址和JSON正文，不要求上传源文件。
+            URI target = new URI("http", null, config.targetHost, config.targetPort,
+                    config.targetPath, null, null);
+            if (target.getHost() == null) {
+                throw new IllegalArgumentException("HTTP目标主机地址无效");
+            }
+            JsonNode content = json.reader(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                    .readTree(config.messageContent);
+            if (content == null) {
+                throw new IllegalArgumentException("HTTP请求正文必须是有效JSON");
+            }
+        } else {
+            // 文件型协议在启动前确认文件存在且可读。
+            path = Paths.get(config.filePath).toAbsolutePath().normalize();
+            if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
+                throw new IllegalArgumentException("源文件不存在或不可读");
+            }
+            config.filePath = path.toString();
+            length = Files.size(path);
+        }
+        // 按协议校验帧长度或文件交换约束。
         if (profile == ProtocolProfile.PDXP) {
             config.pdxp = mapper.findPdxp(sourceId);
             if (config.pdxp == null) {
@@ -56,7 +76,7 @@ public class RunServiceImpl implements RunService {
             if (length == 0 || length % config.pdxp.inputFrameLength != 0) {
                 throw new IllegalArgumentException("PDXP文件必须非空且大小为配置帧长度的整数倍");
             }
-        } else {
+        } else if (profile == ProtocolProfile.FEP) {
             if (length > Integer.MAX_VALUE) {
                 throw new IllegalArgumentException("FEP文件超过协议长度上限");
             }
@@ -71,6 +91,12 @@ public class RunServiceImpl implements RunService {
             fep.put("connectTimeoutMillis", properties.getConnectTimeoutMillis());
             fep.put("responseTimeoutMillis", properties.getResponseTimeoutMillis());
             snapshot.put("fep", fep);
+        }
+        if (profile == ProtocolProfile.JSON) {
+            Map<String, Object> http = new LinkedHashMap<>();
+            http.put("connectTimeoutMillis", properties.getConnectTimeoutMillis());
+            http.put("responseTimeoutMillis", properties.getResponseTimeoutMillis());
+            snapshot.put("http", http);
         }
         // 保存启动记录，将配置与记录交给事务提交后的发送流程。
         RunRecord run = new RunRecord();

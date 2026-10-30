@@ -6,7 +6,11 @@ import com.example.simulator.service.SourceService;
 import com.example.simulator.model.*;
 import com.example.simulator.mapper.SimulatorMapper;
 import com.example.simulator.protocol.PdxpEncoder;
+import com.example.simulator.enums.SendMode;
+import java.net.InetAddress;
 import com.example.common.response.PageResult;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,10 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SourceServiceImpl implements SourceService {
     private final SimulatorMapper mapper;
+    private final ObjectMapper json;
 
-    public SourceServiceImpl(SimulatorMapper mapper) {
+    public SourceServiceImpl(SimulatorMapper mapper, ObjectMapper json) {
         // 注入配置与运行记录的统一数据访问组件。
         this.mapper = mapper;
+        this.json = json;
     }
 
     /** 创建基础配置及可选PDXP参数，任何失败都回滚。 */
@@ -126,6 +132,44 @@ public class SourceServiceImpl implements SourceService {
 
     /** PDXP参数在落库前完成校验。 */
     private void validateProtocol(SourceConfig config) {
+        ProtocolProfile profile = ProtocolProfile.of(config.transferProtocol);
+        // 第一阶段：组播模式只允许PDXP，并校验目标和可选出口网卡地址。
+        if (profile == ProtocolProfile.PDXP) {
+            try {
+                InetAddress targetAddress = InetAddress.getByName(config.targetHost);
+                boolean multicast = SendMode.MULTICAST.value.equals(config.sendMode);
+                if (multicast && (!targetAddress.isMulticastAddress()
+                        || targetAddress.getAddress().length != 4)) {
+                    throw new IllegalArgumentException("组播模式的目标地址必须是IPv4组播地址");
+                }
+                if (!multicast && targetAddress.isMulticastAddress()) {
+                    throw new IllegalArgumentException("单播模式不能使用组播目标地址");
+                }
+                if (!multicast && config.multicastInterface != null) {
+                    throw new IllegalArgumentException("单播模式不能设置组播出口网卡");
+                }
+                if (config.multicastInterface != null) {
+                    InetAddress localAddress = InetAddress.getByName(config.multicastInterface);
+                    if (localAddress.getAddress().length != 4 || localAddress.isAnyLocalAddress()
+                            || localAddress.isMulticastAddress()) {
+                        throw new IllegalArgumentException("组播出口网卡必须填写本机IPv4单播地址");
+                    }
+                }
+            } catch (java.net.UnknownHostException exception) {
+                throw new IllegalArgumentException("组播地址或出口网卡地址无效");
+            }
+        }
+        // 第二阶段：保存时即校验HTTP/JSON正文，避免配置成功后启动才发现格式错误。
+        if (profile == ProtocolProfile.JSON) {
+            try {
+                if (json.reader(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                        .readTree(config.messageContent) == null) {
+                    throw new IllegalArgumentException("HTTP请求正文必须是有效JSON");
+                }
+            } catch (java.io.IOException exception) {
+                throw new IllegalArgumentException("HTTP请求正文必须是有效JSON");
+            }
+        }
         if (config.pdxp != null) {
             PdxpEncoder.validate(config.pdxp);
         }

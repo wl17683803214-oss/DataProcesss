@@ -22,6 +22,7 @@
         select task_id,
                requirement_id,
                task_name,
+               task_evaluation,
                task_priority,
                plan_id,
                plan_code,
@@ -35,6 +36,24 @@
         from experiment_task
         order by event_time desc, task_id
     </select>
+
+    <!-- 手动评估独立更新，缺少任务编号或评估内容时禁止更新任何记录。 -->
+    <update id="updateEvaluation">
+        update experiment_task
+        set task_evaluation = #{taskEvaluation},
+            update_time = current_timestamp
+        <where>
+            <if test="taskId != null and taskId.trim() != ''">
+                task_id = #{taskId}
+            </if>
+            <if test="taskId == null or taskId.trim() == ''">
+                1 = 0
+            </if>
+            <if test="taskEvaluation == null or taskEvaluation.trim() == ''">
+                and 1 = 0
+            </if>
+        </where>
+    </update>
 
     <!-- 开始消息重复投递时更新快照；同轮已经结束时不允许回退为运行中。 -->
     <insert id="upsertStarted">

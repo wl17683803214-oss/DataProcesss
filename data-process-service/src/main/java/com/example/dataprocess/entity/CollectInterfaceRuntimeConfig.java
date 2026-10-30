@@ -9,6 +9,33 @@ import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 
 /** 数据处理服务运行采集接口所需的配置快照。 */
 public class CollectInterfaceRuntimeConfig {
+    /** 公式源码在同步时编译，每帧处理只读取当前版本快照。 */
+    private volatile Map<String, com.example.common.formula.LuaFormulaEngine.Compiled>
+            formulaScripts = Collections.emptyMap();
+
+    /** 获取当前公式快照。 */
+    public Map<String, com.example.common.formula.LuaFormulaEngine.Compiled> getFormulaScripts() {
+        return formulaScripts;
+    }
+
+    /** 原子替换只读公式快照。 */
+    public void setFormulaScripts(Map<String, com.example.common.formula.LuaFormulaEngine.Compiled> scripts) {
+        formulaScripts = scripts == null ? Collections.emptyMap() : scripts;
+    }
+    /** 接收速率上限，空值表示不限速。 */
+    private java.math.BigDecimal receiveRateLimit;
+    /** 接收速率单位，使用英文单位编码保存。 */
+    private String receiveRateLimitUnit;
+
+    /** 获取接收速率上限。 */
+    public java.math.BigDecimal getReceiveRateLimit() { return receiveRateLimit; }
+    /** 设置接收速率上限。 */
+    public void setReceiveRateLimit(java.math.BigDecimal value) { receiveRateLimit = value; }
+    /** 获取接收速率单位。 */
+    public String getReceiveRateLimitUnit() { return receiveRateLimitUnit; }
+    /** 设置接收速率单位。 */
+    public void setReceiveRateLimitUnit(String value) { receiveRateLimitUnit = value; }
+
 
     /** 同一次接口启动只记录第一条处理完成日志，并发处理时原子判断。 */
     private final AtomicBoolean pdxpProcessingLogged = new AtomicBoolean();
@@ -202,6 +229,8 @@ public class CollectInterfaceRuntimeConfig {
                 && same(transferType, other.transferType)
                 && same(transferProtocol, other.transferProtocol)
                 && same(rpcEnabled, other.rpcEnabled)
+                && same(receiveRateLimit, other.receiveRateLimit)
+                && same(receiveRateLimitUnit, other.receiveRateLimitUnit)
                 && same(protocolConfigId, other.protocolConfigId)
                 && same(protocolConfigParams, other.protocolConfigParams);
     }

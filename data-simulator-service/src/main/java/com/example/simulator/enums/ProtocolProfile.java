@@ -5,6 +5,7 @@ package com.example.simulator.enums;
  * 编码保持与旧管理模块BusinessEnums一致；独立服务不依赖旧管理模块。
  */
 public enum ProtocolProfile {
+    JSON(1, 3, "JSON", "HTTP", 8083, 1000L, 1),
     PDXP(2, 1, "PDXP", "用户数据报传输", 9001, 500L, 1),
     FEP(3, 2, "FEP", "传输控制协议", 19003, 10L, 0);
 
@@ -34,7 +35,7 @@ public enum ProtocolProfile {
                 return profile;
             }
         }
-        throw new IllegalArgumentException("仅支持PDXP和FEP模拟源");
+        throw new IllegalArgumentException("仅支持JSON、PDXP和FEP模拟源");
     }
 }
 
