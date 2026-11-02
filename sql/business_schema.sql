@@ -440,7 +440,9 @@ COMMENT ON COLUMN telemetry_parse_rule_config.update_time IS '更新时间';
 -- 任务与设备卫星共同限定有效参数的唯一范围。
 CREATE UNIQUE INDEX IF NOT EXISTS uk_parse_rule_task_device_index
     ON telemetry_parse_rule_config (task_id, device_satellite_id, table_index) WHERE is_deleted = 0;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_parse_rule_task_device_code
+-- 遥测代号允许重复，处理时按序号保留最后一项；此处仅建立普通查询索引。
+DROP INDEX IF EXISTS uk_parse_rule_task_device_code;
+CREATE INDEX IF NOT EXISTS idx_parse_rule_task_device_code
     ON telemetry_parse_rule_config (task_id, device_satellite_id, telemetry_code) WHERE is_deleted = 0;
 -- 任务范围内按遥测代号搜索筛选框参数。
 CREATE INDEX IF NOT EXISTS idx_parse_rule_task_code

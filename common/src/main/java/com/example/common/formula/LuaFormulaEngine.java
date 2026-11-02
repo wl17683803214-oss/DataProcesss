@@ -1,6 +1,7 @@
 package com.example.common.formula;
 
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType;
+import com.example.common.enums.FormulaParameterType;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaClosure;
 import org.luaj.vm2.LuaTable;
@@ -25,7 +26,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /** 统一公式协议：脚本接收原始字节，由公式决定解码方式，不开放任意Java访问。 */
@@ -54,6 +57,8 @@ public final class LuaFormulaEngine {
             LuaValue definition = definition(compiled, environment());
             compiled.code = definition.get("code").checkjstring();
             compiled.name = definition.get("name").checkjstring();
+            // 声明在计算调用之前读取，旧脚本未声明时仍全部使用数值参数。
+            compiled.parameterTypes = parameterTypes(definition.get("parameterTypes"));
             if (!compiled.code.matches("[0-9]{1,20}") || compiled.name.trim().isEmpty()
                     || compiled.name.length() > 100) {
                 throw new IllegalArgumentException("公式编号须为1到20位数字，名称须为1到100个字符");
@@ -83,6 +88,13 @@ public final class LuaFormulaEngine {
 
     /** 每次调用使用独立变量及环境，避免上一帧或其他线程修改本帧结果。 */
     public static Result execute(Compiled compiled, byte[] raw, int bitWidth, String parameters) {
+        // 保留原有调用入口，普通脚本不需要构造关联遥测上下文。
+        return execute(compiled, raw, bitWidth, parameters, Collections.emptyMap());
+    }
+
+    /** 关联上下文只来自调用方的当前帧，不查询数据库、不使用上帧值。 */
+    public static Result execute(Compiled compiled, byte[] raw, int bitWidth, String parameters,
+            Map<String, byte[]> telemetryRawData) {
         if (compiled == null) {
             throw new IllegalArgumentException("未找到对应的公式脚本");
         }
@@ -100,7 +112,8 @@ public final class LuaFormulaEngine {
             }
             input.set("rawBytes", bytes);
             input.set("bitWidth", LuaValue.valueOf(bitWidth));
-            input.set("params", parameters(parameters));
+            // 先将声明为遥测引用的位置替换为原码整数文本，再调用计算函数。
+            input.set("params", parameters(compiled, parameters, telemetryRawData));
             // 模块初始化和计算入口共享同一次指令及时间预算。
             LuaValue output = definition(compiled, globals).get("calculate").call(input);
             return result(output);
@@ -113,21 +126,71 @@ public final class LuaFormulaEngine {
         }
     }
 
-    /** 数值参数以十进制文本传递，精确运算工具不会先损失长整数精度。 */
-    private static LuaTable parameters(String text) {
+    /** 校验声明必须是连续数组，未知类型、空数组及稀疏下标均拒绝导入。 */
+    private static FormulaParameterType[] parameterTypes(LuaValue declaration) {
+        if (declaration.isnil()) { return new FormulaParameterType[0]; }
+        if (!declaration.istable()) {
+            throw new IllegalArgumentException("参数类型声明parameterTypes必须是数组");
+        }
+        LuaTable table = declaration.checktable();
+        int length = table.length();
+        if (length < 1 || length > 256 || table.keys().length != length) {
+            throw new IllegalArgumentException("参数类型声明必须包含1到256个连续数组项");
+        }
+        for (LuaValue key : table.keys()) {
+            if (!key.isint() || key.toint() < 1 || key.toint() > length) {
+                throw new IllegalArgumentException("参数类型声明必须从下标1开始连续填写");
+            }
+        }
+        FormulaParameterType[] types = new FormulaParameterType[length];
+        for (int index = 0; index < length; index++) {
+            LuaValue value = table.get(index + 1);
+            if (value.type() != LuaValue.TSTRING) {
+                throw new IllegalArgumentException("参数类型声明的每一项必须是类型字符串");
+            }
+            types[index] = FormulaParameterType.require(value.checkjstring());
+        }
+        return types;
+    }
+
+    /** 数值和关联原码均以十进制文本传递，避免64位整数提前损失精度。 */
+    private static LuaTable parameters(Compiled compiled, String text, Map<String, byte[]> telemetryRawData) {
         LuaTable result = new LuaTable();
-        if (text == null || text.trim().isEmpty()) { return result; }
-        if (text.length() > 8192) { throw new IllegalArgumentException("处理参数超过8192个字符"); }
-        String[] values = text.split("/", -1);
+        String configuration = text == null ? "" : text.trim();
+        if (configuration.length() > 8192) { throw new IllegalArgumentException("处理参数超过8192个字符"); }
+        String[] values = configuration.isEmpty() ? new String[0] : configuration.split("/", -1);
         if (values.length > 256) { throw new IllegalArgumentException("处理参数不能超过256个"); }
-        for (int index = 0; index < values.length; index++) {
+        int length = Math.max(values.length, compiled.parameterTypes.length);
+        for (int index = 0; index < length; index++) {
+            FormulaParameterType type = index < compiled.parameterTypes.length
+                    ? compiled.parameterTypes[index] : FormulaParameterType.NUMBER;
+            String value = index < values.length ? values[index].trim() : null;
+            if (type == FormulaParameterType.TELEMETRY_RAW) {
+                // 引用位置必须显式提供代号，缺失不能用零值、当前原码或历史值替代。
+                if (value == null || value.isEmpty()) {
+                    throw new IllegalArgumentException("第" + (index + 1) + "个处理参数必须填写关联遥测代号");
+                }
+                byte[] raw = telemetryRawData == null ? null : telemetryRawData.get(value);
+                if (raw == null || raw.length == 0) {
+                    throw new IllegalArgumentException("第" + (index + 1)
+                            + "个参数引用的遥测在当前帧没有原码：" + value);
+                }
+                if (raw.length > MAX_RAW_BYTES) {
+                    throw new IllegalArgumentException("关联遥测原码超过64KB：" + value);
+                }
+                value = unsigned(raw, ByteOrder.LITTLE_ENDIAN);
+            } else if (value == null) {
+                // 未传入的数值参数仍由脚本决定默认值，不强制补齐或改变数组长度。
+                continue;
+            }
             // 空项不允许悄悄占用参数位置，默认值只在未传参数时生效。
             try {
-                decimal(values[index].trim());
+                decimal(value);
             } catch (RuntimeException exception) {
-                throw new IllegalArgumentException("第" + (index + 1) + "个处理参数必须为有效数值");
+                throw new IllegalArgumentException("第" + (index + 1) + "个处理参数的"
+                        + type.getLabel() + "必须为有效且精度允许的数值");
             }
-            result.set(index + 1, LuaValue.valueOf(values[index].trim()));
+            result.set(index + 1, LuaValue.valueOf(value));
         }
         return result;
     }
@@ -165,8 +228,7 @@ public final class LuaFormulaEngine {
         LuaTable table = new LuaTable();
         table.set("unsigned", function(args -> {
             byte[] raw = bytes(args.arg1());
-            if (order(args.arg(2)) == ByteOrder.LITTLE_ENDIAN) { reverse(raw); }
-            return LuaValue.valueOf(new BigInteger(1, raw).toString());
+            return LuaValue.valueOf(unsigned(raw, order(args.arg(2))));
         }));
         table.set("float32", function(args -> {
             byte[] raw = bytes(args.arg1());
@@ -293,6 +355,13 @@ public final class LuaFormulaEngine {
         }
     }
 
+    /** 共享整数解码逻辑，仅反转副本，当前帧其他参数仍保留原始字节。 */
+    private static String unsigned(byte[] raw, ByteOrder order) {
+        byte[] value = raw.clone();
+        if (order == ByteOrder.LITTLE_ENDIAN) { reverse(value); }
+        return new BigInteger(1, value).toString();
+    }
+
     /** 拒绝无穷大及非数值浮点结果。 */
     private static LuaValue finite(double value) {
         if (!Double.isFinite(value)) { throw new IllegalArgumentException("浮点原码或计算结果不是有限数值"); }
@@ -335,6 +404,8 @@ public final class LuaFormulaEngine {
         private final Prototype prototype;
         private String code;
         private String name;
+        /** 编译时校验后的参数类型，只在Java内使用，不暴露可变脚本定义。 */
+        private FormulaParameterType[] parameterTypes;
         private Compiled(Prototype prototype) { this.prototype = prototype; }
         /** 读取公式编号。 */
         public String getCode() { return code; }

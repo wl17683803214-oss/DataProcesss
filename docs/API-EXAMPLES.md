@@ -2375,7 +2375,7 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
 
 303示例脚本：value保存从2000-01-01 12:00:00开始的0.1毫秒整数计数，valueType为VALUE_TYPE_TIME；计数10001对应valueText“2000-01-01 12:00:01.0001”。时间行为由脚本调用工具选择，不由Java按303编号硬编码，不按decimalPlaces舍入，不作时区偏移。
 
-找不到公式、参数无效、脚本执行失败或结果不合法时，仅将当前参数保留为BINARY原码，不生成计算值，并写参数处理失败告警；同帧其他参数继续。BINARY不参与数值校准，数据库value存NULL。导入或修复后调用POST /processing/formulas/sync，后续计算正常时自动恢复告警；历史失败数据不自动补算。完整规范及文件见docs/lua-formulas/README.md。
+找不到公式、参数无效、脚本执行失败或结果不合法时，仅将当前参数保留为BINARY原码，不生成计算值，并写参数处理失败告警；同帧其他参数继续。BINARY不参与数值校准，数据库value存NULL。导入、覆盖或修正配置后由内部同步机制更新运行快照，后续计算正常时自动恢复告警；历史失败数据不自动补算。完整规范及文件见docs/lua-formulas/README.md。
 ### 遥测整帧检查结果与查询
 
 `GET /processing/realtime/telemetry?taskId=728101&interfaceId=14` 查询正常及异常整帧。当前记录示例：
@@ -2767,7 +2767,7 @@ GET /visualization/widgets/{widgetId}/files 的 data.records 每项新增 resolu
 {"code":200,"message":"操作成功","data":{"pageNum":1,"pageSize":20,"total":1,"records":[{"code":"109","name":"浮点源码线性转换","createTime":"2026-10-30T10:00:00","updateTime":"2026-10-30T10:00:00"}]}}
 ```
 
-同编号Lua再次导入会覆盖当前源码，保留createTime并更新updateTime，不再有history或version入参、出参。同源码重复导入不改变更新时间。导入后调用POST /processing/formulas/sync或重新启动接口，才让后续帧使用更新脚本。单脚本导出GET /processing/formulas/export?code=109，文件名109.lua。
+同编号Lua再次导入会覆盖当前源码，保留createTime并更新updateTime，不再有history或version入参、出参。同源码重复导入不改变更新时间。导入、覆盖成功后自动提交后台配置同步，完成后后续帧使用更新脚本；前端没有独立的手动同步或试算入口。单脚本导出GET /processing/formulas/export?code=109，文件名109.lua。
 
 批量删除：POST /processing/formulas/batch-delete。
 
@@ -2776,3 +2776,15 @@ GET /visualization/widgets/{widgetId}/files 的 data.records 每项新增 resolu
 ```
 
 成功响应data为删除条数。单次1到100项，重复编号只计一次；任一编号不存在或被任意任务的有效参数配置引用时，返回400并整批不删，错误消息列出对应编号。删除成功后自动提交后台同步，响应并不表示同步已经完成。
+
+### 关联遥测原码相加
+
+导入400_关联遥测原码相加.lua，目标遥测的参数配置片段：
+
+```json
+{"formulaType":"400","processParam":"TM002/TM003"}
+```
+
+这是字段片段，不能代替参数编辑接口所需完整请求。公式400声明前两个参数均为telemetry_raw；若同帧TM002的原始字节为05、TM003为0A 00，分别解析为5、10，计算结果为15，与这两个遥测自己的公式结果无关。目标字段仍按原配置占用位宽，但此公式不使用目标字段的原码。
+
+同帧所有原码先提取再计算，引用不依赖字段先后顺序。processParam为空、只有一个代号、空项或代号不在当前帧中时，当前参数没有计算结果，保留BINARY原码并产生参数处理失败告警；不默认补0，不读取历史值。关联值真实为0时正常参与计算。

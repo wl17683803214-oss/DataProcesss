@@ -1,0 +1,28 @@
+{
+  "sourceName" : "关联验证_0503",
+  "transferProtocol" : 2,
+  "transferType" : 1,
+  "filePath" : "D:\\工作文档\\数据处理软件\\code\\data-processing\\docs\\模拟源_100帧_6组\\03_关联遥测\\关联验证_0503.dat",
+  "sendMode" : "UNICAST",
+  "targetHost" : "127.0.0.1",
+  "targetPort" : 19103,
+  "sendIntervalMillis" : 100,
+  "loopEnabled" : 0,
+  "pdxp" : {
+    "sourceId" : null,
+    "inputFrameLength" : 16,
+    "transportHeaderLength" : 2,
+    "telemetryHeaderLength" : 4,
+    "customDataLength" : 5,
+    "transportHeader" : "1234",
+    "customData" : "0102030405",
+    "ver" : "80",
+    "mid" : "0003",
+    "sid" : "00000001",
+    "did" : "00000001",
+    "bid" : "05010002",
+    "initialNo" : "00000000",
+    "flag" : "00"
+  },
+  "remark" : "100帧"
+}

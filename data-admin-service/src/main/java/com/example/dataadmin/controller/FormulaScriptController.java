@@ -23,21 +23,10 @@ import java.util.List;
 @RequestMapping("/processing/formulas")
 public class FormulaScriptController {
     private final FormulaScriptService service;
-    /** 复用已有后台同步队列，不阻塞接口响应。 */
-    private final com.example.dataadmin.service.CollectInterfaceRuntimeSyncService runtimeSyncService;
 
     /** 注入公式管理服务。 */
-    public FormulaScriptController(FormulaScriptService service,
-            com.example.dataadmin.service.CollectInterfaceRuntimeSyncService runtimeSyncService) {
+    public FormulaScriptController(FormulaScriptService service) {
         this.service = service;
-        this.runtimeSyncService = runtimeSyncService;
-    }
-
-    /** 导入或修正参数后，由操作人明确请求加载最新运行快照。 */
-    @PostMapping("/sync")
-    public ApiResponse<String> sync() {
-        runtimeSyncService.syncAfterCommit();
-        return ApiResponse.success("公式配置同步已提交，完成情况请查看运行日志和告警");
     }
 
     /** 按编号、名称分页查询公式，不返回源码，不保留历史版本。 */
@@ -56,14 +45,6 @@ public class FormulaScriptController {
             @javax.validation.Valid @org.springframework.web.bind.annotation.RequestBody
             FormulaBatchDeleteRequest request) {
         return ApiResponse.success(service.deleteBatch(request.getCodes()));
-    }
-
-    /** 使用与处理服务相同的引擎试算，错误只返回给调用人，不产生生产告警。 */
-    @PostMapping("/preview")
-    public ApiResponse<java.util.Map<String, Object>> preview(
-            @javax.validation.Valid @org.springframework.web.bind.annotation.RequestBody
-            com.example.dataadmin.dto.processing.FormulaPreviewRequest request) {
-        return ApiResponse.success(service.preview(request));
     }
 
     /** 支持单脚本和多脚本压缩包，任一文件失败则整批回滚。 */

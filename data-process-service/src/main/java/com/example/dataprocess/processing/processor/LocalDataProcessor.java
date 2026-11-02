@@ -112,11 +112,21 @@ public class LocalDataProcessor implements DataProcessor {
                 .setTmType(TelemetryType.TM_TYPE_DEVICE_TM)
                 .setBussinessId(identity.businessId)
                 .setFrameCheckStatus(true);
-        // 第二步：依次取位并构造每个遥测对象，相同遥测代号只保留最后一项。
-        Set<String> decodedSymbols = new HashSet<String>();
-        long duplicateCount = 0L;
+        // 第二步：先提取本帧全部字段原码，后面的遥测也能作为当前公式的参数。
+        List<byte[]> rawFields = new ArrayList<>(fields.size());
+        java.util.Map<String, byte[]> rawBySymbol = new java.util.LinkedHashMap<>();
         for (PdxpProtocolField item : fields) {
             byte[] raw = reader.read(item.getBitWidth());
+            rawFields.add(raw);
+            // 与最终消息去重规则一致，同代号原码采用序号靠后的字段。
+            rawBySymbol.put(item.getTelemetryCode().trim(), raw);
+        }
+        // 第三步：按原有配置顺序计算，引用的是原码，无需等待其他公式完成。
+        Set<String> decodedSymbols = new HashSet<String>();
+        long duplicateCount = 0L;
+        for (int fieldIndex = 0; fieldIndex < fields.size(); fieldIndex++) {
+            PdxpProtocolField item = fields.get(fieldIndex);
+            byte[] raw = rawFields.get(fieldIndex);
             String tmSymbol = item.getTelemetryCode().trim();
             boolean duplicate = !decodedSymbols.add(tmSymbol);
             Telemetry.Builder telemetry = Telemetry.newBuilder()
@@ -124,7 +134,7 @@ public class LocalDataProcessor implements DataProcessor {
                     .setTmSymbol(tmSymbol)
                     .setRawData(ByteString.copyFrom(raw));
             // 直接传入原始字节；只有未配置公式时才按小端无符号整数输出原码。
-            BigDecimal stateValue = fillValue(config, formulas, telemetry, item, raw);
+            BigDecimal stateValue = fillValue(config, formulas, telemetry, item, raw, rawBySymbol);
             if (duplicate) {
                 // 后出现的同代号参数覆盖前值，并在最终Proto中标记发生过去重。
 //                telemetry.setIsDepValue(true);
@@ -160,9 +170,9 @@ public class LocalDataProcessor implements DataProcessor {
             message.putTelemetries(
                     telemetry.getTmSymbol(), telemetry.build());
         }
-        // 第三步：每个被覆盖参数计入处理统计，最终只保留后出现的参数。
+        // 第四步：每个被覆盖参数计入处理统计，最终只保留后出现的参数。
         statistics.recordDuplicate(config, duplicateCount);
-        // 第四步：构造结果并记录本帧本地处理完成信息。
+        // 第五步：构造结果并记录本帧本地处理完成信息。
         TelemetryMessage result = message.build();
         long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000L;
         // 每次启动仅记录本接口第一帧处理完成信息，后续帧不重复打印常规日志。
@@ -221,7 +231,8 @@ public class LocalDataProcessor implements DataProcessor {
             java.util.Map<String, LuaFormulaEngine.Compiled> formulas,
             Telemetry.Builder telemetry,
             PdxpProtocolField field,
-            byte[] raw) {
+            byte[] raw,
+            java.util.Map<String, byte[]> rawBySymbol) {
         try {
             if (!text(field.getFormulaType())) {
                 // 空公式是合法的原码输出场景，展示文本保留完整整数精度。
@@ -237,7 +248,7 @@ public class LocalDataProcessor implements DataProcessor {
                 throw new IllegalArgumentException("未找到公式" + code + "对应的脚本");
             }
             LuaFormulaEngine.Result result = LuaFormulaEngine.execute(
-                    formula, raw, field.getBitWidth(), field.getProcessParam());
+                    formula, raw, field.getBitWidth(), field.getProcessParam(), rawBySymbol);
             ValueType type = result.getType();
             telemetry.setValueType(type);
             if (type == ValueType.VALUE_TYPE_TEXT) {

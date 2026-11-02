@@ -467,8 +467,17 @@ GET /visualization/widgets/{widgetId}/files 的 data.records 增加可空字符�
 - POST /processing/formulas/import：multipart字段file上传.lua或.zip，整批事务导入；同编号覆盖当前源码，不保留历史版本。
 - GET /processing/formulas/export：code必填，下载当前脚本，不支持版本参数。
 - GET /processing/formulas/export-zip：codes为可选逗号分隔编号，下载当前脚本压缩包。
-- POST /processing/formulas/preview：JSON传code、rawHex、bitWidth及可选processParam，使用同一引擎试算，结果类型以中文展示。
-- POST /processing/formulas/sync：提交现有后台同步队列，响应表示已提交；同步后后续帧使用当前脚本。
 - POST /processing/formulas/batch-delete：JSON传codes数组，1到100项；任一编号不存在或被有效参数配置引用时整批不删，成功后自动提交后台同步。
 
-单脚本64KB、上传包8MB、每批100公式。导入不会立即改变运行任务；需同步配置。源码、统一输入输出、原码字节序及六个可导入示例见[lua-formulas/README.md](lua-formulas/README.md)。脚本输入为原始字节、位宽和有序数值参数，formulaDesc仅保留描述，不再执行。
+单脚本64KB、上传包8MB、每批100公式。导入、覆盖及删除成功后自动提交内部配置同步，前端不再提供手动同步或试算操作。源码、统一输入输出、原码字节序及七个可导入示例见[lua-formulas/README.md](lua-formulas/README.md)。脚本输入为原始字节、位宽和有序参数；可选parameterTypes声明number常量或telemetry_raw同帧原码引用，未声明的旧脚本仍按数值解析，formulaDesc仅保留描述，不再执行。
+
+关联公式示例400：导入docs/lua-formulas/400_关联遥测原码相加.lua，将目标参数formulaType设为400、processParam设为TM002/TM003，结果为两项同帧遥测的小端无符号原码之和。两遍处理先取齐原码再算公式，支持引用后面的字段；重复代号取最后一个字段原码。缺少参数、关联代号不存在或原码无效时，当前参数保留BINARY原码并写参数处理失败告警，不补0、不取历史值，其他参数继续。原有100、109、300、301、302、303脚本不需增加声明。
+## 重复遥测代号支持
+
+同一任务、同一设备卫星的参数允许填写相同telemetryCode，序号tableIndex仍必须唯一。Excel、TXT导入以及批量编辑均遵循此规则。参数配置表格用参数主键id作为行键，不能用telemetryCode作为唯一行键，也不能在前端拦截重复代号。
+
+同帧输入5项、其中两项同代号时，处理结果保留4项，序号靠后的项覆盖前项，累计一次去重并产生已有的数据去重告警。两个值相同也属于重复。关联公式通过代号取原码时同样取最后一项。
+
+处理后表格、曲线和勾选仍按设备及遥测代号识别，同代号配置共用一份勾选及最终值，不展示两条相同结果。修改其中一条代号时，仍有其他同代号记录的原勾选继续保留。
+
+已部署环境需执行sql/20261030_allow_duplicate_telemetry_codes.sql解除旧唯一索引，尚未执行数据库迁移。新库使用更新后的business_schema.sql。当前PDXP本地处理的tm_type仍固定为TM_TYPE_DEVICE_TM，实时和延迟测试数据暂不制作。

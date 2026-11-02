@@ -18,11 +18,28 @@
         inner join device_satellite device
           on device.id = selection.device_satellite_id
          and device.task_id = selection.task_id and device.is_deleted = 0
-        inner join telemetry_parse_rule_config rule_config
+        <!-- 重复代号共用一个筛选项，名称沿用序号靠后的最终保留参数。 -->
+        inner join (
+            select ranked.task_id, ranked.device_satellite_id, ranked.telemetry_code, ranked.telemetry_name
+            from (
+                select r.task_id, r.device_satellite_id, r.telemetry_code, r.telemetry_name,
+                       row_number() over (
+                           partition by r.task_id, r.device_satellite_id, r.telemetry_code
+                           order by case when r.table_index ~ '^[0-9]+$' then r.table_index::numeric end desc nulls last,
+                                    r.id desc
+                       ) as code_order
+                from telemetry_parse_rule_config r
+                where r.is_deleted = 0
+                <choose>
+                    <when test="taskId != null and taskId != ''">and r.task_id = #{taskId}</when>
+                    <otherwise>and 1 = 0</otherwise>
+                </choose>
+            ) ranked
+            where ranked.code_order = 1
+        ) rule_config
           on rule_config.task_id = selection.task_id
          and rule_config.device_satellite_id = selection.device_satellite_id
          and rule_config.telemetry_code = selection.telemetry_code
-         and rule_config.is_deleted = 0
         where selection.task_id = #{taskId} and selection.is_deleted = 0
           and selection.selection_type = #{selectionType} and selection.target_id = #{targetId}
         order by selection.device_satellite_id, selection.telemetry_code

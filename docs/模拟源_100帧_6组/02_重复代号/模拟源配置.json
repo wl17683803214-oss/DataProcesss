@@ -1,0 +1,28 @@
+{
+  "sourceName" : "去重验证_0502",
+  "transferProtocol" : 2,
+  "transferType" : 1,
+  "filePath" : "D:\\工作文档\\数据处理软件\\code\\data-processing\\docs\\模拟源_100帧_6组\\02_重复代号\\去重验证_0502.dat",
+  "sendMode" : "UNICAST",
+  "targetHost" : "127.0.0.1",
+  "targetPort" : 19102,
+  "sendIntervalMillis" : 100,
+  "loopEnabled" : 0,
+  "pdxp" : {
+    "sourceId" : null,
+    "inputFrameLength" : 24,
+    "transportHeaderLength" : 2,
+    "telemetryHeaderLength" : 4,
+    "customDataLength" : 5,
+    "transportHeader" : "1234",
+    "customData" : "0102030405",
+    "ver" : "80",
+    "mid" : "0002",
+    "sid" : "00000001",
+    "did" : "00000001",
+    "bid" : "05010001",
+    "initialNo" : "00000000",
+    "flag" : "00"
+  },
+  "remark" : "100帧"
+}

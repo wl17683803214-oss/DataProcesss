@@ -95,27 +95,55 @@
           <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
 
-    <!-- 排除本次修改的记录，利用设备内唯一索引查找已有键冲突。 -->
+    <!-- 排除本次修改的记录，仅检查设备内仍唯一的序号。 -->
     <select id="findBatchConflict" resultType="long">
         select id from telemetry_parse_rule_config
-        where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
-          and is_deleted = 0
-          and id not in
-          <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
-          and (table_index in
-          <foreach collection="tableIndexes" item="value" open="(" separator="," close=")">#{value}</foreach>
-          or telemetry_code in
-          <foreach collection="telemetryCodes" item="value" open="(" separator="," close=")">#{value}</foreach>)
+        where is_deleted = 0
+        <choose>
+            <when test="taskId != null and taskId != '' and deviceSatelliteId != null and tableIndexes != null and tableIndexes.size() > 0">
+                and task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+                <if test="ids != null and ids.size() > 0">
+                    and id not in
+                    <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+                </if>
+                and table_index in
+                <foreach collection="tableIndexes" item="value" open="(" separator="," close=")">#{value}</foreach>
+            </when>
+            <otherwise>and 1 = 0</otherwise>
+        </choose>
         limit 1
     </select>
 
-    <!-- 先腾出整批唯一键，避免两条参数互换序号或代号时触发中间态冲突。 -->
+    <!-- 判断原代号是否仍有未改名记录，重复参数不应互相清空勾选。 -->
+    <select id="countUnchangedCode" resultType="long">
+        select count(id) from telemetry_parse_rule_config
+        where is_deleted = 0
+        <choose>
+            <when test="taskId != null and taskId != '' and deviceSatelliteId != null and telemetryCode != null and telemetryCode != ''">
+                and task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+                and telemetry_code = #{telemetryCode}
+            </when>
+            <otherwise>and 1 = 0</otherwise>
+        </choose>
+        <if test="renamedIds != null and renamedIds.size() > 0">
+            and id not in
+            <foreach collection="renamedIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        </if>
+    </select>
+
+    <!-- 先腾出整批唯一序号，代号已允许重复，不再写入临时代号。 -->
     <update id="updateTemporaryKeys">
         update telemetry_parse_rule_config
-        set table_index = #{rule.tableIndex}, telemetry_code = #{rule.telemetryCode},
+        set table_index = #{rule.tableIndex},
             update_time = current_timestamp
-        where task_id = #{taskId} and id = #{rule.id}
-          and device_satellite_id = #{rule.deviceSatelliteId} and is_deleted = 0
+        where is_deleted = 0
+        <choose>
+            <when test="taskId != null and taskId != '' and rule != null and rule.id != null and rule.deviceSatelliteId != null">
+                and task_id = #{taskId} and id = #{rule.id}
+                and device_satellite_id = #{rule.deviceSatelliteId}
+            </when>
+            <otherwise>and 1 = 0</otherwise>
+        </choose>
     </update>
 
     <!-- 只更新可编辑业务列，任务和设备归属保持不变。 -->

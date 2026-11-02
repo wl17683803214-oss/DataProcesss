@@ -485,25 +485,21 @@ public class DataProcessingServiceImpl implements DataProcessingService {
                     ignored -> new ArrayList<>()).add(update);
         }
 
-        // 第三步：检查批内重复值及批外已有值，避免数据库在写入中间态报唯一键冲突。
+        // 第三步：仅检查序号冲突，遥测代号允许重复以供处理链路去重。
         for (Map.Entry<Long, List<TelemetryParseRuleConfig>> group : updatesByDevice.entrySet()) {
             List<Long> batchIds = new ArrayList<>();
             List<String> tableIndexes = new ArrayList<>();
-            List<String> telemetryCodes = new ArrayList<>();
             Set<String> uniqueIndexes = new HashSet<>();
-            Set<String> uniqueCodes = new HashSet<>();
             for (TelemetryParseRuleConfig update : group.getValue()) {
                 batchIds.add(update.getId());
                 tableIndexes.add(update.getTableIndex());
-                telemetryCodes.add(update.getTelemetryCode());
-                if (!uniqueIndexes.add(update.getTableIndex())
-                        || !uniqueCodes.add(update.getTelemetryCode())) {
-                    throw new IllegalArgumentException("同一设备卫星的序号或遥测代号不能重复");
+                if (!uniqueIndexes.add(update.getTableIndex())) {
+                    throw new IllegalArgumentException("同一设备卫星的序号不能重复");
                 }
             }
             if (parseRuleMapper.findBatchConflict(taskId, group.getKey(), batchIds,
-                    tableIndexes, telemetryCodes) != null) {
-                throw new IllegalArgumentException("修改后的序号或遥测代号与已有参数重复");
+                    tableIndexes) != null) {
+                throw new IllegalArgumentException("修改后的序号与已有参数重复");
             }
         }
 
@@ -519,7 +515,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             temporary.setDeviceSatelliteId(item.getDeviceSatelliteId());
             String suffix = UUID.randomUUID().toString();
             temporary.setTableIndex("__batch_index_" + suffix);
-            temporary.setTelemetryCode("__batch_code_" + suffix);
             if (parseRuleMapper.updateTemporaryKeys(taskId, temporary) != 1) {
                 throw new IllegalStateException("暂存遥测参数唯一键失败：" + item.getId());
             }
@@ -532,16 +527,19 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             }
         }
 
-        // 第五步：清除变化前后的代号勾选，再把原参数的勾选状态关联到新代号。
+        // 第五步：先收集改名记录，不能误清除仍由其他重复参数使用的原代号勾选。
+        Map<Long, List<Long>> renamedIdsByDevice = new HashMap<>();
+        Map<Long, Set<String>> oldCodesByDevice = new HashMap<>();
         Map<TelemetryParseRuleConfig, List<ProcessedTelemetryFilterSelection>> selectedRenames =
                 new LinkedHashMap<>();
         for (List<TelemetryParseRuleConfig> group : updatesByDevice.values()) {
             for (TelemetryParseRuleConfig update : group) {
                 String oldCode = originalById.get(update.getId()).getTelemetryCode();
                 if (!oldCode.equals(update.getTelemetryCode())) {
-                    selectionMapper.markDeleted(taskId, update.getDeviceSatelliteId(), oldCode);
-                    selectionMapper.markDeleted(taskId, update.getDeviceSatelliteId(),
-                            update.getTelemetryCode());
+                    renamedIdsByDevice.computeIfAbsent(update.getDeviceSatelliteId(),
+                            ignored -> new ArrayList<>()).add(update.getId());
+                    oldCodesByDevice.computeIfAbsent(update.getDeviceSatelliteId(),
+                            ignored -> new HashSet<>()).add(oldCode);
                     for (ProcessedTelemetryFilterSelection selected
                             : selectedByDevice.get(update.getDeviceSatelliteId())) {
                         if (oldCode.equals(selected.getTelemetryCode())) {
@@ -549,6 +547,15 @@ public class DataProcessingServiceImpl implements DataProcessingService {
                                     ignored -> new ArrayList<>()).add(selected);
                         }
                     }
+                }
+            }
+        }
+        // 原代号没有未改名记录时才清理；交换代号仍按原记录迁移已有勾选。
+        for (Map.Entry<Long, Set<String>> group : oldCodesByDevice.entrySet()) {
+            for (String code : group.getValue()) {
+                if (parseRuleMapper.countUnchangedCode(taskId, group.getKey(), code,
+                        renamedIdsByDevice.get(group.getKey())) == 0) {
+                    selectionMapper.markDeleted(taskId, group.getKey(), code);
                 }
             }
         }

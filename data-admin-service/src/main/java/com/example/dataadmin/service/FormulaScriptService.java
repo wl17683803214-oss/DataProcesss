@@ -29,7 +29,7 @@ public class FormulaScriptService {
     /** 单批最多一百个公式。 */
     private static final int MAX_FILES = 100;
     private final FormulaScriptMapper mapper;
-    /** 删除成功后复用已有同步队列刷新运行快照。 */
+    /** 导入及删除提交后复用已有内部同步队列，前端不需要手动同步接口。 */
     private final CollectInterfaceRuntimeSyncService runtimeSyncService;
 
     /** 注入已有MyBatis数据访问方式。 */
@@ -115,6 +115,8 @@ public class FormulaScriptService {
             }
             script.setSource(null);
         }
+        // 整批事务提交后自动刷新运行配置，保存成功不等于后台同步已经完成。
+        runtimeSyncService.syncAfterCommit();
         return scripts;
     }
 
@@ -164,46 +166,6 @@ public class FormulaScriptService {
         // 提交后才通知后台刷新，已开始的帧仍完成原有快照。
         runtimeSyncService.syncAfterCommit();
         return deleted;
-    }
-
-    /** 手工输入原码完成试算，返回结果类型中文名称及精确数值文本。 */
-    public java.util.Map<String, Object> preview(
-            com.example.dataadmin.dto.processing.FormulaPreviewRequest request) {
-        FormulaScript script = get(request.getCode());
-        String hex = request.getRawHex().replaceAll("\\s+", "");
-        if (hex.isEmpty() || (hex.length() & 1) != 0 || !hex.matches("[0-9a-fA-F]+")
-                || hex.length() / 2 != (request.getBitWidth() + 7L) / 8L) {
-            throw new IllegalArgumentException("原码必须是与位宽一致的完整十六进制字节");
-        }
-        byte[] raw = new byte[hex.length() / 2];
-        for (int index = 0; index < raw.length; index++) {
-            raw[index] = (byte) Integer.parseInt(hex.substring(index * 2, index * 2 + 2), 16);
-        }
-        // 非整字节字段必须和实际取位器一样，将末字节未使用的高位清零。
-        int usedBits = request.getBitWidth() % 8;
-        if (usedBits != 0 && ((raw[raw.length - 1] & 255) >>> usedBits) != 0) {
-            throw new IllegalArgumentException("原码末字节未使用的高位必须为零");
-        }
-        LuaFormulaEngine.Result value = LuaFormulaEngine.execute(
-                LuaFormulaEngine.compile(script.getSource()), raw, request.getBitWidth(), request.getProcessParam());
-        java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
-        response.put("code", script.getCode());
-        // 查询展示复用协议枚举映射中文，不另建重复类型枚举。
-        String label;
-        switch (value.getType()) {
-            case VALUE_TYPE_FLOAT: label = "单精度"; break;
-            case VALUE_TYPE_DOUBLE: label = "双精度"; break;
-            case VALUE_TYPE_TEXT: label = "文本"; break;
-            case VALUE_TYPE_TIME: label = "时间"; break;
-            default: label = "原码"; break;
-        }
-        response.put("valueType", label);
-        response.put("value", value.getValue() == null ? null
-                : value.getType() == SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType.VALUE_TYPE_FLOAT
-                ? (double) value.getValue().floatValue() : value.getValue().doubleValue());
-        response.put("valueText", value.getText() != null ? value.getText()
-                : value.getValue() == null ? null : value.getValue().toPlainString());
-        return response;
     }
 
     /** 批量导出当前脚本，不指定编号时有界读取全部公式。 */
