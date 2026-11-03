@@ -5140,10 +5140,30 @@ public final class TelecommandMessages {
 
     /**
      * <pre>
+     *指令唯一id
+     * </pre>
+     *
+     * <code>string command_id = 1;</code>
+     * @return The commandId.
+     */
+    String getCommandId();
+    /**
+     * <pre>
+     *指令唯一id
+     * </pre>
+     *
+     * <code>string command_id = 1;</code>
+     * @return The bytes for commandId.
+     */
+    com.google.protobuf.ByteString
+        getCommandIdBytes();
+
+    /**
+     * <pre>
      *指令代号
      * </pre>
      *
-     * <code>string cm_symbol = 1;</code>
+     * <code>string cm_symbol = 2;</code>
      * @return The cmSymbol.
      */
     String getCmSymbol();
@@ -5152,7 +5172,7 @@ public final class TelecommandMessages {
      *指令代号
      * </pre>
      *
-     * <code>string cm_symbol = 1;</code>
+     * <code>string cm_symbol = 2;</code>
      * @return The bytes for cmSymbol.
      */
     com.google.protobuf.ByteString
@@ -5163,7 +5183,7 @@ public final class TelecommandMessages {
      *指令名称
      * </pre>
      *
-     * <code>string cm_name = 2;</code>
+     * <code>string cm_name = 3;</code>
      * @return The cmName.
      */
     String getCmName();
@@ -5172,7 +5192,7 @@ public final class TelecommandMessages {
      *指令名称
      * </pre>
      *
-     * <code>string cm_name = 2;</code>
+     * <code>string cm_name = 3;</code>
      * @return The bytes for cmName.
      */
     com.google.protobuf.ByteString
@@ -5183,17 +5203,27 @@ public final class TelecommandMessages {
      *遥控包数据
      * </pre>
      *
-     * <code>bytes packet_data = 3;</code>
+     * <code>string packet_data = 4;</code>
      * @return The packetData.
      */
-    com.google.protobuf.ByteString getPacketData();
+    String getPacketData();
+    /**
+     * <pre>
+     *遥控包数据
+     * </pre>
+     *
+     * <code>string packet_data = 4;</code>
+     * @return The bytes for packetData.
+     */
+    com.google.protobuf.ByteString
+        getPacketDataBytes();
 
     /**
      * <pre>
      *后判判据
      * </pre>
      *
-     * <code>string validate_func = 4;</code>
+     * <code>string validate_func = 5;</code>
      * @return The validateFunc.
      */
     String getValidateFunc();
@@ -5202,7 +5232,7 @@ public final class TelecommandMessages {
      *后判判据
      * </pre>
      *
-     * <code>string validate_func = 4;</code>
+     * <code>string validate_func = 5;</code>
      * @return The bytes for validateFunc.
      */
     com.google.protobuf.ByteString
@@ -5213,7 +5243,7 @@ public final class TelecommandMessages {
      *绝对时间，执行
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+     * <code>.google.protobuf.Timestamp exec_time = 6;</code>
      * @return Whether the execTime field is set.
      */
     boolean hasExecTime();
@@ -5222,7 +5252,7 @@ public final class TelecommandMessages {
      *绝对时间，执行
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+     * <code>.google.protobuf.Timestamp exec_time = 6;</code>
      * @return The execTime.
      */
     com.google.protobuf.Timestamp getExecTime();
@@ -5231,7 +5261,7 @@ public final class TelecommandMessages {
      *绝对时间，执行
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+     * <code>.google.protobuf.Timestamp exec_time = 6;</code>
      */
     com.google.protobuf.TimestampOrBuilder getExecTimeOrBuilder();
 
@@ -5240,10 +5270,30 @@ public final class TelecommandMessages {
      *发送等待，相对上一条，保留
      * </pre>
      *
-     * <code>int32 send_span = 6;</code>
+     * <code>int32 send_span = 7;</code>
      * @return The sendSpan.
      */
     int getSendSpan();
+
+    /**
+     * <pre>
+     *对应指令类型
+     * </pre>
+     *
+     * <code>string vcid_code = 8;</code>
+     * @return The vcidCode.
+     */
+    String getVcidCode();
+    /**
+     * <pre>
+     *对应指令类型
+     * </pre>
+     *
+     * <code>string vcid_code = 8;</code>
+     * @return The bytes for vcidCode.
+     */
+    com.google.protobuf.ByteString
+        getVcidCodeBytes();
   }
   /**
    * Protobuf type {@code CommandMessage}
@@ -5258,10 +5308,12 @@ public final class TelecommandMessages {
       super(builder);
     }
     private CommandMessage() {
+      commandId_ = "";
       cmSymbol_ = "";
       cmName_ = "";
-      packetData_ = com.google.protobuf.ByteString.EMPTY;
+      packetData_ = "";
       validateFunc_ = "";
+      vcidCode_ = "";
     }
 
     @Override
@@ -5297,27 +5349,34 @@ public final class TelecommandMessages {
             case 10: {
               String s = input.readStringRequireUtf8();
 
-              cmSymbol_ = s;
+              commandId_ = s;
               break;
             }
             case 18: {
               String s = input.readStringRequireUtf8();
 
-              cmName_ = s;
+              cmSymbol_ = s;
               break;
             }
             case 26: {
+              String s = input.readStringRequireUtf8();
 
-              packetData_ = input.readBytes();
+              cmName_ = s;
               break;
             }
             case 34: {
               String s = input.readStringRequireUtf8();
 
-              validateFunc_ = s;
+              packetData_ = s;
               break;
             }
             case 42: {
+              String s = input.readStringRequireUtf8();
+
+              validateFunc_ = s;
+              break;
+            }
+            case 50: {
               com.google.protobuf.Timestamp.Builder subBuilder = null;
               if (execTime_ != null) {
                 subBuilder = execTime_.toBuilder();
@@ -5330,9 +5389,15 @@ public final class TelecommandMessages {
 
               break;
             }
-            case 48: {
+            case 56: {
 
               sendSpan_ = input.readInt32();
+              break;
+            }
+            case 66: {
+              String s = input.readStringRequireUtf8();
+
+              vcidCode_ = s;
               break;
             }
             default: {
@@ -5369,14 +5434,60 @@ public final class TelecommandMessages {
               CommandMessage.class, Builder.class);
     }
 
-    public static final int CM_SYMBOL_FIELD_NUMBER = 1;
+    public static final int COMMAND_ID_FIELD_NUMBER = 1;
+    private volatile Object commandId_;
+    /**
+     * <pre>
+     *指令唯一id
+     * </pre>
+     *
+     * <code>string command_id = 1;</code>
+     * @return The commandId.
+     */
+    @Override
+    public String getCommandId() {
+      Object ref = commandId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        commandId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *指令唯一id
+     * </pre>
+     *
+     * <code>string command_id = 1;</code>
+     * @return The bytes for commandId.
+     */
+    @Override
+    public com.google.protobuf.ByteString
+        getCommandIdBytes() {
+      Object ref = commandId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        commandId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int CM_SYMBOL_FIELD_NUMBER = 2;
     private volatile Object cmSymbol_;
     /**
      * <pre>
      *指令代号
      * </pre>
      *
-     * <code>string cm_symbol = 1;</code>
+     * <code>string cm_symbol = 2;</code>
      * @return The cmSymbol.
      */
     @Override
@@ -5397,7 +5508,7 @@ public final class TelecommandMessages {
      *指令代号
      * </pre>
      *
-     * <code>string cm_symbol = 1;</code>
+     * <code>string cm_symbol = 2;</code>
      * @return The bytes for cmSymbol.
      */
     @Override
@@ -5415,14 +5526,14 @@ public final class TelecommandMessages {
       }
     }
 
-    public static final int CM_NAME_FIELD_NUMBER = 2;
+    public static final int CM_NAME_FIELD_NUMBER = 3;
     private volatile Object cmName_;
     /**
      * <pre>
      *指令名称
      * </pre>
      *
-     * <code>string cm_name = 2;</code>
+     * <code>string cm_name = 3;</code>
      * @return The cmName.
      */
     @Override
@@ -5443,7 +5554,7 @@ public final class TelecommandMessages {
      *指令名称
      * </pre>
      *
-     * <code>string cm_name = 2;</code>
+     * <code>string cm_name = 3;</code>
      * @return The bytes for cmName.
      */
     @Override
@@ -5461,29 +5572,60 @@ public final class TelecommandMessages {
       }
     }
 
-    public static final int PACKET_DATA_FIELD_NUMBER = 3;
-    private com.google.protobuf.ByteString packetData_;
+    public static final int PACKET_DATA_FIELD_NUMBER = 4;
+    private volatile Object packetData_;
     /**
      * <pre>
      *遥控包数据
      * </pre>
      *
-     * <code>bytes packet_data = 3;</code>
+     * <code>string packet_data = 4;</code>
      * @return The packetData.
      */
     @Override
-    public com.google.protobuf.ByteString getPacketData() {
-      return packetData_;
+    public String getPacketData() {
+      Object ref = packetData_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        packetData_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *遥控包数据
+     * </pre>
+     *
+     * <code>string packet_data = 4;</code>
+     * @return The bytes for packetData.
+     */
+    @Override
+    public com.google.protobuf.ByteString
+        getPacketDataBytes() {
+      Object ref = packetData_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        packetData_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
-    public static final int VALIDATE_FUNC_FIELD_NUMBER = 4;
+    public static final int VALIDATE_FUNC_FIELD_NUMBER = 5;
     private volatile Object validateFunc_;
     /**
      * <pre>
      *后判判据
      * </pre>
      *
-     * <code>string validate_func = 4;</code>
+     * <code>string validate_func = 5;</code>
      * @return The validateFunc.
      */
     @Override
@@ -5504,7 +5646,7 @@ public final class TelecommandMessages {
      *后判判据
      * </pre>
      *
-     * <code>string validate_func = 4;</code>
+     * <code>string validate_func = 5;</code>
      * @return The bytes for validateFunc.
      */
     @Override
@@ -5522,14 +5664,14 @@ public final class TelecommandMessages {
       }
     }
 
-    public static final int EXEC_TIME_FIELD_NUMBER = 5;
+    public static final int EXEC_TIME_FIELD_NUMBER = 6;
     private com.google.protobuf.Timestamp execTime_;
     /**
      * <pre>
      *绝对时间，执行
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+     * <code>.google.protobuf.Timestamp exec_time = 6;</code>
      * @return Whether the execTime field is set.
      */
     @Override
@@ -5541,7 +5683,7 @@ public final class TelecommandMessages {
      *绝对时间，执行
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+     * <code>.google.protobuf.Timestamp exec_time = 6;</code>
      * @return The execTime.
      */
     @Override
@@ -5553,26 +5695,72 @@ public final class TelecommandMessages {
      *绝对时间，执行
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+     * <code>.google.protobuf.Timestamp exec_time = 6;</code>
      */
     @Override
     public com.google.protobuf.TimestampOrBuilder getExecTimeOrBuilder() {
       return getExecTime();
     }
 
-    public static final int SEND_SPAN_FIELD_NUMBER = 6;
+    public static final int SEND_SPAN_FIELD_NUMBER = 7;
     private int sendSpan_;
     /**
      * <pre>
      *发送等待，相对上一条，保留
      * </pre>
      *
-     * <code>int32 send_span = 6;</code>
+     * <code>int32 send_span = 7;</code>
      * @return The sendSpan.
      */
     @Override
     public int getSendSpan() {
       return sendSpan_;
+    }
+
+    public static final int VCID_CODE_FIELD_NUMBER = 8;
+    private volatile Object vcidCode_;
+    /**
+     * <pre>
+     *对应指令类型
+     * </pre>
+     *
+     * <code>string vcid_code = 8;</code>
+     * @return The vcidCode.
+     */
+    @Override
+    public String getVcidCode() {
+      Object ref = vcidCode_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        vcidCode_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *对应指令类型
+     * </pre>
+     *
+     * <code>string vcid_code = 8;</code>
+     * @return The bytes for vcidCode.
+     */
+    @Override
+    public com.google.protobuf.ByteString
+        getVcidCodeBytes() {
+      Object ref = vcidCode_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        vcidCode_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     private byte memoizedIsInitialized = -1;
@@ -5589,23 +5777,29 @@ public final class TelecommandMessages {
     @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(commandId_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, commandId_);
+      }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(cmSymbol_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, cmSymbol_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, cmSymbol_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(cmName_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, cmName_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, cmName_);
       }
-      if (!packetData_.isEmpty()) {
-        output.writeBytes(3, packetData_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(packetData_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, packetData_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(validateFunc_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, validateFunc_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, validateFunc_);
       }
       if (execTime_ != null) {
-        output.writeMessage(5, getExecTime());
+        output.writeMessage(6, getExecTime());
       }
       if (sendSpan_ != 0) {
-        output.writeInt32(6, sendSpan_);
+        output.writeInt32(7, sendSpan_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(vcidCode_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 8, vcidCode_);
       }
       unknownFields.writeTo(output);
     }
@@ -5616,26 +5810,31 @@ public final class TelecommandMessages {
       if (size != -1) return size;
 
       size = 0;
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(commandId_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, commandId_);
+      }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(cmSymbol_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, cmSymbol_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, cmSymbol_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(cmName_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, cmName_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, cmName_);
       }
-      if (!packetData_.isEmpty()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(3, packetData_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(packetData_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, packetData_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(validateFunc_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, validateFunc_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, validateFunc_);
       }
       if (execTime_ != null) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(5, getExecTime());
+          .computeMessageSize(6, getExecTime());
       }
       if (sendSpan_ != 0) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(6, sendSpan_);
+          .computeInt32Size(7, sendSpan_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(vcidCode_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, vcidCode_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -5652,6 +5851,8 @@ public final class TelecommandMessages {
       }
       CommandMessage other = (CommandMessage) obj;
 
+      if (!getCommandId()
+          .equals(other.getCommandId())) return false;
       if (!getCmSymbol()
           .equals(other.getCmSymbol())) return false;
       if (!getCmName()
@@ -5667,6 +5868,8 @@ public final class TelecommandMessages {
       }
       if (getSendSpan()
           != other.getSendSpan()) return false;
+      if (!getVcidCode()
+          .equals(other.getVcidCode())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -5678,6 +5881,8 @@ public final class TelecommandMessages {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + COMMAND_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getCommandId().hashCode();
       hash = (37 * hash) + CM_SYMBOL_FIELD_NUMBER;
       hash = (53 * hash) + getCmSymbol().hashCode();
       hash = (37 * hash) + CM_NAME_FIELD_NUMBER;
@@ -5692,6 +5897,8 @@ public final class TelecommandMessages {
       }
       hash = (37 * hash) + SEND_SPAN_FIELD_NUMBER;
       hash = (53 * hash) + getSendSpan();
+      hash = (37 * hash) + VCID_CODE_FIELD_NUMBER;
+      hash = (53 * hash) + getVcidCode().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -5825,11 +6032,13 @@ public final class TelecommandMessages {
       @Override
       public Builder clear() {
         super.clear();
+        commandId_ = "";
+
         cmSymbol_ = "";
 
         cmName_ = "";
 
-        packetData_ = com.google.protobuf.ByteString.EMPTY;
+        packetData_ = "";
 
         validateFunc_ = "";
 
@@ -5840,6 +6049,8 @@ public final class TelecommandMessages {
           execTimeBuilder_ = null;
         }
         sendSpan_ = 0;
+
+        vcidCode_ = "";
 
         return this;
       }
@@ -5867,6 +6078,7 @@ public final class TelecommandMessages {
       @Override
       public CommandMessage buildPartial() {
         CommandMessage result = new CommandMessage(this);
+        result.commandId_ = commandId_;
         result.cmSymbol_ = cmSymbol_;
         result.cmName_ = cmName_;
         result.packetData_ = packetData_;
@@ -5877,6 +6089,7 @@ public final class TelecommandMessages {
           result.execTime_ = execTimeBuilder_.build();
         }
         result.sendSpan_ = sendSpan_;
+        result.vcidCode_ = vcidCode_;
         onBuilt();
         return result;
       }
@@ -5925,6 +6138,10 @@ public final class TelecommandMessages {
 
       public Builder mergeFrom(CommandMessage other) {
         if (other == CommandMessage.getDefaultInstance()) return this;
+        if (!other.getCommandId().isEmpty()) {
+          commandId_ = other.commandId_;
+          onChanged();
+        }
         if (!other.getCmSymbol().isEmpty()) {
           cmSymbol_ = other.cmSymbol_;
           onChanged();
@@ -5933,8 +6150,9 @@ public final class TelecommandMessages {
           cmName_ = other.cmName_;
           onChanged();
         }
-        if (other.getPacketData() != com.google.protobuf.ByteString.EMPTY) {
-          setPacketData(other.getPacketData());
+        if (!other.getPacketData().isEmpty()) {
+          packetData_ = other.packetData_;
+          onChanged();
         }
         if (!other.getValidateFunc().isEmpty()) {
           validateFunc_ = other.validateFunc_;
@@ -5945,6 +6163,10 @@ public final class TelecommandMessages {
         }
         if (other.getSendSpan() != 0) {
           setSendSpan(other.getSendSpan());
+        }
+        if (!other.getVcidCode().isEmpty()) {
+          vcidCode_ = other.vcidCode_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -5975,13 +6197,109 @@ public final class TelecommandMessages {
         return this;
       }
 
+      private Object commandId_ = "";
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @return The commandId.
+       */
+      public String getCommandId() {
+        Object ref = commandId_;
+        if (!(ref instanceof String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          commandId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @return The bytes for commandId.
+       */
+      public com.google.protobuf.ByteString
+          getCommandIdBytes() {
+        Object ref = commandId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (String) ref);
+          commandId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @param value The commandId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCommandId(
+          String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        commandId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearCommandId() {
+        
+        commandId_ = getDefaultInstance().getCommandId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @param value The bytes for commandId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCommandIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        commandId_ = value;
+        onChanged();
+        return this;
+      }
+
       private Object cmSymbol_ = "";
       /**
        * <pre>
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 1;</code>
+       * <code>string cm_symbol = 2;</code>
        * @return The cmSymbol.
        */
       public String getCmSymbol() {
@@ -6001,7 +6319,7 @@ public final class TelecommandMessages {
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 1;</code>
+       * <code>string cm_symbol = 2;</code>
        * @return The bytes for cmSymbol.
        */
       public com.google.protobuf.ByteString
@@ -6022,7 +6340,7 @@ public final class TelecommandMessages {
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 1;</code>
+       * <code>string cm_symbol = 2;</code>
        * @param value The cmSymbol to set.
        * @return This builder for chaining.
        */
@@ -6041,7 +6359,7 @@ public final class TelecommandMessages {
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 1;</code>
+       * <code>string cm_symbol = 2;</code>
        * @return This builder for chaining.
        */
       public Builder clearCmSymbol() {
@@ -6055,7 +6373,7 @@ public final class TelecommandMessages {
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 1;</code>
+       * <code>string cm_symbol = 2;</code>
        * @param value The bytes for cmSymbol to set.
        * @return This builder for chaining.
        */
@@ -6077,7 +6395,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 2;</code>
+       * <code>string cm_name = 3;</code>
        * @return The cmName.
        */
       public String getCmName() {
@@ -6097,7 +6415,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 2;</code>
+       * <code>string cm_name = 3;</code>
        * @return The bytes for cmName.
        */
       public com.google.protobuf.ByteString
@@ -6118,7 +6436,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 2;</code>
+       * <code>string cm_name = 3;</code>
        * @param value The cmName to set.
        * @return This builder for chaining.
        */
@@ -6137,7 +6455,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 2;</code>
+       * <code>string cm_name = 3;</code>
        * @return This builder for chaining.
        */
       public Builder clearCmName() {
@@ -6151,7 +6469,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 2;</code>
+       * <code>string cm_name = 3;</code>
        * @param value The bytes for cmName to set.
        * @return This builder for chaining.
        */
@@ -6167,29 +6485,59 @@ public final class TelecommandMessages {
         return this;
       }
 
-      private com.google.protobuf.ByteString packetData_ = com.google.protobuf.ByteString.EMPTY;
+      private Object packetData_ = "";
       /**
        * <pre>
        *遥控包数据
        * </pre>
        *
-       * <code>bytes packet_data = 3;</code>
+       * <code>string packet_data = 4;</code>
        * @return The packetData.
        */
-      @Override
-      public com.google.protobuf.ByteString getPacketData() {
-        return packetData_;
+      public String getPacketData() {
+        Object ref = packetData_;
+        if (!(ref instanceof String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          packetData_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
       /**
        * <pre>
        *遥控包数据
        * </pre>
        *
-       * <code>bytes packet_data = 3;</code>
+       * <code>string packet_data = 4;</code>
+       * @return The bytes for packetData.
+       */
+      public com.google.protobuf.ByteString
+          getPacketDataBytes() {
+        Object ref = packetData_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (String) ref);
+          packetData_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *遥控包数据
+       * </pre>
+       *
+       * <code>string packet_data = 4;</code>
        * @param value The packetData to set.
        * @return This builder for chaining.
        */
-      public Builder setPacketData(com.google.protobuf.ByteString value) {
+      public Builder setPacketData(
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -6203,12 +6551,32 @@ public final class TelecommandMessages {
        *遥控包数据
        * </pre>
        *
-       * <code>bytes packet_data = 3;</code>
+       * <code>string packet_data = 4;</code>
        * @return This builder for chaining.
        */
       public Builder clearPacketData() {
         
         packetData_ = getDefaultInstance().getPacketData();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *遥控包数据
+       * </pre>
+       *
+       * <code>string packet_data = 4;</code>
+       * @param value The bytes for packetData to set.
+       * @return This builder for chaining.
+       */
+      public Builder setPacketDataBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        packetData_ = value;
         onChanged();
         return this;
       }
@@ -6219,7 +6587,7 @@ public final class TelecommandMessages {
        *后判判据
        * </pre>
        *
-       * <code>string validate_func = 4;</code>
+       * <code>string validate_func = 5;</code>
        * @return The validateFunc.
        */
       public String getValidateFunc() {
@@ -6239,7 +6607,7 @@ public final class TelecommandMessages {
        *后判判据
        * </pre>
        *
-       * <code>string validate_func = 4;</code>
+       * <code>string validate_func = 5;</code>
        * @return The bytes for validateFunc.
        */
       public com.google.protobuf.ByteString
@@ -6260,7 +6628,7 @@ public final class TelecommandMessages {
        *后判判据
        * </pre>
        *
-       * <code>string validate_func = 4;</code>
+       * <code>string validate_func = 5;</code>
        * @param value The validateFunc to set.
        * @return This builder for chaining.
        */
@@ -6279,7 +6647,7 @@ public final class TelecommandMessages {
        *后判判据
        * </pre>
        *
-       * <code>string validate_func = 4;</code>
+       * <code>string validate_func = 5;</code>
        * @return This builder for chaining.
        */
       public Builder clearValidateFunc() {
@@ -6293,7 +6661,7 @@ public final class TelecommandMessages {
        *后判判据
        * </pre>
        *
-       * <code>string validate_func = 4;</code>
+       * <code>string validate_func = 5;</code>
        * @param value The bytes for validateFunc to set.
        * @return This builder for chaining.
        */
@@ -6317,7 +6685,7 @@ public final class TelecommandMessages {
        *绝对时间，执行
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+       * <code>.google.protobuf.Timestamp exec_time = 6;</code>
        * @return Whether the execTime field is set.
        */
       public boolean hasExecTime() {
@@ -6328,7 +6696,7 @@ public final class TelecommandMessages {
        *绝对时间，执行
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+       * <code>.google.protobuf.Timestamp exec_time = 6;</code>
        * @return The execTime.
        */
       public com.google.protobuf.Timestamp getExecTime() {
@@ -6343,7 +6711,7 @@ public final class TelecommandMessages {
        *绝对时间，执行
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+       * <code>.google.protobuf.Timestamp exec_time = 6;</code>
        */
       public Builder setExecTime(com.google.protobuf.Timestamp value) {
         if (execTimeBuilder_ == null) {
@@ -6363,7 +6731,7 @@ public final class TelecommandMessages {
        *绝对时间，执行
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+       * <code>.google.protobuf.Timestamp exec_time = 6;</code>
        */
       public Builder setExecTime(
           com.google.protobuf.Timestamp.Builder builderForValue) {
@@ -6381,7 +6749,7 @@ public final class TelecommandMessages {
        *绝对时间，执行
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+       * <code>.google.protobuf.Timestamp exec_time = 6;</code>
        */
       public Builder mergeExecTime(com.google.protobuf.Timestamp value) {
         if (execTimeBuilder_ == null) {
@@ -6403,7 +6771,7 @@ public final class TelecommandMessages {
        *绝对时间，执行
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+       * <code>.google.protobuf.Timestamp exec_time = 6;</code>
        */
       public Builder clearExecTime() {
         if (execTimeBuilder_ == null) {
@@ -6421,7 +6789,7 @@ public final class TelecommandMessages {
        *绝对时间，执行
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+       * <code>.google.protobuf.Timestamp exec_time = 6;</code>
        */
       public com.google.protobuf.Timestamp.Builder getExecTimeBuilder() {
         
@@ -6433,7 +6801,7 @@ public final class TelecommandMessages {
        *绝对时间，执行
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+       * <code>.google.protobuf.Timestamp exec_time = 6;</code>
        */
       public com.google.protobuf.TimestampOrBuilder getExecTimeOrBuilder() {
         if (execTimeBuilder_ != null) {
@@ -6448,7 +6816,7 @@ public final class TelecommandMessages {
        *绝对时间，执行
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp exec_time = 5;</code>
+       * <code>.google.protobuf.Timestamp exec_time = 6;</code>
        */
       private com.google.protobuf.SingleFieldBuilderV3<
           com.google.protobuf.Timestamp, com.google.protobuf.Timestamp.Builder, com.google.protobuf.TimestampOrBuilder> 
@@ -6470,7 +6838,7 @@ public final class TelecommandMessages {
        *发送等待，相对上一条，保留
        * </pre>
        *
-       * <code>int32 send_span = 6;</code>
+       * <code>int32 send_span = 7;</code>
        * @return The sendSpan.
        */
       @Override
@@ -6482,7 +6850,7 @@ public final class TelecommandMessages {
        *发送等待，相对上一条，保留
        * </pre>
        *
-       * <code>int32 send_span = 6;</code>
+       * <code>int32 send_span = 7;</code>
        * @param value The sendSpan to set.
        * @return This builder for chaining.
        */
@@ -6497,12 +6865,108 @@ public final class TelecommandMessages {
        *发送等待，相对上一条，保留
        * </pre>
        *
-       * <code>int32 send_span = 6;</code>
+       * <code>int32 send_span = 7;</code>
        * @return This builder for chaining.
        */
       public Builder clearSendSpan() {
         
         sendSpan_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private Object vcidCode_ = "";
+      /**
+       * <pre>
+       *对应指令类型
+       * </pre>
+       *
+       * <code>string vcid_code = 8;</code>
+       * @return The vcidCode.
+       */
+      public String getVcidCode() {
+        Object ref = vcidCode_;
+        if (!(ref instanceof String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          vcidCode_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *对应指令类型
+       * </pre>
+       *
+       * <code>string vcid_code = 8;</code>
+       * @return The bytes for vcidCode.
+       */
+      public com.google.protobuf.ByteString
+          getVcidCodeBytes() {
+        Object ref = vcidCode_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (String) ref);
+          vcidCode_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *对应指令类型
+       * </pre>
+       *
+       * <code>string vcid_code = 8;</code>
+       * @param value The vcidCode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setVcidCode(
+          String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        vcidCode_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *对应指令类型
+       * </pre>
+       *
+       * <code>string vcid_code = 8;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearVcidCode() {
+        
+        vcidCode_ = getDefaultInstance().getVcidCode();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *对应指令类型
+       * </pre>
+       *
+       * <code>string vcid_code = 8;</code>
+       * @param value The bytes for vcidCode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setVcidCodeBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        vcidCode_ = value;
         onChanged();
         return this;
       }
@@ -6565,10 +7029,30 @@ public final class TelecommandMessages {
 
     /**
      * <pre>
+     *指令唯一id
+     * </pre>
+     *
+     * <code>string command_id = 1;</code>
+     * @return The commandId.
+     */
+    String getCommandId();
+    /**
+     * <pre>
+     *指令唯一id
+     * </pre>
+     *
+     * <code>string command_id = 1;</code>
+     * @return The bytes for commandId.
+     */
+    com.google.protobuf.ByteString
+        getCommandIdBytes();
+
+    /**
+     * <pre>
      *发送通道信息
      * </pre>
      *
-     * <code>string send_channel = 1;</code>
+     * <code>string send_channel = 2;</code>
      * @return The sendChannel.
      */
     String getSendChannel();
@@ -6577,7 +7061,7 @@ public final class TelecommandMessages {
      *发送通道信息
      * </pre>
      *
-     * <code>string send_channel = 1;</code>
+     * <code>string send_channel = 2;</code>
      * @return The bytes for sendChannel.
      */
     com.google.protobuf.ByteString
@@ -6588,7 +7072,7 @@ public final class TelecommandMessages {
      *该指令发送模式（单指令或测试项名称）
      * </pre>
      *
-     * <code>string sending_mode = 2;</code>
+     * <code>string sending_mode = 3;</code>
      * @return The sendingMode.
      */
     String getSendingMode();
@@ -6597,7 +7081,7 @@ public final class TelecommandMessages {
      *该指令发送模式（单指令或测试项名称）
      * </pre>
      *
-     * <code>string sending_mode = 2;</code>
+     * <code>string sending_mode = 3;</code>
      * @return The bytes for sendingMode.
      */
     com.google.protobuf.ByteString
@@ -6608,7 +7092,7 @@ public final class TelecommandMessages {
      *指令代号
      * </pre>
      *
-     * <code>string cm_symbol = 3;</code>
+     * <code>string cm_symbol = 4;</code>
      * @return The cmSymbol.
      */
     String getCmSymbol();
@@ -6617,7 +7101,7 @@ public final class TelecommandMessages {
      *指令代号
      * </pre>
      *
-     * <code>string cm_symbol = 3;</code>
+     * <code>string cm_symbol = 4;</code>
      * @return The bytes for cmSymbol.
      */
     com.google.protobuf.ByteString
@@ -6628,7 +7112,7 @@ public final class TelecommandMessages {
      *指令名称
      * </pre>
      *
-     * <code>string cm_name = 4;</code>
+     * <code>string cm_name = 5;</code>
      * @return The cmName.
      */
     String getCmName();
@@ -6637,7 +7121,7 @@ public final class TelecommandMessages {
      *指令名称
      * </pre>
      *
-     * <code>string cm_name = 4;</code>
+     * <code>string cm_name = 5;</code>
      * @return The bytes for cmName.
      */
     com.google.protobuf.ByteString
@@ -6648,17 +7132,27 @@ public final class TelecommandMessages {
      *指令数据（遥控帧）
      * </pre>
      *
-     * <code>bytes raw_data = 5;</code>
+     * <code>string raw_data = 6;</code>
      * @return The rawData.
      */
-    com.google.protobuf.ByteString getRawData();
+    String getRawData();
+    /**
+     * <pre>
+     *指令数据（遥控帧）
+     * </pre>
+     *
+     * <code>string raw_data = 6;</code>
+     * @return The bytes for rawData.
+     */
+    com.google.protobuf.ByteString
+        getRawDataBytes();
 
     /**
      * <pre>
      *指令发送时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+     * <code>.google.protobuf.Timestamp sending_time = 7;</code>
      * @return Whether the sendingTime field is set.
      */
     boolean hasSendingTime();
@@ -6667,7 +7161,7 @@ public final class TelecommandMessages {
      *指令发送时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+     * <code>.google.protobuf.Timestamp sending_time = 7;</code>
      * @return The sendingTime.
      */
     com.google.protobuf.Timestamp getSendingTime();
@@ -6676,7 +7170,7 @@ public final class TelecommandMessages {
      *指令发送时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+     * <code>.google.protobuf.Timestamp sending_time = 7;</code>
      */
     com.google.protobuf.TimestampOrBuilder getSendingTimeOrBuilder();
 
@@ -6685,7 +7179,7 @@ public final class TelecommandMessages {
      *指令发送结果
      * </pre>
      *
-     * <code>.CommandExecResult sending_result = 7;</code>
+     * <code>.CommandExecResult sending_result = 8;</code>
      * @return The enum numeric value on the wire for sendingResult.
      */
     int getSendingResultValue();
@@ -6694,7 +7188,7 @@ public final class TelecommandMessages {
      *指令发送结果
      * </pre>
      *
-     * <code>.CommandExecResult sending_result = 7;</code>
+     * <code>.CommandExecResult sending_result = 8;</code>
      * @return The sendingResult.
      */
     CommandExecResult getSendingResult();
@@ -6704,7 +7198,7 @@ public final class TelecommandMessages {
      *指令发送详情
      * </pre>
      *
-     * <code>string sending_details = 8;</code>
+     * <code>string sending_details = 9;</code>
      * @return The sendingDetails.
      */
     String getSendingDetails();
@@ -6713,7 +7207,7 @@ public final class TelecommandMessages {
      *指令发送详情
      * </pre>
      *
-     * <code>string sending_details = 8;</code>
+     * <code>string sending_details = 9;</code>
      * @return The bytes for sendingDetails.
      */
     com.google.protobuf.ByteString
@@ -6724,7 +7218,7 @@ public final class TelecommandMessages {
      *后判结果
      * </pre>
      *
-     * <code>string validation_detail = 9;</code>
+     * <code>string validation_detail = 10;</code>
      * @return The validationDetail.
      */
     String getValidationDetail();
@@ -6733,11 +7227,23 @@ public final class TelecommandMessages {
      *后判结果
      * </pre>
      *
-     * <code>string validation_detail = 9;</code>
+     * <code>string validation_detail = 10;</code>
      * @return The bytes for validationDetail.
      */
     com.google.protobuf.ByteString
         getValidationDetailBytes();
+
+    /**
+     * <code>string sat_code = 11;</code>
+     * @return The satCode.
+     */
+    String getSatCode();
+    /**
+     * <code>string sat_code = 11;</code>
+     * @return The bytes for satCode.
+     */
+    com.google.protobuf.ByteString
+        getSatCodeBytes();
   }
   /**
    * <pre>
@@ -6756,14 +7262,16 @@ public final class TelecommandMessages {
       super(builder);
     }
     private CommandExecResultMsg() {
+      commandId_ = "";
       sendChannel_ = "";
       sendingMode_ = "";
       cmSymbol_ = "";
       cmName_ = "";
-      rawData_ = com.google.protobuf.ByteString.EMPTY;
+      rawData_ = "";
       sendingResult_ = 0;
       sendingDetails_ = "";
       validationDetail_ = "";
+      satCode_ = "";
     }
 
     @Override
@@ -6799,33 +7307,40 @@ public final class TelecommandMessages {
             case 10: {
               String s = input.readStringRequireUtf8();
 
-              sendChannel_ = s;
+              commandId_ = s;
               break;
             }
             case 18: {
               String s = input.readStringRequireUtf8();
 
-              sendingMode_ = s;
+              sendChannel_ = s;
               break;
             }
             case 26: {
               String s = input.readStringRequireUtf8();
 
-              cmSymbol_ = s;
+              sendingMode_ = s;
               break;
             }
             case 34: {
               String s = input.readStringRequireUtf8();
 
-              cmName_ = s;
+              cmSymbol_ = s;
               break;
             }
             case 42: {
+              String s = input.readStringRequireUtf8();
 
-              rawData_ = input.readBytes();
+              cmName_ = s;
               break;
             }
             case 50: {
+              String s = input.readStringRequireUtf8();
+
+              rawData_ = s;
+              break;
+            }
+            case 58: {
               com.google.protobuf.Timestamp.Builder subBuilder = null;
               if (sendingTime_ != null) {
                 subBuilder = sendingTime_.toBuilder();
@@ -6838,22 +7353,28 @@ public final class TelecommandMessages {
 
               break;
             }
-            case 56: {
+            case 64: {
               int rawValue = input.readEnum();
 
               sendingResult_ = rawValue;
               break;
             }
-            case 66: {
+            case 74: {
               String s = input.readStringRequireUtf8();
 
               sendingDetails_ = s;
               break;
             }
-            case 74: {
+            case 82: {
               String s = input.readStringRequireUtf8();
 
               validationDetail_ = s;
+              break;
+            }
+            case 90: {
+              String s = input.readStringRequireUtf8();
+
+              satCode_ = s;
               break;
             }
             default: {
@@ -6890,14 +7411,60 @@ public final class TelecommandMessages {
               CommandExecResultMsg.class, Builder.class);
     }
 
-    public static final int SEND_CHANNEL_FIELD_NUMBER = 1;
+    public static final int COMMAND_ID_FIELD_NUMBER = 1;
+    private volatile Object commandId_;
+    /**
+     * <pre>
+     *指令唯一id
+     * </pre>
+     *
+     * <code>string command_id = 1;</code>
+     * @return The commandId.
+     */
+    @Override
+    public String getCommandId() {
+      Object ref = commandId_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        commandId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *指令唯一id
+     * </pre>
+     *
+     * <code>string command_id = 1;</code>
+     * @return The bytes for commandId.
+     */
+    @Override
+    public com.google.protobuf.ByteString
+        getCommandIdBytes() {
+      Object ref = commandId_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        commandId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int SEND_CHANNEL_FIELD_NUMBER = 2;
     private volatile Object sendChannel_;
     /**
      * <pre>
      *发送通道信息
      * </pre>
      *
-     * <code>string send_channel = 1;</code>
+     * <code>string send_channel = 2;</code>
      * @return The sendChannel.
      */
     @Override
@@ -6918,7 +7485,7 @@ public final class TelecommandMessages {
      *发送通道信息
      * </pre>
      *
-     * <code>string send_channel = 1;</code>
+     * <code>string send_channel = 2;</code>
      * @return The bytes for sendChannel.
      */
     @Override
@@ -6936,14 +7503,14 @@ public final class TelecommandMessages {
       }
     }
 
-    public static final int SENDING_MODE_FIELD_NUMBER = 2;
+    public static final int SENDING_MODE_FIELD_NUMBER = 3;
     private volatile Object sendingMode_;
     /**
      * <pre>
      *该指令发送模式（单指令或测试项名称）
      * </pre>
      *
-     * <code>string sending_mode = 2;</code>
+     * <code>string sending_mode = 3;</code>
      * @return The sendingMode.
      */
     @Override
@@ -6964,7 +7531,7 @@ public final class TelecommandMessages {
      *该指令发送模式（单指令或测试项名称）
      * </pre>
      *
-     * <code>string sending_mode = 2;</code>
+     * <code>string sending_mode = 3;</code>
      * @return The bytes for sendingMode.
      */
     @Override
@@ -6982,14 +7549,14 @@ public final class TelecommandMessages {
       }
     }
 
-    public static final int CM_SYMBOL_FIELD_NUMBER = 3;
+    public static final int CM_SYMBOL_FIELD_NUMBER = 4;
     private volatile Object cmSymbol_;
     /**
      * <pre>
      *指令代号
      * </pre>
      *
-     * <code>string cm_symbol = 3;</code>
+     * <code>string cm_symbol = 4;</code>
      * @return The cmSymbol.
      */
     @Override
@@ -7010,7 +7577,7 @@ public final class TelecommandMessages {
      *指令代号
      * </pre>
      *
-     * <code>string cm_symbol = 3;</code>
+     * <code>string cm_symbol = 4;</code>
      * @return The bytes for cmSymbol.
      */
     @Override
@@ -7028,14 +7595,14 @@ public final class TelecommandMessages {
       }
     }
 
-    public static final int CM_NAME_FIELD_NUMBER = 4;
+    public static final int CM_NAME_FIELD_NUMBER = 5;
     private volatile Object cmName_;
     /**
      * <pre>
      *指令名称
      * </pre>
      *
-     * <code>string cm_name = 4;</code>
+     * <code>string cm_name = 5;</code>
      * @return The cmName.
      */
     @Override
@@ -7056,7 +7623,7 @@ public final class TelecommandMessages {
      *指令名称
      * </pre>
      *
-     * <code>string cm_name = 4;</code>
+     * <code>string cm_name = 5;</code>
      * @return The bytes for cmName.
      */
     @Override
@@ -7074,29 +7641,60 @@ public final class TelecommandMessages {
       }
     }
 
-    public static final int RAW_DATA_FIELD_NUMBER = 5;
-    private com.google.protobuf.ByteString rawData_;
+    public static final int RAW_DATA_FIELD_NUMBER = 6;
+    private volatile Object rawData_;
     /**
      * <pre>
      *指令数据（遥控帧）
      * </pre>
      *
-     * <code>bytes raw_data = 5;</code>
+     * <code>string raw_data = 6;</code>
      * @return The rawData.
      */
     @Override
-    public com.google.protobuf.ByteString getRawData() {
-      return rawData_;
+    public String getRawData() {
+      Object ref = rawData_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        rawData_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *指令数据（遥控帧）
+     * </pre>
+     *
+     * <code>string raw_data = 6;</code>
+     * @return The bytes for rawData.
+     */
+    @Override
+    public com.google.protobuf.ByteString
+        getRawDataBytes() {
+      Object ref = rawData_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        rawData_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
-    public static final int SENDING_TIME_FIELD_NUMBER = 6;
+    public static final int SENDING_TIME_FIELD_NUMBER = 7;
     private com.google.protobuf.Timestamp sendingTime_;
     /**
      * <pre>
      *指令发送时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+     * <code>.google.protobuf.Timestamp sending_time = 7;</code>
      * @return Whether the sendingTime field is set.
      */
     @Override
@@ -7108,7 +7706,7 @@ public final class TelecommandMessages {
      *指令发送时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+     * <code>.google.protobuf.Timestamp sending_time = 7;</code>
      * @return The sendingTime.
      */
     @Override
@@ -7120,21 +7718,21 @@ public final class TelecommandMessages {
      *指令发送时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+     * <code>.google.protobuf.Timestamp sending_time = 7;</code>
      */
     @Override
     public com.google.protobuf.TimestampOrBuilder getSendingTimeOrBuilder() {
       return getSendingTime();
     }
 
-    public static final int SENDING_RESULT_FIELD_NUMBER = 7;
+    public static final int SENDING_RESULT_FIELD_NUMBER = 8;
     private int sendingResult_;
     /**
      * <pre>
      *指令发送结果
      * </pre>
      *
-     * <code>.CommandExecResult sending_result = 7;</code>
+     * <code>.CommandExecResult sending_result = 8;</code>
      * @return The enum numeric value on the wire for sendingResult.
      */
     @Override public int getSendingResultValue() {
@@ -7145,7 +7743,7 @@ public final class TelecommandMessages {
      *指令发送结果
      * </pre>
      *
-     * <code>.CommandExecResult sending_result = 7;</code>
+     * <code>.CommandExecResult sending_result = 8;</code>
      * @return The sendingResult.
      */
     @Override public CommandExecResult getSendingResult() {
@@ -7154,14 +7752,14 @@ public final class TelecommandMessages {
       return result == null ? CommandExecResult.UNRECOGNIZED : result;
     }
 
-    public static final int SENDING_DETAILS_FIELD_NUMBER = 8;
+    public static final int SENDING_DETAILS_FIELD_NUMBER = 9;
     private volatile Object sendingDetails_;
     /**
      * <pre>
      *指令发送详情
      * </pre>
      *
-     * <code>string sending_details = 8;</code>
+     * <code>string sending_details = 9;</code>
      * @return The sendingDetails.
      */
     @Override
@@ -7182,7 +7780,7 @@ public final class TelecommandMessages {
      *指令发送详情
      * </pre>
      *
-     * <code>string sending_details = 8;</code>
+     * <code>string sending_details = 9;</code>
      * @return The bytes for sendingDetails.
      */
     @Override
@@ -7200,14 +7798,14 @@ public final class TelecommandMessages {
       }
     }
 
-    public static final int VALIDATION_DETAIL_FIELD_NUMBER = 9;
+    public static final int VALIDATION_DETAIL_FIELD_NUMBER = 10;
     private volatile Object validationDetail_;
     /**
      * <pre>
      *后判结果
      * </pre>
      *
-     * <code>string validation_detail = 9;</code>
+     * <code>string validation_detail = 10;</code>
      * @return The validationDetail.
      */
     @Override
@@ -7228,7 +7826,7 @@ public final class TelecommandMessages {
      *后判结果
      * </pre>
      *
-     * <code>string validation_detail = 9;</code>
+     * <code>string validation_detail = 10;</code>
      * @return The bytes for validationDetail.
      */
     @Override
@@ -7240,6 +7838,44 @@ public final class TelecommandMessages {
             com.google.protobuf.ByteString.copyFromUtf8(
                 (String) ref);
         validationDetail_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int SAT_CODE_FIELD_NUMBER = 11;
+    private volatile Object satCode_;
+    /**
+     * <code>string sat_code = 11;</code>
+     * @return The satCode.
+     */
+    @Override
+    public String getSatCode() {
+      Object ref = satCode_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        satCode_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string sat_code = 11;</code>
+     * @return The bytes for satCode.
+     */
+    @Override
+    public com.google.protobuf.ByteString
+        getSatCodeBytes() {
+      Object ref = satCode_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        satCode_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
@@ -7260,32 +7896,38 @@ public final class TelecommandMessages {
     @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(commandId_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, commandId_);
+      }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(sendChannel_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, sendChannel_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, sendChannel_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(sendingMode_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, sendingMode_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, sendingMode_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(cmSymbol_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, cmSymbol_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, cmSymbol_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(cmName_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, cmName_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, cmName_);
       }
-      if (!rawData_.isEmpty()) {
-        output.writeBytes(5, rawData_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(rawData_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, rawData_);
       }
       if (sendingTime_ != null) {
-        output.writeMessage(6, getSendingTime());
+        output.writeMessage(7, getSendingTime());
       }
       if (sendingResult_ != CommandExecResult.CM_SENDING_RESULT_UNSPECIFIED.getNumber()) {
-        output.writeEnum(7, sendingResult_);
+        output.writeEnum(8, sendingResult_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(sendingDetails_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 8, sendingDetails_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 9, sendingDetails_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(validationDetail_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 9, validationDetail_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 10, validationDetail_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 11, satCode_);
       }
       unknownFields.writeTo(output);
     }
@@ -7296,35 +7938,40 @@ public final class TelecommandMessages {
       if (size != -1) return size;
 
       size = 0;
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(commandId_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, commandId_);
+      }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(sendChannel_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, sendChannel_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, sendChannel_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(sendingMode_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, sendingMode_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, sendingMode_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(cmSymbol_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, cmSymbol_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, cmSymbol_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(cmName_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, cmName_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, cmName_);
       }
-      if (!rawData_.isEmpty()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(5, rawData_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(rawData_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, rawData_);
       }
       if (sendingTime_ != null) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(6, getSendingTime());
+          .computeMessageSize(7, getSendingTime());
       }
       if (sendingResult_ != CommandExecResult.CM_SENDING_RESULT_UNSPECIFIED.getNumber()) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(7, sendingResult_);
+          .computeEnumSize(8, sendingResult_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(sendingDetails_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, sendingDetails_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(9, sendingDetails_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(validationDetail_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(9, validationDetail_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(10, validationDetail_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(11, satCode_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -7341,6 +7988,8 @@ public final class TelecommandMessages {
       }
       CommandExecResultMsg other = (CommandExecResultMsg) obj;
 
+      if (!getCommandId()
+          .equals(other.getCommandId())) return false;
       if (!getSendChannel()
           .equals(other.getSendChannel())) return false;
       if (!getSendingMode()
@@ -7361,6 +8010,8 @@ public final class TelecommandMessages {
           .equals(other.getSendingDetails())) return false;
       if (!getValidationDetail()
           .equals(other.getValidationDetail())) return false;
+      if (!getSatCode()
+          .equals(other.getSatCode())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -7372,6 +8023,8 @@ public final class TelecommandMessages {
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + COMMAND_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getCommandId().hashCode();
       hash = (37 * hash) + SEND_CHANNEL_FIELD_NUMBER;
       hash = (53 * hash) + getSendChannel().hashCode();
       hash = (37 * hash) + SENDING_MODE_FIELD_NUMBER;
@@ -7392,6 +8045,8 @@ public final class TelecommandMessages {
       hash = (53 * hash) + getSendingDetails().hashCode();
       hash = (37 * hash) + VALIDATION_DETAIL_FIELD_NUMBER;
       hash = (53 * hash) + getValidationDetail().hashCode();
+      hash = (37 * hash) + SAT_CODE_FIELD_NUMBER;
+      hash = (53 * hash) + getSatCode().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -7529,6 +8184,8 @@ public final class TelecommandMessages {
       @Override
       public Builder clear() {
         super.clear();
+        commandId_ = "";
+
         sendChannel_ = "";
 
         sendingMode_ = "";
@@ -7537,7 +8194,7 @@ public final class TelecommandMessages {
 
         cmName_ = "";
 
-        rawData_ = com.google.protobuf.ByteString.EMPTY;
+        rawData_ = "";
 
         if (sendingTimeBuilder_ == null) {
           sendingTime_ = null;
@@ -7550,6 +8207,8 @@ public final class TelecommandMessages {
         sendingDetails_ = "";
 
         validationDetail_ = "";
+
+        satCode_ = "";
 
         return this;
       }
@@ -7577,6 +8236,7 @@ public final class TelecommandMessages {
       @Override
       public CommandExecResultMsg buildPartial() {
         CommandExecResultMsg result = new CommandExecResultMsg(this);
+        result.commandId_ = commandId_;
         result.sendChannel_ = sendChannel_;
         result.sendingMode_ = sendingMode_;
         result.cmSymbol_ = cmSymbol_;
@@ -7590,6 +8250,7 @@ public final class TelecommandMessages {
         result.sendingResult_ = sendingResult_;
         result.sendingDetails_ = sendingDetails_;
         result.validationDetail_ = validationDetail_;
+        result.satCode_ = satCode_;
         onBuilt();
         return result;
       }
@@ -7638,6 +8299,10 @@ public final class TelecommandMessages {
 
       public Builder mergeFrom(CommandExecResultMsg other) {
         if (other == CommandExecResultMsg.getDefaultInstance()) return this;
+        if (!other.getCommandId().isEmpty()) {
+          commandId_ = other.commandId_;
+          onChanged();
+        }
         if (!other.getSendChannel().isEmpty()) {
           sendChannel_ = other.sendChannel_;
           onChanged();
@@ -7654,8 +8319,9 @@ public final class TelecommandMessages {
           cmName_ = other.cmName_;
           onChanged();
         }
-        if (other.getRawData() != com.google.protobuf.ByteString.EMPTY) {
-          setRawData(other.getRawData());
+        if (!other.getRawData().isEmpty()) {
+          rawData_ = other.rawData_;
+          onChanged();
         }
         if (other.hasSendingTime()) {
           mergeSendingTime(other.getSendingTime());
@@ -7669,6 +8335,10 @@ public final class TelecommandMessages {
         }
         if (!other.getValidationDetail().isEmpty()) {
           validationDetail_ = other.validationDetail_;
+          onChanged();
+        }
+        if (!other.getSatCode().isEmpty()) {
+          satCode_ = other.satCode_;
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -7700,13 +8370,109 @@ public final class TelecommandMessages {
         return this;
       }
 
+      private Object commandId_ = "";
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @return The commandId.
+       */
+      public String getCommandId() {
+        Object ref = commandId_;
+        if (!(ref instanceof String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          commandId_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @return The bytes for commandId.
+       */
+      public com.google.protobuf.ByteString
+          getCommandIdBytes() {
+        Object ref = commandId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (String) ref);
+          commandId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @param value The commandId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCommandId(
+          String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        commandId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearCommandId() {
+        
+        commandId_ = getDefaultInstance().getCommandId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *指令唯一id
+       * </pre>
+       *
+       * <code>string command_id = 1;</code>
+       * @param value The bytes for commandId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCommandIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        commandId_ = value;
+        onChanged();
+        return this;
+      }
+
       private Object sendChannel_ = "";
       /**
        * <pre>
        *发送通道信息
        * </pre>
        *
-       * <code>string send_channel = 1;</code>
+       * <code>string send_channel = 2;</code>
        * @return The sendChannel.
        */
       public String getSendChannel() {
@@ -7726,7 +8492,7 @@ public final class TelecommandMessages {
        *发送通道信息
        * </pre>
        *
-       * <code>string send_channel = 1;</code>
+       * <code>string send_channel = 2;</code>
        * @return The bytes for sendChannel.
        */
       public com.google.protobuf.ByteString
@@ -7747,7 +8513,7 @@ public final class TelecommandMessages {
        *发送通道信息
        * </pre>
        *
-       * <code>string send_channel = 1;</code>
+       * <code>string send_channel = 2;</code>
        * @param value The sendChannel to set.
        * @return This builder for chaining.
        */
@@ -7766,7 +8532,7 @@ public final class TelecommandMessages {
        *发送通道信息
        * </pre>
        *
-       * <code>string send_channel = 1;</code>
+       * <code>string send_channel = 2;</code>
        * @return This builder for chaining.
        */
       public Builder clearSendChannel() {
@@ -7780,7 +8546,7 @@ public final class TelecommandMessages {
        *发送通道信息
        * </pre>
        *
-       * <code>string send_channel = 1;</code>
+       * <code>string send_channel = 2;</code>
        * @param value The bytes for sendChannel to set.
        * @return This builder for chaining.
        */
@@ -7802,7 +8568,7 @@ public final class TelecommandMessages {
        *该指令发送模式（单指令或测试项名称）
        * </pre>
        *
-       * <code>string sending_mode = 2;</code>
+       * <code>string sending_mode = 3;</code>
        * @return The sendingMode.
        */
       public String getSendingMode() {
@@ -7822,7 +8588,7 @@ public final class TelecommandMessages {
        *该指令发送模式（单指令或测试项名称）
        * </pre>
        *
-       * <code>string sending_mode = 2;</code>
+       * <code>string sending_mode = 3;</code>
        * @return The bytes for sendingMode.
        */
       public com.google.protobuf.ByteString
@@ -7843,7 +8609,7 @@ public final class TelecommandMessages {
        *该指令发送模式（单指令或测试项名称）
        * </pre>
        *
-       * <code>string sending_mode = 2;</code>
+       * <code>string sending_mode = 3;</code>
        * @param value The sendingMode to set.
        * @return This builder for chaining.
        */
@@ -7862,7 +8628,7 @@ public final class TelecommandMessages {
        *该指令发送模式（单指令或测试项名称）
        * </pre>
        *
-       * <code>string sending_mode = 2;</code>
+       * <code>string sending_mode = 3;</code>
        * @return This builder for chaining.
        */
       public Builder clearSendingMode() {
@@ -7876,7 +8642,7 @@ public final class TelecommandMessages {
        *该指令发送模式（单指令或测试项名称）
        * </pre>
        *
-       * <code>string sending_mode = 2;</code>
+       * <code>string sending_mode = 3;</code>
        * @param value The bytes for sendingMode to set.
        * @return This builder for chaining.
        */
@@ -7898,7 +8664,7 @@ public final class TelecommandMessages {
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 3;</code>
+       * <code>string cm_symbol = 4;</code>
        * @return The cmSymbol.
        */
       public String getCmSymbol() {
@@ -7918,7 +8684,7 @@ public final class TelecommandMessages {
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 3;</code>
+       * <code>string cm_symbol = 4;</code>
        * @return The bytes for cmSymbol.
        */
       public com.google.protobuf.ByteString
@@ -7939,7 +8705,7 @@ public final class TelecommandMessages {
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 3;</code>
+       * <code>string cm_symbol = 4;</code>
        * @param value The cmSymbol to set.
        * @return This builder for chaining.
        */
@@ -7958,7 +8724,7 @@ public final class TelecommandMessages {
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 3;</code>
+       * <code>string cm_symbol = 4;</code>
        * @return This builder for chaining.
        */
       public Builder clearCmSymbol() {
@@ -7972,7 +8738,7 @@ public final class TelecommandMessages {
        *指令代号
        * </pre>
        *
-       * <code>string cm_symbol = 3;</code>
+       * <code>string cm_symbol = 4;</code>
        * @param value The bytes for cmSymbol to set.
        * @return This builder for chaining.
        */
@@ -7994,7 +8760,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 4;</code>
+       * <code>string cm_name = 5;</code>
        * @return The cmName.
        */
       public String getCmName() {
@@ -8014,7 +8780,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 4;</code>
+       * <code>string cm_name = 5;</code>
        * @return The bytes for cmName.
        */
       public com.google.protobuf.ByteString
@@ -8035,7 +8801,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 4;</code>
+       * <code>string cm_name = 5;</code>
        * @param value The cmName to set.
        * @return This builder for chaining.
        */
@@ -8054,7 +8820,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 4;</code>
+       * <code>string cm_name = 5;</code>
        * @return This builder for chaining.
        */
       public Builder clearCmName() {
@@ -8068,7 +8834,7 @@ public final class TelecommandMessages {
        *指令名称
        * </pre>
        *
-       * <code>string cm_name = 4;</code>
+       * <code>string cm_name = 5;</code>
        * @param value The bytes for cmName to set.
        * @return This builder for chaining.
        */
@@ -8084,29 +8850,59 @@ public final class TelecommandMessages {
         return this;
       }
 
-      private com.google.protobuf.ByteString rawData_ = com.google.protobuf.ByteString.EMPTY;
+      private Object rawData_ = "";
       /**
        * <pre>
        *指令数据（遥控帧）
        * </pre>
        *
-       * <code>bytes raw_data = 5;</code>
+       * <code>string raw_data = 6;</code>
        * @return The rawData.
        */
-      @Override
-      public com.google.protobuf.ByteString getRawData() {
-        return rawData_;
+      public String getRawData() {
+        Object ref = rawData_;
+        if (!(ref instanceof String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          rawData_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
       }
       /**
        * <pre>
        *指令数据（遥控帧）
        * </pre>
        *
-       * <code>bytes raw_data = 5;</code>
+       * <code>string raw_data = 6;</code>
+       * @return The bytes for rawData.
+       */
+      public com.google.protobuf.ByteString
+          getRawDataBytes() {
+        Object ref = rawData_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (String) ref);
+          rawData_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *指令数据（遥控帧）
+       * </pre>
+       *
+       * <code>string raw_data = 6;</code>
        * @param value The rawData to set.
        * @return This builder for chaining.
        */
-      public Builder setRawData(com.google.protobuf.ByteString value) {
+      public Builder setRawData(
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -8120,12 +8916,32 @@ public final class TelecommandMessages {
        *指令数据（遥控帧）
        * </pre>
        *
-       * <code>bytes raw_data = 5;</code>
+       * <code>string raw_data = 6;</code>
        * @return This builder for chaining.
        */
       public Builder clearRawData() {
         
         rawData_ = getDefaultInstance().getRawData();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *指令数据（遥控帧）
+       * </pre>
+       *
+       * <code>string raw_data = 6;</code>
+       * @param value The bytes for rawData to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRawDataBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        rawData_ = value;
         onChanged();
         return this;
       }
@@ -8138,7 +8954,7 @@ public final class TelecommandMessages {
        *指令发送时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+       * <code>.google.protobuf.Timestamp sending_time = 7;</code>
        * @return Whether the sendingTime field is set.
        */
       public boolean hasSendingTime() {
@@ -8149,7 +8965,7 @@ public final class TelecommandMessages {
        *指令发送时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+       * <code>.google.protobuf.Timestamp sending_time = 7;</code>
        * @return The sendingTime.
        */
       public com.google.protobuf.Timestamp getSendingTime() {
@@ -8164,7 +8980,7 @@ public final class TelecommandMessages {
        *指令发送时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+       * <code>.google.protobuf.Timestamp sending_time = 7;</code>
        */
       public Builder setSendingTime(com.google.protobuf.Timestamp value) {
         if (sendingTimeBuilder_ == null) {
@@ -8184,7 +9000,7 @@ public final class TelecommandMessages {
        *指令发送时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+       * <code>.google.protobuf.Timestamp sending_time = 7;</code>
        */
       public Builder setSendingTime(
           com.google.protobuf.Timestamp.Builder builderForValue) {
@@ -8202,7 +9018,7 @@ public final class TelecommandMessages {
        *指令发送时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+       * <code>.google.protobuf.Timestamp sending_time = 7;</code>
        */
       public Builder mergeSendingTime(com.google.protobuf.Timestamp value) {
         if (sendingTimeBuilder_ == null) {
@@ -8224,7 +9040,7 @@ public final class TelecommandMessages {
        *指令发送时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+       * <code>.google.protobuf.Timestamp sending_time = 7;</code>
        */
       public Builder clearSendingTime() {
         if (sendingTimeBuilder_ == null) {
@@ -8242,7 +9058,7 @@ public final class TelecommandMessages {
        *指令发送时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+       * <code>.google.protobuf.Timestamp sending_time = 7;</code>
        */
       public com.google.protobuf.Timestamp.Builder getSendingTimeBuilder() {
         
@@ -8254,7 +9070,7 @@ public final class TelecommandMessages {
        *指令发送时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+       * <code>.google.protobuf.Timestamp sending_time = 7;</code>
        */
       public com.google.protobuf.TimestampOrBuilder getSendingTimeOrBuilder() {
         if (sendingTimeBuilder_ != null) {
@@ -8269,7 +9085,7 @@ public final class TelecommandMessages {
        *指令发送时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp sending_time = 6;</code>
+       * <code>.google.protobuf.Timestamp sending_time = 7;</code>
        */
       private com.google.protobuf.SingleFieldBuilderV3<
           com.google.protobuf.Timestamp, com.google.protobuf.Timestamp.Builder, com.google.protobuf.TimestampOrBuilder> 
@@ -8291,7 +9107,7 @@ public final class TelecommandMessages {
        *指令发送结果
        * </pre>
        *
-       * <code>.CommandExecResult sending_result = 7;</code>
+       * <code>.CommandExecResult sending_result = 8;</code>
        * @return The enum numeric value on the wire for sendingResult.
        */
       @Override public int getSendingResultValue() {
@@ -8302,7 +9118,7 @@ public final class TelecommandMessages {
        *指令发送结果
        * </pre>
        *
-       * <code>.CommandExecResult sending_result = 7;</code>
+       * <code>.CommandExecResult sending_result = 8;</code>
        * @param value The enum numeric value on the wire for sendingResult to set.
        * @return This builder for chaining.
        */
@@ -8317,7 +9133,7 @@ public final class TelecommandMessages {
        *指令发送结果
        * </pre>
        *
-       * <code>.CommandExecResult sending_result = 7;</code>
+       * <code>.CommandExecResult sending_result = 8;</code>
        * @return The sendingResult.
        */
       @Override
@@ -8331,7 +9147,7 @@ public final class TelecommandMessages {
        *指令发送结果
        * </pre>
        *
-       * <code>.CommandExecResult sending_result = 7;</code>
+       * <code>.CommandExecResult sending_result = 8;</code>
        * @param value The sendingResult to set.
        * @return This builder for chaining.
        */
@@ -8349,7 +9165,7 @@ public final class TelecommandMessages {
        *指令发送结果
        * </pre>
        *
-       * <code>.CommandExecResult sending_result = 7;</code>
+       * <code>.CommandExecResult sending_result = 8;</code>
        * @return This builder for chaining.
        */
       public Builder clearSendingResult() {
@@ -8365,7 +9181,7 @@ public final class TelecommandMessages {
        *指令发送详情
        * </pre>
        *
-       * <code>string sending_details = 8;</code>
+       * <code>string sending_details = 9;</code>
        * @return The sendingDetails.
        */
       public String getSendingDetails() {
@@ -8385,7 +9201,7 @@ public final class TelecommandMessages {
        *指令发送详情
        * </pre>
        *
-       * <code>string sending_details = 8;</code>
+       * <code>string sending_details = 9;</code>
        * @return The bytes for sendingDetails.
        */
       public com.google.protobuf.ByteString
@@ -8406,7 +9222,7 @@ public final class TelecommandMessages {
        *指令发送详情
        * </pre>
        *
-       * <code>string sending_details = 8;</code>
+       * <code>string sending_details = 9;</code>
        * @param value The sendingDetails to set.
        * @return This builder for chaining.
        */
@@ -8425,7 +9241,7 @@ public final class TelecommandMessages {
        *指令发送详情
        * </pre>
        *
-       * <code>string sending_details = 8;</code>
+       * <code>string sending_details = 9;</code>
        * @return This builder for chaining.
        */
       public Builder clearSendingDetails() {
@@ -8439,7 +9255,7 @@ public final class TelecommandMessages {
        *指令发送详情
        * </pre>
        *
-       * <code>string sending_details = 8;</code>
+       * <code>string sending_details = 9;</code>
        * @param value The bytes for sendingDetails to set.
        * @return This builder for chaining.
        */
@@ -8461,7 +9277,7 @@ public final class TelecommandMessages {
        *后判结果
        * </pre>
        *
-       * <code>string validation_detail = 9;</code>
+       * <code>string validation_detail = 10;</code>
        * @return The validationDetail.
        */
       public String getValidationDetail() {
@@ -8481,7 +9297,7 @@ public final class TelecommandMessages {
        *后判结果
        * </pre>
        *
-       * <code>string validation_detail = 9;</code>
+       * <code>string validation_detail = 10;</code>
        * @return The bytes for validationDetail.
        */
       public com.google.protobuf.ByteString
@@ -8502,7 +9318,7 @@ public final class TelecommandMessages {
        *后判结果
        * </pre>
        *
-       * <code>string validation_detail = 9;</code>
+       * <code>string validation_detail = 10;</code>
        * @param value The validationDetail to set.
        * @return This builder for chaining.
        */
@@ -8521,7 +9337,7 @@ public final class TelecommandMessages {
        *后判结果
        * </pre>
        *
-       * <code>string validation_detail = 9;</code>
+       * <code>string validation_detail = 10;</code>
        * @return This builder for chaining.
        */
       public Builder clearValidationDetail() {
@@ -8535,7 +9351,7 @@ public final class TelecommandMessages {
        *后判结果
        * </pre>
        *
-       * <code>string validation_detail = 9;</code>
+       * <code>string validation_detail = 10;</code>
        * @param value The bytes for validationDetail to set.
        * @return This builder for chaining.
        */
@@ -8547,6 +9363,82 @@ public final class TelecommandMessages {
   checkByteStringIsUtf8(value);
         
         validationDetail_ = value;
+        onChanged();
+        return this;
+      }
+
+      private Object satCode_ = "";
+      /**
+       * <code>string sat_code = 11;</code>
+       * @return The satCode.
+       */
+      public String getSatCode() {
+        Object ref = satCode_;
+        if (!(ref instanceof String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          satCode_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      /**
+       * <code>string sat_code = 11;</code>
+       * @return The bytes for satCode.
+       */
+      public com.google.protobuf.ByteString
+          getSatCodeBytes() {
+        Object ref = satCode_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (String) ref);
+          satCode_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string sat_code = 11;</code>
+       * @param value The satCode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSatCode(
+          String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        satCode_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string sat_code = 11;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearSatCode() {
+        
+        satCode_ = getDefaultInstance().getSatCode();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string sat_code = 11;</code>
+       * @param value The bytes for satCode to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSatCodeBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        satCode_ = value;
         onChanged();
         return this;
       }
@@ -10071,26 +10963,50 @@ public final class TelecommandMessages {
      * <pre>
      * </pre>
      *
-     * <code>string requirement_id = 2;</code>
-     * @return The requirementId.
+     * <code>string task_id = 2;</code>
+     * @return The taskId.
      */
-    String getRequirementId();
+    String getTaskId();
     /**
      * <pre>
      * </pre>
      *
-     * <code>string requirement_id = 2;</code>
-     * @return The bytes for requirementId.
+     * <code>string task_id = 2;</code>
+     * @return The bytes for taskId.
      */
     com.google.protobuf.ByteString
-        getRequirementIdBytes();
+        getTaskIdBytes();
+
+    /**
+     * <code>string task_name = 3;</code>
+     * @return The taskName.
+     */
+    String getTaskName();
+    /**
+     * <code>string task_name = 3;</code>
+     * @return The bytes for taskName.
+     */
+    com.google.protobuf.ByteString
+        getTaskNameBytes();
+
+    /**
+     * <code>string task_plan_addr = 4;</code>
+     * @return The taskPlanAddr.
+     */
+    String getTaskPlanAddr();
+    /**
+     * <code>string task_plan_addr = 4;</code>
+     * @return The bytes for taskPlanAddr.
+     */
+    com.google.protobuf.ByteString
+        getTaskPlanAddrBytes();
 
     /**
      * <pre>
      *消息时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp message_time = 3;</code>
+     * <code>.google.protobuf.Timestamp message_time = 5;</code>
      * @return Whether the messageTime field is set.
      */
     boolean hasMessageTime();
@@ -10099,7 +11015,7 @@ public final class TelecommandMessages {
      *消息时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp message_time = 3;</code>
+     * <code>.google.protobuf.Timestamp message_time = 5;</code>
      * @return The messageTime.
      */
     com.google.protobuf.Timestamp getMessageTime();
@@ -10108,53 +11024,13 @@ public final class TelecommandMessages {
      *消息时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp message_time = 3;</code>
+     * <code>.google.protobuf.Timestamp message_time = 5;</code>
      */
     com.google.protobuf.TimestampOrBuilder getMessageTimeOrBuilder();
-
-    /**
-     * <pre>
-     *文件地址
-     * </pre>
-     *
-     * <code>string file_address = 4;</code>
-     * @return The fileAddress.
-     */
-    String getFileAddress();
-    /**
-     * <pre>
-     *文件地址
-     * </pre>
-     *
-     * <code>string file_address = 4;</code>
-     * @return The bytes for fileAddress.
-     */
-    com.google.protobuf.ByteString
-        getFileAddressBytes();
-
-    /**
-     * <pre>
-     *如有，写附件信息，比如XML
-     * </pre>
-     *
-     * <code>string file_context = 5;</code>
-     * @return The fileContext.
-     */
-    String getFileContext();
-    /**
-     * <pre>
-     *如有，写附件信息，比如XML
-     * </pre>
-     *
-     * <code>string file_context = 5;</code>
-     * @return The bytes for fileContext.
-     */
-    com.google.protobuf.ByteString
-        getFileContextBytes();
   }
   /**
    * <pre>
-   *设计阶段信息
+   *设计阶段信息:广播任务信息
    * </pre>
    *
    * Protobuf type {@code DesignStageMessage}
@@ -10169,9 +11045,9 @@ public final class TelecommandMessages {
       super(builder);
     }
     private DesignStageMessage() {
-      requirementId_ = "";
-      fileAddress_ = "";
-      fileContext_ = "";
+      taskId_ = "";
+      taskName_ = "";
+      taskPlanAddr_ = "";
     }
 
     @Override
@@ -10220,10 +11096,22 @@ public final class TelecommandMessages {
             case 18: {
               String s = input.readStringRequireUtf8();
 
-              requirementId_ = s;
+              taskId_ = s;
               break;
             }
             case 26: {
+              String s = input.readStringRequireUtf8();
+
+              taskName_ = s;
+              break;
+            }
+            case 34: {
+              String s = input.readStringRequireUtf8();
+
+              taskPlanAddr_ = s;
+              break;
+            }
+            case 42: {
               com.google.protobuf.Timestamp.Builder subBuilder = null;
               if (messageTime_ != null) {
                 subBuilder = messageTime_.toBuilder();
@@ -10234,18 +11122,6 @@ public final class TelecommandMessages {
                 messageTime_ = subBuilder.buildPartial();
               }
 
-              break;
-            }
-            case 34: {
-              String s = input.readStringRequireUtf8();
-
-              fileAddress_ = s;
-              break;
-            }
-            case 42: {
-              String s = input.readStringRequireUtf8();
-
-              fileContext_ = s;
               break;
             }
             default: {
@@ -10320,25 +11196,25 @@ public final class TelecommandMessages {
       return getHeadInfo();
     }
 
-    public static final int REQUIREMENT_ID_FIELD_NUMBER = 2;
-    private volatile Object requirementId_;
+    public static final int TASK_ID_FIELD_NUMBER = 2;
+    private volatile Object taskId_;
     /**
      * <pre>
      * </pre>
      *
-     * <code>string requirement_id = 2;</code>
-     * @return The requirementId.
+     * <code>string task_id = 2;</code>
+     * @return The taskId.
      */
     @Override
-    public String getRequirementId() {
-      Object ref = requirementId_;
+    public String getTaskId() {
+      Object ref = taskId_;
       if (ref instanceof String) {
         return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         String s = bs.toStringUtf8();
-        requirementId_ = s;
+        taskId_ = s;
         return s;
       }
     }
@@ -10346,32 +11222,108 @@ public final class TelecommandMessages {
      * <pre>
      * </pre>
      *
-     * <code>string requirement_id = 2;</code>
-     * @return The bytes for requirementId.
+     * <code>string task_id = 2;</code>
+     * @return The bytes for taskId.
      */
     @Override
     public com.google.protobuf.ByteString
-        getRequirementIdBytes() {
-      Object ref = requirementId_;
+        getTaskIdBytes() {
+      Object ref = taskId_;
       if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (String) ref);
-        requirementId_ = b;
+        taskId_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
 
-    public static final int MESSAGE_TIME_FIELD_NUMBER = 3;
+    public static final int TASK_NAME_FIELD_NUMBER = 3;
+    private volatile Object taskName_;
+    /**
+     * <code>string task_name = 3;</code>
+     * @return The taskName.
+     */
+    @Override
+    public String getTaskName() {
+      Object ref = taskName_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        taskName_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string task_name = 3;</code>
+     * @return The bytes for taskName.
+     */
+    @Override
+    public com.google.protobuf.ByteString
+        getTaskNameBytes() {
+      Object ref = taskName_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        taskName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int TASK_PLAN_ADDR_FIELD_NUMBER = 4;
+    private volatile Object taskPlanAddr_;
+    /**
+     * <code>string task_plan_addr = 4;</code>
+     * @return The taskPlanAddr.
+     */
+    @Override
+    public String getTaskPlanAddr() {
+      Object ref = taskPlanAddr_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        taskPlanAddr_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string task_plan_addr = 4;</code>
+     * @return The bytes for taskPlanAddr.
+     */
+    @Override
+    public com.google.protobuf.ByteString
+        getTaskPlanAddrBytes() {
+      Object ref = taskPlanAddr_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        taskPlanAddr_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int MESSAGE_TIME_FIELD_NUMBER = 5;
     private com.google.protobuf.Timestamp messageTime_;
     /**
      * <pre>
      *消息时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp message_time = 3;</code>
+     * <code>.google.protobuf.Timestamp message_time = 5;</code>
      * @return Whether the messageTime field is set.
      */
     @Override
@@ -10383,7 +11335,7 @@ public final class TelecommandMessages {
      *消息时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp message_time = 3;</code>
+     * <code>.google.protobuf.Timestamp message_time = 5;</code>
      * @return The messageTime.
      */
     @Override
@@ -10395,103 +11347,11 @@ public final class TelecommandMessages {
      *消息时间
      * </pre>
      *
-     * <code>.google.protobuf.Timestamp message_time = 3;</code>
+     * <code>.google.protobuf.Timestamp message_time = 5;</code>
      */
     @Override
     public com.google.protobuf.TimestampOrBuilder getMessageTimeOrBuilder() {
       return getMessageTime();
-    }
-
-    public static final int FILE_ADDRESS_FIELD_NUMBER = 4;
-    private volatile Object fileAddress_;
-    /**
-     * <pre>
-     *文件地址
-     * </pre>
-     *
-     * <code>string file_address = 4;</code>
-     * @return The fileAddress.
-     */
-    @Override
-    public String getFileAddress() {
-      Object ref = fileAddress_;
-      if (ref instanceof String) {
-        return (String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        String s = bs.toStringUtf8();
-        fileAddress_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     *文件地址
-     * </pre>
-     *
-     * <code>string file_address = 4;</code>
-     * @return The bytes for fileAddress.
-     */
-    @Override
-    public com.google.protobuf.ByteString
-        getFileAddressBytes() {
-      Object ref = fileAddress_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (String) ref);
-        fileAddress_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int FILE_CONTEXT_FIELD_NUMBER = 5;
-    private volatile Object fileContext_;
-    /**
-     * <pre>
-     *如有，写附件信息，比如XML
-     * </pre>
-     *
-     * <code>string file_context = 5;</code>
-     * @return The fileContext.
-     */
-    @Override
-    public String getFileContext() {
-      Object ref = fileContext_;
-      if (ref instanceof String) {
-        return (String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        String s = bs.toStringUtf8();
-        fileContext_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     *如有，写附件信息，比如XML
-     * </pre>
-     *
-     * <code>string file_context = 5;</code>
-     * @return The bytes for fileContext.
-     */
-    @Override
-    public com.google.protobuf.ByteString
-        getFileContextBytes() {
-      Object ref = fileContext_;
-      if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (String) ref);
-        fileContext_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
     }
 
     private byte memoizedIsInitialized = -1;
@@ -10511,17 +11371,17 @@ public final class TelecommandMessages {
       if (headInfo_ != null) {
         output.writeMessage(1, getHeadInfo());
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(requirementId_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, requirementId_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(taskId_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, taskId_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(taskName_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, taskName_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(taskPlanAddr_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, taskPlanAddr_);
       }
       if (messageTime_ != null) {
-        output.writeMessage(3, getMessageTime());
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(fileAddress_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, fileAddress_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(fileContext_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, fileContext_);
+        output.writeMessage(5, getMessageTime());
       }
       unknownFields.writeTo(output);
     }
@@ -10536,18 +11396,18 @@ public final class TelecommandMessages {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(1, getHeadInfo());
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(requirementId_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, requirementId_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(taskId_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, taskId_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(taskName_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, taskName_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(taskPlanAddr_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, taskPlanAddr_);
       }
       if (messageTime_ != null) {
         size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, getMessageTime());
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(fileAddress_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, fileAddress_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(fileContext_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, fileContext_);
+          .computeMessageSize(5, getMessageTime());
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -10569,17 +11429,17 @@ public final class TelecommandMessages {
         if (!getHeadInfo()
             .equals(other.getHeadInfo())) return false;
       }
-      if (!getRequirementId()
-          .equals(other.getRequirementId())) return false;
+      if (!getTaskId()
+          .equals(other.getTaskId())) return false;
+      if (!getTaskName()
+          .equals(other.getTaskName())) return false;
+      if (!getTaskPlanAddr()
+          .equals(other.getTaskPlanAddr())) return false;
       if (hasMessageTime() != other.hasMessageTime()) return false;
       if (hasMessageTime()) {
         if (!getMessageTime()
             .equals(other.getMessageTime())) return false;
       }
-      if (!getFileAddress()
-          .equals(other.getFileAddress())) return false;
-      if (!getFileContext()
-          .equals(other.getFileContext())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -10595,16 +11455,16 @@ public final class TelecommandMessages {
         hash = (37 * hash) + HEAD_INFO_FIELD_NUMBER;
         hash = (53 * hash) + getHeadInfo().hashCode();
       }
-      hash = (37 * hash) + REQUIREMENT_ID_FIELD_NUMBER;
-      hash = (53 * hash) + getRequirementId().hashCode();
+      hash = (37 * hash) + TASK_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getTaskId().hashCode();
+      hash = (37 * hash) + TASK_NAME_FIELD_NUMBER;
+      hash = (53 * hash) + getTaskName().hashCode();
+      hash = (37 * hash) + TASK_PLAN_ADDR_FIELD_NUMBER;
+      hash = (53 * hash) + getTaskPlanAddr().hashCode();
       if (hasMessageTime()) {
         hash = (37 * hash) + MESSAGE_TIME_FIELD_NUMBER;
         hash = (53 * hash) + getMessageTime().hashCode();
       }
-      hash = (37 * hash) + FILE_ADDRESS_FIELD_NUMBER;
-      hash = (53 * hash) + getFileAddress().hashCode();
-      hash = (37 * hash) + FILE_CONTEXT_FIELD_NUMBER;
-      hash = (53 * hash) + getFileContext().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -10702,7 +11562,7 @@ public final class TelecommandMessages {
     }
     /**
      * <pre>
-     *设计阶段信息
+     *设计阶段信息:广播任务信息
      * </pre>
      *
      * Protobuf type {@code DesignStageMessage}
@@ -10748,7 +11608,11 @@ public final class TelecommandMessages {
           headInfo_ = null;
           headInfoBuilder_ = null;
         }
-        requirementId_ = "";
+        taskId_ = "";
+
+        taskName_ = "";
+
+        taskPlanAddr_ = "";
 
         if (messageTimeBuilder_ == null) {
           messageTime_ = null;
@@ -10756,10 +11620,6 @@ public final class TelecommandMessages {
           messageTime_ = null;
           messageTimeBuilder_ = null;
         }
-        fileAddress_ = "";
-
-        fileContext_ = "";
-
         return this;
       }
 
@@ -10791,14 +11651,14 @@ public final class TelecommandMessages {
         } else {
           result.headInfo_ = headInfoBuilder_.build();
         }
-        result.requirementId_ = requirementId_;
+        result.taskId_ = taskId_;
+        result.taskName_ = taskName_;
+        result.taskPlanAddr_ = taskPlanAddr_;
         if (messageTimeBuilder_ == null) {
           result.messageTime_ = messageTime_;
         } else {
           result.messageTime_ = messageTimeBuilder_.build();
         }
-        result.fileAddress_ = fileAddress_;
-        result.fileContext_ = fileContext_;
         onBuilt();
         return result;
       }
@@ -10850,20 +11710,20 @@ public final class TelecommandMessages {
         if (other.hasHeadInfo()) {
           mergeHeadInfo(other.getHeadInfo());
         }
-        if (!other.getRequirementId().isEmpty()) {
-          requirementId_ = other.requirementId_;
+        if (!other.getTaskId().isEmpty()) {
+          taskId_ = other.taskId_;
+          onChanged();
+        }
+        if (!other.getTaskName().isEmpty()) {
+          taskName_ = other.taskName_;
+          onChanged();
+        }
+        if (!other.getTaskPlanAddr().isEmpty()) {
+          taskPlanAddr_ = other.taskPlanAddr_;
           onChanged();
         }
         if (other.hasMessageTime()) {
           mergeMessageTime(other.getMessageTime());
-        }
-        if (!other.getFileAddress().isEmpty()) {
-          fileAddress_ = other.fileAddress_;
-          onChanged();
-        }
-        if (!other.getFileContext().isEmpty()) {
-          fileContext_ = other.fileContext_;
-          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -11049,21 +11909,21 @@ public final class TelecommandMessages {
         return headInfoBuilder_;
       }
 
-      private Object requirementId_ = "";
+      private Object taskId_ = "";
       /**
        * <pre>
        * </pre>
        *
-       * <code>string requirement_id = 2;</code>
-       * @return The requirementId.
+       * <code>string task_id = 2;</code>
+       * @return The taskId.
        */
-      public String getRequirementId() {
-        Object ref = requirementId_;
+      public String getTaskId() {
+        Object ref = taskId_;
         if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           String s = bs.toStringUtf8();
-          requirementId_ = s;
+          taskId_ = s;
           return s;
         } else {
           return (String) ref;
@@ -11073,17 +11933,17 @@ public final class TelecommandMessages {
        * <pre>
        * </pre>
        *
-       * <code>string requirement_id = 2;</code>
-       * @return The bytes for requirementId.
+       * <code>string task_id = 2;</code>
+       * @return The bytes for taskId.
        */
       public com.google.protobuf.ByteString
-          getRequirementIdBytes() {
-        Object ref = requirementId_;
+          getTaskIdBytes() {
+        Object ref = taskId_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (String) ref);
-          requirementId_ = b;
+          taskId_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
@@ -11093,17 +11953,17 @@ public final class TelecommandMessages {
        * <pre>
        * </pre>
        *
-       * <code>string requirement_id = 2;</code>
-       * @param value The requirementId to set.
+       * <code>string task_id = 2;</code>
+       * @param value The taskId to set.
        * @return This builder for chaining.
        */
-      public Builder setRequirementId(
+      public Builder setTaskId(
           String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   
-        requirementId_ = value;
+        taskId_ = value;
         onChanged();
         return this;
       }
@@ -11111,12 +11971,12 @@ public final class TelecommandMessages {
        * <pre>
        * </pre>
        *
-       * <code>string requirement_id = 2;</code>
+       * <code>string task_id = 2;</code>
        * @return This builder for chaining.
        */
-      public Builder clearRequirementId() {
+      public Builder clearTaskId() {
         
-        requirementId_ = getDefaultInstance().getRequirementId();
+        taskId_ = getDefaultInstance().getTaskId();
         onChanged();
         return this;
       }
@@ -11124,18 +11984,170 @@ public final class TelecommandMessages {
        * <pre>
        * </pre>
        *
-       * <code>string requirement_id = 2;</code>
-       * @param value The bytes for requirementId to set.
+       * <code>string task_id = 2;</code>
+       * @param value The bytes for taskId to set.
        * @return This builder for chaining.
        */
-      public Builder setRequirementIdBytes(
+      public Builder setTaskIdBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
         
-        requirementId_ = value;
+        taskId_ = value;
+        onChanged();
+        return this;
+      }
+
+      private Object taskName_ = "";
+      /**
+       * <code>string task_name = 3;</code>
+       * @return The taskName.
+       */
+      public String getTaskName() {
+        Object ref = taskName_;
+        if (!(ref instanceof String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          taskName_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      /**
+       * <code>string task_name = 3;</code>
+       * @return The bytes for taskName.
+       */
+      public com.google.protobuf.ByteString
+          getTaskNameBytes() {
+        Object ref = taskName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (String) ref);
+          taskName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string task_name = 3;</code>
+       * @param value The taskName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTaskName(
+          String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        taskName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string task_name = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearTaskName() {
+        
+        taskName_ = getDefaultInstance().getTaskName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string task_name = 3;</code>
+       * @param value The bytes for taskName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTaskNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        taskName_ = value;
+        onChanged();
+        return this;
+      }
+
+      private Object taskPlanAddr_ = "";
+      /**
+       * <code>string task_plan_addr = 4;</code>
+       * @return The taskPlanAddr.
+       */
+      public String getTaskPlanAddr() {
+        Object ref = taskPlanAddr_;
+        if (!(ref instanceof String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          taskPlanAddr_ = s;
+          return s;
+        } else {
+          return (String) ref;
+        }
+      }
+      /**
+       * <code>string task_plan_addr = 4;</code>
+       * @return The bytes for taskPlanAddr.
+       */
+      public com.google.protobuf.ByteString
+          getTaskPlanAddrBytes() {
+        Object ref = taskPlanAddr_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (String) ref);
+          taskPlanAddr_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string task_plan_addr = 4;</code>
+       * @param value The taskPlanAddr to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTaskPlanAddr(
+          String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        taskPlanAddr_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string task_plan_addr = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearTaskPlanAddr() {
+        
+        taskPlanAddr_ = getDefaultInstance().getTaskPlanAddr();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string task_plan_addr = 4;</code>
+       * @param value The bytes for taskPlanAddr to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTaskPlanAddrBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        taskPlanAddr_ = value;
         onChanged();
         return this;
       }
@@ -11148,7 +12160,7 @@ public final class TelecommandMessages {
        *消息时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp message_time = 3;</code>
+       * <code>.google.protobuf.Timestamp message_time = 5;</code>
        * @return Whether the messageTime field is set.
        */
       public boolean hasMessageTime() {
@@ -11159,7 +12171,7 @@ public final class TelecommandMessages {
        *消息时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp message_time = 3;</code>
+       * <code>.google.protobuf.Timestamp message_time = 5;</code>
        * @return The messageTime.
        */
       public com.google.protobuf.Timestamp getMessageTime() {
@@ -11174,7 +12186,7 @@ public final class TelecommandMessages {
        *消息时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp message_time = 3;</code>
+       * <code>.google.protobuf.Timestamp message_time = 5;</code>
        */
       public Builder setMessageTime(com.google.protobuf.Timestamp value) {
         if (messageTimeBuilder_ == null) {
@@ -11194,7 +12206,7 @@ public final class TelecommandMessages {
        *消息时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp message_time = 3;</code>
+       * <code>.google.protobuf.Timestamp message_time = 5;</code>
        */
       public Builder setMessageTime(
           com.google.protobuf.Timestamp.Builder builderForValue) {
@@ -11212,7 +12224,7 @@ public final class TelecommandMessages {
        *消息时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp message_time = 3;</code>
+       * <code>.google.protobuf.Timestamp message_time = 5;</code>
        */
       public Builder mergeMessageTime(com.google.protobuf.Timestamp value) {
         if (messageTimeBuilder_ == null) {
@@ -11234,7 +12246,7 @@ public final class TelecommandMessages {
        *消息时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp message_time = 3;</code>
+       * <code>.google.protobuf.Timestamp message_time = 5;</code>
        */
       public Builder clearMessageTime() {
         if (messageTimeBuilder_ == null) {
@@ -11252,7 +12264,7 @@ public final class TelecommandMessages {
        *消息时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp message_time = 3;</code>
+       * <code>.google.protobuf.Timestamp message_time = 5;</code>
        */
       public com.google.protobuf.Timestamp.Builder getMessageTimeBuilder() {
         
@@ -11264,7 +12276,7 @@ public final class TelecommandMessages {
        *消息时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp message_time = 3;</code>
+       * <code>.google.protobuf.Timestamp message_time = 5;</code>
        */
       public com.google.protobuf.TimestampOrBuilder getMessageTimeOrBuilder() {
         if (messageTimeBuilder_ != null) {
@@ -11279,7 +12291,7 @@ public final class TelecommandMessages {
        *消息时间
        * </pre>
        *
-       * <code>.google.protobuf.Timestamp message_time = 3;</code>
+       * <code>.google.protobuf.Timestamp message_time = 5;</code>
        */
       private com.google.protobuf.SingleFieldBuilderV3<
           com.google.protobuf.Timestamp, com.google.protobuf.Timestamp.Builder, com.google.protobuf.TimestampOrBuilder> 
@@ -11293,198 +12305,6 @@ public final class TelecommandMessages {
           messageTime_ = null;
         }
         return messageTimeBuilder_;
-      }
-
-      private Object fileAddress_ = "";
-      /**
-       * <pre>
-       *文件地址
-       * </pre>
-       *
-       * <code>string file_address = 4;</code>
-       * @return The fileAddress.
-       */
-      public String getFileAddress() {
-        Object ref = fileAddress_;
-        if (!(ref instanceof String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          String s = bs.toStringUtf8();
-          fileAddress_ = s;
-          return s;
-        } else {
-          return (String) ref;
-        }
-      }
-      /**
-       * <pre>
-       *文件地址
-       * </pre>
-       *
-       * <code>string file_address = 4;</code>
-       * @return The bytes for fileAddress.
-       */
-      public com.google.protobuf.ByteString
-          getFileAddressBytes() {
-        Object ref = fileAddress_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (String) ref);
-          fileAddress_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       *文件地址
-       * </pre>
-       *
-       * <code>string file_address = 4;</code>
-       * @param value The fileAddress to set.
-       * @return This builder for chaining.
-       */
-      public Builder setFileAddress(
-          String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        fileAddress_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       *文件地址
-       * </pre>
-       *
-       * <code>string file_address = 4;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearFileAddress() {
-        
-        fileAddress_ = getDefaultInstance().getFileAddress();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       *文件地址
-       * </pre>
-       *
-       * <code>string file_address = 4;</code>
-       * @param value The bytes for fileAddress to set.
-       * @return This builder for chaining.
-       */
-      public Builder setFileAddressBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        fileAddress_ = value;
-        onChanged();
-        return this;
-      }
-
-      private Object fileContext_ = "";
-      /**
-       * <pre>
-       *如有，写附件信息，比如XML
-       * </pre>
-       *
-       * <code>string file_context = 5;</code>
-       * @return The fileContext.
-       */
-      public String getFileContext() {
-        Object ref = fileContext_;
-        if (!(ref instanceof String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          String s = bs.toStringUtf8();
-          fileContext_ = s;
-          return s;
-        } else {
-          return (String) ref;
-        }
-      }
-      /**
-       * <pre>
-       *如有，写附件信息，比如XML
-       * </pre>
-       *
-       * <code>string file_context = 5;</code>
-       * @return The bytes for fileContext.
-       */
-      public com.google.protobuf.ByteString
-          getFileContextBytes() {
-        Object ref = fileContext_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (String) ref);
-          fileContext_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       *如有，写附件信息，比如XML
-       * </pre>
-       *
-       * <code>string file_context = 5;</code>
-       * @param value The fileContext to set.
-       * @return This builder for chaining.
-       */
-      public Builder setFileContext(
-          String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        fileContext_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       *如有，写附件信息，比如XML
-       * </pre>
-       *
-       * <code>string file_context = 5;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearFileContext() {
-        
-        fileContext_ = getDefaultInstance().getFileContext();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       *如有，写附件信息，比如XML
-       * </pre>
-       *
-       * <code>string file_context = 5;</code>
-       * @param value The bytes for fileContext to set.
-       * @return This builder for chaining.
-       */
-      public Builder setFileContextBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        fileContext_ = value;
-        onChanged();
-        return this;
       }
       @Override
       public final Builder setUnknownFields(
@@ -11595,36 +12415,37 @@ public final class TelecommandMessages {
       "ommand_result_msgs\030\005 \003(\0132\025.CommandExecRe" +
       "sultMsg\0220\n\014message_time\030\006 \001(\0132\032.google.p" +
       "rotobuf.Timestamp\022\020\n\010sat_code\030\007 \001(\t\022\024\n\014c" +
-      "hannel_code\030\010 \001(\t:\007\212\265\030\0031.0\"\242\001\n\016CommandMe" +
-      "ssage\022\021\n\tcm_symbol\030\001 \001(\t\022\017\n\007cm_name\030\002 \001(" +
-      "\t\022\023\n\013packet_data\030\003 \001(\014\022\025\n\rvalidate_func\030" +
-      "\004 \001(\t\022-\n\texec_time\030\005 \001(\0132\032.google.protob" +
-      "uf.Timestamp\022\021\n\tsend_span\030\006 \001(\005\"\223\002\n\024Comm" +
-      "andExecResultMsg\022\024\n\014send_channel\030\001 \001(\t\022\024" +
-      "\n\014sending_mode\030\002 \001(\t\022\021\n\tcm_symbol\030\003 \001(\t\022" +
-      "\017\n\007cm_name\030\004 \001(\t\022\020\n\010raw_data\030\005 \001(\014\0220\n\014se" +
-      "nding_time\030\006 \001(\0132\032.google.protobuf.Times" +
-      "tamp\022*\n\016sending_result\030\007 \001(\0162\022.CommandEx" +
-      "ecResult\022\027\n\017sending_details\030\010 \001(\t\022\031\n\021val" +
-      "idation_detail\030\t \001(\t:\007\212\265\030\0031.0\"\312\001\n\024Adjust" +
-      "ControlMessage\022!\n\thead_info\030\001 \001(\0132\016.Prot" +
-      "oHeadInfo\022\022\n\nmessage_id\030\002 \001(\t\022(\n\013item_re" +
-      "sult\030\003 \001(\0162\023.TestItemExecResult\0220\n\014messa" +
-      "ge_time\030\004 \001(\0132\032.google.protobuf.Timestam" +
-      "p\022\026\n\016result_context\030\005 \001(\t:\007\212\265\030\0031.0\"\266\001\n\022D" +
-      "esignStageMessage\022!\n\thead_info\030\001 \001(\0132\016.P" +
-      "rotoHeadInfo\022\026\n\016requirement_id\030\002 \001(\t\0220\n\014" +
-      "message_time\030\003 \001(\0132\032.google.protobuf.Tim" +
-      "estamp\022\024\n\014file_address\030\004 \001(\t\022\024\n\014file_con" +
-      "text\030\005 \001(\t:\007\212\265\030\0031.0*o\n\022TestItemExecResul" +
-      "t\022 \n\034ITEM_EXEC_RESULT_UNSPECIFIED\020\000\022\034\n\030I" +
-      "TEM_EXEC_RESULT_SUCCESS\020\001\022\031\n\025ITEM_EXEC_R" +
-      "ESULT_FAIL\020\002*q\n\021CommandExecResult\022!\n\035CM_" +
-      "SENDING_RESULT_UNSPECIFIED\020\000\022\035\n\031CM_SENDI" +
-      "NG_RESULT_SUCCESS\020\001\022\032\n\026CM_SENDING_RESULT" +
-      "_FAIL\020\002BC\n\037SatDataCenter.DataExchange.Tm" +
-      "Tc\252\002\037SatDataCenter.DataExchange.TmTcP\000b\006" +
-      "proto3"
+      "hannel_code\030\010 \001(\t:\007\212\265\030\0031.0\"\311\001\n\016CommandMe" +
+      "ssage\022\022\n\ncommand_id\030\001 \001(\t\022\021\n\tcm_symbol\030\002" +
+      " \001(\t\022\017\n\007cm_name\030\003 \001(\t\022\023\n\013packet_data\030\004 \001" +
+      "(\t\022\025\n\rvalidate_func\030\005 \001(\t\022-\n\texec_time\030\006" +
+      " \001(\0132\032.google.protobuf.Timestamp\022\021\n\tsend" +
+      "_span\030\007 \001(\005\022\021\n\tvcid_code\030\010 \001(\t\"\260\002\n\024Comma" +
+      "ndExecResultMsg\022\022\n\ncommand_id\030\001 \001(\t\022\024\n\014s" +
+      "end_channel\030\002 \001(\t\022\024\n\014sending_mode\030\003 \001(\t\022" +
+      "\021\n\tcm_symbol\030\004 \001(\t\022\017\n\007cm_name\030\005 \001(\t\022\020\n\010r" +
+      "aw_data\030\006 \001(\t\0220\n\014sending_time\030\007 \001(\0132\032.go" +
+      "ogle.protobuf.Timestamp\022*\n\016sending_resul" +
+      "t\030\010 \001(\0162\022.CommandExecResult\022\027\n\017sending_d" +
+      "etails\030\t \001(\t\022\031\n\021validation_detail\030\n \001(\t\022" +
+      "\020\n\010sat_code\030\013 \001(\t\"\312\001\n\024AdjustControlMessa" +
+      "ge\022!\n\thead_info\030\001 \001(\0132\016.ProtoHeadInfo\022\022\n" +
+      "\nmessage_id\030\002 \001(\t\022(\n\013item_result\030\003 \001(\0162\023" +
+      ".TestItemExecResult\0220\n\014message_time\030\004 \001(" +
+      "\0132\032.google.protobuf.Timestamp\022\026\n\016result_" +
+      "context\030\005 \001(\t:\007\212\265\030\0031.0\"\256\001\n\022DesignStageMe" +
+      "ssage\022!\n\thead_info\030\001 \001(\0132\016.ProtoHeadInfo" +
+      "\022\017\n\007task_id\030\002 \001(\t\022\021\n\ttask_name\030\003 \001(\t\022\026\n\016" +
+      "task_plan_addr\030\004 \001(\t\0220\n\014message_time\030\005 \001" +
+      "(\0132\032.google.protobuf.Timestamp:\007\212\265\030\0031.0*" +
+      "o\n\022TestItemExecResult\022 \n\034ITEM_EXEC_RESUL" +
+      "T_UNSPECIFIED\020\000\022\034\n\030ITEM_EXEC_RESULT_SUCC" +
+      "ESS\020\001\022\031\n\025ITEM_EXEC_RESULT_FAIL\020\002*q\n\021Comm" +
+      "andExecResult\022!\n\035CM_SENDING_RESULT_UNSPE" +
+      "CIFIED\020\000\022\035\n\031CM_SENDING_RESULT_SUCCESS\020\001\022" +
+      "\032\n\026CM_SENDING_RESULT_FAIL\020\002BC\n\037SatDataCe" +
+      "nter.DataExchange.TmTc\252\002\037SatDataCenter.D" +
+      "ataExchange.TmTcP\000b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -11649,13 +12470,13 @@ public final class TelecommandMessages {
     internal_static_CommandMessage_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_CommandMessage_descriptor,
-        new String[] { "CmSymbol", "CmName", "PacketData", "ValidateFunc", "ExecTime", "SendSpan", });
+        new String[] { "CommandId", "CmSymbol", "CmName", "PacketData", "ValidateFunc", "ExecTime", "SendSpan", "VcidCode", });
     internal_static_CommandExecResultMsg_descriptor =
       getDescriptor().getMessageTypes().get(3);
     internal_static_CommandExecResultMsg_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_CommandExecResultMsg_descriptor,
-        new String[] { "SendChannel", "SendingMode", "CmSymbol", "CmName", "RawData", "SendingTime", "SendingResult", "SendingDetails", "ValidationDetail", });
+        new String[] { "CommandId", "SendChannel", "SendingMode", "CmSymbol", "CmName", "RawData", "SendingTime", "SendingResult", "SendingDetails", "ValidationDetail", "SatCode", });
     internal_static_AdjustControlMessage_descriptor =
       getDescriptor().getMessageTypes().get(4);
     internal_static_AdjustControlMessage_fieldAccessorTable = new
@@ -11667,7 +12488,7 @@ public final class TelecommandMessages {
     internal_static_DesignStageMessage_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_DesignStageMessage_descriptor,
-        new String[] { "HeadInfo", "RequirementId", "MessageTime", "FileAddress", "FileContext", });
+        new String[] { "HeadInfo", "TaskId", "TaskName", "TaskPlanAddr", "MessageTime", });
     com.google.protobuf.ExtensionRegistry registry =
         com.google.protobuf.ExtensionRegistry.newInstance();
     registry.add(Version.version);

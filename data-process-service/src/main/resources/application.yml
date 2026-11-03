@@ -1,1 +1,1 @@
-# Business configuration is managed by Nacos (data-process-service.yaml).
+# 业务配置统一由Nacos的data-process-service.yaml管理，指令响应接收配置也在该文件中。

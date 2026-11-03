@@ -4982,6 +4982,76 @@ components:
       bearerFormat: JWT
 
   schemas:
+    PdxpCommandResponseData:
+      type: object
+      description: >-
+        指令响应UDP输入协议说明，并非JSON或HTTP请求。标准PDXP包头32字节，VER=0x80，
+        MID为无符号卫星代号，SID=DID=0x00000006，BID=0x05040001。
+        数据域严格按以下字段顺序排列，整数均为小端；字符串按UTF-8字节长度读取。
+        地址、端口、预留topic和可选传输头长度由data-processing.command-response配置。
+        接收后仅组装CommandExecResultMsg并打印中文日志，不向RocketMQ发送。
+      required: [command_number, cm_symbol_length, cm_symbol, result_code, command_id_length, command_id]
+      properties:
+        command_number:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 4294967295
+          description: 4字节无符号指令号，按协议读取，Proto没有对应字段，不赋值。
+        cm_symbol_length:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: 2字节无符号指令代号长度，单位字节。
+        cm_symbol:
+          type: string
+          description: 按声明长度解码的指令代号字符串，保留前导零。
+        result_code:
+          type: string
+          enum: ['0', '1', '2']
+          description: 1字节结果先转字符串；0成功、1失败、2超时，再映射到Proto枚举。
+        command_id_length:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: 2字节无符号指令标识长度，单位字节。
+        command_id:
+          type: string
+          description: 完整接收指令代号及随机后缀，不生成或修改指令标识。
+    CommandExecResultMsg:
+      type: object
+      description: >-
+        TelecommandMessages.CommandExecResultMsg的本次赋值字段说明；实际对象为Protobuf消息。
+        只赋以下五个字段，其余字段保留默认值；当前只打印日志，不提供新增HTTP接口。
+        日志结果使用成功、失败、超时三个中文名称。
+      properties:
+        sat_code:
+          type: string
+          description: PDXP包头MID的无符号十进制字符串。
+          example: '6'
+        sending_result:
+          type: string
+          enum: [CM_SENDING_RESULT_UNSPECIFIED, CM_SENDING_RESULT_SUCCESS, CM_SENDING_RESULT_FAIL]
+          description: 协议0映射成功，1映射失败，2超时映射未指定；Proto枚举数值分别为1、2、0。
+        sending_time:
+          type: object
+          description: DATE以2000-01-01为第1天，加TIME乘0.1毫秒，按北京时间解释后转换成时间戳。
+          properties:
+            seconds:
+              type: integer
+              format: int64
+              description: 距离世界协调时1970-01-01零点的秒数。
+            nanos:
+              type: integer
+              minimum: 0
+              maximum: 999999999
+              description: 秒内纳秒，保留协议0.1毫秒精度。
+        cm_symbol:
+          type: string
+          description: 协议数据域指令代号按UTF-8解码的原始字符串。
+        command_id:
+          type: string
+          description: 协议数据域完整指令标识按UTF-8解码的原始字符串。
     UserRoleSummary:
       type: object
       description: "用户关联角色，复用系统角色结构"

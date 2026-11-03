@@ -72,6 +72,18 @@ greptime:
 
 # 数据采集接口和数据处理公共配置。
 data-processing:
+  # 采集指令响应使用独立UDP端口；修改后重启数据处理服务生效。
+  command-response:
+    # 是否随服务启动监听指令响应；未配置本分组的旧环境默认不启用。
+    enabled: true
+    # 本机绑定地址，0.0.0.0表示监听全部IPv4网卡。
+    host: 0.0.0.0
+    # 指令响应专用端口，避免与遥测采集接口使用相同端口。
+    port: 19104
+    # 预留指令响应主题；当前只打印日志，不向RocketMQ发送消息。
+    topic: topic_zl_response_sjcl
+    # 标准32字节PDXP包头之前的传输头长度，0表示直接从PDXP包头解析。
+    transport-header-length: 0
   # PDXP按接口rpc_enabled选择本地或远程配置；修改后重启处理服务生效。
   # 旧平级长度项需迁移到以下分组，不再作为分组的回退值。
   pdxp:
