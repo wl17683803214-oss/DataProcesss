@@ -1,0 +1,16 @@
+{
+  "taskId" : "TASK_100FRAME_20261030",
+  "channelName" : "阈值法验证",
+  "calibrationFormula" : "CAL_THRESHOLD",
+  "detectMethod" : 2,
+  "sigmaValue" : 3,
+  "sampleWindow" : 20,
+  "fluctuationRate" : 10,
+  "normalRange" : "90~140",
+  "chauvenetCoef" : 0.5,
+  "minSampleCount" : 20,
+  "iterateCount" : 2,
+  "dynamicUpdate" : 1,
+  "autoClean" : 1,
+  "enabled" : 1
+}

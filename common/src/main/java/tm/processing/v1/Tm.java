@@ -26,7 +26,7 @@ public final class Tm {
      * <code>string sat_code = 1;</code>
      * @return The satCode.
      */
-    java.lang.String getSatCode();
+    String getSatCode();
     /**
      * <pre>
      * 卫星代号（SatlliteCode），如 "74"
@@ -46,7 +46,7 @@ public final class Tm {
      * <code>string channel = 2;</code>
      * @return The channel.
      */
-    java.lang.String getChannel();
+    String getChannel();
     /**
      * <pre>
      * 遥测通道代号（十六进制），如 "12"
@@ -123,7 +123,7 @@ public final class Tm {
      * <code>string data_source = 7;</code>
      * @return The dataSource.
      */
-    java.lang.String getDataSource();
+    String getDataSource();
     /**
      * <pre>
      * 数据源名称
@@ -158,14 +158,14 @@ public final class Tm {
       dataSource_ = "";
     }
 
-    @java.lang.Override
+    @Override
     @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
+    protected Object newInstance(
         UnusedPrivateParameter unused) {
       return new FrameRequest();
     }
 
-    @java.lang.Override
+    @Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
       return this.unknownFields;
@@ -176,7 +176,7 @@ public final class Tm {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
+        throw new NullPointerException();
       }
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -189,13 +189,13 @@ public final class Tm {
               done = true;
               break;
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
               satCode_ = s;
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
               channel_ = s;
               break;
@@ -229,7 +229,7 @@ public final class Tm {
               break;
             }
             case 58: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
               dataSource_ = s;
               break;
@@ -257,19 +257,19 @@ public final class Tm {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameRequest_descriptor;
+      return Tm.internal_static_tm_processing_v1_FrameRequest_descriptor;
     }
 
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+    @Override
+    protected FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameRequest_fieldAccessorTable
+      return Tm.internal_static_tm_processing_v1_FrameRequest_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.FrameRequest.class, tm.processing.v1.Tm.FrameRequest.Builder.class);
+              FrameRequest.class, Builder.class);
     }
 
     public static final int SAT_CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object satCode_;
+    private volatile Object satCode_;
     /**
      * <pre>
      * 卫星代号（SatlliteCode），如 "74"
@@ -278,15 +278,15 @@ public final class Tm {
      * <code>string sat_code = 1;</code>
      * @return The satCode.
      */
-    @java.lang.Override
-    public java.lang.String getSatCode() {
-      java.lang.Object ref = satCode_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getSatCode() {
+      Object ref = satCode_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
+        String s = bs.toStringUtf8();
         satCode_ = s;
         return s;
       }
@@ -299,14 +299,14 @@ public final class Tm {
      * <code>string sat_code = 1;</code>
      * @return The bytes for satCode.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
         getSatCodeBytes() {
-      java.lang.Object ref = satCode_;
-      if (ref instanceof java.lang.String) {
+      Object ref = satCode_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
+                (String) ref);
         satCode_ = b;
         return b;
       } else {
@@ -315,7 +315,7 @@ public final class Tm {
     }
 
     public static final int CHANNEL_FIELD_NUMBER = 2;
-    private volatile java.lang.Object channel_;
+    private volatile Object channel_;
     /**
      * <pre>
      * 遥测通道代号（十六进制），如 "12"
@@ -324,15 +324,15 @@ public final class Tm {
      * <code>string channel = 2;</code>
      * @return The channel.
      */
-    @java.lang.Override
-    public java.lang.String getChannel() {
-      java.lang.Object ref = channel_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getChannel() {
+      Object ref = channel_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
+        String s = bs.toStringUtf8();
         channel_ = s;
         return s;
       }
@@ -345,14 +345,14 @@ public final class Tm {
      * <code>string channel = 2;</code>
      * @return The bytes for channel.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
         getChannelBytes() {
-      java.lang.Object ref = channel_;
-      if (ref instanceof java.lang.String) {
+      Object ref = channel_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
+                (String) ref);
         channel_ = b;
         return b;
       } else {
@@ -370,7 +370,7 @@ public final class Tm {
      * <code>bytes data = 3;</code>
      * @return The data.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString getData() {
       return data_;
     }
@@ -385,7 +385,7 @@ public final class Tm {
      * <code>.google.protobuf.Timestamp send_time = 4;</code>
      * @return Whether the sendTime field is set.
      */
-    @java.lang.Override
+    @Override
     public boolean hasSendTime() {
       return sendTime_ != null;
     }
@@ -397,7 +397,7 @@ public final class Tm {
      * <code>.google.protobuf.Timestamp send_time = 4;</code>
      * @return The sendTime.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.Timestamp getSendTime() {
       return sendTime_ == null ? com.google.protobuf.Timestamp.getDefaultInstance() : sendTime_;
     }
@@ -408,7 +408,7 @@ public final class Tm {
      *
      * <code>.google.protobuf.Timestamp send_time = 4;</code>
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.TimestampOrBuilder getSendTimeOrBuilder() {
       return getSendTime();
     }
@@ -423,7 +423,7 @@ public final class Tm {
      * <code>uint64 sequence = 5;</code>
      * @return The sequence.
      */
-    @java.lang.Override
+    @Override
     public long getSequence() {
       return sequence_;
     }
@@ -438,13 +438,13 @@ public final class Tm {
      * <code>int32 length = 6;</code>
      * @return The length.
      */
-    @java.lang.Override
+    @Override
     public int getLength() {
       return length_;
     }
 
     public static final int DATA_SOURCE_FIELD_NUMBER = 7;
-    private volatile java.lang.Object dataSource_;
+    private volatile Object dataSource_;
     /**
      * <pre>
      * 数据源名称
@@ -453,15 +453,15 @@ public final class Tm {
      * <code>string data_source = 7;</code>
      * @return The dataSource.
      */
-    @java.lang.Override
-    public java.lang.String getDataSource() {
-      java.lang.Object ref = dataSource_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getDataSource() {
+      Object ref = dataSource_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
+        String s = bs.toStringUtf8();
         dataSource_ = s;
         return s;
       }
@@ -474,14 +474,14 @@ public final class Tm {
      * <code>string data_source = 7;</code>
      * @return The bytes for dataSource.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
         getDataSourceBytes() {
-      java.lang.Object ref = dataSource_;
-      if (ref instanceof java.lang.String) {
+      Object ref = dataSource_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
+                (String) ref);
         dataSource_ = b;
         return b;
       } else {
@@ -490,7 +490,7 @@ public final class Tm {
     }
 
     private byte memoizedIsInitialized = -1;
-    @java.lang.Override
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -500,7 +500,7 @@ public final class Tm {
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
@@ -527,7 +527,7 @@ public final class Tm {
       unknownFields.writeTo(output);
     }
 
-    @java.lang.Override
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
@@ -563,15 +563,15 @@ public final class Tm {
       return size;
     }
 
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
+    @Override
+    public boolean equals(final Object obj) {
       if (obj == this) {
        return true;
       }
-      if (!(obj instanceof tm.processing.v1.Tm.FrameRequest)) {
+      if (!(obj instanceof FrameRequest)) {
         return super.equals(obj);
       }
-      tm.processing.v1.Tm.FrameRequest other = (tm.processing.v1.Tm.FrameRequest) obj;
+      FrameRequest other = (FrameRequest) obj;
 
       if (!getSatCode()
           .equals(other.getSatCode())) return false;
@@ -594,7 +594,7 @@ public final class Tm {
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public int hashCode() {
       if (memoizedHashCode != 0) {
         return memoizedHashCode;
@@ -623,69 +623,69 @@ public final class Tm {
       return hash;
     }
 
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(
+    public static FrameRequest parseFrom(
         java.nio.ByteBuffer data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(
+    public static FrameRequest parseFrom(
         java.nio.ByteBuffer data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(
+    public static FrameRequest parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(
+    public static FrameRequest parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(byte[] data)
+    public static FrameRequest parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(
+    public static FrameRequest parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(java.io.InputStream input)
+    public static FrameRequest parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(
+    public static FrameRequest parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseDelimitedFrom(java.io.InputStream input)
+    public static FrameRequest parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseDelimitedFrom(
+    public static FrameRequest parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(
+    public static FrameRequest parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.FrameRequest parseFrom(
+    public static FrameRequest parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -693,23 +693,23 @@ public final class Tm {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    @java.lang.Override
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-    public static Builder newBuilder(tm.processing.v1.Tm.FrameRequest prototype) {
+    public static Builder newBuilder(FrameRequest prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
-    @java.lang.Override
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
     }
 
-    @java.lang.Override
+    @Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
@@ -723,18 +723,18 @@ public final class Tm {
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
         // @@protoc_insertion_point(builder_implements:tm.processing.v1.FrameRequest)
-        tm.processing.v1.Tm.FrameRequestOrBuilder {
+        FrameRequestOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameRequest_descriptor;
+        return Tm.internal_static_tm_processing_v1_FrameRequest_descriptor;
       }
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      @Override
+      protected FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameRequest_fieldAccessorTable
+        return Tm.internal_static_tm_processing_v1_FrameRequest_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.FrameRequest.class, tm.processing.v1.Tm.FrameRequest.Builder.class);
+                FrameRequest.class, Builder.class);
       }
 
       // Construct using tm.processing.v1.Tm.FrameRequest.newBuilder()
@@ -743,7 +743,7 @@ public final class Tm {
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+          BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
@@ -752,7 +752,7 @@ public final class Tm {
                 .alwaysUseFieldBuilders) {
         }
       }
-      @java.lang.Override
+      @Override
       public Builder clear() {
         super.clear();
         satCode_ = "";
@@ -776,29 +776,29 @@ public final class Tm {
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameRequest_descriptor;
+        return Tm.internal_static_tm_processing_v1_FrameRequest_descriptor;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.FrameRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.FrameRequest.getDefaultInstance();
+      @Override
+      public FrameRequest getDefaultInstanceForType() {
+        return FrameRequest.getDefaultInstance();
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.FrameRequest build() {
-        tm.processing.v1.Tm.FrameRequest result = buildPartial();
+      @Override
+      public FrameRequest build() {
+        FrameRequest result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.FrameRequest buildPartial() {
-        tm.processing.v1.Tm.FrameRequest result = new tm.processing.v1.Tm.FrameRequest(this);
+      @Override
+      public FrameRequest buildPartial() {
+        FrameRequest result = new FrameRequest(this);
         result.satCode_ = satCode_;
         result.channel_ = channel_;
         result.data_ = data_;
@@ -814,50 +814,50 @@ public final class Tm {
         return result;
       }
 
-      @java.lang.Override
+      @Override
       public Builder clone() {
         return super.clone();
       }
-      @java.lang.Override
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.setField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
         return super.clearField(field);
       }
-      @java.lang.Override
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
         return super.clearOneof(oneof);
       }
-      @java.lang.Override
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return super.setRepeatedField(field, index, value);
       }
-      @java.lang.Override
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.addRepeatedField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.FrameRequest) {
-          return mergeFrom((tm.processing.v1.Tm.FrameRequest)other);
+        if (other instanceof FrameRequest) {
+          return mergeFrom((FrameRequest)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(tm.processing.v1.Tm.FrameRequest other) {
-        if (other == tm.processing.v1.Tm.FrameRequest.getDefaultInstance()) return this;
+      public Builder mergeFrom(FrameRequest other) {
+        if (other == FrameRequest.getDefaultInstance()) return this;
         if (!other.getSatCode().isEmpty()) {
           satCode_ = other.satCode_;
           onChanged();
@@ -887,21 +887,21 @@ public final class Tm {
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public final boolean isInitialized() {
         return true;
       }
 
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        tm.processing.v1.Tm.FrameRequest parsedMessage = null;
+        FrameRequest parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.FrameRequest) e.getUnfinishedMessage();
+          parsedMessage = (FrameRequest) e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
@@ -911,7 +911,7 @@ public final class Tm {
         return this;
       }
 
-      private java.lang.Object satCode_ = "";
+      private Object satCode_ = "";
       /**
        * <pre>
        * 卫星代号（SatlliteCode），如 "74"
@@ -920,16 +920,16 @@ public final class Tm {
        * <code>string sat_code = 1;</code>
        * @return The satCode.
        */
-      public java.lang.String getSatCode() {
-        java.lang.Object ref = satCode_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getSatCode() {
+        Object ref = satCode_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
+          String s = bs.toStringUtf8();
           satCode_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
@@ -942,11 +942,11 @@ public final class Tm {
        */
       public com.google.protobuf.ByteString
           getSatCodeBytes() {
-        java.lang.Object ref = satCode_;
+        Object ref = satCode_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
+                  (String) ref);
           satCode_ = b;
           return b;
         } else {
@@ -963,7 +963,7 @@ public final class Tm {
        * @return This builder for chaining.
        */
       public Builder setSatCode(
-          java.lang.String value) {
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1007,7 +1007,7 @@ public final class Tm {
         return this;
       }
 
-      private java.lang.Object channel_ = "";
+      private Object channel_ = "";
       /**
        * <pre>
        * 遥测通道代号（十六进制），如 "12"
@@ -1016,16 +1016,16 @@ public final class Tm {
        * <code>string channel = 2;</code>
        * @return The channel.
        */
-      public java.lang.String getChannel() {
-        java.lang.Object ref = channel_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getChannel() {
+        Object ref = channel_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
+          String s = bs.toStringUtf8();
           channel_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
@@ -1038,11 +1038,11 @@ public final class Tm {
        */
       public com.google.protobuf.ByteString
           getChannelBytes() {
-        java.lang.Object ref = channel_;
+        Object ref = channel_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
+                  (String) ref);
           channel_ = b;
           return b;
         } else {
@@ -1059,7 +1059,7 @@ public final class Tm {
        * @return This builder for chaining.
        */
       public Builder setChannel(
-          java.lang.String value) {
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1112,7 +1112,7 @@ public final class Tm {
        * <code>bytes data = 3;</code>
        * @return The data.
        */
-      @java.lang.Override
+      @Override
       public com.google.protobuf.ByteString getData() {
         return data_;
       }
@@ -1313,7 +1313,7 @@ public final class Tm {
        * <code>uint64 sequence = 5;</code>
        * @return The sequence.
        */
-      @java.lang.Override
+      @Override
       public long getSequence() {
         return sequence_;
       }
@@ -1356,7 +1356,7 @@ public final class Tm {
        * <code>int32 length = 6;</code>
        * @return The length.
        */
-      @java.lang.Override
+      @Override
       public int getLength() {
         return length_;
       }
@@ -1390,7 +1390,7 @@ public final class Tm {
         return this;
       }
 
-      private java.lang.Object dataSource_ = "";
+      private Object dataSource_ = "";
       /**
        * <pre>
        * 数据源名称
@@ -1399,16 +1399,16 @@ public final class Tm {
        * <code>string data_source = 7;</code>
        * @return The dataSource.
        */
-      public java.lang.String getDataSource() {
-        java.lang.Object ref = dataSource_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getDataSource() {
+        Object ref = dataSource_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
+          String s = bs.toStringUtf8();
           dataSource_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
@@ -1421,11 +1421,11 @@ public final class Tm {
        */
       public com.google.protobuf.ByteString
           getDataSourceBytes() {
-        java.lang.Object ref = dataSource_;
+        Object ref = dataSource_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
+                  (String) ref);
           dataSource_ = b;
           return b;
         } else {
@@ -1442,7 +1442,7 @@ public final class Tm {
        * @return This builder for chaining.
        */
       public Builder setDataSource(
-          java.lang.String value) {
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -1485,13 +1485,13 @@ public final class Tm {
         onChanged();
         return this;
       }
-      @java.lang.Override
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
-      @java.lang.Override
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -1502,18 +1502,18 @@ public final class Tm {
     }
 
     // @@protoc_insertion_point(class_scope:tm.processing.v1.FrameRequest)
-    private static final tm.processing.v1.Tm.FrameRequest DEFAULT_INSTANCE;
+    private static final FrameRequest DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.FrameRequest();
+      DEFAULT_INSTANCE = new FrameRequest();
     }
 
-    public static tm.processing.v1.Tm.FrameRequest getDefaultInstance() {
+    public static FrameRequest getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
     private static final com.google.protobuf.Parser<FrameRequest>
         PARSER = new com.google.protobuf.AbstractParser<FrameRequest>() {
-      @java.lang.Override
+      @Override
       public FrameRequest parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -1526,13 +1526,13 @@ public final class Tm {
       return PARSER;
     }
 
-    @java.lang.Override
+    @Override
     public com.google.protobuf.Parser<FrameRequest> getParserForType() {
       return PARSER;
     }
 
-    @java.lang.Override
-    public tm.processing.v1.Tm.FrameRequest getDefaultInstanceForType() {
+    @Override
+    public FrameRequest getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
@@ -1560,7 +1560,7 @@ public final class Tm {
      * <code>string message = 2;</code>
      * @return The message.
      */
-    java.lang.String getMessage();
+    String getMessage();
     /**
      * <pre>
      * 错误描述，成功时为空
@@ -1598,6 +1598,50 @@ public final class Tm {
      * <code>.TelemetryMessage tm_msg = 3;</code>
      */
     SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder getTmMsgOrBuilder();
+
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    java.util.List<SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage> 
+        getExtraTmMsgsList();
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage getExtraTmMsgs(int index);
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    int getExtraTmMsgsCount();
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    java.util.List<? extends SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder> 
+        getExtraTmMsgsOrBuilderList();
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder getExtraTmMsgsOrBuilder(
+        int index);
   }
   /**
    * <pre>
@@ -1617,16 +1661,17 @@ public final class Tm {
     }
     private FrameResponse() {
       message_ = "";
+      extraTmMsgs_ = java.util.Collections.emptyList();
     }
 
-    @java.lang.Override
+    @Override
     @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
+    protected Object newInstance(
         UnusedPrivateParameter unused) {
       return new FrameResponse();
     }
 
-    @java.lang.Override
+    @Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
       return this.unknownFields;
@@ -1637,8 +1682,9 @@ public final class Tm {
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
+        throw new NullPointerException();
       }
+      int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
@@ -1655,7 +1701,7 @@ public final class Tm {
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
               message_ = s;
               break;
@@ -1671,6 +1717,15 @@ public final class Tm {
                 tmMsg_ = subBuilder.buildPartial();
               }
 
+              break;
+            }
+            case 34: {
+              if (!((mutable_bitField0_ & 0x00000001) != 0)) {
+                extraTmMsgs_ = new java.util.ArrayList<SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage>();
+                mutable_bitField0_ |= 0x00000001;
+              }
+              extraTmMsgs_.add(
+                  input.readMessage(SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.parser(), extensionRegistry));
               break;
             }
             default: {
@@ -1690,21 +1745,24 @@ public final class Tm {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
+        if (((mutable_bitField0_ & 0x00000001) != 0)) {
+          extraTmMsgs_ = java.util.Collections.unmodifiableList(extraTmMsgs_);
+        }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameResponse_descriptor;
+      return Tm.internal_static_tm_processing_v1_FrameResponse_descriptor;
     }
 
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+    @Override
+    protected FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameResponse_fieldAccessorTable
+      return Tm.internal_static_tm_processing_v1_FrameResponse_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.FrameResponse.class, tm.processing.v1.Tm.FrameResponse.Builder.class);
+              FrameResponse.class, Builder.class);
     }
 
     public static final int CODE_FIELD_NUMBER = 1;
@@ -1717,13 +1775,13 @@ public final class Tm {
      * <code>int32 code = 1;</code>
      * @return The code.
      */
-    @java.lang.Override
+    @Override
     public int getCode() {
       return code_;
     }
 
     public static final int MESSAGE_FIELD_NUMBER = 2;
-    private volatile java.lang.Object message_;
+    private volatile Object message_;
     /**
      * <pre>
      * 错误描述，成功时为空
@@ -1732,15 +1790,15 @@ public final class Tm {
      * <code>string message = 2;</code>
      * @return The message.
      */
-    @java.lang.Override
-    public java.lang.String getMessage() {
-      java.lang.Object ref = message_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getMessage() {
+      Object ref = message_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
+        String s = bs.toStringUtf8();
         message_ = s;
         return s;
       }
@@ -1753,14 +1811,14 @@ public final class Tm {
      * <code>string message = 2;</code>
      * @return The bytes for message.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
         getMessageBytes() {
-      java.lang.Object ref = message_;
-      if (ref instanceof java.lang.String) {
+      Object ref = message_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
+                (String) ref);
         message_ = b;
         return b;
       } else {
@@ -1778,7 +1836,7 @@ public final class Tm {
      * <code>.TelemetryMessage tm_msg = 3;</code>
      * @return Whether the tmMsg field is set.
      */
-    @java.lang.Override
+    @Override
     public boolean hasTmMsg() {
       return tmMsg_ != null;
     }
@@ -1790,7 +1848,7 @@ public final class Tm {
      * <code>.TelemetryMessage tm_msg = 3;</code>
      * @return The tmMsg.
      */
-    @java.lang.Override
+    @Override
     public SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage getTmMsg() {
       return tmMsg_ == null ? SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.getDefaultInstance() : tmMsg_;
     }
@@ -1801,13 +1859,73 @@ public final class Tm {
      *
      * <code>.TelemetryMessage tm_msg = 3;</code>
      */
-    @java.lang.Override
+    @Override
     public SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder getTmMsgOrBuilder() {
       return getTmMsg();
     }
 
+    public static final int EXTRA_TM_MSGS_FIELD_NUMBER = 4;
+    private java.util.List<SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage> extraTmMsgs_;
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    @Override
+    public java.util.List<SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage> getExtraTmMsgsList() {
+      return extraTmMsgs_;
+    }
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    @Override
+    public java.util.List<? extends SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder> 
+        getExtraTmMsgsOrBuilderList() {
+      return extraTmMsgs_;
+    }
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    @Override
+    public int getExtraTmMsgsCount() {
+      return extraTmMsgs_.size();
+    }
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    @Override
+    public SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage getExtraTmMsgs(int index) {
+      return extraTmMsgs_.get(index);
+    }
+    /**
+     * <pre>
+     * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+     * </pre>
+     *
+     * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+     */
+    @Override
+    public SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder getExtraTmMsgsOrBuilder(
+        int index) {
+      return extraTmMsgs_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
-    @java.lang.Override
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -1817,7 +1935,7 @@ public final class Tm {
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (code_ != 0) {
@@ -1829,10 +1947,13 @@ public final class Tm {
       if (tmMsg_ != null) {
         output.writeMessage(3, getTmMsg());
       }
+      for (int i = 0; i < extraTmMsgs_.size(); i++) {
+        output.writeMessage(4, extraTmMsgs_.get(i));
+      }
       unknownFields.writeTo(output);
     }
 
-    @java.lang.Override
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
@@ -1849,20 +1970,24 @@ public final class Tm {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(3, getTmMsg());
       }
+      for (int i = 0; i < extraTmMsgs_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(4, extraTmMsgs_.get(i));
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
+    @Override
+    public boolean equals(final Object obj) {
       if (obj == this) {
        return true;
       }
-      if (!(obj instanceof tm.processing.v1.Tm.FrameResponse)) {
+      if (!(obj instanceof FrameResponse)) {
         return super.equals(obj);
       }
-      tm.processing.v1.Tm.FrameResponse other = (tm.processing.v1.Tm.FrameResponse) obj;
+      FrameResponse other = (FrameResponse) obj;
 
       if (getCode()
           != other.getCode()) return false;
@@ -1873,11 +1998,13 @@ public final class Tm {
         if (!getTmMsg()
             .equals(other.getTmMsg())) return false;
       }
+      if (!getExtraTmMsgsList()
+          .equals(other.getExtraTmMsgsList())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public int hashCode() {
       if (memoizedHashCode != 0) {
         return memoizedHashCode;
@@ -1892,74 +2019,78 @@ public final class Tm {
         hash = (37 * hash) + TM_MSG_FIELD_NUMBER;
         hash = (53 * hash) + getTmMsg().hashCode();
       }
+      if (getExtraTmMsgsCount() > 0) {
+        hash = (37 * hash) + EXTRA_TM_MSGS_FIELD_NUMBER;
+        hash = (53 * hash) + getExtraTmMsgsList().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
     }
 
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(
+    public static FrameResponse parseFrom(
         java.nio.ByteBuffer data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(
+    public static FrameResponse parseFrom(
         java.nio.ByteBuffer data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(
+    public static FrameResponse parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(
+    public static FrameResponse parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(byte[] data)
+    public static FrameResponse parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(
+    public static FrameResponse parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(java.io.InputStream input)
+    public static FrameResponse parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(
+    public static FrameResponse parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseDelimitedFrom(java.io.InputStream input)
+    public static FrameResponse parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseDelimitedFrom(
+    public static FrameResponse parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(
+    public static FrameResponse parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.FrameResponse parseFrom(
+    public static FrameResponse parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -1967,23 +2098,23 @@ public final class Tm {
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    @java.lang.Override
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-    public static Builder newBuilder(tm.processing.v1.Tm.FrameResponse prototype) {
+    public static Builder newBuilder(FrameResponse prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
-    @java.lang.Override
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
     }
 
-    @java.lang.Override
+    @Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
@@ -1997,18 +2128,18 @@ public final class Tm {
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
         // @@protoc_insertion_point(builder_implements:tm.processing.v1.FrameResponse)
-        tm.processing.v1.Tm.FrameResponseOrBuilder {
+        FrameResponseOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameResponse_descriptor;
+        return Tm.internal_static_tm_processing_v1_FrameResponse_descriptor;
       }
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      @Override
+      protected FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameResponse_fieldAccessorTable
+        return Tm.internal_static_tm_processing_v1_FrameResponse_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.FrameResponse.class, tm.processing.v1.Tm.FrameResponse.Builder.class);
+                FrameResponse.class, Builder.class);
       }
 
       // Construct using tm.processing.v1.Tm.FrameResponse.newBuilder()
@@ -2017,16 +2148,17 @@ public final class Tm {
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+          BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
       private void maybeForceBuilderInitialization() {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
+          getExtraTmMsgsFieldBuilder();
         }
       }
-      @java.lang.Override
+      @Override
       public Builder clear() {
         super.clear();
         code_ = 0;
@@ -2039,32 +2171,39 @@ public final class Tm {
           tmMsg_ = null;
           tmMsgBuilder_ = null;
         }
+        if (extraTmMsgsBuilder_ == null) {
+          extraTmMsgs_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000001);
+        } else {
+          extraTmMsgsBuilder_.clear();
+        }
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_FrameResponse_descriptor;
+        return Tm.internal_static_tm_processing_v1_FrameResponse_descriptor;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.FrameResponse getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.FrameResponse.getDefaultInstance();
+      @Override
+      public FrameResponse getDefaultInstanceForType() {
+        return FrameResponse.getDefaultInstance();
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.FrameResponse build() {
-        tm.processing.v1.Tm.FrameResponse result = buildPartial();
+      @Override
+      public FrameResponse build() {
+        FrameResponse result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.FrameResponse buildPartial() {
-        tm.processing.v1.Tm.FrameResponse result = new tm.processing.v1.Tm.FrameResponse(this);
+      @Override
+      public FrameResponse buildPartial() {
+        FrameResponse result = new FrameResponse(this);
+        int from_bitField0_ = bitField0_;
         result.code_ = code_;
         result.message_ = message_;
         if (tmMsgBuilder_ == null) {
@@ -2072,54 +2211,63 @@ public final class Tm {
         } else {
           result.tmMsg_ = tmMsgBuilder_.build();
         }
+        if (extraTmMsgsBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) != 0)) {
+            extraTmMsgs_ = java.util.Collections.unmodifiableList(extraTmMsgs_);
+            bitField0_ = (bitField0_ & ~0x00000001);
+          }
+          result.extraTmMsgs_ = extraTmMsgs_;
+        } else {
+          result.extraTmMsgs_ = extraTmMsgsBuilder_.build();
+        }
         onBuilt();
         return result;
       }
 
-      @java.lang.Override
+      @Override
       public Builder clone() {
         return super.clone();
       }
-      @java.lang.Override
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.setField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
         return super.clearField(field);
       }
-      @java.lang.Override
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
         return super.clearOneof(oneof);
       }
-      @java.lang.Override
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return super.setRepeatedField(field, index, value);
       }
-      @java.lang.Override
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.addRepeatedField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.FrameResponse) {
-          return mergeFrom((tm.processing.v1.Tm.FrameResponse)other);
+        if (other instanceof FrameResponse) {
+          return mergeFrom((FrameResponse)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(tm.processing.v1.Tm.FrameResponse other) {
-        if (other == tm.processing.v1.Tm.FrameResponse.getDefaultInstance()) return this;
+      public Builder mergeFrom(FrameResponse other) {
+        if (other == FrameResponse.getDefaultInstance()) return this;
         if (other.getCode() != 0) {
           setCode(other.getCode());
         }
@@ -2130,26 +2278,52 @@ public final class Tm {
         if (other.hasTmMsg()) {
           mergeTmMsg(other.getTmMsg());
         }
+        if (extraTmMsgsBuilder_ == null) {
+          if (!other.extraTmMsgs_.isEmpty()) {
+            if (extraTmMsgs_.isEmpty()) {
+              extraTmMsgs_ = other.extraTmMsgs_;
+              bitField0_ = (bitField0_ & ~0x00000001);
+            } else {
+              ensureExtraTmMsgsIsMutable();
+              extraTmMsgs_.addAll(other.extraTmMsgs_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.extraTmMsgs_.isEmpty()) {
+            if (extraTmMsgsBuilder_.isEmpty()) {
+              extraTmMsgsBuilder_.dispose();
+              extraTmMsgsBuilder_ = null;
+              extraTmMsgs_ = other.extraTmMsgs_;
+              bitField0_ = (bitField0_ & ~0x00000001);
+              extraTmMsgsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getExtraTmMsgsFieldBuilder() : null;
+            } else {
+              extraTmMsgsBuilder_.addAllMessages(other.extraTmMsgs_);
+            }
+          }
+        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public final boolean isInitialized() {
         return true;
       }
 
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        tm.processing.v1.Tm.FrameResponse parsedMessage = null;
+        FrameResponse parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.FrameResponse) e.getUnfinishedMessage();
+          parsedMessage = (FrameResponse) e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
@@ -2158,6 +2332,7 @@ public final class Tm {
         }
         return this;
       }
+      private int bitField0_;
 
       private int code_ ;
       /**
@@ -2168,7 +2343,7 @@ public final class Tm {
        * <code>int32 code = 1;</code>
        * @return The code.
        */
-      @java.lang.Override
+      @Override
       public int getCode() {
         return code_;
       }
@@ -2202,7 +2377,7 @@ public final class Tm {
         return this;
       }
 
-      private java.lang.Object message_ = "";
+      private Object message_ = "";
       /**
        * <pre>
        * 错误描述，成功时为空
@@ -2211,16 +2386,16 @@ public final class Tm {
        * <code>string message = 2;</code>
        * @return The message.
        */
-      public java.lang.String getMessage() {
-        java.lang.Object ref = message_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getMessage() {
+        Object ref = message_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
+          String s = bs.toStringUtf8();
           message_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
@@ -2233,11 +2408,11 @@ public final class Tm {
        */
       public com.google.protobuf.ByteString
           getMessageBytes() {
-        java.lang.Object ref = message_;
+        Object ref = message_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
+                  (String) ref);
           message_ = b;
           return b;
         } else {
@@ -2254,7 +2429,7 @@ public final class Tm {
        * @return This builder for chaining.
        */
       public Builder setMessage(
-          java.lang.String value) {
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -2452,13 +2627,325 @@ public final class Tm {
         }
         return tmMsgBuilder_;
       }
-      @java.lang.Override
+
+      private java.util.List<SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage> extraTmMsgs_ =
+        java.util.Collections.emptyList();
+      private void ensureExtraTmMsgsIsMutable() {
+        if (!((bitField0_ & 0x00000001) != 0)) {
+          extraTmMsgs_ = new java.util.ArrayList<SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage>(extraTmMsgs_);
+          bitField0_ |= 0x00000001;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder> extraTmMsgsBuilder_;
+
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public java.util.List<SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage> getExtraTmMsgsList() {
+        if (extraTmMsgsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(extraTmMsgs_);
+        } else {
+          return extraTmMsgsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public int getExtraTmMsgsCount() {
+        if (extraTmMsgsBuilder_ == null) {
+          return extraTmMsgs_.size();
+        } else {
+          return extraTmMsgsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage getExtraTmMsgs(int index) {
+        if (extraTmMsgsBuilder_ == null) {
+          return extraTmMsgs_.get(index);
+        } else {
+          return extraTmMsgsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public Builder setExtraTmMsgs(
+          int index, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage value) {
+        if (extraTmMsgsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureExtraTmMsgsIsMutable();
+          extraTmMsgs_.set(index, value);
+          onChanged();
+        } else {
+          extraTmMsgsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public Builder setExtraTmMsgs(
+          int index, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder builderForValue) {
+        if (extraTmMsgsBuilder_ == null) {
+          ensureExtraTmMsgsIsMutable();
+          extraTmMsgs_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          extraTmMsgsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public Builder addExtraTmMsgs(SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage value) {
+        if (extraTmMsgsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureExtraTmMsgsIsMutable();
+          extraTmMsgs_.add(value);
+          onChanged();
+        } else {
+          extraTmMsgsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public Builder addExtraTmMsgs(
+          int index, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage value) {
+        if (extraTmMsgsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureExtraTmMsgsIsMutable();
+          extraTmMsgs_.add(index, value);
+          onChanged();
+        } else {
+          extraTmMsgsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public Builder addExtraTmMsgs(
+          SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder builderForValue) {
+        if (extraTmMsgsBuilder_ == null) {
+          ensureExtraTmMsgsIsMutable();
+          extraTmMsgs_.add(builderForValue.build());
+          onChanged();
+        } else {
+          extraTmMsgsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public Builder addExtraTmMsgs(
+          int index, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder builderForValue) {
+        if (extraTmMsgsBuilder_ == null) {
+          ensureExtraTmMsgsIsMutable();
+          extraTmMsgs_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          extraTmMsgsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public Builder addAllExtraTmMsgs(
+          Iterable<? extends SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage> values) {
+        if (extraTmMsgsBuilder_ == null) {
+          ensureExtraTmMsgsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, extraTmMsgs_);
+          onChanged();
+        } else {
+          extraTmMsgsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public Builder clearExtraTmMsgs() {
+        if (extraTmMsgsBuilder_ == null) {
+          extraTmMsgs_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000001);
+          onChanged();
+        } else {
+          extraTmMsgsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public Builder removeExtraTmMsgs(int index) {
+        if (extraTmMsgsBuilder_ == null) {
+          ensureExtraTmMsgsIsMutable();
+          extraTmMsgs_.remove(index);
+          onChanged();
+        } else {
+          extraTmMsgsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder getExtraTmMsgsBuilder(
+          int index) {
+        return getExtraTmMsgsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder getExtraTmMsgsOrBuilder(
+          int index) {
+        if (extraTmMsgsBuilder_ == null) {
+          return extraTmMsgs_.get(index);  } else {
+          return extraTmMsgsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public java.util.List<? extends SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder> 
+           getExtraTmMsgsOrBuilderList() {
+        if (extraTmMsgsBuilder_ != null) {
+          return extraTmMsgsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(extraTmMsgs_);
+        }
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder addExtraTmMsgsBuilder() {
+        return getExtraTmMsgsFieldBuilder().addBuilder(
+            SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder addExtraTmMsgsBuilder(
+          int index) {
+        return getExtraTmMsgsFieldBuilder().addBuilder(
+            index, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       * 新插件可能对一帧给出多组结果；只追加字段，不改变旧字段号
+       * </pre>
+       *
+       * <code>repeated .TelemetryMessage extra_tm_msgs = 4;</code>
+       */
+      public java.util.List<SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder> 
+           getExtraTmMsgsBuilderList() {
+        return getExtraTmMsgsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder> 
+          getExtraTmMsgsFieldBuilder() {
+        if (extraTmMsgsBuilder_ == null) {
+          extraTmMsgsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage.Builder, SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessageOrBuilder>(
+                  extraTmMsgs_,
+                  ((bitField0_ & 0x00000001) != 0),
+                  getParentForChildren(),
+                  isClean());
+          extraTmMsgs_ = null;
+        }
+        return extraTmMsgsBuilder_;
+      }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
-      @java.lang.Override
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -2469,18 +2956,18 @@ public final class Tm {
     }
 
     // @@protoc_insertion_point(class_scope:tm.processing.v1.FrameResponse)
-    private static final tm.processing.v1.Tm.FrameResponse DEFAULT_INSTANCE;
+    private static final FrameResponse DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.FrameResponse();
+      DEFAULT_INSTANCE = new FrameResponse();
     }
 
-    public static tm.processing.v1.Tm.FrameResponse getDefaultInstance() {
+    public static FrameResponse getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
     private static final com.google.protobuf.Parser<FrameResponse>
         PARSER = new com.google.protobuf.AbstractParser<FrameResponse>() {
-      @java.lang.Override
+      @Override
       public FrameResponse parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -2493,6771 +2980,20 @@ public final class Tm {
       return PARSER;
     }
 
-    @java.lang.Override
+    @Override
     public com.google.protobuf.Parser<FrameResponse> getParserForType() {
       return PARSER;
     }
 
-    @java.lang.Override
-    public tm.processing.v1.Tm.FrameResponse getDefaultInstanceForType() {
+    @Override
+    public FrameResponse getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
   }
 
-  public interface DescrambleRuleOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.DescrambleRule)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * 解扰起始位置
-     * </pre>
-     *
-     * <code>int32 start_pos = 1;</code>
-     * @return The startPos.
-     */
-    int getStartPos();
-
-    /**
-     * <pre>
-     * 解扰长度
-     * </pre>
-     *
-     * <code>int32 length = 2;</code>
-     * @return The length.
-     */
-    int getLength();
-
-    /**
-     * <pre>
-     * 解扰多项式，如 "x^8+x^5+1"
-     * </pre>
-     *
-     * <code>string feed_back = 3;</code>
-     * @return The feedBack.
-     */
-    java.lang.String getFeedBack();
-    /**
-     * <pre>
-     * 解扰多项式，如 "x^8+x^5+1"
-     * </pre>
-     *
-     * <code>string feed_back = 3;</code>
-     * @return The bytes for feedBack.
-     */
-    com.google.protobuf.ByteString
-        getFeedBackBytes();
-
-    /**
-     * <pre>
-     * 移位寄存器初始值，true 表示全 1
-     * </pre>
-     *
-     * <code>bool initial_value = 4;</code>
-     * @return The initialValue.
-     */
-    boolean getInitialValue();
-  }
-  /**
-   * <pre>
-   * 解扰规则。
-   * </pre>
-   *
-   * Protobuf type {@code tm.processing.v1.DescrambleRule}
-   */
-  public static final class DescrambleRule extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.DescrambleRule)
-      DescrambleRuleOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use DescrambleRule.newBuilder() to construct.
-    private DescrambleRule(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private DescrambleRule() {
-      feedBack_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new DescrambleRule();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private DescrambleRule(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 8: {
-
-              startPos_ = input.readInt32();
-              break;
-            }
-            case 16: {
-
-              length_ = input.readInt32();
-              break;
-            }
-            case 26: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              feedBack_ = s;
-              break;
-            }
-            case 32: {
-
-              initialValue_ = input.readBool();
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_DescrambleRule_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_DescrambleRule_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.DescrambleRule.class, tm.processing.v1.Tm.DescrambleRule.Builder.class);
-    }
-
-    public static final int START_POS_FIELD_NUMBER = 1;
-    private int startPos_;
-    /**
-     * <pre>
-     * 解扰起始位置
-     * </pre>
-     *
-     * <code>int32 start_pos = 1;</code>
-     * @return The startPos.
-     */
-    @java.lang.Override
-    public int getStartPos() {
-      return startPos_;
-    }
-
-    public static final int LENGTH_FIELD_NUMBER = 2;
-    private int length_;
-    /**
-     * <pre>
-     * 解扰长度
-     * </pre>
-     *
-     * <code>int32 length = 2;</code>
-     * @return The length.
-     */
-    @java.lang.Override
-    public int getLength() {
-      return length_;
-    }
-
-    public static final int FEED_BACK_FIELD_NUMBER = 3;
-    private volatile java.lang.Object feedBack_;
-    /**
-     * <pre>
-     * 解扰多项式，如 "x^8+x^5+1"
-     * </pre>
-     *
-     * <code>string feed_back = 3;</code>
-     * @return The feedBack.
-     */
-    @java.lang.Override
-    public java.lang.String getFeedBack() {
-      java.lang.Object ref = feedBack_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        feedBack_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 解扰多项式，如 "x^8+x^5+1"
-     * </pre>
-     *
-     * <code>string feed_back = 3;</code>
-     * @return The bytes for feedBack.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getFeedBackBytes() {
-      java.lang.Object ref = feedBack_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        feedBack_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int INITIAL_VALUE_FIELD_NUMBER = 4;
-    private boolean initialValue_;
-    /**
-     * <pre>
-     * 移位寄存器初始值，true 表示全 1
-     * </pre>
-     *
-     * <code>bool initial_value = 4;</code>
-     * @return The initialValue.
-     */
-    @java.lang.Override
-    public boolean getInitialValue() {
-      return initialValue_;
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (startPos_ != 0) {
-        output.writeInt32(1, startPos_);
-      }
-      if (length_ != 0) {
-        output.writeInt32(2, length_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(feedBack_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, feedBack_);
-      }
-      if (initialValue_ != false) {
-        output.writeBool(4, initialValue_);
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (startPos_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(1, startPos_);
-      }
-      if (length_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(2, length_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(feedBack_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, feedBack_);
-      }
-      if (initialValue_ != false) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(4, initialValue_);
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.DescrambleRule)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.DescrambleRule other = (tm.processing.v1.Tm.DescrambleRule) obj;
-
-      if (getStartPos()
-          != other.getStartPos()) return false;
-      if (getLength()
-          != other.getLength()) return false;
-      if (!getFeedBack()
-          .equals(other.getFeedBack())) return false;
-      if (getInitialValue()
-          != other.getInitialValue()) return false;
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + START_POS_FIELD_NUMBER;
-      hash = (53 * hash) + getStartPos();
-      hash = (37 * hash) + LENGTH_FIELD_NUMBER;
-      hash = (53 * hash) + getLength();
-      hash = (37 * hash) + FEED_BACK_FIELD_NUMBER;
-      hash = (53 * hash) + getFeedBack().hashCode();
-      hash = (37 * hash) + INITIAL_VALUE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-          getInitialValue());
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.DescrambleRule parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.DescrambleRule prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * <pre>
-     * 解扰规则。
-     * </pre>
-     *
-     * Protobuf type {@code tm.processing.v1.DescrambleRule}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.DescrambleRule)
-        tm.processing.v1.Tm.DescrambleRuleOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_DescrambleRule_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_DescrambleRule_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.DescrambleRule.class, tm.processing.v1.Tm.DescrambleRule.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.DescrambleRule.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        startPos_ = 0;
-
-        length_ = 0;
-
-        feedBack_ = "";
-
-        initialValue_ = false;
-
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_DescrambleRule_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.DescrambleRule getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.DescrambleRule.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.DescrambleRule build() {
-        tm.processing.v1.Tm.DescrambleRule result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.DescrambleRule buildPartial() {
-        tm.processing.v1.Tm.DescrambleRule result = new tm.processing.v1.Tm.DescrambleRule(this);
-        result.startPos_ = startPos_;
-        result.length_ = length_;
-        result.feedBack_ = feedBack_;
-        result.initialValue_ = initialValue_;
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.DescrambleRule) {
-          return mergeFrom((tm.processing.v1.Tm.DescrambleRule)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.DescrambleRule other) {
-        if (other == tm.processing.v1.Tm.DescrambleRule.getDefaultInstance()) return this;
-        if (other.getStartPos() != 0) {
-          setStartPos(other.getStartPos());
-        }
-        if (other.getLength() != 0) {
-          setLength(other.getLength());
-        }
-        if (!other.getFeedBack().isEmpty()) {
-          feedBack_ = other.feedBack_;
-          onChanged();
-        }
-        if (other.getInitialValue() != false) {
-          setInitialValue(other.getInitialValue());
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.DescrambleRule parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.DescrambleRule) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-
-      private int startPos_ ;
-      /**
-       * <pre>
-       * 解扰起始位置
-       * </pre>
-       *
-       * <code>int32 start_pos = 1;</code>
-       * @return The startPos.
-       */
-      @java.lang.Override
-      public int getStartPos() {
-        return startPos_;
-      }
-      /**
-       * <pre>
-       * 解扰起始位置
-       * </pre>
-       *
-       * <code>int32 start_pos = 1;</code>
-       * @param value The startPos to set.
-       * @return This builder for chaining.
-       */
-      public Builder setStartPos(int value) {
-        
-        startPos_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 解扰起始位置
-       * </pre>
-       *
-       * <code>int32 start_pos = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearStartPos() {
-        
-        startPos_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private int length_ ;
-      /**
-       * <pre>
-       * 解扰长度
-       * </pre>
-       *
-       * <code>int32 length = 2;</code>
-       * @return The length.
-       */
-      @java.lang.Override
-      public int getLength() {
-        return length_;
-      }
-      /**
-       * <pre>
-       * 解扰长度
-       * </pre>
-       *
-       * <code>int32 length = 2;</code>
-       * @param value The length to set.
-       * @return This builder for chaining.
-       */
-      public Builder setLength(int value) {
-        
-        length_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 解扰长度
-       * </pre>
-       *
-       * <code>int32 length = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearLength() {
-        
-        length_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object feedBack_ = "";
-      /**
-       * <pre>
-       * 解扰多项式，如 "x^8+x^5+1"
-       * </pre>
-       *
-       * <code>string feed_back = 3;</code>
-       * @return The feedBack.
-       */
-      public java.lang.String getFeedBack() {
-        java.lang.Object ref = feedBack_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          feedBack_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 解扰多项式，如 "x^8+x^5+1"
-       * </pre>
-       *
-       * <code>string feed_back = 3;</code>
-       * @return The bytes for feedBack.
-       */
-      public com.google.protobuf.ByteString
-          getFeedBackBytes() {
-        java.lang.Object ref = feedBack_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          feedBack_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 解扰多项式，如 "x^8+x^5+1"
-       * </pre>
-       *
-       * <code>string feed_back = 3;</code>
-       * @param value The feedBack to set.
-       * @return This builder for chaining.
-       */
-      public Builder setFeedBack(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        feedBack_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 解扰多项式，如 "x^8+x^5+1"
-       * </pre>
-       *
-       * <code>string feed_back = 3;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearFeedBack() {
-        
-        feedBack_ = getDefaultInstance().getFeedBack();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 解扰多项式，如 "x^8+x^5+1"
-       * </pre>
-       *
-       * <code>string feed_back = 3;</code>
-       * @param value The bytes for feedBack to set.
-       * @return This builder for chaining.
-       */
-      public Builder setFeedBackBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        feedBack_ = value;
-        onChanged();
-        return this;
-      }
-
-      private boolean initialValue_ ;
-      /**
-       * <pre>
-       * 移位寄存器初始值，true 表示全 1
-       * </pre>
-       *
-       * <code>bool initial_value = 4;</code>
-       * @return The initialValue.
-       */
-      @java.lang.Override
-      public boolean getInitialValue() {
-        return initialValue_;
-      }
-      /**
-       * <pre>
-       * 移位寄存器初始值，true 表示全 1
-       * </pre>
-       *
-       * <code>bool initial_value = 4;</code>
-       * @param value The initialValue to set.
-       * @return This builder for chaining.
-       */
-      public Builder setInitialValue(boolean value) {
-        
-        initialValue_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 移位寄存器初始值，true 表示全 1
-       * </pre>
-       *
-       * <code>bool initial_value = 4;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearInitialValue() {
-        
-        initialValue_ = false;
-        onChanged();
-        return this;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.DescrambleRule)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.DescrambleRule)
-    private static final tm.processing.v1.Tm.DescrambleRule DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.DescrambleRule();
-    }
-
-    public static tm.processing.v1.Tm.DescrambleRule getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<DescrambleRule>
-        PARSER = new com.google.protobuf.AbstractParser<DescrambleRule>() {
-      @java.lang.Override
-      public DescrambleRule parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new DescrambleRule(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<DescrambleRule> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<DescrambleRule> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.DescrambleRule getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface TmChannelOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.TmChannel)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * 通道名称
-     * </pre>
-     *
-     * <code>string name = 1;</code>
-     * @return The name.
-     */
-    java.lang.String getName();
-    /**
-     * <pre>
-     * 通道名称
-     * </pre>
-     *
-     * <code>string name = 1;</code>
-     * @return The bytes for name.
-     */
-    com.google.protobuf.ByteString
-        getNameBytes();
-
-    /**
-     * <pre>
-     * 是否启用
-     * </pre>
-     *
-     * <code>bool enable = 2;</code>
-     * @return The enable.
-     */
-    boolean getEnable();
-
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 3;</code>
-     * @return The channelId.
-     */
-    java.lang.String getChannelId();
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 3;</code>
-     * @return The bytes for channelId.
-     */
-    com.google.protobuf.ByteString
-        getChannelIdBytes();
-
-    /**
-     * <pre>
-     * 该通道数据是否加扰，true 时帧会先解扰
-     * </pre>
-     *
-     * <code>bool to_descramble = 4;</code>
-     * @return The toDescramble.
-     */
-    boolean getToDescramble();
-
-    /**
-     * <pre>
-     * 同步头
-     * </pre>
-     *
-     * <code>string tm_sync_head = 5;</code>
-     * @return The tmSyncHead.
-     */
-    java.lang.String getTmSyncHead();
-    /**
-     * <pre>
-     * 同步头
-     * </pre>
-     *
-     * <code>string tm_sync_head = 5;</code>
-     * @return The bytes for tmSyncHead.
-     */
-    com.google.protobuf.ByteString
-        getTmSyncHeadBytes();
-  }
-  /**
-   * <pre>
-   * 一个遥测通道。
-   * </pre>
-   *
-   * Protobuf type {@code tm.processing.v1.TmChannel}
-   */
-  public static final class TmChannel extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.TmChannel)
-      TmChannelOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use TmChannel.newBuilder() to construct.
-    private TmChannel(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private TmChannel() {
-      name_ = "";
-      channelId_ = "";
-      tmSyncHead_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new TmChannel();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private TmChannel(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              name_ = s;
-              break;
-            }
-            case 16: {
-
-              enable_ = input.readBool();
-              break;
-            }
-            case 26: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              channelId_ = s;
-              break;
-            }
-            case 32: {
-
-              toDescramble_ = input.readBool();
-              break;
-            }
-            case 42: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              tmSyncHead_ = s;
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_TmChannel_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_TmChannel_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.TmChannel.class, tm.processing.v1.Tm.TmChannel.Builder.class);
-    }
-
-    public static final int NAME_FIELD_NUMBER = 1;
-    private volatile java.lang.Object name_;
-    /**
-     * <pre>
-     * 通道名称
-     * </pre>
-     *
-     * <code>string name = 1;</code>
-     * @return The name.
-     */
-    @java.lang.Override
-    public java.lang.String getName() {
-      java.lang.Object ref = name_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        name_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 通道名称
-     * </pre>
-     *
-     * <code>string name = 1;</code>
-     * @return The bytes for name.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getNameBytes() {
-      java.lang.Object ref = name_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        name_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int ENABLE_FIELD_NUMBER = 2;
-    private boolean enable_;
-    /**
-     * <pre>
-     * 是否启用
-     * </pre>
-     *
-     * <code>bool enable = 2;</code>
-     * @return The enable.
-     */
-    @java.lang.Override
-    public boolean getEnable() {
-      return enable_;
-    }
-
-    public static final int CHANNEL_ID_FIELD_NUMBER = 3;
-    private volatile java.lang.Object channelId_;
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 3;</code>
-     * @return The channelId.
-     */
-    @java.lang.Override
-    public java.lang.String getChannelId() {
-      java.lang.Object ref = channelId_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        channelId_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 3;</code>
-     * @return The bytes for channelId.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getChannelIdBytes() {
-      java.lang.Object ref = channelId_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        channelId_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int TO_DESCRAMBLE_FIELD_NUMBER = 4;
-    private boolean toDescramble_;
-    /**
-     * <pre>
-     * 该通道数据是否加扰，true 时帧会先解扰
-     * </pre>
-     *
-     * <code>bool to_descramble = 4;</code>
-     * @return The toDescramble.
-     */
-    @java.lang.Override
-    public boolean getToDescramble() {
-      return toDescramble_;
-    }
-
-    public static final int TM_SYNC_HEAD_FIELD_NUMBER = 5;
-    private volatile java.lang.Object tmSyncHead_;
-    /**
-     * <pre>
-     * 同步头
-     * </pre>
-     *
-     * <code>string tm_sync_head = 5;</code>
-     * @return The tmSyncHead.
-     */
-    @java.lang.Override
-    public java.lang.String getTmSyncHead() {
-      java.lang.Object ref = tmSyncHead_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        tmSyncHead_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 同步头
-     * </pre>
-     *
-     * <code>string tm_sync_head = 5;</code>
-     * @return The bytes for tmSyncHead.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getTmSyncHeadBytes() {
-      java.lang.Object ref = tmSyncHead_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        tmSyncHead_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
-      }
-      if (enable_ != false) {
-        output.writeBool(2, enable_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(channelId_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, channelId_);
-      }
-      if (toDescramble_ != false) {
-        output.writeBool(4, toDescramble_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(tmSyncHead_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, tmSyncHead_);
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
-      }
-      if (enable_ != false) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(2, enable_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(channelId_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, channelId_);
-      }
-      if (toDescramble_ != false) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(4, toDescramble_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(tmSyncHead_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, tmSyncHead_);
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.TmChannel)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.TmChannel other = (tm.processing.v1.Tm.TmChannel) obj;
-
-      if (!getName()
-          .equals(other.getName())) return false;
-      if (getEnable()
-          != other.getEnable()) return false;
-      if (!getChannelId()
-          .equals(other.getChannelId())) return false;
-      if (getToDescramble()
-          != other.getToDescramble()) return false;
-      if (!getTmSyncHead()
-          .equals(other.getTmSyncHead())) return false;
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getName().hashCode();
-      hash = (37 * hash) + ENABLE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-          getEnable());
-      hash = (37 * hash) + CHANNEL_ID_FIELD_NUMBER;
-      hash = (53 * hash) + getChannelId().hashCode();
-      hash = (37 * hash) + TO_DESCRAMBLE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-          getToDescramble());
-      hash = (37 * hash) + TM_SYNC_HEAD_FIELD_NUMBER;
-      hash = (53 * hash) + getTmSyncHead().hashCode();
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.TmChannel parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.TmChannel parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.TmChannel prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * <pre>
-     * 一个遥测通道。
-     * </pre>
-     *
-     * Protobuf type {@code tm.processing.v1.TmChannel}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.TmChannel)
-        tm.processing.v1.Tm.TmChannelOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_TmChannel_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_TmChannel_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.TmChannel.class, tm.processing.v1.Tm.TmChannel.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.TmChannel.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        name_ = "";
-
-        enable_ = false;
-
-        channelId_ = "";
-
-        toDescramble_ = false;
-
-        tmSyncHead_ = "";
-
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_TmChannel_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.TmChannel getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.TmChannel.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.TmChannel build() {
-        tm.processing.v1.Tm.TmChannel result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.TmChannel buildPartial() {
-        tm.processing.v1.Tm.TmChannel result = new tm.processing.v1.Tm.TmChannel(this);
-        result.name_ = name_;
-        result.enable_ = enable_;
-        result.channelId_ = channelId_;
-        result.toDescramble_ = toDescramble_;
-        result.tmSyncHead_ = tmSyncHead_;
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.TmChannel) {
-          return mergeFrom((tm.processing.v1.Tm.TmChannel)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.TmChannel other) {
-        if (other == tm.processing.v1.Tm.TmChannel.getDefaultInstance()) return this;
-        if (!other.getName().isEmpty()) {
-          name_ = other.name_;
-          onChanged();
-        }
-        if (other.getEnable() != false) {
-          setEnable(other.getEnable());
-        }
-        if (!other.getChannelId().isEmpty()) {
-          channelId_ = other.channelId_;
-          onChanged();
-        }
-        if (other.getToDescramble() != false) {
-          setToDescramble(other.getToDescramble());
-        }
-        if (!other.getTmSyncHead().isEmpty()) {
-          tmSyncHead_ = other.tmSyncHead_;
-          onChanged();
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.TmChannel parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.TmChannel) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-
-      private java.lang.Object name_ = "";
-      /**
-       * <pre>
-       * 通道名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @return The name.
-       */
-      public java.lang.String getName() {
-        java.lang.Object ref = name_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          name_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 通道名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @return The bytes for name.
-       */
-      public com.google.protobuf.ByteString
-          getNameBytes() {
-        java.lang.Object ref = name_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          name_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 通道名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @param value The name to set.
-       * @return This builder for chaining.
-       */
-      public Builder setName(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        name_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 通道名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearName() {
-        
-        name_ = getDefaultInstance().getName();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 通道名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @param value The bytes for name to set.
-       * @return This builder for chaining.
-       */
-      public Builder setNameBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        name_ = value;
-        onChanged();
-        return this;
-      }
-
-      private boolean enable_ ;
-      /**
-       * <pre>
-       * 是否启用
-       * </pre>
-       *
-       * <code>bool enable = 2;</code>
-       * @return The enable.
-       */
-      @java.lang.Override
-      public boolean getEnable() {
-        return enable_;
-      }
-      /**
-       * <pre>
-       * 是否启用
-       * </pre>
-       *
-       * <code>bool enable = 2;</code>
-       * @param value The enable to set.
-       * @return This builder for chaining.
-       */
-      public Builder setEnable(boolean value) {
-        
-        enable_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 是否启用
-       * </pre>
-       *
-       * <code>bool enable = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearEnable() {
-        
-        enable_ = false;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object channelId_ = "";
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 3;</code>
-       * @return The channelId.
-       */
-      public java.lang.String getChannelId() {
-        java.lang.Object ref = channelId_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          channelId_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 3;</code>
-       * @return The bytes for channelId.
-       */
-      public com.google.protobuf.ByteString
-          getChannelIdBytes() {
-        java.lang.Object ref = channelId_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          channelId_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 3;</code>
-       * @param value The channelId to set.
-       * @return This builder for chaining.
-       */
-      public Builder setChannelId(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        channelId_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 3;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearChannelId() {
-        
-        channelId_ = getDefaultInstance().getChannelId();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 3;</code>
-       * @param value The bytes for channelId to set.
-       * @return This builder for chaining.
-       */
-      public Builder setChannelIdBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        channelId_ = value;
-        onChanged();
-        return this;
-      }
-
-      private boolean toDescramble_ ;
-      /**
-       * <pre>
-       * 该通道数据是否加扰，true 时帧会先解扰
-       * </pre>
-       *
-       * <code>bool to_descramble = 4;</code>
-       * @return The toDescramble.
-       */
-      @java.lang.Override
-      public boolean getToDescramble() {
-        return toDescramble_;
-      }
-      /**
-       * <pre>
-       * 该通道数据是否加扰，true 时帧会先解扰
-       * </pre>
-       *
-       * <code>bool to_descramble = 4;</code>
-       * @param value The toDescramble to set.
-       * @return This builder for chaining.
-       */
-      public Builder setToDescramble(boolean value) {
-        
-        toDescramble_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 该通道数据是否加扰，true 时帧会先解扰
-       * </pre>
-       *
-       * <code>bool to_descramble = 4;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearToDescramble() {
-        
-        toDescramble_ = false;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object tmSyncHead_ = "";
-      /**
-       * <pre>
-       * 同步头
-       * </pre>
-       *
-       * <code>string tm_sync_head = 5;</code>
-       * @return The tmSyncHead.
-       */
-      public java.lang.String getTmSyncHead() {
-        java.lang.Object ref = tmSyncHead_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          tmSyncHead_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 同步头
-       * </pre>
-       *
-       * <code>string tm_sync_head = 5;</code>
-       * @return The bytes for tmSyncHead.
-       */
-      public com.google.protobuf.ByteString
-          getTmSyncHeadBytes() {
-        java.lang.Object ref = tmSyncHead_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          tmSyncHead_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 同步头
-       * </pre>
-       *
-       * <code>string tm_sync_head = 5;</code>
-       * @param value The tmSyncHead to set.
-       * @return This builder for chaining.
-       */
-      public Builder setTmSyncHead(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        tmSyncHead_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 同步头
-       * </pre>
-       *
-       * <code>string tm_sync_head = 5;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearTmSyncHead() {
-        
-        tmSyncHead_ = getDefaultInstance().getTmSyncHead();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 同步头
-       * </pre>
-       *
-       * <code>string tm_sync_head = 5;</code>
-       * @param value The bytes for tmSyncHead to set.
-       * @return This builder for chaining.
-       */
-      public Builder setTmSyncHeadBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        tmSyncHead_ = value;
-        onChanged();
-        return this;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.TmChannel)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.TmChannel)
-    private static final tm.processing.v1.Tm.TmChannel DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.TmChannel();
-    }
-
-    public static tm.processing.v1.Tm.TmChannel getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<TmChannel>
-        PARSER = new com.google.protobuf.AbstractParser<TmChannel>() {
-      @java.lang.Override
-      public TmChannel parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new TmChannel(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<TmChannel> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<TmChannel> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.TmChannel getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface SatelliteInfoOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.SatelliteInfo)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * 卫星名称
-     * </pre>
-     *
-     * <code>string name = 1;</code>
-     * @return The name.
-     */
-    java.lang.String getName();
-    /**
-     * <pre>
-     * 卫星名称
-     * </pre>
-     *
-     * <code>string name = 1;</code>
-     * @return The bytes for name.
-     */
-    com.google.protobuf.ByteString
-        getNameBytes();
-
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 2;</code>
-     * @return The code.
-     */
-    java.lang.String getCode();
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 2;</code>
-     * @return The bytes for code.
-     */
-    com.google.protobuf.ByteString
-        getCodeBytes();
-
-    /**
-     * <pre>
-     * 是否启用
-     * </pre>
-     *
-     * <code>bool enable = 3;</code>
-     * @return The enable.
-     */
-    boolean getEnable();
-
-    /**
-     * <pre>
-     * 遥测参数表 A 相对路径
-     * </pre>
-     *
-     * <code>string table_a = 4;</code>
-     * @return The tableA.
-     */
-    java.lang.String getTableA();
-    /**
-     * <pre>
-     * 遥测参数表 A 相对路径
-     * </pre>
-     *
-     * <code>string table_a = 4;</code>
-     * @return The bytes for tableA.
-     */
-    com.google.protobuf.ByteString
-        getTableABytes();
-
-    /**
-     * <pre>
-     * 帧结构表 B 相对路径
-     * </pre>
-     *
-     * <code>string table_b = 5;</code>
-     * @return The tableB.
-     */
-    java.lang.String getTableB();
-    /**
-     * <pre>
-     * 帧结构表 B 相对路径
-     * </pre>
-     *
-     * <code>string table_b = 5;</code>
-     * @return The bytes for tableB.
-     */
-    com.google.protobuf.ByteString
-        getTableBBytes();
-
-    /**
-     * <pre>
-     * Lua 脚本目录
-     * </pre>
-     *
-     * <code>string lua_path = 6;</code>
-     * @return The luaPath.
-     */
-    java.lang.String getLuaPath();
-    /**
-     * <pre>
-     * Lua 脚本目录
-     * </pre>
-     *
-     * <code>string lua_path = 6;</code>
-     * @return The bytes for luaPath.
-     */
-    com.google.protobuf.ByteString
-        getLuaPathBytes();
-
-    /**
-     * <pre>
-     * 帧长
-     * </pre>
-     *
-     * <code>int32 tm_len = 7;</code>
-     * @return The tmLen.
-     */
-    int getTmLen();
-
-    /**
-     * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-     * @return Whether the descrambleRule field is set.
-     */
-    boolean hasDescrambleRule();
-    /**
-     * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-     * @return The descrambleRule.
-     */
-    tm.processing.v1.Tm.DescrambleRule getDescrambleRule();
-    /**
-     * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-     */
-    tm.processing.v1.Tm.DescrambleRuleOrBuilder getDescrambleRuleOrBuilder();
-
-    /**
-     * <pre>
-     * key 形如 "tm.12"
-     * </pre>
-     *
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-     */
-    int getTmChannelsCount();
-    /**
-     * <pre>
-     * key 形如 "tm.12"
-     * </pre>
-     *
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-     */
-    boolean containsTmChannels(
-        java.lang.String key);
-    /**
-     * Use {@link #getTmChannelsMap()} instead.
-     */
-    @java.lang.Deprecated
-    java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel>
-    getTmChannels();
-    /**
-     * <pre>
-     * key 形如 "tm.12"
-     * </pre>
-     *
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-     */
-    java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel>
-    getTmChannelsMap();
-    /**
-     * <pre>
-     * key 形如 "tm.12"
-     * </pre>
-     *
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-     */
-
-    /* nullable */
-tm.processing.v1.Tm.TmChannel getTmChannelsOrDefault(
-        java.lang.String key,
-        /* nullable */
-tm.processing.v1.Tm.TmChannel defaultValue);
-    /**
-     * <pre>
-     * key 形如 "tm.12"
-     * </pre>
-     *
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-     */
-
-    tm.processing.v1.Tm.TmChannel getTmChannelsOrThrow(
-        java.lang.String key);
-  }
-  /**
-   * <pre>
-   * 卫星完整配置信息。
-   * </pre>
-   *
-   * Protobuf type {@code tm.processing.v1.SatelliteInfo}
-   */
-  public static final class SatelliteInfo extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.SatelliteInfo)
-      SatelliteInfoOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use SatelliteInfo.newBuilder() to construct.
-    private SatelliteInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private SatelliteInfo() {
-      name_ = "";
-      code_ = "";
-      tableA_ = "";
-      tableB_ = "";
-      luaPath_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new SatelliteInfo();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private SatelliteInfo(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              name_ = s;
-              break;
-            }
-            case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              code_ = s;
-              break;
-            }
-            case 24: {
-
-              enable_ = input.readBool();
-              break;
-            }
-            case 34: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              tableA_ = s;
-              break;
-            }
-            case 42: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              tableB_ = s;
-              break;
-            }
-            case 50: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              luaPath_ = s;
-              break;
-            }
-            case 56: {
-
-              tmLen_ = input.readInt32();
-              break;
-            }
-            case 66: {
-              tm.processing.v1.Tm.DescrambleRule.Builder subBuilder = null;
-              if (descrambleRule_ != null) {
-                subBuilder = descrambleRule_.toBuilder();
-              }
-              descrambleRule_ = input.readMessage(tm.processing.v1.Tm.DescrambleRule.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(descrambleRule_);
-                descrambleRule_ = subBuilder.buildPartial();
-              }
-
-              break;
-            }
-            case 74: {
-              if (!((mutable_bitField0_ & 0x00000001) != 0)) {
-                tmChannels_ = com.google.protobuf.MapField.newMapField(
-                    TmChannelsDefaultEntryHolder.defaultEntry);
-                mutable_bitField0_ |= 0x00000001;
-              }
-              com.google.protobuf.MapEntry<java.lang.String, tm.processing.v1.Tm.TmChannel>
-              tmChannels__ = input.readMessage(
-                  TmChannelsDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
-              tmChannels_.getMutableMap().put(
-                  tmChannels__.getKey(), tmChannels__.getValue());
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SatelliteInfo_descriptor;
-    }
-
-    @SuppressWarnings({"rawtypes"})
-    @java.lang.Override
-    protected com.google.protobuf.MapField internalGetMapField(
-        int number) {
-      switch (number) {
-        case 9:
-          return internalGetTmChannels();
-        default:
-          throw new RuntimeException(
-              "Invalid map field number: " + number);
-      }
-    }
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SatelliteInfo_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.SatelliteInfo.class, tm.processing.v1.Tm.SatelliteInfo.Builder.class);
-    }
-
-    public static final int NAME_FIELD_NUMBER = 1;
-    private volatile java.lang.Object name_;
-    /**
-     * <pre>
-     * 卫星名称
-     * </pre>
-     *
-     * <code>string name = 1;</code>
-     * @return The name.
-     */
-    @java.lang.Override
-    public java.lang.String getName() {
-      java.lang.Object ref = name_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        name_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 卫星名称
-     * </pre>
-     *
-     * <code>string name = 1;</code>
-     * @return The bytes for name.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getNameBytes() {
-      java.lang.Object ref = name_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        name_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int CODE_FIELD_NUMBER = 2;
-    private volatile java.lang.Object code_;
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 2;</code>
-     * @return The code.
-     */
-    @java.lang.Override
-    public java.lang.String getCode() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        code_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 2;</code>
-     * @return The bytes for code.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getCodeBytes() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        code_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int ENABLE_FIELD_NUMBER = 3;
-    private boolean enable_;
-    /**
-     * <pre>
-     * 是否启用
-     * </pre>
-     *
-     * <code>bool enable = 3;</code>
-     * @return The enable.
-     */
-    @java.lang.Override
-    public boolean getEnable() {
-      return enable_;
-    }
-
-    public static final int TABLE_A_FIELD_NUMBER = 4;
-    private volatile java.lang.Object tableA_;
-    /**
-     * <pre>
-     * 遥测参数表 A 相对路径
-     * </pre>
-     *
-     * <code>string table_a = 4;</code>
-     * @return The tableA.
-     */
-    @java.lang.Override
-    public java.lang.String getTableA() {
-      java.lang.Object ref = tableA_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        tableA_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 遥测参数表 A 相对路径
-     * </pre>
-     *
-     * <code>string table_a = 4;</code>
-     * @return The bytes for tableA.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getTableABytes() {
-      java.lang.Object ref = tableA_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        tableA_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int TABLE_B_FIELD_NUMBER = 5;
-    private volatile java.lang.Object tableB_;
-    /**
-     * <pre>
-     * 帧结构表 B 相对路径
-     * </pre>
-     *
-     * <code>string table_b = 5;</code>
-     * @return The tableB.
-     */
-    @java.lang.Override
-    public java.lang.String getTableB() {
-      java.lang.Object ref = tableB_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        tableB_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 帧结构表 B 相对路径
-     * </pre>
-     *
-     * <code>string table_b = 5;</code>
-     * @return The bytes for tableB.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getTableBBytes() {
-      java.lang.Object ref = tableB_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        tableB_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int LUA_PATH_FIELD_NUMBER = 6;
-    private volatile java.lang.Object luaPath_;
-    /**
-     * <pre>
-     * Lua 脚本目录
-     * </pre>
-     *
-     * <code>string lua_path = 6;</code>
-     * @return The luaPath.
-     */
-    @java.lang.Override
-    public java.lang.String getLuaPath() {
-      java.lang.Object ref = luaPath_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        luaPath_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * Lua 脚本目录
-     * </pre>
-     *
-     * <code>string lua_path = 6;</code>
-     * @return The bytes for luaPath.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getLuaPathBytes() {
-      java.lang.Object ref = luaPath_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        luaPath_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int TM_LEN_FIELD_NUMBER = 7;
-    private int tmLen_;
-    /**
-     * <pre>
-     * 帧长
-     * </pre>
-     *
-     * <code>int32 tm_len = 7;</code>
-     * @return The tmLen.
-     */
-    @java.lang.Override
-    public int getTmLen() {
-      return tmLen_;
-    }
-
-    public static final int DESCRAMBLE_RULE_FIELD_NUMBER = 8;
-    private tm.processing.v1.Tm.DescrambleRule descrambleRule_;
-    /**
-     * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-     * @return Whether the descrambleRule field is set.
-     */
-    @java.lang.Override
-    public boolean hasDescrambleRule() {
-      return descrambleRule_ != null;
-    }
-    /**
-     * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-     * @return The descrambleRule.
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.DescrambleRule getDescrambleRule() {
-      return descrambleRule_ == null ? tm.processing.v1.Tm.DescrambleRule.getDefaultInstance() : descrambleRule_;
-    }
-    /**
-     * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.DescrambleRuleOrBuilder getDescrambleRuleOrBuilder() {
-      return getDescrambleRule();
-    }
-
-    public static final int TM_CHANNELS_FIELD_NUMBER = 9;
-    private static final class TmChannelsDefaultEntryHolder {
-      static final com.google.protobuf.MapEntry<
-          java.lang.String, tm.processing.v1.Tm.TmChannel> defaultEntry =
-              com.google.protobuf.MapEntry
-              .<java.lang.String, tm.processing.v1.Tm.TmChannel>newDefaultInstance(
-                  tm.processing.v1.Tm.internal_static_tm_processing_v1_SatelliteInfo_TmChannelsEntry_descriptor, 
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "",
-                  com.google.protobuf.WireFormat.FieldType.MESSAGE,
-                  tm.processing.v1.Tm.TmChannel.getDefaultInstance());
-    }
-    private com.google.protobuf.MapField<
-        java.lang.String, tm.processing.v1.Tm.TmChannel> tmChannels_;
-    private com.google.protobuf.MapField<java.lang.String, tm.processing.v1.Tm.TmChannel>
-    internalGetTmChannels() {
-      if (tmChannels_ == null) {
-        return com.google.protobuf.MapField.emptyMapField(
-            TmChannelsDefaultEntryHolder.defaultEntry);
-      }
-      return tmChannels_;
-    }
-
-    public int getTmChannelsCount() {
-      return internalGetTmChannels().getMap().size();
-    }
-    /**
-     * <pre>
-     * key 形如 "tm.12"
-     * </pre>
-     *
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-     */
-
-    @java.lang.Override
-    public boolean containsTmChannels(
-        java.lang.String key) {
-      if (key == null) { throw new NullPointerException("map key"); }
-      return internalGetTmChannels().getMap().containsKey(key);
-    }
-    /**
-     * Use {@link #getTmChannelsMap()} instead.
-     */
-    @java.lang.Override
-    @java.lang.Deprecated
-    public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> getTmChannels() {
-      return getTmChannelsMap();
-    }
-    /**
-     * <pre>
-     * key 形如 "tm.12"
-     * </pre>
-     *
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-     */
-    @java.lang.Override
-
-    public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> getTmChannelsMap() {
-      return internalGetTmChannels().getMap();
-    }
-    /**
-     * <pre>
-     * key 形如 "tm.12"
-     * </pre>
-     *
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-     */
-    @java.lang.Override
-
-    public tm.processing.v1.Tm.TmChannel getTmChannelsOrDefault(
-        java.lang.String key,
-        tm.processing.v1.Tm.TmChannel defaultValue) {
-      if (key == null) { throw new NullPointerException("map key"); }
-      java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> map =
-          internalGetTmChannels().getMap();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
-    }
-    /**
-     * <pre>
-     * key 形如 "tm.12"
-     * </pre>
-     *
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-     */
-    @java.lang.Override
-
-    public tm.processing.v1.Tm.TmChannel getTmChannelsOrThrow(
-        java.lang.String key) {
-      if (key == null) { throw new NullPointerException("map key"); }
-      java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> map =
-          internalGetTmChannels().getMap();
-      if (!map.containsKey(key)) {
-        throw new java.lang.IllegalArgumentException();
-      }
-      return map.get(key);
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, name_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, code_);
-      }
-      if (enable_ != false) {
-        output.writeBool(3, enable_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(tableA_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, tableA_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(tableB_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, tableB_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(luaPath_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, luaPath_);
-      }
-      if (tmLen_ != 0) {
-        output.writeInt32(7, tmLen_);
-      }
-      if (descrambleRule_ != null) {
-        output.writeMessage(8, getDescrambleRule());
-      }
-      com.google.protobuf.GeneratedMessageV3
-        .serializeStringMapTo(
-          output,
-          internalGetTmChannels(),
-          TmChannelsDefaultEntryHolder.defaultEntry,
-          9);
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(name_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, name_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, code_);
-      }
-      if (enable_ != false) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(3, enable_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(tableA_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, tableA_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(tableB_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, tableB_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(luaPath_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, luaPath_);
-      }
-      if (tmLen_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(7, tmLen_);
-      }
-      if (descrambleRule_ != null) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(8, getDescrambleRule());
-      }
-      for (java.util.Map.Entry<java.lang.String, tm.processing.v1.Tm.TmChannel> entry
-           : internalGetTmChannels().getMap().entrySet()) {
-        com.google.protobuf.MapEntry<java.lang.String, tm.processing.v1.Tm.TmChannel>
-        tmChannels__ = TmChannelsDefaultEntryHolder.defaultEntry.newBuilderForType()
-            .setKey(entry.getKey())
-            .setValue(entry.getValue())
-            .build();
-        size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(9, tmChannels__);
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.SatelliteInfo)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.SatelliteInfo other = (tm.processing.v1.Tm.SatelliteInfo) obj;
-
-      if (!getName()
-          .equals(other.getName())) return false;
-      if (!getCode()
-          .equals(other.getCode())) return false;
-      if (getEnable()
-          != other.getEnable()) return false;
-      if (!getTableA()
-          .equals(other.getTableA())) return false;
-      if (!getTableB()
-          .equals(other.getTableB())) return false;
-      if (!getLuaPath()
-          .equals(other.getLuaPath())) return false;
-      if (getTmLen()
-          != other.getTmLen()) return false;
-      if (hasDescrambleRule() != other.hasDescrambleRule()) return false;
-      if (hasDescrambleRule()) {
-        if (!getDescrambleRule()
-            .equals(other.getDescrambleRule())) return false;
-      }
-      if (!internalGetTmChannels().equals(
-          other.internalGetTmChannels())) return false;
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + NAME_FIELD_NUMBER;
-      hash = (53 * hash) + getName().hashCode();
-      hash = (37 * hash) + CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getCode().hashCode();
-      hash = (37 * hash) + ENABLE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-          getEnable());
-      hash = (37 * hash) + TABLE_A_FIELD_NUMBER;
-      hash = (53 * hash) + getTableA().hashCode();
-      hash = (37 * hash) + TABLE_B_FIELD_NUMBER;
-      hash = (53 * hash) + getTableB().hashCode();
-      hash = (37 * hash) + LUA_PATH_FIELD_NUMBER;
-      hash = (53 * hash) + getLuaPath().hashCode();
-      hash = (37 * hash) + TM_LEN_FIELD_NUMBER;
-      hash = (53 * hash) + getTmLen();
-      if (hasDescrambleRule()) {
-        hash = (37 * hash) + DESCRAMBLE_RULE_FIELD_NUMBER;
-        hash = (53 * hash) + getDescrambleRule().hashCode();
-      }
-      if (!internalGetTmChannels().getMap().isEmpty()) {
-        hash = (37 * hash) + TM_CHANNELS_FIELD_NUMBER;
-        hash = (53 * hash) + internalGetTmChannels().hashCode();
-      }
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.SatelliteInfo parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.SatelliteInfo prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * <pre>
-     * 卫星完整配置信息。
-     * </pre>
-     *
-     * Protobuf type {@code tm.processing.v1.SatelliteInfo}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.SatelliteInfo)
-        tm.processing.v1.Tm.SatelliteInfoOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SatelliteInfo_descriptor;
-      }
-
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMapField(
-          int number) {
-        switch (number) {
-          case 9:
-            return internalGetTmChannels();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMutableMapField(
-          int number) {
-        switch (number) {
-          case 9:
-            return internalGetMutableTmChannels();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SatelliteInfo_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.SatelliteInfo.class, tm.processing.v1.Tm.SatelliteInfo.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.SatelliteInfo.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        name_ = "";
-
-        code_ = "";
-
-        enable_ = false;
-
-        tableA_ = "";
-
-        tableB_ = "";
-
-        luaPath_ = "";
-
-        tmLen_ = 0;
-
-        if (descrambleRuleBuilder_ == null) {
-          descrambleRule_ = null;
-        } else {
-          descrambleRule_ = null;
-          descrambleRuleBuilder_ = null;
-        }
-        internalGetMutableTmChannels().clear();
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SatelliteInfo_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.SatelliteInfo getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.SatelliteInfo build() {
-        tm.processing.v1.Tm.SatelliteInfo result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.SatelliteInfo buildPartial() {
-        tm.processing.v1.Tm.SatelliteInfo result = new tm.processing.v1.Tm.SatelliteInfo(this);
-        int from_bitField0_ = bitField0_;
-        result.name_ = name_;
-        result.code_ = code_;
-        result.enable_ = enable_;
-        result.tableA_ = tableA_;
-        result.tableB_ = tableB_;
-        result.luaPath_ = luaPath_;
-        result.tmLen_ = tmLen_;
-        if (descrambleRuleBuilder_ == null) {
-          result.descrambleRule_ = descrambleRule_;
-        } else {
-          result.descrambleRule_ = descrambleRuleBuilder_.build();
-        }
-        result.tmChannels_ = internalGetTmChannels();
-        result.tmChannels_.makeImmutable();
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.SatelliteInfo) {
-          return mergeFrom((tm.processing.v1.Tm.SatelliteInfo)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.SatelliteInfo other) {
-        if (other == tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance()) return this;
-        if (!other.getName().isEmpty()) {
-          name_ = other.name_;
-          onChanged();
-        }
-        if (!other.getCode().isEmpty()) {
-          code_ = other.code_;
-          onChanged();
-        }
-        if (other.getEnable() != false) {
-          setEnable(other.getEnable());
-        }
-        if (!other.getTableA().isEmpty()) {
-          tableA_ = other.tableA_;
-          onChanged();
-        }
-        if (!other.getTableB().isEmpty()) {
-          tableB_ = other.tableB_;
-          onChanged();
-        }
-        if (!other.getLuaPath().isEmpty()) {
-          luaPath_ = other.luaPath_;
-          onChanged();
-        }
-        if (other.getTmLen() != 0) {
-          setTmLen(other.getTmLen());
-        }
-        if (other.hasDescrambleRule()) {
-          mergeDescrambleRule(other.getDescrambleRule());
-        }
-        internalGetMutableTmChannels().mergeFrom(
-            other.internalGetTmChannels());
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.SatelliteInfo parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.SatelliteInfo) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      private java.lang.Object name_ = "";
-      /**
-       * <pre>
-       * 卫星名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @return The name.
-       */
-      public java.lang.String getName() {
-        java.lang.Object ref = name_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          name_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @return The bytes for name.
-       */
-      public com.google.protobuf.ByteString
-          getNameBytes() {
-        java.lang.Object ref = name_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          name_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @param value The name to set.
-       * @return This builder for chaining.
-       */
-      public Builder setName(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        name_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearName() {
-        
-        name_ = getDefaultInstance().getName();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星名称
-       * </pre>
-       *
-       * <code>string name = 1;</code>
-       * @param value The bytes for name to set.
-       * @return This builder for chaining.
-       */
-      public Builder setNameBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        name_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object code_ = "";
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 2;</code>
-       * @return The code.
-       */
-      public java.lang.String getCode() {
-        java.lang.Object ref = code_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          code_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 2;</code>
-       * @return The bytes for code.
-       */
-      public com.google.protobuf.ByteString
-          getCodeBytes() {
-        java.lang.Object ref = code_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          code_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 2;</code>
-       * @param value The code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCode(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        code_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearCode() {
-        
-        code_ = getDefaultInstance().getCode();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 2;</code>
-       * @param value The bytes for code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCodeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        code_ = value;
-        onChanged();
-        return this;
-      }
-
-      private boolean enable_ ;
-      /**
-       * <pre>
-       * 是否启用
-       * </pre>
-       *
-       * <code>bool enable = 3;</code>
-       * @return The enable.
-       */
-      @java.lang.Override
-      public boolean getEnable() {
-        return enable_;
-      }
-      /**
-       * <pre>
-       * 是否启用
-       * </pre>
-       *
-       * <code>bool enable = 3;</code>
-       * @param value The enable to set.
-       * @return This builder for chaining.
-       */
-      public Builder setEnable(boolean value) {
-        
-        enable_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 是否启用
-       * </pre>
-       *
-       * <code>bool enable = 3;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearEnable() {
-        
-        enable_ = false;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object tableA_ = "";
-      /**
-       * <pre>
-       * 遥测参数表 A 相对路径
-       * </pre>
-       *
-       * <code>string table_a = 4;</code>
-       * @return The tableA.
-       */
-      public java.lang.String getTableA() {
-        java.lang.Object ref = tableA_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          tableA_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 遥测参数表 A 相对路径
-       * </pre>
-       *
-       * <code>string table_a = 4;</code>
-       * @return The bytes for tableA.
-       */
-      public com.google.protobuf.ByteString
-          getTableABytes() {
-        java.lang.Object ref = tableA_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          tableA_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 遥测参数表 A 相对路径
-       * </pre>
-       *
-       * <code>string table_a = 4;</code>
-       * @param value The tableA to set.
-       * @return This builder for chaining.
-       */
-      public Builder setTableA(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        tableA_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 遥测参数表 A 相对路径
-       * </pre>
-       *
-       * <code>string table_a = 4;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearTableA() {
-        
-        tableA_ = getDefaultInstance().getTableA();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 遥测参数表 A 相对路径
-       * </pre>
-       *
-       * <code>string table_a = 4;</code>
-       * @param value The bytes for tableA to set.
-       * @return This builder for chaining.
-       */
-      public Builder setTableABytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        tableA_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object tableB_ = "";
-      /**
-       * <pre>
-       * 帧结构表 B 相对路径
-       * </pre>
-       *
-       * <code>string table_b = 5;</code>
-       * @return The tableB.
-       */
-      public java.lang.String getTableB() {
-        java.lang.Object ref = tableB_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          tableB_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 帧结构表 B 相对路径
-       * </pre>
-       *
-       * <code>string table_b = 5;</code>
-       * @return The bytes for tableB.
-       */
-      public com.google.protobuf.ByteString
-          getTableBBytes() {
-        java.lang.Object ref = tableB_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          tableB_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 帧结构表 B 相对路径
-       * </pre>
-       *
-       * <code>string table_b = 5;</code>
-       * @param value The tableB to set.
-       * @return This builder for chaining.
-       */
-      public Builder setTableB(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        tableB_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 帧结构表 B 相对路径
-       * </pre>
-       *
-       * <code>string table_b = 5;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearTableB() {
-        
-        tableB_ = getDefaultInstance().getTableB();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 帧结构表 B 相对路径
-       * </pre>
-       *
-       * <code>string table_b = 5;</code>
-       * @param value The bytes for tableB to set.
-       * @return This builder for chaining.
-       */
-      public Builder setTableBBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        tableB_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object luaPath_ = "";
-      /**
-       * <pre>
-       * Lua 脚本目录
-       * </pre>
-       *
-       * <code>string lua_path = 6;</code>
-       * @return The luaPath.
-       */
-      public java.lang.String getLuaPath() {
-        java.lang.Object ref = luaPath_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          luaPath_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Lua 脚本目录
-       * </pre>
-       *
-       * <code>string lua_path = 6;</code>
-       * @return The bytes for luaPath.
-       */
-      public com.google.protobuf.ByteString
-          getLuaPathBytes() {
-        java.lang.Object ref = luaPath_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          luaPath_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * Lua 脚本目录
-       * </pre>
-       *
-       * <code>string lua_path = 6;</code>
-       * @param value The luaPath to set.
-       * @return This builder for chaining.
-       */
-      public Builder setLuaPath(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        luaPath_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Lua 脚本目录
-       * </pre>
-       *
-       * <code>string lua_path = 6;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearLuaPath() {
-        
-        luaPath_ = getDefaultInstance().getLuaPath();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * Lua 脚本目录
-       * </pre>
-       *
-       * <code>string lua_path = 6;</code>
-       * @param value The bytes for luaPath to set.
-       * @return This builder for chaining.
-       */
-      public Builder setLuaPathBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        luaPath_ = value;
-        onChanged();
-        return this;
-      }
-
-      private int tmLen_ ;
-      /**
-       * <pre>
-       * 帧长
-       * </pre>
-       *
-       * <code>int32 tm_len = 7;</code>
-       * @return The tmLen.
-       */
-      @java.lang.Override
-      public int getTmLen() {
-        return tmLen_;
-      }
-      /**
-       * <pre>
-       * 帧长
-       * </pre>
-       *
-       * <code>int32 tm_len = 7;</code>
-       * @param value The tmLen to set.
-       * @return This builder for chaining.
-       */
-      public Builder setTmLen(int value) {
-        
-        tmLen_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 帧长
-       * </pre>
-       *
-       * <code>int32 tm_len = 7;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearTmLen() {
-        
-        tmLen_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private tm.processing.v1.Tm.DescrambleRule descrambleRule_;
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.DescrambleRule, tm.processing.v1.Tm.DescrambleRule.Builder, tm.processing.v1.Tm.DescrambleRuleOrBuilder> descrambleRuleBuilder_;
-      /**
-       * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-       * @return Whether the descrambleRule field is set.
-       */
-      public boolean hasDescrambleRule() {
-        return descrambleRuleBuilder_ != null || descrambleRule_ != null;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-       * @return The descrambleRule.
-       */
-      public tm.processing.v1.Tm.DescrambleRule getDescrambleRule() {
-        if (descrambleRuleBuilder_ == null) {
-          return descrambleRule_ == null ? tm.processing.v1.Tm.DescrambleRule.getDefaultInstance() : descrambleRule_;
-        } else {
-          return descrambleRuleBuilder_.getMessage();
-        }
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-       */
-      public Builder setDescrambleRule(tm.processing.v1.Tm.DescrambleRule value) {
-        if (descrambleRuleBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          descrambleRule_ = value;
-          onChanged();
-        } else {
-          descrambleRuleBuilder_.setMessage(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-       */
-      public Builder setDescrambleRule(
-          tm.processing.v1.Tm.DescrambleRule.Builder builderForValue) {
-        if (descrambleRuleBuilder_ == null) {
-          descrambleRule_ = builderForValue.build();
-          onChanged();
-        } else {
-          descrambleRuleBuilder_.setMessage(builderForValue.build());
-        }
-
-        return this;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-       */
-      public Builder mergeDescrambleRule(tm.processing.v1.Tm.DescrambleRule value) {
-        if (descrambleRuleBuilder_ == null) {
-          if (descrambleRule_ != null) {
-            descrambleRule_ =
-              tm.processing.v1.Tm.DescrambleRule.newBuilder(descrambleRule_).mergeFrom(value).buildPartial();
-          } else {
-            descrambleRule_ = value;
-          }
-          onChanged();
-        } else {
-          descrambleRuleBuilder_.mergeFrom(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-       */
-      public Builder clearDescrambleRule() {
-        if (descrambleRuleBuilder_ == null) {
-          descrambleRule_ = null;
-          onChanged();
-        } else {
-          descrambleRule_ = null;
-          descrambleRuleBuilder_ = null;
-        }
-
-        return this;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-       */
-      public tm.processing.v1.Tm.DescrambleRule.Builder getDescrambleRuleBuilder() {
-        
-        onChanged();
-        return getDescrambleRuleFieldBuilder().getBuilder();
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-       */
-      public tm.processing.v1.Tm.DescrambleRuleOrBuilder getDescrambleRuleOrBuilder() {
-        if (descrambleRuleBuilder_ != null) {
-          return descrambleRuleBuilder_.getMessageOrBuilder();
-        } else {
-          return descrambleRule_ == null ?
-              tm.processing.v1.Tm.DescrambleRule.getDefaultInstance() : descrambleRule_;
-        }
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule descramble_rule = 8;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.DescrambleRule, tm.processing.v1.Tm.DescrambleRule.Builder, tm.processing.v1.Tm.DescrambleRuleOrBuilder> 
-          getDescrambleRuleFieldBuilder() {
-        if (descrambleRuleBuilder_ == null) {
-          descrambleRuleBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              tm.processing.v1.Tm.DescrambleRule, tm.processing.v1.Tm.DescrambleRule.Builder, tm.processing.v1.Tm.DescrambleRuleOrBuilder>(
-                  getDescrambleRule(),
-                  getParentForChildren(),
-                  isClean());
-          descrambleRule_ = null;
-        }
-        return descrambleRuleBuilder_;
-      }
-
-      private com.google.protobuf.MapField<
-          java.lang.String, tm.processing.v1.Tm.TmChannel> tmChannels_;
-      private com.google.protobuf.MapField<java.lang.String, tm.processing.v1.Tm.TmChannel>
-      internalGetTmChannels() {
-        if (tmChannels_ == null) {
-          return com.google.protobuf.MapField.emptyMapField(
-              TmChannelsDefaultEntryHolder.defaultEntry);
-        }
-        return tmChannels_;
-      }
-      private com.google.protobuf.MapField<java.lang.String, tm.processing.v1.Tm.TmChannel>
-      internalGetMutableTmChannels() {
-        onChanged();;
-        if (tmChannels_ == null) {
-          tmChannels_ = com.google.protobuf.MapField.newMapField(
-              TmChannelsDefaultEntryHolder.defaultEntry);
-        }
-        if (!tmChannels_.isMutable()) {
-          tmChannels_ = tmChannels_.copy();
-        }
-        return tmChannels_;
-      }
-
-      public int getTmChannelsCount() {
-        return internalGetTmChannels().getMap().size();
-      }
-      /**
-       * <pre>
-       * key 形如 "tm.12"
-       * </pre>
-       *
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-       */
-
-      @java.lang.Override
-      public boolean containsTmChannels(
-          java.lang.String key) {
-        if (key == null) { throw new NullPointerException("map key"); }
-        return internalGetTmChannels().getMap().containsKey(key);
-      }
-      /**
-       * Use {@link #getTmChannelsMap()} instead.
-       */
-      @java.lang.Override
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> getTmChannels() {
-        return getTmChannelsMap();
-      }
-      /**
-       * <pre>
-       * key 形如 "tm.12"
-       * </pre>
-       *
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-       */
-      @java.lang.Override
-
-      public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> getTmChannelsMap() {
-        return internalGetTmChannels().getMap();
-      }
-      /**
-       * <pre>
-       * key 形如 "tm.12"
-       * </pre>
-       *
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-       */
-      @java.lang.Override
-
-      public tm.processing.v1.Tm.TmChannel getTmChannelsOrDefault(
-          java.lang.String key,
-          tm.processing.v1.Tm.TmChannel defaultValue) {
-        if (key == null) { throw new NullPointerException("map key"); }
-        java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> map =
-            internalGetTmChannels().getMap();
-        return map.containsKey(key) ? map.get(key) : defaultValue;
-      }
-      /**
-       * <pre>
-       * key 形如 "tm.12"
-       * </pre>
-       *
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-       */
-      @java.lang.Override
-
-      public tm.processing.v1.Tm.TmChannel getTmChannelsOrThrow(
-          java.lang.String key) {
-        if (key == null) { throw new NullPointerException("map key"); }
-        java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> map =
-            internalGetTmChannels().getMap();
-        if (!map.containsKey(key)) {
-          throw new java.lang.IllegalArgumentException();
-        }
-        return map.get(key);
-      }
-
-      public Builder clearTmChannels() {
-        internalGetMutableTmChannels().getMutableMap()
-            .clear();
-        return this;
-      }
-      /**
-       * <pre>
-       * key 形如 "tm.12"
-       * </pre>
-       *
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-       */
-
-      public Builder removeTmChannels(
-          java.lang.String key) {
-        if (key == null) { throw new NullPointerException("map key"); }
-        internalGetMutableTmChannels().getMutableMap()
-            .remove(key);
-        return this;
-      }
-      /**
-       * Use alternate mutation accessors instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel>
-      getMutableTmChannels() {
-        return internalGetMutableTmChannels().getMutableMap();
-      }
-      /**
-       * <pre>
-       * key 形如 "tm.12"
-       * </pre>
-       *
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-       */
-      public Builder putTmChannels(
-          java.lang.String key,
-          tm.processing.v1.Tm.TmChannel value) {
-        if (key == null) { throw new NullPointerException("map key"); }
-        if (value == null) {
-  throw new NullPointerException("map value");
-}
-
-        internalGetMutableTmChannels().getMutableMap()
-            .put(key, value);
-        return this;
-      }
-      /**
-       * <pre>
-       * key 形如 "tm.12"
-       * </pre>
-       *
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; tm_channels = 9;</code>
-       */
-
-      public Builder putAllTmChannels(
-          java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> values) {
-        internalGetMutableTmChannels().getMutableMap()
-            .putAll(values);
-        return this;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.SatelliteInfo)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.SatelliteInfo)
-    private static final tm.processing.v1.Tm.SatelliteInfo DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.SatelliteInfo();
-    }
-
-    public static tm.processing.v1.Tm.SatelliteInfo getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<SatelliteInfo>
-        PARSER = new com.google.protobuf.AbstractParser<SatelliteInfo>() {
-      @java.lang.Override
-      public SatelliteInfo parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new SatelliteInfo(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<SatelliteInfo> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<SatelliteInfo> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.SatelliteInfo getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface ListSatellitesResponseOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.ListSatellitesResponse)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <code>int32 code = 1;</code>
-     * @return The code.
-     */
-    int getCode();
-
-    /**
-     * <code>string message = 2;</code>
-     * @return The message.
-     */
-    java.lang.String getMessage();
-    /**
-     * <code>string message = 2;</code>
-     * @return The bytes for message.
-     */
-    com.google.protobuf.ByteString
-        getMessageBytes();
-
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    java.util.List<tm.processing.v1.Tm.SatelliteInfo> 
-        getSatellitesList();
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    tm.processing.v1.Tm.SatelliteInfo getSatellites(int index);
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    int getSatellitesCount();
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    java.util.List<? extends tm.processing.v1.Tm.SatelliteInfoOrBuilder> 
-        getSatellitesOrBuilderList();
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    tm.processing.v1.Tm.SatelliteInfoOrBuilder getSatellitesOrBuilder(
-        int index);
-  }
-  /**
-   * Protobuf type {@code tm.processing.v1.ListSatellitesResponse}
-   */
-  public static final class ListSatellitesResponse extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.ListSatellitesResponse)
-      ListSatellitesResponseOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use ListSatellitesResponse.newBuilder() to construct.
-    private ListSatellitesResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private ListSatellitesResponse() {
-      message_ = "";
-      satellites_ = java.util.Collections.emptyList();
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new ListSatellitesResponse();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private ListSatellitesResponse(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 8: {
-
-              code_ = input.readInt32();
-              break;
-            }
-            case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              message_ = s;
-              break;
-            }
-            case 26: {
-              if (!((mutable_bitField0_ & 0x00000001) != 0)) {
-                satellites_ = new java.util.ArrayList<tm.processing.v1.Tm.SatelliteInfo>();
-                mutable_bitField0_ |= 0x00000001;
-              }
-              satellites_.add(
-                  input.readMessage(tm.processing.v1.Tm.SatelliteInfo.parser(), extensionRegistry));
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        if (((mutable_bitField0_ & 0x00000001) != 0)) {
-          satellites_ = java.util.Collections.unmodifiableList(satellites_);
-        }
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_ListSatellitesResponse_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_ListSatellitesResponse_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.ListSatellitesResponse.class, tm.processing.v1.Tm.ListSatellitesResponse.Builder.class);
-    }
-
-    public static final int CODE_FIELD_NUMBER = 1;
-    private int code_;
-    /**
-     * <code>int32 code = 1;</code>
-     * @return The code.
-     */
-    @java.lang.Override
-    public int getCode() {
-      return code_;
-    }
-
-    public static final int MESSAGE_FIELD_NUMBER = 2;
-    private volatile java.lang.Object message_;
-    /**
-     * <code>string message = 2;</code>
-     * @return The message.
-     */
-    @java.lang.Override
-    public java.lang.String getMessage() {
-      java.lang.Object ref = message_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        message_ = s;
-        return s;
-      }
-    }
-    /**
-     * <code>string message = 2;</code>
-     * @return The bytes for message.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getMessageBytes() {
-      java.lang.Object ref = message_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        message_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int SATELLITES_FIELD_NUMBER = 3;
-    private java.util.List<tm.processing.v1.Tm.SatelliteInfo> satellites_;
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    @java.lang.Override
-    public java.util.List<tm.processing.v1.Tm.SatelliteInfo> getSatellitesList() {
-      return satellites_;
-    }
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    @java.lang.Override
-    public java.util.List<? extends tm.processing.v1.Tm.SatelliteInfoOrBuilder> 
-        getSatellitesOrBuilderList() {
-      return satellites_;
-    }
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    @java.lang.Override
-    public int getSatellitesCount() {
-      return satellites_.size();
-    }
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.SatelliteInfo getSatellites(int index) {
-      return satellites_.get(index);
-    }
-    /**
-     * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.SatelliteInfoOrBuilder getSatellitesOrBuilder(
-        int index) {
-      return satellites_.get(index);
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (code_ != 0) {
-        output.writeInt32(1, code_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(message_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, message_);
-      }
-      for (int i = 0; i < satellites_.size(); i++) {
-        output.writeMessage(3, satellites_.get(i));
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (code_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(1, code_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(message_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, message_);
-      }
-      for (int i = 0; i < satellites_.size(); i++) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, satellites_.get(i));
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.ListSatellitesResponse)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.ListSatellitesResponse other = (tm.processing.v1.Tm.ListSatellitesResponse) obj;
-
-      if (getCode()
-          != other.getCode()) return false;
-      if (!getMessage()
-          .equals(other.getMessage())) return false;
-      if (!getSatellitesList()
-          .equals(other.getSatellitesList())) return false;
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getCode();
-      hash = (37 * hash) + MESSAGE_FIELD_NUMBER;
-      hash = (53 * hash) + getMessage().hashCode();
-      if (getSatellitesCount() > 0) {
-        hash = (37 * hash) + SATELLITES_FIELD_NUMBER;
-        hash = (53 * hash) + getSatellitesList().hashCode();
-      }
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.ListSatellitesResponse parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.ListSatellitesResponse prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code tm.processing.v1.ListSatellitesResponse}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.ListSatellitesResponse)
-        tm.processing.v1.Tm.ListSatellitesResponseOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_ListSatellitesResponse_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_ListSatellitesResponse_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.ListSatellitesResponse.class, tm.processing.v1.Tm.ListSatellitesResponse.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.ListSatellitesResponse.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-          getSatellitesFieldBuilder();
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        code_ = 0;
-
-        message_ = "";
-
-        if (satellitesBuilder_ == null) {
-          satellites_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000001);
-        } else {
-          satellitesBuilder_.clear();
-        }
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_ListSatellitesResponse_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.ListSatellitesResponse getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.ListSatellitesResponse.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.ListSatellitesResponse build() {
-        tm.processing.v1.Tm.ListSatellitesResponse result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.ListSatellitesResponse buildPartial() {
-        tm.processing.v1.Tm.ListSatellitesResponse result = new tm.processing.v1.Tm.ListSatellitesResponse(this);
-        int from_bitField0_ = bitField0_;
-        result.code_ = code_;
-        result.message_ = message_;
-        if (satellitesBuilder_ == null) {
-          if (((bitField0_ & 0x00000001) != 0)) {
-            satellites_ = java.util.Collections.unmodifiableList(satellites_);
-            bitField0_ = (bitField0_ & ~0x00000001);
-          }
-          result.satellites_ = satellites_;
-        } else {
-          result.satellites_ = satellitesBuilder_.build();
-        }
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.ListSatellitesResponse) {
-          return mergeFrom((tm.processing.v1.Tm.ListSatellitesResponse)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.ListSatellitesResponse other) {
-        if (other == tm.processing.v1.Tm.ListSatellitesResponse.getDefaultInstance()) return this;
-        if (other.getCode() != 0) {
-          setCode(other.getCode());
-        }
-        if (!other.getMessage().isEmpty()) {
-          message_ = other.message_;
-          onChanged();
-        }
-        if (satellitesBuilder_ == null) {
-          if (!other.satellites_.isEmpty()) {
-            if (satellites_.isEmpty()) {
-              satellites_ = other.satellites_;
-              bitField0_ = (bitField0_ & ~0x00000001);
-            } else {
-              ensureSatellitesIsMutable();
-              satellites_.addAll(other.satellites_);
-            }
-            onChanged();
-          }
-        } else {
-          if (!other.satellites_.isEmpty()) {
-            if (satellitesBuilder_.isEmpty()) {
-              satellitesBuilder_.dispose();
-              satellitesBuilder_ = null;
-              satellites_ = other.satellites_;
-              bitField0_ = (bitField0_ & ~0x00000001);
-              satellitesBuilder_ = 
-                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
-                   getSatellitesFieldBuilder() : null;
-            } else {
-              satellitesBuilder_.addAllMessages(other.satellites_);
-            }
-          }
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.ListSatellitesResponse parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.ListSatellitesResponse) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      private int code_ ;
-      /**
-       * <code>int32 code = 1;</code>
-       * @return The code.
-       */
-      @java.lang.Override
-      public int getCode() {
-        return code_;
-      }
-      /**
-       * <code>int32 code = 1;</code>
-       * @param value The code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCode(int value) {
-        
-        code_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>int32 code = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearCode() {
-        
-        code_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object message_ = "";
-      /**
-       * <code>string message = 2;</code>
-       * @return The message.
-       */
-      public java.lang.String getMessage() {
-        java.lang.Object ref = message_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          message_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <code>string message = 2;</code>
-       * @return The bytes for message.
-       */
-      public com.google.protobuf.ByteString
-          getMessageBytes() {
-        java.lang.Object ref = message_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          message_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>string message = 2;</code>
-       * @param value The message to set.
-       * @return This builder for chaining.
-       */
-      public Builder setMessage(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        message_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string message = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearMessage() {
-        
-        message_ = getDefaultInstance().getMessage();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string message = 2;</code>
-       * @param value The bytes for message to set.
-       * @return This builder for chaining.
-       */
-      public Builder setMessageBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        message_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.util.List<tm.processing.v1.Tm.SatelliteInfo> satellites_ =
-        java.util.Collections.emptyList();
-      private void ensureSatellitesIsMutable() {
-        if (!((bitField0_ & 0x00000001) != 0)) {
-          satellites_ = new java.util.ArrayList<tm.processing.v1.Tm.SatelliteInfo>(satellites_);
-          bitField0_ |= 0x00000001;
-         }
-      }
-
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder> satellitesBuilder_;
-
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public java.util.List<tm.processing.v1.Tm.SatelliteInfo> getSatellitesList() {
-        if (satellitesBuilder_ == null) {
-          return java.util.Collections.unmodifiableList(satellites_);
-        } else {
-          return satellitesBuilder_.getMessageList();
-        }
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public int getSatellitesCount() {
-        if (satellitesBuilder_ == null) {
-          return satellites_.size();
-        } else {
-          return satellitesBuilder_.getCount();
-        }
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfo getSatellites(int index) {
-        if (satellitesBuilder_ == null) {
-          return satellites_.get(index);
-        } else {
-          return satellitesBuilder_.getMessage(index);
-        }
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public Builder setSatellites(
-          int index, tm.processing.v1.Tm.SatelliteInfo value) {
-        if (satellitesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureSatellitesIsMutable();
-          satellites_.set(index, value);
-          onChanged();
-        } else {
-          satellitesBuilder_.setMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public Builder setSatellites(
-          int index, tm.processing.v1.Tm.SatelliteInfo.Builder builderForValue) {
-        if (satellitesBuilder_ == null) {
-          ensureSatellitesIsMutable();
-          satellites_.set(index, builderForValue.build());
-          onChanged();
-        } else {
-          satellitesBuilder_.setMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public Builder addSatellites(tm.processing.v1.Tm.SatelliteInfo value) {
-        if (satellitesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureSatellitesIsMutable();
-          satellites_.add(value);
-          onChanged();
-        } else {
-          satellitesBuilder_.addMessage(value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public Builder addSatellites(
-          int index, tm.processing.v1.Tm.SatelliteInfo value) {
-        if (satellitesBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          ensureSatellitesIsMutable();
-          satellites_.add(index, value);
-          onChanged();
-        } else {
-          satellitesBuilder_.addMessage(index, value);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public Builder addSatellites(
-          tm.processing.v1.Tm.SatelliteInfo.Builder builderForValue) {
-        if (satellitesBuilder_ == null) {
-          ensureSatellitesIsMutable();
-          satellites_.add(builderForValue.build());
-          onChanged();
-        } else {
-          satellitesBuilder_.addMessage(builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public Builder addSatellites(
-          int index, tm.processing.v1.Tm.SatelliteInfo.Builder builderForValue) {
-        if (satellitesBuilder_ == null) {
-          ensureSatellitesIsMutable();
-          satellites_.add(index, builderForValue.build());
-          onChanged();
-        } else {
-          satellitesBuilder_.addMessage(index, builderForValue.build());
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public Builder addAllSatellites(
-          java.lang.Iterable<? extends tm.processing.v1.Tm.SatelliteInfo> values) {
-        if (satellitesBuilder_ == null) {
-          ensureSatellitesIsMutable();
-          com.google.protobuf.AbstractMessageLite.Builder.addAll(
-              values, satellites_);
-          onChanged();
-        } else {
-          satellitesBuilder_.addAllMessages(values);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public Builder clearSatellites() {
-        if (satellitesBuilder_ == null) {
-          satellites_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00000001);
-          onChanged();
-        } else {
-          satellitesBuilder_.clear();
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public Builder removeSatellites(int index) {
-        if (satellitesBuilder_ == null) {
-          ensureSatellitesIsMutable();
-          satellites_.remove(index);
-          onChanged();
-        } else {
-          satellitesBuilder_.remove(index);
-        }
-        return this;
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfo.Builder getSatellitesBuilder(
-          int index) {
-        return getSatellitesFieldBuilder().getBuilder(index);
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfoOrBuilder getSatellitesOrBuilder(
-          int index) {
-        if (satellitesBuilder_ == null) {
-          return satellites_.get(index);  } else {
-          return satellitesBuilder_.getMessageOrBuilder(index);
-        }
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public java.util.List<? extends tm.processing.v1.Tm.SatelliteInfoOrBuilder> 
-           getSatellitesOrBuilderList() {
-        if (satellitesBuilder_ != null) {
-          return satellitesBuilder_.getMessageOrBuilderList();
-        } else {
-          return java.util.Collections.unmodifiableList(satellites_);
-        }
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfo.Builder addSatellitesBuilder() {
-        return getSatellitesFieldBuilder().addBuilder(
-            tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfo.Builder addSatellitesBuilder(
-          int index) {
-        return getSatellitesFieldBuilder().addBuilder(
-            index, tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance());
-      }
-      /**
-       * <code>repeated .tm.processing.v1.SatelliteInfo satellites = 3;</code>
-       */
-      public java.util.List<tm.processing.v1.Tm.SatelliteInfo.Builder> 
-           getSatellitesBuilderList() {
-        return getSatellitesFieldBuilder().getBuilderList();
-      }
-      private com.google.protobuf.RepeatedFieldBuilderV3<
-          tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder> 
-          getSatellitesFieldBuilder() {
-        if (satellitesBuilder_ == null) {
-          satellitesBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
-              tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder>(
-                  satellites_,
-                  ((bitField0_ & 0x00000001) != 0),
-                  getParentForChildren(),
-                  isClean());
-          satellites_ = null;
-        }
-        return satellitesBuilder_;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.ListSatellitesResponse)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.ListSatellitesResponse)
-    private static final tm.processing.v1.Tm.ListSatellitesResponse DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.ListSatellitesResponse();
-    }
-
-    public static tm.processing.v1.Tm.ListSatellitesResponse getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<ListSatellitesResponse>
-        PARSER = new com.google.protobuf.AbstractParser<ListSatellitesResponse>() {
-      @java.lang.Override
-      public ListSatellitesResponse parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new ListSatellitesResponse(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<ListSatellitesResponse> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<ListSatellitesResponse> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.ListSatellitesResponse getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface CreateSatelliteRequestOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.CreateSatelliteRequest)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-     * @return Whether the info field is set.
-     */
-    boolean hasInfo();
-    /**
-     * <pre>
-     * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-     * @return The info.
-     */
-    tm.processing.v1.Tm.SatelliteInfo getInfo();
-    /**
-     * <pre>
-     * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-     */
-    tm.processing.v1.Tm.SatelliteInfoOrBuilder getInfoOrBuilder();
-  }
-  /**
-   * Protobuf type {@code tm.processing.v1.CreateSatelliteRequest}
-   */
-  public static final class CreateSatelliteRequest extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.CreateSatelliteRequest)
-      CreateSatelliteRequestOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use CreateSatelliteRequest.newBuilder() to construct.
-    private CreateSatelliteRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private CreateSatelliteRequest() {
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new CreateSatelliteRequest();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private CreateSatelliteRequest(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              tm.processing.v1.Tm.SatelliteInfo.Builder subBuilder = null;
-              if (info_ != null) {
-                subBuilder = info_.toBuilder();
-              }
-              info_ = input.readMessage(tm.processing.v1.Tm.SatelliteInfo.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(info_);
-                info_ = subBuilder.buildPartial();
-              }
-
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_CreateSatelliteRequest_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_CreateSatelliteRequest_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.CreateSatelliteRequest.class, tm.processing.v1.Tm.CreateSatelliteRequest.Builder.class);
-    }
-
-    public static final int INFO_FIELD_NUMBER = 1;
-    private tm.processing.v1.Tm.SatelliteInfo info_;
-    /**
-     * <pre>
-     * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-     * @return Whether the info field is set.
-     */
-    @java.lang.Override
-    public boolean hasInfo() {
-      return info_ != null;
-    }
-    /**
-     * <pre>
-     * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-     * @return The info.
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.SatelliteInfo getInfo() {
-      return info_ == null ? tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance() : info_;
-    }
-    /**
-     * <pre>
-     * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.SatelliteInfoOrBuilder getInfoOrBuilder() {
-      return getInfo();
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (info_ != null) {
-        output.writeMessage(1, getInfo());
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (info_ != null) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(1, getInfo());
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.CreateSatelliteRequest)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.CreateSatelliteRequest other = (tm.processing.v1.Tm.CreateSatelliteRequest) obj;
-
-      if (hasInfo() != other.hasInfo()) return false;
-      if (hasInfo()) {
-        if (!getInfo()
-            .equals(other.getInfo())) return false;
-      }
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      if (hasInfo()) {
-        hash = (37 * hash) + INFO_FIELD_NUMBER;
-        hash = (53 * hash) + getInfo().hashCode();
-      }
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.CreateSatelliteRequest parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.CreateSatelliteRequest prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code tm.processing.v1.CreateSatelliteRequest}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.CreateSatelliteRequest)
-        tm.processing.v1.Tm.CreateSatelliteRequestOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_CreateSatelliteRequest_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_CreateSatelliteRequest_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.CreateSatelliteRequest.class, tm.processing.v1.Tm.CreateSatelliteRequest.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.CreateSatelliteRequest.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        if (infoBuilder_ == null) {
-          info_ = null;
-        } else {
-          info_ = null;
-          infoBuilder_ = null;
-        }
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_CreateSatelliteRequest_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.CreateSatelliteRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.CreateSatelliteRequest.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.CreateSatelliteRequest build() {
-        tm.processing.v1.Tm.CreateSatelliteRequest result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.CreateSatelliteRequest buildPartial() {
-        tm.processing.v1.Tm.CreateSatelliteRequest result = new tm.processing.v1.Tm.CreateSatelliteRequest(this);
-        if (infoBuilder_ == null) {
-          result.info_ = info_;
-        } else {
-          result.info_ = infoBuilder_.build();
-        }
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.CreateSatelliteRequest) {
-          return mergeFrom((tm.processing.v1.Tm.CreateSatelliteRequest)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.CreateSatelliteRequest other) {
-        if (other == tm.processing.v1.Tm.CreateSatelliteRequest.getDefaultInstance()) return this;
-        if (other.hasInfo()) {
-          mergeInfo(other.getInfo());
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.CreateSatelliteRequest parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.CreateSatelliteRequest) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-
-      private tm.processing.v1.Tm.SatelliteInfo info_;
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder> infoBuilder_;
-      /**
-       * <pre>
-       * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-       * @return Whether the info field is set.
-       */
-      public boolean hasInfo() {
-        return infoBuilder_ != null || info_ != null;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-       * @return The info.
-       */
-      public tm.processing.v1.Tm.SatelliteInfo getInfo() {
-        if (infoBuilder_ == null) {
-          return info_ == null ? tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance() : info_;
-        } else {
-          return infoBuilder_.getMessage();
-        }
-      }
-      /**
-       * <pre>
-       * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-       */
-      public Builder setInfo(tm.processing.v1.Tm.SatelliteInfo value) {
-        if (infoBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          info_ = value;
-          onChanged();
-        } else {
-          infoBuilder_.setMessage(value);
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-       */
-      public Builder setInfo(
-          tm.processing.v1.Tm.SatelliteInfo.Builder builderForValue) {
-        if (infoBuilder_ == null) {
-          info_ = builderForValue.build();
-          onChanged();
-        } else {
-          infoBuilder_.setMessage(builderForValue.build());
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-       */
-      public Builder mergeInfo(tm.processing.v1.Tm.SatelliteInfo value) {
-        if (infoBuilder_ == null) {
-          if (info_ != null) {
-            info_ =
-              tm.processing.v1.Tm.SatelliteInfo.newBuilder(info_).mergeFrom(value).buildPartial();
-          } else {
-            info_ = value;
-          }
-          onChanged();
-        } else {
-          infoBuilder_.mergeFrom(value);
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-       */
-      public Builder clearInfo() {
-        if (infoBuilder_ == null) {
-          info_ = null;
-          onChanged();
-        } else {
-          info_ = null;
-          infoBuilder_ = null;
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfo.Builder getInfoBuilder() {
-        
-        onChanged();
-        return getInfoFieldBuilder().getBuilder();
-      }
-      /**
-       * <pre>
-       * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfoOrBuilder getInfoOrBuilder() {
-        if (infoBuilder_ != null) {
-          return infoBuilder_.getMessageOrBuilder();
-        } else {
-          return info_ == null ?
-              tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance() : info_;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星完整配置（名称、代号、启停、参数表、Lua、帧长、解扰规则、通道）
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 1;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder> 
-          getInfoFieldBuilder() {
-        if (infoBuilder_ == null) {
-          infoBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder>(
-                  getInfo(),
-                  getParentForChildren(),
-                  isClean());
-          info_ = null;
-        }
-        return infoBuilder_;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.CreateSatelliteRequest)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.CreateSatelliteRequest)
-    private static final tm.processing.v1.Tm.CreateSatelliteRequest DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.CreateSatelliteRequest();
-    }
-
-    public static tm.processing.v1.Tm.CreateSatelliteRequest getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<CreateSatelliteRequest>
-        PARSER = new com.google.protobuf.AbstractParser<CreateSatelliteRequest>() {
-      @java.lang.Override
-      public CreateSatelliteRequest parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new CreateSatelliteRequest(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<CreateSatelliteRequest> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<CreateSatelliteRequest> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.CreateSatelliteRequest getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface UpdateSatelliteRequestOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.UpdateSatelliteRequest)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * 要编辑的卫星代号（用于定位原卫星）
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The code.
-     */
-    java.lang.String getCode();
-    /**
-     * <pre>
-     * 要编辑的卫星代号（用于定位原卫星）
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
-     */
-    com.google.protobuf.ByteString
-        getCodeBytes();
-
-    /**
-     * <pre>
-     * 卫星完整新配置，名称/代号变更时按新值整体更新
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-     * @return Whether the info field is set.
-     */
-    boolean hasInfo();
-    /**
-     * <pre>
-     * 卫星完整新配置，名称/代号变更时按新值整体更新
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-     * @return The info.
-     */
-    tm.processing.v1.Tm.SatelliteInfo getInfo();
-    /**
-     * <pre>
-     * 卫星完整新配置，名称/代号变更时按新值整体更新
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-     */
-    tm.processing.v1.Tm.SatelliteInfoOrBuilder getInfoOrBuilder();
-  }
-  /**
-   * Protobuf type {@code tm.processing.v1.UpdateSatelliteRequest}
-   */
-  public static final class UpdateSatelliteRequest extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.UpdateSatelliteRequest)
-      UpdateSatelliteRequestOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use UpdateSatelliteRequest.newBuilder() to construct.
-    private UpdateSatelliteRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private UpdateSatelliteRequest() {
-      code_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new UpdateSatelliteRequest();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private UpdateSatelliteRequest(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              code_ = s;
-              break;
-            }
-            case 18: {
-              tm.processing.v1.Tm.SatelliteInfo.Builder subBuilder = null;
-              if (info_ != null) {
-                subBuilder = info_.toBuilder();
-              }
-              info_ = input.readMessage(tm.processing.v1.Tm.SatelliteInfo.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(info_);
-                info_ = subBuilder.buildPartial();
-              }
-
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_UpdateSatelliteRequest_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_UpdateSatelliteRequest_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.UpdateSatelliteRequest.class, tm.processing.v1.Tm.UpdateSatelliteRequest.Builder.class);
-    }
-
-    public static final int CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object code_;
-    /**
-     * <pre>
-     * 要编辑的卫星代号（用于定位原卫星）
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The code.
-     */
-    @java.lang.Override
-    public java.lang.String getCode() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        code_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 要编辑的卫星代号（用于定位原卫星）
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getCodeBytes() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        code_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int INFO_FIELD_NUMBER = 2;
-    private tm.processing.v1.Tm.SatelliteInfo info_;
-    /**
-     * <pre>
-     * 卫星完整新配置，名称/代号变更时按新值整体更新
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-     * @return Whether the info field is set.
-     */
-    @java.lang.Override
-    public boolean hasInfo() {
-      return info_ != null;
-    }
-    /**
-     * <pre>
-     * 卫星完整新配置，名称/代号变更时按新值整体更新
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-     * @return The info.
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.SatelliteInfo getInfo() {
-      return info_ == null ? tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance() : info_;
-    }
-    /**
-     * <pre>
-     * 卫星完整新配置，名称/代号变更时按新值整体更新
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.SatelliteInfoOrBuilder getInfoOrBuilder() {
-      return getInfo();
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, code_);
-      }
-      if (info_ != null) {
-        output.writeMessage(2, getInfo());
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, code_);
-      }
-      if (info_ != null) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, getInfo());
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.UpdateSatelliteRequest)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.UpdateSatelliteRequest other = (tm.processing.v1.Tm.UpdateSatelliteRequest) obj;
-
-      if (!getCode()
-          .equals(other.getCode())) return false;
-      if (hasInfo() != other.hasInfo()) return false;
-      if (hasInfo()) {
-        if (!getInfo()
-            .equals(other.getInfo())) return false;
-      }
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getCode().hashCode();
-      if (hasInfo()) {
-        hash = (37 * hash) + INFO_FIELD_NUMBER;
-        hash = (53 * hash) + getInfo().hashCode();
-      }
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.UpdateSatelliteRequest prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code tm.processing.v1.UpdateSatelliteRequest}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.UpdateSatelliteRequest)
-        tm.processing.v1.Tm.UpdateSatelliteRequestOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_UpdateSatelliteRequest_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_UpdateSatelliteRequest_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.UpdateSatelliteRequest.class, tm.processing.v1.Tm.UpdateSatelliteRequest.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.UpdateSatelliteRequest.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        code_ = "";
-
-        if (infoBuilder_ == null) {
-          info_ = null;
-        } else {
-          info_ = null;
-          infoBuilder_ = null;
-        }
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_UpdateSatelliteRequest_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.UpdateSatelliteRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.UpdateSatelliteRequest.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.UpdateSatelliteRequest build() {
-        tm.processing.v1.Tm.UpdateSatelliteRequest result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.UpdateSatelliteRequest buildPartial() {
-        tm.processing.v1.Tm.UpdateSatelliteRequest result = new tm.processing.v1.Tm.UpdateSatelliteRequest(this);
-        result.code_ = code_;
-        if (infoBuilder_ == null) {
-          result.info_ = info_;
-        } else {
-          result.info_ = infoBuilder_.build();
-        }
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.UpdateSatelliteRequest) {
-          return mergeFrom((tm.processing.v1.Tm.UpdateSatelliteRequest)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.UpdateSatelliteRequest other) {
-        if (other == tm.processing.v1.Tm.UpdateSatelliteRequest.getDefaultInstance()) return this;
-        if (!other.getCode().isEmpty()) {
-          code_ = other.code_;
-          onChanged();
-        }
-        if (other.hasInfo()) {
-          mergeInfo(other.getInfo());
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.UpdateSatelliteRequest parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.UpdateSatelliteRequest) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-
-      private java.lang.Object code_ = "";
-      /**
-       * <pre>
-       * 要编辑的卫星代号（用于定位原卫星）
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @return The code.
-       */
-      public java.lang.String getCode() {
-        java.lang.Object ref = code_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          code_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 要编辑的卫星代号（用于定位原卫星）
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @return The bytes for code.
-       */
-      public com.google.protobuf.ByteString
-          getCodeBytes() {
-        java.lang.Object ref = code_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          code_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 要编辑的卫星代号（用于定位原卫星）
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @param value The code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCode(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        code_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 要编辑的卫星代号（用于定位原卫星）
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearCode() {
-        
-        code_ = getDefaultInstance().getCode();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 要编辑的卫星代号（用于定位原卫星）
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @param value The bytes for code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCodeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        code_ = value;
-        onChanged();
-        return this;
-      }
-
-      private tm.processing.v1.Tm.SatelliteInfo info_;
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder> infoBuilder_;
-      /**
-       * <pre>
-       * 卫星完整新配置，名称/代号变更时按新值整体更新
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-       * @return Whether the info field is set.
-       */
-      public boolean hasInfo() {
-        return infoBuilder_ != null || info_ != null;
-      }
-      /**
-       * <pre>
-       * 卫星完整新配置，名称/代号变更时按新值整体更新
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-       * @return The info.
-       */
-      public tm.processing.v1.Tm.SatelliteInfo getInfo() {
-        if (infoBuilder_ == null) {
-          return info_ == null ? tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance() : info_;
-        } else {
-          return infoBuilder_.getMessage();
-        }
-      }
-      /**
-       * <pre>
-       * 卫星完整新配置，名称/代号变更时按新值整体更新
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-       */
-      public Builder setInfo(tm.processing.v1.Tm.SatelliteInfo value) {
-        if (infoBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          info_ = value;
-          onChanged();
-        } else {
-          infoBuilder_.setMessage(value);
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整新配置，名称/代号变更时按新值整体更新
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-       */
-      public Builder setInfo(
-          tm.processing.v1.Tm.SatelliteInfo.Builder builderForValue) {
-        if (infoBuilder_ == null) {
-          info_ = builderForValue.build();
-          onChanged();
-        } else {
-          infoBuilder_.setMessage(builderForValue.build());
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整新配置，名称/代号变更时按新值整体更新
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-       */
-      public Builder mergeInfo(tm.processing.v1.Tm.SatelliteInfo value) {
-        if (infoBuilder_ == null) {
-          if (info_ != null) {
-            info_ =
-              tm.processing.v1.Tm.SatelliteInfo.newBuilder(info_).mergeFrom(value).buildPartial();
-          } else {
-            info_ = value;
-          }
-          onChanged();
-        } else {
-          infoBuilder_.mergeFrom(value);
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整新配置，名称/代号变更时按新值整体更新
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-       */
-      public Builder clearInfo() {
-        if (infoBuilder_ == null) {
-          info_ = null;
-          onChanged();
-        } else {
-          info_ = null;
-          infoBuilder_ = null;
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整新配置，名称/代号变更时按新值整体更新
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfo.Builder getInfoBuilder() {
-        
-        onChanged();
-        return getInfoFieldBuilder().getBuilder();
-      }
-      /**
-       * <pre>
-       * 卫星完整新配置，名称/代号变更时按新值整体更新
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfoOrBuilder getInfoOrBuilder() {
-        if (infoBuilder_ != null) {
-          return infoBuilder_.getMessageOrBuilder();
-        } else {
-          return info_ == null ?
-              tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance() : info_;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星完整新配置，名称/代号变更时按新值整体更新
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo info = 2;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder> 
-          getInfoFieldBuilder() {
-        if (infoBuilder_ == null) {
-          infoBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder>(
-                  getInfo(),
-                  getParentForChildren(),
-                  isClean());
-          info_ = null;
-        }
-        return infoBuilder_;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.UpdateSatelliteRequest)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.UpdateSatelliteRequest)
-    private static final tm.processing.v1.Tm.UpdateSatelliteRequest DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.UpdateSatelliteRequest();
-    }
-
-    public static tm.processing.v1.Tm.UpdateSatelliteRequest getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<UpdateSatelliteRequest>
-        PARSER = new com.google.protobuf.AbstractParser<UpdateSatelliteRequest>() {
-      @java.lang.Override
-      public UpdateSatelliteRequest parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new UpdateSatelliteRequest(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<UpdateSatelliteRequest> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<UpdateSatelliteRequest> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.UpdateSatelliteRequest getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface GetSatelliteRequestOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.GetSatelliteRequest)
+  public interface SetSatEnabledRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:tm.processing.v1.SetSatEnabledRequest)
       com.google.protobuf.MessageOrBuilder {
 
     /**
@@ -9268,2122 +3004,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>string code = 1;</code>
      * @return The code.
      */
-    java.lang.String getCode();
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
-     */
-    com.google.protobuf.ByteString
-        getCodeBytes();
-  }
-  /**
-   * Protobuf type {@code tm.processing.v1.GetSatelliteRequest}
-   */
-  public static final class GetSatelliteRequest extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.GetSatelliteRequest)
-      GetSatelliteRequestOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use GetSatelliteRequest.newBuilder() to construct.
-    private GetSatelliteRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private GetSatelliteRequest() {
-      code_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new GetSatelliteRequest();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private GetSatelliteRequest(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              code_ = s;
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteRequest_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteRequest_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.GetSatelliteRequest.class, tm.processing.v1.Tm.GetSatelliteRequest.Builder.class);
-    }
-
-    public static final int CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object code_;
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The code.
-     */
-    @java.lang.Override
-    public java.lang.String getCode() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        code_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getCodeBytes() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        code_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, code_);
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, code_);
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.GetSatelliteRequest)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.GetSatelliteRequest other = (tm.processing.v1.Tm.GetSatelliteRequest) obj;
-
-      if (!getCode()
-          .equals(other.getCode())) return false;
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getCode().hashCode();
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteRequest parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.GetSatelliteRequest prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code tm.processing.v1.GetSatelliteRequest}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.GetSatelliteRequest)
-        tm.processing.v1.Tm.GetSatelliteRequestOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteRequest_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteRequest_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.GetSatelliteRequest.class, tm.processing.v1.Tm.GetSatelliteRequest.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.GetSatelliteRequest.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        code_ = "";
-
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteRequest_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.GetSatelliteRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.GetSatelliteRequest.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.GetSatelliteRequest build() {
-        tm.processing.v1.Tm.GetSatelliteRequest result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.GetSatelliteRequest buildPartial() {
-        tm.processing.v1.Tm.GetSatelliteRequest result = new tm.processing.v1.Tm.GetSatelliteRequest(this);
-        result.code_ = code_;
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.GetSatelliteRequest) {
-          return mergeFrom((tm.processing.v1.Tm.GetSatelliteRequest)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.GetSatelliteRequest other) {
-        if (other == tm.processing.v1.Tm.GetSatelliteRequest.getDefaultInstance()) return this;
-        if (!other.getCode().isEmpty()) {
-          code_ = other.code_;
-          onChanged();
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.GetSatelliteRequest parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.GetSatelliteRequest) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-
-      private java.lang.Object code_ = "";
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @return The code.
-       */
-      public java.lang.String getCode() {
-        java.lang.Object ref = code_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          code_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @return The bytes for code.
-       */
-      public com.google.protobuf.ByteString
-          getCodeBytes() {
-        java.lang.Object ref = code_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          code_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @param value The code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCode(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        code_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearCode() {
-        
-        code_ = getDefaultInstance().getCode();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @param value The bytes for code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCodeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        code_ = value;
-        onChanged();
-        return this;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.GetSatelliteRequest)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.GetSatelliteRequest)
-    private static final tm.processing.v1.Tm.GetSatelliteRequest DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.GetSatelliteRequest();
-    }
-
-    public static tm.processing.v1.Tm.GetSatelliteRequest getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<GetSatelliteRequest>
-        PARSER = new com.google.protobuf.AbstractParser<GetSatelliteRequest>() {
-      @java.lang.Override
-      public GetSatelliteRequest parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new GetSatelliteRequest(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<GetSatelliteRequest> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<GetSatelliteRequest> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.GetSatelliteRequest getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface GetSatelliteResponseOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.GetSatelliteResponse)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <code>int32 code = 1;</code>
-     * @return The code.
-     */
-    int getCode();
-
-    /**
-     * <code>string message = 2;</code>
-     * @return The message.
-     */
-    java.lang.String getMessage();
-    /**
-     * <code>string message = 2;</code>
-     * @return The bytes for message.
-     */
-    com.google.protobuf.ByteString
-        getMessageBytes();
-
-    /**
-     * <pre>
-     * 卫星完整配置，未找到时为空
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-     * @return Whether the satellite field is set.
-     */
-    boolean hasSatellite();
-    /**
-     * <pre>
-     * 卫星完整配置，未找到时为空
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-     * @return The satellite.
-     */
-    tm.processing.v1.Tm.SatelliteInfo getSatellite();
-    /**
-     * <pre>
-     * 卫星完整配置，未找到时为空
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-     */
-    tm.processing.v1.Tm.SatelliteInfoOrBuilder getSatelliteOrBuilder();
-  }
-  /**
-   * Protobuf type {@code tm.processing.v1.GetSatelliteResponse}
-   */
-  public static final class GetSatelliteResponse extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.GetSatelliteResponse)
-      GetSatelliteResponseOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use GetSatelliteResponse.newBuilder() to construct.
-    private GetSatelliteResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private GetSatelliteResponse() {
-      message_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new GetSatelliteResponse();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private GetSatelliteResponse(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 8: {
-
-              code_ = input.readInt32();
-              break;
-            }
-            case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              message_ = s;
-              break;
-            }
-            case 26: {
-              tm.processing.v1.Tm.SatelliteInfo.Builder subBuilder = null;
-              if (satellite_ != null) {
-                subBuilder = satellite_.toBuilder();
-              }
-              satellite_ = input.readMessage(tm.processing.v1.Tm.SatelliteInfo.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(satellite_);
-                satellite_ = subBuilder.buildPartial();
-              }
-
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteResponse_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteResponse_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.GetSatelliteResponse.class, tm.processing.v1.Tm.GetSatelliteResponse.Builder.class);
-    }
-
-    public static final int CODE_FIELD_NUMBER = 1;
-    private int code_;
-    /**
-     * <code>int32 code = 1;</code>
-     * @return The code.
-     */
-    @java.lang.Override
-    public int getCode() {
-      return code_;
-    }
-
-    public static final int MESSAGE_FIELD_NUMBER = 2;
-    private volatile java.lang.Object message_;
-    /**
-     * <code>string message = 2;</code>
-     * @return The message.
-     */
-    @java.lang.Override
-    public java.lang.String getMessage() {
-      java.lang.Object ref = message_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        message_ = s;
-        return s;
-      }
-    }
-    /**
-     * <code>string message = 2;</code>
-     * @return The bytes for message.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getMessageBytes() {
-      java.lang.Object ref = message_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        message_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int SATELLITE_FIELD_NUMBER = 3;
-    private tm.processing.v1.Tm.SatelliteInfo satellite_;
-    /**
-     * <pre>
-     * 卫星完整配置，未找到时为空
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-     * @return Whether the satellite field is set.
-     */
-    @java.lang.Override
-    public boolean hasSatellite() {
-      return satellite_ != null;
-    }
-    /**
-     * <pre>
-     * 卫星完整配置，未找到时为空
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-     * @return The satellite.
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.SatelliteInfo getSatellite() {
-      return satellite_ == null ? tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance() : satellite_;
-    }
-    /**
-     * <pre>
-     * 卫星完整配置，未找到时为空
-     * </pre>
-     *
-     * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-     */
-    @java.lang.Override
-    public tm.processing.v1.Tm.SatelliteInfoOrBuilder getSatelliteOrBuilder() {
-      return getSatellite();
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (code_ != 0) {
-        output.writeInt32(1, code_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(message_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, message_);
-      }
-      if (satellite_ != null) {
-        output.writeMessage(3, getSatellite());
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (code_ != 0) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(1, code_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(message_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, message_);
-      }
-      if (satellite_ != null) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(3, getSatellite());
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.GetSatelliteResponse)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.GetSatelliteResponse other = (tm.processing.v1.Tm.GetSatelliteResponse) obj;
-
-      if (getCode()
-          != other.getCode()) return false;
-      if (!getMessage()
-          .equals(other.getMessage())) return false;
-      if (hasSatellite() != other.hasSatellite()) return false;
-      if (hasSatellite()) {
-        if (!getSatellite()
-            .equals(other.getSatellite())) return false;
-      }
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getCode();
-      hash = (37 * hash) + MESSAGE_FIELD_NUMBER;
-      hash = (53 * hash) + getMessage().hashCode();
-      if (hasSatellite()) {
-        hash = (37 * hash) + SATELLITE_FIELD_NUMBER;
-        hash = (53 * hash) + getSatellite().hashCode();
-      }
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.GetSatelliteResponse parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.GetSatelliteResponse prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code tm.processing.v1.GetSatelliteResponse}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.GetSatelliteResponse)
-        tm.processing.v1.Tm.GetSatelliteResponseOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteResponse_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteResponse_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.GetSatelliteResponse.class, tm.processing.v1.Tm.GetSatelliteResponse.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.GetSatelliteResponse.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        code_ = 0;
-
-        message_ = "";
-
-        if (satelliteBuilder_ == null) {
-          satellite_ = null;
-        } else {
-          satellite_ = null;
-          satelliteBuilder_ = null;
-        }
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_GetSatelliteResponse_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.GetSatelliteResponse getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.GetSatelliteResponse.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.GetSatelliteResponse build() {
-        tm.processing.v1.Tm.GetSatelliteResponse result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.GetSatelliteResponse buildPartial() {
-        tm.processing.v1.Tm.GetSatelliteResponse result = new tm.processing.v1.Tm.GetSatelliteResponse(this);
-        result.code_ = code_;
-        result.message_ = message_;
-        if (satelliteBuilder_ == null) {
-          result.satellite_ = satellite_;
-        } else {
-          result.satellite_ = satelliteBuilder_.build();
-        }
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.GetSatelliteResponse) {
-          return mergeFrom((tm.processing.v1.Tm.GetSatelliteResponse)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.GetSatelliteResponse other) {
-        if (other == tm.processing.v1.Tm.GetSatelliteResponse.getDefaultInstance()) return this;
-        if (other.getCode() != 0) {
-          setCode(other.getCode());
-        }
-        if (!other.getMessage().isEmpty()) {
-          message_ = other.message_;
-          onChanged();
-        }
-        if (other.hasSatellite()) {
-          mergeSatellite(other.getSatellite());
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.GetSatelliteResponse parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.GetSatelliteResponse) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-
-      private int code_ ;
-      /**
-       * <code>int32 code = 1;</code>
-       * @return The code.
-       */
-      @java.lang.Override
-      public int getCode() {
-        return code_;
-      }
-      /**
-       * <code>int32 code = 1;</code>
-       * @param value The code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCode(int value) {
-        
-        code_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>int32 code = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearCode() {
-        
-        code_ = 0;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object message_ = "";
-      /**
-       * <code>string message = 2;</code>
-       * @return The message.
-       */
-      public java.lang.String getMessage() {
-        java.lang.Object ref = message_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          message_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <code>string message = 2;</code>
-       * @return The bytes for message.
-       */
-      public com.google.protobuf.ByteString
-          getMessageBytes() {
-        java.lang.Object ref = message_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          message_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>string message = 2;</code>
-       * @param value The message to set.
-       * @return This builder for chaining.
-       */
-      public Builder setMessage(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        message_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string message = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearMessage() {
-        
-        message_ = getDefaultInstance().getMessage();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>string message = 2;</code>
-       * @param value The bytes for message to set.
-       * @return This builder for chaining.
-       */
-      public Builder setMessageBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        message_ = value;
-        onChanged();
-        return this;
-      }
-
-      private tm.processing.v1.Tm.SatelliteInfo satellite_;
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder> satelliteBuilder_;
-      /**
-       * <pre>
-       * 卫星完整配置，未找到时为空
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-       * @return Whether the satellite field is set.
-       */
-      public boolean hasSatellite() {
-        return satelliteBuilder_ != null || satellite_ != null;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置，未找到时为空
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-       * @return The satellite.
-       */
-      public tm.processing.v1.Tm.SatelliteInfo getSatellite() {
-        if (satelliteBuilder_ == null) {
-          return satellite_ == null ? tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance() : satellite_;
-        } else {
-          return satelliteBuilder_.getMessage();
-        }
-      }
-      /**
-       * <pre>
-       * 卫星完整配置，未找到时为空
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-       */
-      public Builder setSatellite(tm.processing.v1.Tm.SatelliteInfo value) {
-        if (satelliteBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          satellite_ = value;
-          onChanged();
-        } else {
-          satelliteBuilder_.setMessage(value);
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置，未找到时为空
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-       */
-      public Builder setSatellite(
-          tm.processing.v1.Tm.SatelliteInfo.Builder builderForValue) {
-        if (satelliteBuilder_ == null) {
-          satellite_ = builderForValue.build();
-          onChanged();
-        } else {
-          satelliteBuilder_.setMessage(builderForValue.build());
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置，未找到时为空
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-       */
-      public Builder mergeSatellite(tm.processing.v1.Tm.SatelliteInfo value) {
-        if (satelliteBuilder_ == null) {
-          if (satellite_ != null) {
-            satellite_ =
-              tm.processing.v1.Tm.SatelliteInfo.newBuilder(satellite_).mergeFrom(value).buildPartial();
-          } else {
-            satellite_ = value;
-          }
-          onChanged();
-        } else {
-          satelliteBuilder_.mergeFrom(value);
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置，未找到时为空
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-       */
-      public Builder clearSatellite() {
-        if (satelliteBuilder_ == null) {
-          satellite_ = null;
-          onChanged();
-        } else {
-          satellite_ = null;
-          satelliteBuilder_ = null;
-        }
-
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星完整配置，未找到时为空
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfo.Builder getSatelliteBuilder() {
-        
-        onChanged();
-        return getSatelliteFieldBuilder().getBuilder();
-      }
-      /**
-       * <pre>
-       * 卫星完整配置，未找到时为空
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-       */
-      public tm.processing.v1.Tm.SatelliteInfoOrBuilder getSatelliteOrBuilder() {
-        if (satelliteBuilder_ != null) {
-          return satelliteBuilder_.getMessageOrBuilder();
-        } else {
-          return satellite_ == null ?
-              tm.processing.v1.Tm.SatelliteInfo.getDefaultInstance() : satellite_;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星完整配置，未找到时为空
-       * </pre>
-       *
-       * <code>.tm.processing.v1.SatelliteInfo satellite = 3;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder> 
-          getSatelliteFieldBuilder() {
-        if (satelliteBuilder_ == null) {
-          satelliteBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              tm.processing.v1.Tm.SatelliteInfo, tm.processing.v1.Tm.SatelliteInfo.Builder, tm.processing.v1.Tm.SatelliteInfoOrBuilder>(
-                  getSatellite(),
-                  getParentForChildren(),
-                  isClean());
-          satellite_ = null;
-        }
-        return satelliteBuilder_;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.GetSatelliteResponse)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.GetSatelliteResponse)
-    private static final tm.processing.v1.Tm.GetSatelliteResponse DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.GetSatelliteResponse();
-    }
-
-    public static tm.processing.v1.Tm.GetSatelliteResponse getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<GetSatelliteResponse>
-        PARSER = new com.google.protobuf.AbstractParser<GetSatelliteResponse>() {
-      @java.lang.Override
-      public GetSatelliteResponse parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new GetSatelliteResponse(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<GetSatelliteResponse> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<GetSatelliteResponse> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.GetSatelliteResponse getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface DeleteSatelliteRequestOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.DeleteSatelliteRequest)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The code.
-     */
-    java.lang.String getCode();
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
-     */
-    com.google.protobuf.ByteString
-        getCodeBytes();
-  }
-  /**
-   * Protobuf type {@code tm.processing.v1.DeleteSatelliteRequest}
-   */
-  public static final class DeleteSatelliteRequest extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.DeleteSatelliteRequest)
-      DeleteSatelliteRequestOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use DeleteSatelliteRequest.newBuilder() to construct.
-    private DeleteSatelliteRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private DeleteSatelliteRequest() {
-      code_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new DeleteSatelliteRequest();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private DeleteSatelliteRequest(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              code_ = s;
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_DeleteSatelliteRequest_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_DeleteSatelliteRequest_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.DeleteSatelliteRequest.class, tm.processing.v1.Tm.DeleteSatelliteRequest.Builder.class);
-    }
-
-    public static final int CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object code_;
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The code.
-     */
-    @java.lang.Override
-    public java.lang.String getCode() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        code_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getCodeBytes() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        code_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, code_);
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, code_);
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.DeleteSatelliteRequest)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.DeleteSatelliteRequest other = (tm.processing.v1.Tm.DeleteSatelliteRequest) obj;
-
-      if (!getCode()
-          .equals(other.getCode())) return false;
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getCode().hashCode();
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.DeleteSatelliteRequest prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code tm.processing.v1.DeleteSatelliteRequest}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.DeleteSatelliteRequest)
-        tm.processing.v1.Tm.DeleteSatelliteRequestOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_DeleteSatelliteRequest_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_DeleteSatelliteRequest_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.DeleteSatelliteRequest.class, tm.processing.v1.Tm.DeleteSatelliteRequest.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.DeleteSatelliteRequest.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        code_ = "";
-
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_DeleteSatelliteRequest_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.DeleteSatelliteRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.DeleteSatelliteRequest.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.DeleteSatelliteRequest build() {
-        tm.processing.v1.Tm.DeleteSatelliteRequest result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.DeleteSatelliteRequest buildPartial() {
-        tm.processing.v1.Tm.DeleteSatelliteRequest result = new tm.processing.v1.Tm.DeleteSatelliteRequest(this);
-        result.code_ = code_;
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.DeleteSatelliteRequest) {
-          return mergeFrom((tm.processing.v1.Tm.DeleteSatelliteRequest)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.DeleteSatelliteRequest other) {
-        if (other == tm.processing.v1.Tm.DeleteSatelliteRequest.getDefaultInstance()) return this;
-        if (!other.getCode().isEmpty()) {
-          code_ = other.code_;
-          onChanged();
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.DeleteSatelliteRequest parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.DeleteSatelliteRequest) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-
-      private java.lang.Object code_ = "";
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @return The code.
-       */
-      public java.lang.String getCode() {
-        java.lang.Object ref = code_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          code_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @return The bytes for code.
-       */
-      public com.google.protobuf.ByteString
-          getCodeBytes() {
-        java.lang.Object ref = code_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          code_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @param value The code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCode(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        code_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearCode() {
-        
-        code_ = getDefaultInstance().getCode();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string code = 1;</code>
-       * @param value The bytes for code to set.
-       * @return This builder for chaining.
-       */
-      public Builder setCodeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        code_ = value;
-        onChanged();
-        return this;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.DeleteSatelliteRequest)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.DeleteSatelliteRequest)
-    private static final tm.processing.v1.Tm.DeleteSatelliteRequest DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.DeleteSatelliteRequest();
-    }
-
-    public static tm.processing.v1.Tm.DeleteSatelliteRequest getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<DeleteSatelliteRequest>
-        PARSER = new com.google.protobuf.AbstractParser<DeleteSatelliteRequest>() {
-      @java.lang.Override
-      public DeleteSatelliteRequest parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new DeleteSatelliteRequest(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<DeleteSatelliteRequest> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<DeleteSatelliteRequest> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.DeleteSatelliteRequest getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface SetEnabledRequestOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.SetEnabledRequest)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string code = 1;</code>
-     * @return The code.
-     */
-    java.lang.String getCode();
+    String getCode();
     /**
      * <pre>
      * 卫星代号
@@ -11402,40 +3023,40 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     boolean getEnable();
   }
   /**
-   * Protobuf type {@code tm.processing.v1.SetEnabledRequest}
+   * Protobuf type {@code tm.processing.v1.SetSatEnabledRequest}
    */
-  public static final class SetEnabledRequest extends
+  public static final class SetSatEnabledRequest extends
       com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.SetEnabledRequest)
-      SetEnabledRequestOrBuilder {
+      // @@protoc_insertion_point(message_implements:tm.processing.v1.SetSatEnabledRequest)
+      SetSatEnabledRequestOrBuilder {
   private static final long serialVersionUID = 0L;
-    // Use SetEnabledRequest.newBuilder() to construct.
-    private SetEnabledRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+    // Use SetSatEnabledRequest.newBuilder() to construct.
+    private SetSatEnabledRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
-    private SetEnabledRequest() {
+    private SetSatEnabledRequest() {
       code_ = "";
     }
 
-    @java.lang.Override
+    @Override
     @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
+    protected Object newInstance(
         UnusedPrivateParameter unused) {
-      return new SetEnabledRequest();
+      return new SetSatEnabledRequest();
     }
 
-    @java.lang.Override
+    @Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
       return this.unknownFields;
     }
-    private SetEnabledRequest(
+    private SetSatEnabledRequest(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
+        throw new NullPointerException();
       }
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -11448,7 +3069,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
               done = true;
               break;
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
               code_ = s;
               break;
@@ -11481,19 +3102,19 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetEnabledRequest_descriptor;
+      return Tm.internal_static_tm_processing_v1_SetSatEnabledRequest_descriptor;
     }
 
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+    @Override
+    protected FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetEnabledRequest_fieldAccessorTable
+      return Tm.internal_static_tm_processing_v1_SetSatEnabledRequest_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.SetEnabledRequest.class, tm.processing.v1.Tm.SetEnabledRequest.Builder.class);
+              SetSatEnabledRequest.class, Builder.class);
     }
 
     public static final int CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object code_;
+    private volatile Object code_;
     /**
      * <pre>
      * 卫星代号
@@ -11502,15 +3123,15 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>string code = 1;</code>
      * @return The code.
      */
-    @java.lang.Override
-    public java.lang.String getCode() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getCode() {
+      Object ref = code_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
+        String s = bs.toStringUtf8();
         code_ = s;
         return s;
       }
@@ -11523,14 +3144,14 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>string code = 1;</code>
      * @return The bytes for code.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
         getCodeBytes() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
+      Object ref = code_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
+                (String) ref);
         code_ = b;
         return b;
       } else {
@@ -11544,13 +3165,13 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>bool enable = 2;</code>
      * @return The enable.
      */
-    @java.lang.Override
+    @Override
     public boolean getEnable() {
       return enable_;
     }
 
     private byte memoizedIsInitialized = -1;
-    @java.lang.Override
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -11560,7 +3181,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
@@ -11572,7 +3193,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       unknownFields.writeTo(output);
     }
 
-    @java.lang.Override
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
@@ -11590,15 +3211,15 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return size;
     }
 
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
+    @Override
+    public boolean equals(final Object obj) {
       if (obj == this) {
        return true;
       }
-      if (!(obj instanceof tm.processing.v1.Tm.SetEnabledRequest)) {
+      if (!(obj instanceof SetSatEnabledRequest)) {
         return super.equals(obj);
       }
-      tm.processing.v1.Tm.SetEnabledRequest other = (tm.processing.v1.Tm.SetEnabledRequest) obj;
+      SetSatEnabledRequest other = (SetSatEnabledRequest) obj;
 
       if (!getCode()
           .equals(other.getCode())) return false;
@@ -11608,7 +3229,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public int hashCode() {
       if (memoizedHashCode != 0) {
         return memoizedHashCode;
@@ -11625,69 +3246,69 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return hash;
     }
 
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(
+    public static SetSatEnabledRequest parseFrom(
         java.nio.ByteBuffer data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(
+    public static SetSatEnabledRequest parseFrom(
         java.nio.ByteBuffer data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(
+    public static SetSatEnabledRequest parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(
+    public static SetSatEnabledRequest parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(byte[] data)
+    public static SetSatEnabledRequest parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(
+    public static SetSatEnabledRequest parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(java.io.InputStream input)
+    public static SetSatEnabledRequest parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(
+    public static SetSatEnabledRequest parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseDelimitedFrom(java.io.InputStream input)
+    public static SetSatEnabledRequest parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseDelimitedFrom(
+    public static SetSatEnabledRequest parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(
+    public static SetSatEnabledRequest parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.SetEnabledRequest parseFrom(
+    public static SetSatEnabledRequest parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -11695,53 +3316,53 @@ tm.processing.v1.Tm.TmChannel defaultValue);
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    @java.lang.Override
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-    public static Builder newBuilder(tm.processing.v1.Tm.SetEnabledRequest prototype) {
+    public static Builder newBuilder(SetSatEnabledRequest prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
-    @java.lang.Override
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
     }
 
-    @java.lang.Override
+    @Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
     /**
-     * Protobuf type {@code tm.processing.v1.SetEnabledRequest}
+     * Protobuf type {@code tm.processing.v1.SetSatEnabledRequest}
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.SetEnabledRequest)
-        tm.processing.v1.Tm.SetEnabledRequestOrBuilder {
+        // @@protoc_insertion_point(builder_implements:tm.processing.v1.SetSatEnabledRequest)
+        SetSatEnabledRequestOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetEnabledRequest_descriptor;
+        return Tm.internal_static_tm_processing_v1_SetSatEnabledRequest_descriptor;
       }
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      @Override
+      protected FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetEnabledRequest_fieldAccessorTable
+        return Tm.internal_static_tm_processing_v1_SetSatEnabledRequest_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.SetEnabledRequest.class, tm.processing.v1.Tm.SetEnabledRequest.Builder.class);
+                SetSatEnabledRequest.class, Builder.class);
       }
 
-      // Construct using tm.processing.v1.Tm.SetEnabledRequest.newBuilder()
+      // Construct using tm.processing.v1.Tm.SetSatEnabledRequest.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+          BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
@@ -11750,7 +3371,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
                 .alwaysUseFieldBuilders) {
         }
       }
-      @java.lang.Override
+      @Override
       public Builder clear() {
         super.clear();
         code_ = "";
@@ -11760,79 +3381,79 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetEnabledRequest_descriptor;
+        return Tm.internal_static_tm_processing_v1_SetSatEnabledRequest_descriptor;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetEnabledRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.SetEnabledRequest.getDefaultInstance();
+      @Override
+      public SetSatEnabledRequest getDefaultInstanceForType() {
+        return SetSatEnabledRequest.getDefaultInstance();
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetEnabledRequest build() {
-        tm.processing.v1.Tm.SetEnabledRequest result = buildPartial();
+      @Override
+      public SetSatEnabledRequest build() {
+        SetSatEnabledRequest result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetEnabledRequest buildPartial() {
-        tm.processing.v1.Tm.SetEnabledRequest result = new tm.processing.v1.Tm.SetEnabledRequest(this);
+      @Override
+      public SetSatEnabledRequest buildPartial() {
+        SetSatEnabledRequest result = new SetSatEnabledRequest(this);
         result.code_ = code_;
         result.enable_ = enable_;
         onBuilt();
         return result;
       }
 
-      @java.lang.Override
+      @Override
       public Builder clone() {
         return super.clone();
       }
-      @java.lang.Override
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.setField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
         return super.clearField(field);
       }
-      @java.lang.Override
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
         return super.clearOneof(oneof);
       }
-      @java.lang.Override
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return super.setRepeatedField(field, index, value);
       }
-      @java.lang.Override
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.addRepeatedField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.SetEnabledRequest) {
-          return mergeFrom((tm.processing.v1.Tm.SetEnabledRequest)other);
+        if (other instanceof SetSatEnabledRequest) {
+          return mergeFrom((SetSatEnabledRequest)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(tm.processing.v1.Tm.SetEnabledRequest other) {
-        if (other == tm.processing.v1.Tm.SetEnabledRequest.getDefaultInstance()) return this;
+      public Builder mergeFrom(SetSatEnabledRequest other) {
+        if (other == SetSatEnabledRequest.getDefaultInstance()) return this;
         if (!other.getCode().isEmpty()) {
           code_ = other.code_;
           onChanged();
@@ -11845,21 +3466,21 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public final boolean isInitialized() {
         return true;
       }
 
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        tm.processing.v1.Tm.SetEnabledRequest parsedMessage = null;
+        SetSatEnabledRequest parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.SetEnabledRequest) e.getUnfinishedMessage();
+          parsedMessage = (SetSatEnabledRequest) e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
@@ -11869,7 +3490,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         return this;
       }
 
-      private java.lang.Object code_ = "";
+      private Object code_ = "";
       /**
        * <pre>
        * 卫星代号
@@ -11878,16 +3499,16 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * <code>string code = 1;</code>
        * @return The code.
        */
-      public java.lang.String getCode() {
-        java.lang.Object ref = code_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getCode() {
+        Object ref = code_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
+          String s = bs.toStringUtf8();
           code_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
@@ -11900,11 +3521,11 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        */
       public com.google.protobuf.ByteString
           getCodeBytes() {
-        java.lang.Object ref = code_;
+        Object ref = code_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
+                  (String) ref);
           code_ = b;
           return b;
         } else {
@@ -11921,7 +3542,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * @return This builder for chaining.
        */
       public Builder setCode(
-          java.lang.String value) {
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -11970,7 +3591,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * <code>bool enable = 2;</code>
        * @return The enable.
        */
-      @java.lang.Override
+      @Override
       public boolean getEnable() {
         return enable_;
       }
@@ -11995,1800 +3616,54 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         onChanged();
         return this;
       }
-      @java.lang.Override
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
-      @java.lang.Override
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
       }
 
 
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.SetEnabledRequest)
+      // @@protoc_insertion_point(builder_scope:tm.processing.v1.SetSatEnabledRequest)
     }
 
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.SetEnabledRequest)
-    private static final tm.processing.v1.Tm.SetEnabledRequest DEFAULT_INSTANCE;
+    // @@protoc_insertion_point(class_scope:tm.processing.v1.SetSatEnabledRequest)
+    private static final SetSatEnabledRequest DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.SetEnabledRequest();
+      DEFAULT_INSTANCE = new SetSatEnabledRequest();
     }
 
-    public static tm.processing.v1.Tm.SetEnabledRequest getDefaultInstance() {
+    public static SetSatEnabledRequest getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<SetEnabledRequest>
-        PARSER = new com.google.protobuf.AbstractParser<SetEnabledRequest>() {
-      @java.lang.Override
-      public SetEnabledRequest parsePartialFrom(
+    private static final com.google.protobuf.Parser<SetSatEnabledRequest>
+        PARSER = new com.google.protobuf.AbstractParser<SetSatEnabledRequest>() {
+      @Override
+      public SetSatEnabledRequest parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new SetEnabledRequest(input, extensionRegistry);
+        return new SetSatEnabledRequest(input, extensionRegistry);
       }
     };
 
-    public static com.google.protobuf.Parser<SetEnabledRequest> parser() {
+    public static com.google.protobuf.Parser<SetSatEnabledRequest> parser() {
       return PARSER;
     }
 
-    @java.lang.Override
-    public com.google.protobuf.Parser<SetEnabledRequest> getParserForType() {
+    @Override
+    public com.google.protobuf.Parser<SetSatEnabledRequest> getParserForType() {
       return PARSER;
     }
 
-    @java.lang.Override
-    public tm.processing.v1.Tm.SetEnabledRequest getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface SetChannelEnabledRequestOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.SetChannelEnabledRequest)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string sat_code = 1;</code>
-     * @return The satCode.
-     */
-    java.lang.String getSatCode();
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string sat_code = 1;</code>
-     * @return The bytes for satCode.
-     */
-    com.google.protobuf.ByteString
-        getSatCodeBytes();
-
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 2;</code>
-     * @return The channelId.
-     */
-    java.lang.String getChannelId();
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 2;</code>
-     * @return The bytes for channelId.
-     */
-    com.google.protobuf.ByteString
-        getChannelIdBytes();
-
-    /**
-     * <code>bool enable = 3;</code>
-     * @return The enable.
-     */
-    boolean getEnable();
-  }
-  /**
-   * Protobuf type {@code tm.processing.v1.SetChannelEnabledRequest}
-   */
-  public static final class SetChannelEnabledRequest extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.SetChannelEnabledRequest)
-      SetChannelEnabledRequestOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use SetChannelEnabledRequest.newBuilder() to construct.
-    private SetChannelEnabledRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private SetChannelEnabledRequest() {
-      satCode_ = "";
-      channelId_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new SetChannelEnabledRequest();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private SetChannelEnabledRequest(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              satCode_ = s;
-              break;
-            }
-            case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              channelId_ = s;
-              break;
-            }
-            case 24: {
-
-              enable_ = input.readBool();
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelEnabledRequest_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelEnabledRequest_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.SetChannelEnabledRequest.class, tm.processing.v1.Tm.SetChannelEnabledRequest.Builder.class);
-    }
-
-    public static final int SAT_CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object satCode_;
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string sat_code = 1;</code>
-     * @return The satCode.
-     */
-    @java.lang.Override
-    public java.lang.String getSatCode() {
-      java.lang.Object ref = satCode_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        satCode_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string sat_code = 1;</code>
-     * @return The bytes for satCode.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getSatCodeBytes() {
-      java.lang.Object ref = satCode_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        satCode_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int CHANNEL_ID_FIELD_NUMBER = 2;
-    private volatile java.lang.Object channelId_;
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 2;</code>
-     * @return The channelId.
-     */
-    @java.lang.Override
-    public java.lang.String getChannelId() {
-      java.lang.Object ref = channelId_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        channelId_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 2;</code>
-     * @return The bytes for channelId.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getChannelIdBytes() {
-      java.lang.Object ref = channelId_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        channelId_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int ENABLE_FIELD_NUMBER = 3;
-    private boolean enable_;
-    /**
-     * <code>bool enable = 3;</code>
-     * @return The enable.
-     */
-    @java.lang.Override
-    public boolean getEnable() {
-      return enable_;
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, satCode_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(channelId_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, channelId_);
-      }
-      if (enable_ != false) {
-        output.writeBool(3, enable_);
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, satCode_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(channelId_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, channelId_);
-      }
-      if (enable_ != false) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(3, enable_);
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.SetChannelEnabledRequest)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.SetChannelEnabledRequest other = (tm.processing.v1.Tm.SetChannelEnabledRequest) obj;
-
-      if (!getSatCode()
-          .equals(other.getSatCode())) return false;
-      if (!getChannelId()
-          .equals(other.getChannelId())) return false;
-      if (getEnable()
-          != other.getEnable()) return false;
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + SAT_CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getSatCode().hashCode();
-      hash = (37 * hash) + CHANNEL_ID_FIELD_NUMBER;
-      hash = (53 * hash) + getChannelId().hashCode();
-      hash = (37 * hash) + ENABLE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-          getEnable());
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.SetChannelEnabledRequest prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code tm.processing.v1.SetChannelEnabledRequest}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.SetChannelEnabledRequest)
-        tm.processing.v1.Tm.SetChannelEnabledRequestOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelEnabledRequest_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelEnabledRequest_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.SetChannelEnabledRequest.class, tm.processing.v1.Tm.SetChannelEnabledRequest.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.SetChannelEnabledRequest.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        satCode_ = "";
-
-        channelId_ = "";
-
-        enable_ = false;
-
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelEnabledRequest_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetChannelEnabledRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.SetChannelEnabledRequest.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetChannelEnabledRequest build() {
-        tm.processing.v1.Tm.SetChannelEnabledRequest result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetChannelEnabledRequest buildPartial() {
-        tm.processing.v1.Tm.SetChannelEnabledRequest result = new tm.processing.v1.Tm.SetChannelEnabledRequest(this);
-        result.satCode_ = satCode_;
-        result.channelId_ = channelId_;
-        result.enable_ = enable_;
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.SetChannelEnabledRequest) {
-          return mergeFrom((tm.processing.v1.Tm.SetChannelEnabledRequest)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.SetChannelEnabledRequest other) {
-        if (other == tm.processing.v1.Tm.SetChannelEnabledRequest.getDefaultInstance()) return this;
-        if (!other.getSatCode().isEmpty()) {
-          satCode_ = other.satCode_;
-          onChanged();
-        }
-        if (!other.getChannelId().isEmpty()) {
-          channelId_ = other.channelId_;
-          onChanged();
-        }
-        if (other.getEnable() != false) {
-          setEnable(other.getEnable());
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.SetChannelEnabledRequest parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.SetChannelEnabledRequest) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-
-      private java.lang.Object satCode_ = "";
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @return The satCode.
-       */
-      public java.lang.String getSatCode() {
-        java.lang.Object ref = satCode_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          satCode_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @return The bytes for satCode.
-       */
-      public com.google.protobuf.ByteString
-          getSatCodeBytes() {
-        java.lang.Object ref = satCode_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          satCode_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @param value The satCode to set.
-       * @return This builder for chaining.
-       */
-      public Builder setSatCode(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        satCode_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearSatCode() {
-        
-        satCode_ = getDefaultInstance().getSatCode();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @param value The bytes for satCode to set.
-       * @return This builder for chaining.
-       */
-      public Builder setSatCodeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        satCode_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object channelId_ = "";
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @return The channelId.
-       */
-      public java.lang.String getChannelId() {
-        java.lang.Object ref = channelId_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          channelId_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @return The bytes for channelId.
-       */
-      public com.google.protobuf.ByteString
-          getChannelIdBytes() {
-        java.lang.Object ref = channelId_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          channelId_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @param value The channelId to set.
-       * @return This builder for chaining.
-       */
-      public Builder setChannelId(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        channelId_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearChannelId() {
-        
-        channelId_ = getDefaultInstance().getChannelId();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @param value The bytes for channelId to set.
-       * @return This builder for chaining.
-       */
-      public Builder setChannelIdBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        channelId_ = value;
-        onChanged();
-        return this;
-      }
-
-      private boolean enable_ ;
-      /**
-       * <code>bool enable = 3;</code>
-       * @return The enable.
-       */
-      @java.lang.Override
-      public boolean getEnable() {
-        return enable_;
-      }
-      /**
-       * <code>bool enable = 3;</code>
-       * @param value The enable to set.
-       * @return This builder for chaining.
-       */
-      public Builder setEnable(boolean value) {
-        
-        enable_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>bool enable = 3;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearEnable() {
-        
-        enable_ = false;
-        onChanged();
-        return this;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.SetChannelEnabledRequest)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.SetChannelEnabledRequest)
-    private static final tm.processing.v1.Tm.SetChannelEnabledRequest DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.SetChannelEnabledRequest();
-    }
-
-    public static tm.processing.v1.Tm.SetChannelEnabledRequest getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<SetChannelEnabledRequest>
-        PARSER = new com.google.protobuf.AbstractParser<SetChannelEnabledRequest>() {
-      @java.lang.Override
-      public SetChannelEnabledRequest parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new SetChannelEnabledRequest(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<SetChannelEnabledRequest> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<SetChannelEnabledRequest> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.SetChannelEnabledRequest getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface SetChannelDescrambleRequestOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.SetChannelDescrambleRequest)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string sat_code = 1;</code>
-     * @return The satCode.
-     */
-    java.lang.String getSatCode();
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string sat_code = 1;</code>
-     * @return The bytes for satCode.
-     */
-    com.google.protobuf.ByteString
-        getSatCodeBytes();
-
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 2;</code>
-     * @return The channelId.
-     */
-    java.lang.String getChannelId();
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 2;</code>
-     * @return The bytes for channelId.
-     */
-    com.google.protobuf.ByteString
-        getChannelIdBytes();
-
-    /**
-     * <pre>
-     * 该通道数据是否需要解扰
-     * </pre>
-     *
-     * <code>bool to_descramble = 3;</code>
-     * @return The toDescramble.
-     */
-    boolean getToDescramble();
-  }
-  /**
-   * Protobuf type {@code tm.processing.v1.SetChannelDescrambleRequest}
-   */
-  public static final class SetChannelDescrambleRequest extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.SetChannelDescrambleRequest)
-      SetChannelDescrambleRequestOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use SetChannelDescrambleRequest.newBuilder() to construct.
-    private SetChannelDescrambleRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private SetChannelDescrambleRequest() {
-      satCode_ = "";
-      channelId_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new SetChannelDescrambleRequest();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private SetChannelDescrambleRequest(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              satCode_ = s;
-              break;
-            }
-            case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              channelId_ = s;
-              break;
-            }
-            case 24: {
-
-              toDescramble_ = input.readBool();
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelDescrambleRequest_descriptor;
-    }
-
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelDescrambleRequest_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.SetChannelDescrambleRequest.class, tm.processing.v1.Tm.SetChannelDescrambleRequest.Builder.class);
-    }
-
-    public static final int SAT_CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object satCode_;
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string sat_code = 1;</code>
-     * @return The satCode.
-     */
-    @java.lang.Override
-    public java.lang.String getSatCode() {
-      java.lang.Object ref = satCode_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        satCode_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 卫星代号
-     * </pre>
-     *
-     * <code>string sat_code = 1;</code>
-     * @return The bytes for satCode.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getSatCodeBytes() {
-      java.lang.Object ref = satCode_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        satCode_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int CHANNEL_ID_FIELD_NUMBER = 2;
-    private volatile java.lang.Object channelId_;
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 2;</code>
-     * @return The channelId.
-     */
-    @java.lang.Override
-    public java.lang.String getChannelId() {
-      java.lang.Object ref = channelId_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        channelId_ = s;
-        return s;
-      }
-    }
-    /**
-     * <pre>
-     * 通道代号（十六进制），如 "12"
-     * </pre>
-     *
-     * <code>string channel_id = 2;</code>
-     * @return The bytes for channelId.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getChannelIdBytes() {
-      java.lang.Object ref = channelId_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        channelId_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int TO_DESCRAMBLE_FIELD_NUMBER = 3;
-    private boolean toDescramble_;
-    /**
-     * <pre>
-     * 该通道数据是否需要解扰
-     * </pre>
-     *
-     * <code>bool to_descramble = 3;</code>
-     * @return The toDescramble.
-     */
-    @java.lang.Override
-    public boolean getToDescramble() {
-      return toDescramble_;
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, satCode_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(channelId_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, channelId_);
-      }
-      if (toDescramble_ != false) {
-        output.writeBool(3, toDescramble_);
-      }
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, satCode_);
-      }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(channelId_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, channelId_);
-      }
-      if (toDescramble_ != false) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(3, toDescramble_);
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.SetChannelDescrambleRequest)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.SetChannelDescrambleRequest other = (tm.processing.v1.Tm.SetChannelDescrambleRequest) obj;
-
-      if (!getSatCode()
-          .equals(other.getSatCode())) return false;
-      if (!getChannelId()
-          .equals(other.getChannelId())) return false;
-      if (getToDescramble()
-          != other.getToDescramble()) return false;
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + SAT_CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getSatCode().hashCode();
-      hash = (37 * hash) + CHANNEL_ID_FIELD_NUMBER;
-      hash = (53 * hash) + getChannelId().hashCode();
-      hash = (37 * hash) + TO_DESCRAMBLE_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
-          getToDescramble());
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.SetChannelDescrambleRequest prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code tm.processing.v1.SetChannelDescrambleRequest}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.SetChannelDescrambleRequest)
-        tm.processing.v1.Tm.SetChannelDescrambleRequestOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelDescrambleRequest_descriptor;
-      }
-
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelDescrambleRequest_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.SetChannelDescrambleRequest.class, tm.processing.v1.Tm.SetChannelDescrambleRequest.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.SetChannelDescrambleRequest.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        satCode_ = "";
-
-        channelId_ = "";
-
-        toDescramble_ = false;
-
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetChannelDescrambleRequest_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetChannelDescrambleRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.SetChannelDescrambleRequest.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetChannelDescrambleRequest build() {
-        tm.processing.v1.Tm.SetChannelDescrambleRequest result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetChannelDescrambleRequest buildPartial() {
-        tm.processing.v1.Tm.SetChannelDescrambleRequest result = new tm.processing.v1.Tm.SetChannelDescrambleRequest(this);
-        result.satCode_ = satCode_;
-        result.channelId_ = channelId_;
-        result.toDescramble_ = toDescramble_;
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.SetChannelDescrambleRequest) {
-          return mergeFrom((tm.processing.v1.Tm.SetChannelDescrambleRequest)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.SetChannelDescrambleRequest other) {
-        if (other == tm.processing.v1.Tm.SetChannelDescrambleRequest.getDefaultInstance()) return this;
-        if (!other.getSatCode().isEmpty()) {
-          satCode_ = other.satCode_;
-          onChanged();
-        }
-        if (!other.getChannelId().isEmpty()) {
-          channelId_ = other.channelId_;
-          onChanged();
-        }
-        if (other.getToDescramble() != false) {
-          setToDescramble(other.getToDescramble());
-        }
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.SetChannelDescrambleRequest parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.SetChannelDescrambleRequest) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-
-      private java.lang.Object satCode_ = "";
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @return The satCode.
-       */
-      public java.lang.String getSatCode() {
-        java.lang.Object ref = satCode_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          satCode_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @return The bytes for satCode.
-       */
-      public com.google.protobuf.ByteString
-          getSatCodeBytes() {
-        java.lang.Object ref = satCode_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          satCode_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @param value The satCode to set.
-       * @return This builder for chaining.
-       */
-      public Builder setSatCode(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        satCode_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearSatCode() {
-        
-        satCode_ = getDefaultInstance().getSatCode();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 卫星代号
-       * </pre>
-       *
-       * <code>string sat_code = 1;</code>
-       * @param value The bytes for satCode to set.
-       * @return This builder for chaining.
-       */
-      public Builder setSatCodeBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        satCode_ = value;
-        onChanged();
-        return this;
-      }
-
-      private java.lang.Object channelId_ = "";
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @return The channelId.
-       */
-      public java.lang.String getChannelId() {
-        java.lang.Object ref = channelId_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          channelId_ = s;
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @return The bytes for channelId.
-       */
-      public com.google.protobuf.ByteString
-          getChannelIdBytes() {
-        java.lang.Object ref = channelId_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          channelId_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @param value The channelId to set.
-       * @return This builder for chaining.
-       */
-      public Builder setChannelId(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        channelId_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearChannelId() {
-        
-        channelId_ = getDefaultInstance().getChannelId();
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 通道代号（十六进制），如 "12"
-       * </pre>
-       *
-       * <code>string channel_id = 2;</code>
-       * @param value The bytes for channelId to set.
-       * @return This builder for chaining.
-       */
-      public Builder setChannelIdBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-        
-        channelId_ = value;
-        onChanged();
-        return this;
-      }
-
-      private boolean toDescramble_ ;
-      /**
-       * <pre>
-       * 该通道数据是否需要解扰
-       * </pre>
-       *
-       * <code>bool to_descramble = 3;</code>
-       * @return The toDescramble.
-       */
-      @java.lang.Override
-      public boolean getToDescramble() {
-        return toDescramble_;
-      }
-      /**
-       * <pre>
-       * 该通道数据是否需要解扰
-       * </pre>
-       *
-       * <code>bool to_descramble = 3;</code>
-       * @param value The toDescramble to set.
-       * @return This builder for chaining.
-       */
-      public Builder setToDescramble(boolean value) {
-        
-        toDescramble_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 该通道数据是否需要解扰
-       * </pre>
-       *
-       * <code>bool to_descramble = 3;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearToDescramble() {
-        
-        toDescramble_ = false;
-        onChanged();
-        return this;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.SetChannelDescrambleRequest)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.SetChannelDescrambleRequest)
-    private static final tm.processing.v1.Tm.SetChannelDescrambleRequest DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.SetChannelDescrambleRequest();
-    }
-
-    public static tm.processing.v1.Tm.SetChannelDescrambleRequest getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<SetChannelDescrambleRequest>
-        PARSER = new com.google.protobuf.AbstractParser<SetChannelDescrambleRequest>() {
-      @java.lang.Override
-      public SetChannelDescrambleRequest parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new SetChannelDescrambleRequest(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<SetChannelDescrambleRequest> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<SetChannelDescrambleRequest> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.SetChannelDescrambleRequest getDefaultInstanceForType() {
+    @Override
+    public SetSatEnabledRequest getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
@@ -13803,40 +3678,40 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * 卫星代号
      * </pre>
      *
-     * <code>string code = 1;</code>
-     * @return The code.
+     * <code>string sat_code = 1;</code>
+     * @return The satCode.
      */
-    java.lang.String getCode();
+    String getSatCode();
     /**
      * <pre>
      * 卫星代号
      * </pre>
      *
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
+     * <code>string sat_code = 1;</code>
+     * @return The bytes for satCode.
      */
     com.google.protobuf.ByteString
-        getCodeBytes();
+        getSatCodeBytes();
 
     /**
      * <pre>
-     * "A" 或 "B"
+     * 参数表地址
      * </pre>
      *
-     * <code>string table = 2;</code>
-     * @return The table.
+     * <code>string table_path = 2;</code>
+     * @return The tablePath.
      */
-    java.lang.String getTable();
+    String getTablePath();
     /**
      * <pre>
-     * "A" 或 "B"
+     * 参数表地址
      * </pre>
      *
-     * <code>string table = 2;</code>
-     * @return The bytes for table.
+     * <code>string table_path = 2;</code>
+     * @return The bytes for tablePath.
      */
     com.google.protobuf.ByteString
-        getTableBytes();
+        getTablePathBytes();
 
     /**
      * <pre>
@@ -13846,7 +3721,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>string file_name = 3;</code>
      * @return The fileName.
      */
-    java.lang.String getFileName();
+    String getFileName();
     /**
      * <pre>
      * 文件名
@@ -13857,16 +3732,6 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      */
     com.google.protobuf.ByteString
         getFileNameBytes();
-
-    /**
-     * <pre>
-     * 文件内容
-     * </pre>
-     *
-     * <code>bytes content = 4;</code>
-     * @return The content.
-     */
-    com.google.protobuf.ByteString getContent();
   }
   /**
    * Protobuf type {@code tm.processing.v1.UploadTableRequest}
@@ -13881,20 +3746,19 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       super(builder);
     }
     private UploadTableRequest() {
-      code_ = "";
-      table_ = "";
+      satCode_ = "";
+      tablePath_ = "";
       fileName_ = "";
-      content_ = com.google.protobuf.ByteString.EMPTY;
     }
 
-    @java.lang.Override
+    @Override
     @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
+    protected Object newInstance(
         UnusedPrivateParameter unused) {
       return new UploadTableRequest();
     }
 
-    @java.lang.Override
+    @Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
       return this.unknownFields;
@@ -13905,7 +3769,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
+        throw new NullPointerException();
       }
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -13918,26 +3782,21 @@ tm.processing.v1.Tm.TmChannel defaultValue);
               done = true;
               break;
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
-              code_ = s;
+              satCode_ = s;
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
-              table_ = s;
+              tablePath_ = s;
               break;
             }
             case 26: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
               fileName_ = s;
-              break;
-            }
-            case 34: {
-
-              content_ = input.readBytes();
               break;
             }
             default: {
@@ -13963,37 +3822,37 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_UploadTableRequest_descriptor;
+      return Tm.internal_static_tm_processing_v1_UploadTableRequest_descriptor;
     }
 
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+    @Override
+    protected FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_UploadTableRequest_fieldAccessorTable
+      return Tm.internal_static_tm_processing_v1_UploadTableRequest_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.UploadTableRequest.class, tm.processing.v1.Tm.UploadTableRequest.Builder.class);
+              UploadTableRequest.class, Builder.class);
     }
 
-    public static final int CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object code_;
+    public static final int SAT_CODE_FIELD_NUMBER = 1;
+    private volatile Object satCode_;
     /**
      * <pre>
      * 卫星代号
      * </pre>
      *
-     * <code>string code = 1;</code>
-     * @return The code.
+     * <code>string sat_code = 1;</code>
+     * @return The satCode.
      */
-    @java.lang.Override
-    public java.lang.String getCode() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getSatCode() {
+      Object ref = satCode_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        code_ = s;
+        String s = bs.toStringUtf8();
+        satCode_ = s;
         return s;
       }
     }
@@ -14002,64 +3861,64 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * 卫星代号
      * </pre>
      *
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
+     * <code>string sat_code = 1;</code>
+     * @return The bytes for satCode.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
-        getCodeBytes() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
+        getSatCodeBytes() {
+      Object ref = satCode_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        code_ = b;
+                (String) ref);
+        satCode_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
 
-    public static final int TABLE_FIELD_NUMBER = 2;
-    private volatile java.lang.Object table_;
+    public static final int TABLE_PATH_FIELD_NUMBER = 2;
+    private volatile Object tablePath_;
     /**
      * <pre>
-     * "A" 或 "B"
+     * 参数表地址
      * </pre>
      *
-     * <code>string table = 2;</code>
-     * @return The table.
+     * <code>string table_path = 2;</code>
+     * @return The tablePath.
      */
-    @java.lang.Override
-    public java.lang.String getTable() {
-      java.lang.Object ref = table_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getTablePath() {
+      Object ref = tablePath_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        table_ = s;
+        String s = bs.toStringUtf8();
+        tablePath_ = s;
         return s;
       }
     }
     /**
      * <pre>
-     * "A" 或 "B"
+     * 参数表地址
      * </pre>
      *
-     * <code>string table = 2;</code>
-     * @return The bytes for table.
+     * <code>string table_path = 2;</code>
+     * @return The bytes for tablePath.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
-        getTableBytes() {
-      java.lang.Object ref = table_;
-      if (ref instanceof java.lang.String) {
+        getTablePathBytes() {
+      Object ref = tablePath_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        table_ = b;
+                (String) ref);
+        tablePath_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
@@ -14067,7 +3926,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     }
 
     public static final int FILE_NAME_FIELD_NUMBER = 3;
-    private volatile java.lang.Object fileName_;
+    private volatile Object fileName_;
     /**
      * <pre>
      * 文件名
@@ -14076,15 +3935,15 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>string file_name = 3;</code>
      * @return The fileName.
      */
-    @java.lang.Override
-    public java.lang.String getFileName() {
-      java.lang.Object ref = fileName_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getFileName() {
+      Object ref = fileName_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
+        String s = bs.toStringUtf8();
         fileName_ = s;
         return s;
       }
@@ -14097,14 +3956,14 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>string file_name = 3;</code>
      * @return The bytes for fileName.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
         getFileNameBytes() {
-      java.lang.Object ref = fileName_;
-      if (ref instanceof java.lang.String) {
+      Object ref = fileName_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
+                (String) ref);
         fileName_ = b;
         return b;
       } else {
@@ -14112,23 +3971,8 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       }
     }
 
-    public static final int CONTENT_FIELD_NUMBER = 4;
-    private com.google.protobuf.ByteString content_;
-    /**
-     * <pre>
-     * 文件内容
-     * </pre>
-     *
-     * <code>bytes content = 4;</code>
-     * @return The content.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString getContent() {
-      return content_;
-    }
-
     private byte memoizedIsInitialized = -1;
-    @java.lang.Override
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -14138,153 +3982,142 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, code_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, satCode_);
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(table_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, table_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(tablePath_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, tablePath_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(fileName_)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, fileName_);
       }
-      if (!content_.isEmpty()) {
-        output.writeBytes(4, content_);
-      }
       unknownFields.writeTo(output);
     }
 
-    @java.lang.Override
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, code_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, satCode_);
       }
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(table_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, table_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(tablePath_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, tablePath_);
       }
       if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(fileName_)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, fileName_);
-      }
-      if (!content_.isEmpty()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(4, content_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
+    @Override
+    public boolean equals(final Object obj) {
       if (obj == this) {
        return true;
       }
-      if (!(obj instanceof tm.processing.v1.Tm.UploadTableRequest)) {
+      if (!(obj instanceof UploadTableRequest)) {
         return super.equals(obj);
       }
-      tm.processing.v1.Tm.UploadTableRequest other = (tm.processing.v1.Tm.UploadTableRequest) obj;
+      UploadTableRequest other = (UploadTableRequest) obj;
 
-      if (!getCode()
-          .equals(other.getCode())) return false;
-      if (!getTable()
-          .equals(other.getTable())) return false;
+      if (!getSatCode()
+          .equals(other.getSatCode())) return false;
+      if (!getTablePath()
+          .equals(other.getTablePath())) return false;
       if (!getFileName()
           .equals(other.getFileName())) return false;
-      if (!getContent()
-          .equals(other.getContent())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public int hashCode() {
       if (memoizedHashCode != 0) {
         return memoizedHashCode;
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getCode().hashCode();
-      hash = (37 * hash) + TABLE_FIELD_NUMBER;
-      hash = (53 * hash) + getTable().hashCode();
+      hash = (37 * hash) + SAT_CODE_FIELD_NUMBER;
+      hash = (53 * hash) + getSatCode().hashCode();
+      hash = (37 * hash) + TABLE_PATH_FIELD_NUMBER;
+      hash = (53 * hash) + getTablePath().hashCode();
       hash = (37 * hash) + FILE_NAME_FIELD_NUMBER;
       hash = (53 * hash) + getFileName().hashCode();
-      hash = (37 * hash) + CONTENT_FIELD_NUMBER;
-      hash = (53 * hash) + getContent().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
     }
 
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(
+    public static UploadTableRequest parseFrom(
         java.nio.ByteBuffer data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(
+    public static UploadTableRequest parseFrom(
         java.nio.ByteBuffer data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(
+    public static UploadTableRequest parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(
+    public static UploadTableRequest parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(byte[] data)
+    public static UploadTableRequest parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(
+    public static UploadTableRequest parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(java.io.InputStream input)
+    public static UploadTableRequest parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(
+    public static UploadTableRequest parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseDelimitedFrom(java.io.InputStream input)
+    public static UploadTableRequest parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseDelimitedFrom(
+    public static UploadTableRequest parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(
+    public static UploadTableRequest parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.UploadTableRequest parseFrom(
+    public static UploadTableRequest parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -14292,23 +4125,23 @@ tm.processing.v1.Tm.TmChannel defaultValue);
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    @java.lang.Override
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-    public static Builder newBuilder(tm.processing.v1.Tm.UploadTableRequest prototype) {
+    public static Builder newBuilder(UploadTableRequest prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
-    @java.lang.Override
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
     }
 
-    @java.lang.Override
+    @Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
@@ -14318,18 +4151,18 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
         // @@protoc_insertion_point(builder_implements:tm.processing.v1.UploadTableRequest)
-        tm.processing.v1.Tm.UploadTableRequestOrBuilder {
+        UploadTableRequestOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_UploadTableRequest_descriptor;
+        return Tm.internal_static_tm_processing_v1_UploadTableRequest_descriptor;
       }
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      @Override
+      protected FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_UploadTableRequest_fieldAccessorTable
+        return Tm.internal_static_tm_processing_v1_UploadTableRequest_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.UploadTableRequest.class, tm.processing.v1.Tm.UploadTableRequest.Builder.class);
+                UploadTableRequest.class, Builder.class);
       }
 
       // Construct using tm.processing.v1.Tm.UploadTableRequest.newBuilder()
@@ -14338,7 +4171,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+          BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
@@ -14347,130 +4180,124 @@ tm.processing.v1.Tm.TmChannel defaultValue);
                 .alwaysUseFieldBuilders) {
         }
       }
-      @java.lang.Override
+      @Override
       public Builder clear() {
         super.clear();
-        code_ = "";
+        satCode_ = "";
 
-        table_ = "";
+        tablePath_ = "";
 
         fileName_ = "";
-
-        content_ = com.google.protobuf.ByteString.EMPTY;
 
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_UploadTableRequest_descriptor;
+        return Tm.internal_static_tm_processing_v1_UploadTableRequest_descriptor;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.UploadTableRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.UploadTableRequest.getDefaultInstance();
+      @Override
+      public UploadTableRequest getDefaultInstanceForType() {
+        return UploadTableRequest.getDefaultInstance();
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.UploadTableRequest build() {
-        tm.processing.v1.Tm.UploadTableRequest result = buildPartial();
+      @Override
+      public UploadTableRequest build() {
+        UploadTableRequest result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.UploadTableRequest buildPartial() {
-        tm.processing.v1.Tm.UploadTableRequest result = new tm.processing.v1.Tm.UploadTableRequest(this);
-        result.code_ = code_;
-        result.table_ = table_;
+      @Override
+      public UploadTableRequest buildPartial() {
+        UploadTableRequest result = new UploadTableRequest(this);
+        result.satCode_ = satCode_;
+        result.tablePath_ = tablePath_;
         result.fileName_ = fileName_;
-        result.content_ = content_;
         onBuilt();
         return result;
       }
 
-      @java.lang.Override
+      @Override
       public Builder clone() {
         return super.clone();
       }
-      @java.lang.Override
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.setField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
         return super.clearField(field);
       }
-      @java.lang.Override
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
         return super.clearOneof(oneof);
       }
-      @java.lang.Override
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return super.setRepeatedField(field, index, value);
       }
-      @java.lang.Override
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.addRepeatedField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.UploadTableRequest) {
-          return mergeFrom((tm.processing.v1.Tm.UploadTableRequest)other);
+        if (other instanceof UploadTableRequest) {
+          return mergeFrom((UploadTableRequest)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(tm.processing.v1.Tm.UploadTableRequest other) {
-        if (other == tm.processing.v1.Tm.UploadTableRequest.getDefaultInstance()) return this;
-        if (!other.getCode().isEmpty()) {
-          code_ = other.code_;
+      public Builder mergeFrom(UploadTableRequest other) {
+        if (other == UploadTableRequest.getDefaultInstance()) return this;
+        if (!other.getSatCode().isEmpty()) {
+          satCode_ = other.satCode_;
           onChanged();
         }
-        if (!other.getTable().isEmpty()) {
-          table_ = other.table_;
+        if (!other.getTablePath().isEmpty()) {
+          tablePath_ = other.tablePath_;
           onChanged();
         }
         if (!other.getFileName().isEmpty()) {
           fileName_ = other.fileName_;
           onChanged();
         }
-        if (other.getContent() != com.google.protobuf.ByteString.EMPTY) {
-          setContent(other.getContent());
-        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public final boolean isInitialized() {
         return true;
       }
 
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        tm.processing.v1.Tm.UploadTableRequest parsedMessage = null;
+        UploadTableRequest parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.UploadTableRequest) e.getUnfinishedMessage();
+          parsedMessage = (UploadTableRequest) e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
@@ -14480,25 +4307,25 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         return this;
       }
 
-      private java.lang.Object code_ = "";
+      private Object satCode_ = "";
       /**
        * <pre>
        * 卫星代号
        * </pre>
        *
-       * <code>string code = 1;</code>
-       * @return The code.
+       * <code>string sat_code = 1;</code>
+       * @return The satCode.
        */
-      public java.lang.String getCode() {
-        java.lang.Object ref = code_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getSatCode() {
+        Object ref = satCode_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          code_ = s;
+          String s = bs.toStringUtf8();
+          satCode_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
@@ -14506,17 +4333,17 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * 卫星代号
        * </pre>
        *
-       * <code>string code = 1;</code>
-       * @return The bytes for code.
+       * <code>string sat_code = 1;</code>
+       * @return The bytes for satCode.
        */
       public com.google.protobuf.ByteString
-          getCodeBytes() {
-        java.lang.Object ref = code_;
+          getSatCodeBytes() {
+        Object ref = satCode_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          code_ = b;
+                  (String) ref);
+          satCode_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
@@ -14527,17 +4354,17 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * 卫星代号
        * </pre>
        *
-       * <code>string code = 1;</code>
-       * @param value The code to set.
+       * <code>string sat_code = 1;</code>
+       * @param value The satCode to set.
        * @return This builder for chaining.
        */
-      public Builder setCode(
-          java.lang.String value) {
+      public Builder setSatCode(
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   
-        code_ = value;
+        satCode_ = value;
         onChanged();
         return this;
       }
@@ -14546,12 +4373,12 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * 卫星代号
        * </pre>
        *
-       * <code>string code = 1;</code>
+       * <code>string sat_code = 1;</code>
        * @return This builder for chaining.
        */
-      public Builder clearCode() {
+      public Builder clearSatCode() {
         
-        code_ = getDefaultInstance().getCode();
+        satCode_ = getDefaultInstance().getSatCode();
         onChanged();
         return this;
       }
@@ -14560,59 +4387,59 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * 卫星代号
        * </pre>
        *
-       * <code>string code = 1;</code>
-       * @param value The bytes for code to set.
+       * <code>string sat_code = 1;</code>
+       * @param value The bytes for satCode to set.
        * @return This builder for chaining.
        */
-      public Builder setCodeBytes(
+      public Builder setSatCodeBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
         
-        code_ = value;
+        satCode_ = value;
         onChanged();
         return this;
       }
 
-      private java.lang.Object table_ = "";
+      private Object tablePath_ = "";
       /**
        * <pre>
-       * "A" 或 "B"
+       * 参数表地址
        * </pre>
        *
-       * <code>string table = 2;</code>
-       * @return The table.
+       * <code>string table_path = 2;</code>
+       * @return The tablePath.
        */
-      public java.lang.String getTable() {
-        java.lang.Object ref = table_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getTablePath() {
+        Object ref = tablePath_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          table_ = s;
+          String s = bs.toStringUtf8();
+          tablePath_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
        * <pre>
-       * "A" 或 "B"
+       * 参数表地址
        * </pre>
        *
-       * <code>string table = 2;</code>
-       * @return The bytes for table.
+       * <code>string table_path = 2;</code>
+       * @return The bytes for tablePath.
        */
       public com.google.protobuf.ByteString
-          getTableBytes() {
-        java.lang.Object ref = table_;
+          getTablePathBytes() {
+        Object ref = tablePath_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          table_ = b;
+                  (String) ref);
+          tablePath_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
@@ -14620,59 +4447,59 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       }
       /**
        * <pre>
-       * "A" 或 "B"
+       * 参数表地址
        * </pre>
        *
-       * <code>string table = 2;</code>
-       * @param value The table to set.
+       * <code>string table_path = 2;</code>
+       * @param value The tablePath to set.
        * @return This builder for chaining.
        */
-      public Builder setTable(
-          java.lang.String value) {
+      public Builder setTablePath(
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   
-        table_ = value;
+        tablePath_ = value;
         onChanged();
         return this;
       }
       /**
        * <pre>
-       * "A" 或 "B"
+       * 参数表地址
        * </pre>
        *
-       * <code>string table = 2;</code>
+       * <code>string table_path = 2;</code>
        * @return This builder for chaining.
        */
-      public Builder clearTable() {
+      public Builder clearTablePath() {
         
-        table_ = getDefaultInstance().getTable();
+        tablePath_ = getDefaultInstance().getTablePath();
         onChanged();
         return this;
       }
       /**
        * <pre>
-       * "A" 或 "B"
+       * 参数表地址
        * </pre>
        *
-       * <code>string table = 2;</code>
-       * @param value The bytes for table to set.
+       * <code>string table_path = 2;</code>
+       * @param value The bytes for tablePath to set.
        * @return This builder for chaining.
        */
-      public Builder setTableBytes(
+      public Builder setTablePathBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
         
-        table_ = value;
+        tablePath_ = value;
         onChanged();
         return this;
       }
 
-      private java.lang.Object fileName_ = "";
+      private Object fileName_ = "";
       /**
        * <pre>
        * 文件名
@@ -14681,16 +4508,16 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * <code>string file_name = 3;</code>
        * @return The fileName.
        */
-      public java.lang.String getFileName() {
-        java.lang.Object ref = fileName_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getFileName() {
+        Object ref = fileName_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
+          String s = bs.toStringUtf8();
           fileName_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
@@ -14703,11 +4530,11 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        */
       public com.google.protobuf.ByteString
           getFileNameBytes() {
-        java.lang.Object ref = fileName_;
+        Object ref = fileName_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
+                  (String) ref);
           fileName_ = b;
           return b;
         } else {
@@ -14724,7 +4551,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * @return This builder for chaining.
        */
       public Builder setFileName(
-          java.lang.String value) {
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -14767,59 +4594,13 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         onChanged();
         return this;
       }
-
-      private com.google.protobuf.ByteString content_ = com.google.protobuf.ByteString.EMPTY;
-      /**
-       * <pre>
-       * 文件内容
-       * </pre>
-       *
-       * <code>bytes content = 4;</code>
-       * @return The content.
-       */
-      @java.lang.Override
-      public com.google.protobuf.ByteString getContent() {
-        return content_;
-      }
-      /**
-       * <pre>
-       * 文件内容
-       * </pre>
-       *
-       * <code>bytes content = 4;</code>
-       * @param value The content to set.
-       * @return This builder for chaining.
-       */
-      public Builder setContent(com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  
-        content_ = value;
-        onChanged();
-        return this;
-      }
-      /**
-       * <pre>
-       * 文件内容
-       * </pre>
-       *
-       * <code>bytes content = 4;</code>
-       * @return This builder for chaining.
-       */
-      public Builder clearContent() {
-        
-        content_ = getDefaultInstance().getContent();
-        onChanged();
-        return this;
-      }
-      @java.lang.Override
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
-      @java.lang.Override
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -14830,18 +4611,18 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     }
 
     // @@protoc_insertion_point(class_scope:tm.processing.v1.UploadTableRequest)
-    private static final tm.processing.v1.Tm.UploadTableRequest DEFAULT_INSTANCE;
+    private static final UploadTableRequest DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.UploadTableRequest();
+      DEFAULT_INSTANCE = new UploadTableRequest();
     }
 
-    public static tm.processing.v1.Tm.UploadTableRequest getDefaultInstance() {
+    public static UploadTableRequest getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
     private static final com.google.protobuf.Parser<UploadTableRequest>
         PARSER = new com.google.protobuf.AbstractParser<UploadTableRequest>() {
-      @java.lang.Override
+      @Override
       public UploadTableRequest parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -14854,84 +4635,119 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return PARSER;
     }
 
-    @java.lang.Override
+    @Override
     public com.google.protobuf.Parser<UploadTableRequest> getParserForType() {
       return PARSER;
     }
 
-    @java.lang.Override
-    public tm.processing.v1.Tm.UploadTableRequest getDefaultInstanceForType() {
+    @Override
+    public UploadTableRequest getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
   }
 
-  public interface SetDescrambleRuleRequestOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.SetDescrambleRuleRequest)
+  public interface UploadJsonRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:tm.processing.v1.UploadJsonRequest)
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>string code = 1;</code>
-     * @return The code.
+     * <pre>
+     * 卫星代号
+     * </pre>
+     *
+     * <code>string sat_code = 1;</code>
+     * @return The satCode.
      */
-    java.lang.String getCode();
+    String getSatCode();
     /**
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
+     * <pre>
+     * 卫星代号
+     * </pre>
+     *
+     * <code>string sat_code = 1;</code>
+     * @return The bytes for satCode.
      */
     com.google.protobuf.ByteString
-        getCodeBytes();
+        getSatCodeBytes();
 
     /**
-     * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-     * @return Whether the rule field is set.
+     * <pre>
+     * 卫星名称
+     * </pre>
+     *
+     * <code>string sat_name = 2;</code>
+     * @return The satName.
      */
-    boolean hasRule();
+    String getSatName();
     /**
-     * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-     * @return The rule.
+     * <pre>
+     * 卫星名称
+     * </pre>
+     *
+     * <code>string sat_name = 2;</code>
+     * @return The bytes for satName.
      */
-    tm.processing.v1.Tm.DescrambleRule getRule();
+    com.google.protobuf.ByteString
+        getSatNameBytes();
+
     /**
-     * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
+     * <pre>
+     * json内容
+     * </pre>
+     *
+     * <code>string json_content = 3;</code>
+     * @return The jsonContent.
      */
-    tm.processing.v1.Tm.DescrambleRuleOrBuilder getRuleOrBuilder();
+    String getJsonContent();
+    /**
+     * <pre>
+     * json内容
+     * </pre>
+     *
+     * <code>string json_content = 3;</code>
+     * @return The bytes for jsonContent.
+     */
+    com.google.protobuf.ByteString
+        getJsonContentBytes();
   }
   /**
-   * Protobuf type {@code tm.processing.v1.SetDescrambleRuleRequest}
+   * Protobuf type {@code tm.processing.v1.UploadJsonRequest}
    */
-  public static final class SetDescrambleRuleRequest extends
+  public static final class UploadJsonRequest extends
       com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.SetDescrambleRuleRequest)
-      SetDescrambleRuleRequestOrBuilder {
+      // @@protoc_insertion_point(message_implements:tm.processing.v1.UploadJsonRequest)
+      UploadJsonRequestOrBuilder {
   private static final long serialVersionUID = 0L;
-    // Use SetDescrambleRuleRequest.newBuilder() to construct.
-    private SetDescrambleRuleRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+    // Use UploadJsonRequest.newBuilder() to construct.
+    private UploadJsonRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
     }
-    private SetDescrambleRuleRequest() {
-      code_ = "";
+    private UploadJsonRequest() {
+      satCode_ = "";
+      satName_ = "";
+      jsonContent_ = "";
     }
 
-    @java.lang.Override
+    @Override
     @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
+    protected Object newInstance(
         UnusedPrivateParameter unused) {
-      return new SetDescrambleRuleRequest();
+      return new UploadJsonRequest();
     }
 
-    @java.lang.Override
+    @Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
       return this.unknownFields;
     }
-    private SetDescrambleRuleRequest(
+    private UploadJsonRequest(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
+        throw new NullPointerException();
       }
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -14944,22 +4760,21 @@ tm.processing.v1.Tm.TmChannel defaultValue);
               done = true;
               break;
             case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
-              code_ = s;
+              satCode_ = s;
               break;
             }
             case 18: {
-              tm.processing.v1.Tm.DescrambleRule.Builder subBuilder = null;
-              if (rule_ != null) {
-                subBuilder = rule_.toBuilder();
-              }
-              rule_ = input.readMessage(tm.processing.v1.Tm.DescrambleRule.parser(), extensionRegistry);
-              if (subBuilder != null) {
-                subBuilder.mergeFrom(rule_);
-                rule_ = subBuilder.buildPartial();
-              }
+              String s = input.readStringRequireUtf8();
 
+              satName_ = s;
+              break;
+            }
+            case 26: {
+              String s = input.readStringRequireUtf8();
+
+              jsonContent_ = s;
               break;
             }
             default: {
@@ -14985,83 +4800,157 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetDescrambleRuleRequest_descriptor;
+      return Tm.internal_static_tm_processing_v1_UploadJsonRequest_descriptor;
     }
 
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+    @Override
+    protected FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetDescrambleRuleRequest_fieldAccessorTable
+      return Tm.internal_static_tm_processing_v1_UploadJsonRequest_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.SetDescrambleRuleRequest.class, tm.processing.v1.Tm.SetDescrambleRuleRequest.Builder.class);
+              UploadJsonRequest.class, Builder.class);
     }
 
-    public static final int CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object code_;
+    public static final int SAT_CODE_FIELD_NUMBER = 1;
+    private volatile Object satCode_;
     /**
-     * <code>string code = 1;</code>
-     * @return The code.
+     * <pre>
+     * 卫星代号
+     * </pre>
+     *
+     * <code>string sat_code = 1;</code>
+     * @return The satCode.
      */
-    @java.lang.Override
-    public java.lang.String getCode() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getSatCode() {
+      Object ref = satCode_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        code_ = s;
+        String s = bs.toStringUtf8();
+        satCode_ = s;
         return s;
       }
     }
     /**
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
+     * <pre>
+     * 卫星代号
+     * </pre>
+     *
+     * <code>string sat_code = 1;</code>
+     * @return The bytes for satCode.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
-        getCodeBytes() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
+        getSatCodeBytes() {
+      Object ref = satCode_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        code_ = b;
+                (String) ref);
+        satCode_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
 
-    public static final int RULE_FIELD_NUMBER = 2;
-    private tm.processing.v1.Tm.DescrambleRule rule_;
+    public static final int SAT_NAME_FIELD_NUMBER = 2;
+    private volatile Object satName_;
     /**
-     * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-     * @return Whether the rule field is set.
+     * <pre>
+     * 卫星名称
+     * </pre>
+     *
+     * <code>string sat_name = 2;</code>
+     * @return The satName.
      */
-    @java.lang.Override
-    public boolean hasRule() {
-      return rule_ != null;
+    @Override
+    public String getSatName() {
+      Object ref = satName_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        satName_ = s;
+        return s;
+      }
     }
     /**
-     * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-     * @return The rule.
+     * <pre>
+     * 卫星名称
+     * </pre>
+     *
+     * <code>string sat_name = 2;</code>
+     * @return The bytes for satName.
      */
-    @java.lang.Override
-    public tm.processing.v1.Tm.DescrambleRule getRule() {
-      return rule_ == null ? tm.processing.v1.Tm.DescrambleRule.getDefaultInstance() : rule_;
+    @Override
+    public com.google.protobuf.ByteString
+        getSatNameBytes() {
+      Object ref = satName_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        satName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int JSON_CONTENT_FIELD_NUMBER = 3;
+    private volatile Object jsonContent_;
+    /**
+     * <pre>
+     * json内容
+     * </pre>
+     *
+     * <code>string json_content = 3;</code>
+     * @return The jsonContent.
+     */
+    @Override
+    public String getJsonContent() {
+      Object ref = jsonContent_;
+      if (ref instanceof String) {
+        return (String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        String s = bs.toStringUtf8();
+        jsonContent_ = s;
+        return s;
+      }
     }
     /**
-     * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
+     * <pre>
+     * json内容
+     * </pre>
+     *
+     * <code>string json_content = 3;</code>
+     * @return The bytes for jsonContent.
      */
-    @java.lang.Override
-    public tm.processing.v1.Tm.DescrambleRuleOrBuilder getRuleOrBuilder() {
-      return getRule();
+    @Override
+    public com.google.protobuf.ByteString
+        getJsonContentBytes() {
+      Object ref = jsonContent_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (String) ref);
+        jsonContent_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     private byte memoizedIsInitialized = -1;
-    @java.lang.Override
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -15071,138 +4960,142 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, code_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, satCode_);
       }
-      if (rule_ != null) {
-        output.writeMessage(2, getRule());
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satName_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, satName_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(jsonContent_)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, jsonContent_);
       }
       unknownFields.writeTo(output);
     }
 
-    @java.lang.Override
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
 
       size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, code_);
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satCode_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, satCode_);
       }
-      if (rule_ != null) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeMessageSize(2, getRule());
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(satName_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, satName_);
+      }
+      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(jsonContent_)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, jsonContent_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
+    @Override
+    public boolean equals(final Object obj) {
       if (obj == this) {
        return true;
       }
-      if (!(obj instanceof tm.processing.v1.Tm.SetDescrambleRuleRequest)) {
+      if (!(obj instanceof UploadJsonRequest)) {
         return super.equals(obj);
       }
-      tm.processing.v1.Tm.SetDescrambleRuleRequest other = (tm.processing.v1.Tm.SetDescrambleRuleRequest) obj;
+      UploadJsonRequest other = (UploadJsonRequest) obj;
 
-      if (!getCode()
-          .equals(other.getCode())) return false;
-      if (hasRule() != other.hasRule()) return false;
-      if (hasRule()) {
-        if (!getRule()
-            .equals(other.getRule())) return false;
-      }
+      if (!getSatCode()
+          .equals(other.getSatCode())) return false;
+      if (!getSatName()
+          .equals(other.getSatName())) return false;
+      if (!getJsonContent()
+          .equals(other.getJsonContent())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public int hashCode() {
       if (memoizedHashCode != 0) {
         return memoizedHashCode;
       }
       int hash = 41;
       hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getCode().hashCode();
-      if (hasRule()) {
-        hash = (37 * hash) + RULE_FIELD_NUMBER;
-        hash = (53 * hash) + getRule().hashCode();
-      }
+      hash = (37 * hash) + SAT_CODE_FIELD_NUMBER;
+      hash = (53 * hash) + getSatCode().hashCode();
+      hash = (37 * hash) + SAT_NAME_FIELD_NUMBER;
+      hash = (53 * hash) + getSatName().hashCode();
+      hash = (37 * hash) + JSON_CONTENT_FIELD_NUMBER;
+      hash = (53 * hash) + getJsonContent().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
     }
 
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(
+    public static UploadJsonRequest parseFrom(
         java.nio.ByteBuffer data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(
+    public static UploadJsonRequest parseFrom(
         java.nio.ByteBuffer data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(
+    public static UploadJsonRequest parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(
+    public static UploadJsonRequest parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(byte[] data)
+    public static UploadJsonRequest parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(
+    public static UploadJsonRequest parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(java.io.InputStream input)
+    public static UploadJsonRequest parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(
+    public static UploadJsonRequest parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseDelimitedFrom(java.io.InputStream input)
+    public static UploadJsonRequest parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseDelimitedFrom(
+    public static UploadJsonRequest parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(
+    public static UploadJsonRequest parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest parseFrom(
+    public static UploadJsonRequest parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -15210,53 +5103,53 @@ tm.processing.v1.Tm.TmChannel defaultValue);
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    @java.lang.Override
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-    public static Builder newBuilder(tm.processing.v1.Tm.SetDescrambleRuleRequest prototype) {
+    public static Builder newBuilder(UploadJsonRequest prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
-    @java.lang.Override
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
     }
 
-    @java.lang.Override
+    @Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
     /**
-     * Protobuf type {@code tm.processing.v1.SetDescrambleRuleRequest}
+     * Protobuf type {@code tm.processing.v1.UploadJsonRequest}
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.SetDescrambleRuleRequest)
-        tm.processing.v1.Tm.SetDescrambleRuleRequestOrBuilder {
+        // @@protoc_insertion_point(builder_implements:tm.processing.v1.UploadJsonRequest)
+        UploadJsonRequestOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetDescrambleRuleRequest_descriptor;
+        return Tm.internal_static_tm_processing_v1_UploadJsonRequest_descriptor;
       }
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      @Override
+      protected FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetDescrambleRuleRequest_fieldAccessorTable
+        return Tm.internal_static_tm_processing_v1_UploadJsonRequest_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.SetDescrambleRuleRequest.class, tm.processing.v1.Tm.SetDescrambleRuleRequest.Builder.class);
+                UploadJsonRequest.class, Builder.class);
       }
 
-      // Construct using tm.processing.v1.Tm.SetDescrambleRuleRequest.newBuilder()
+      // Construct using tm.processing.v1.Tm.UploadJsonRequest.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+          BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
@@ -15265,124 +5158,124 @@ tm.processing.v1.Tm.TmChannel defaultValue);
                 .alwaysUseFieldBuilders) {
         }
       }
-      @java.lang.Override
+      @Override
       public Builder clear() {
         super.clear();
-        code_ = "";
+        satCode_ = "";
 
-        if (ruleBuilder_ == null) {
-          rule_ = null;
-        } else {
-          rule_ = null;
-          ruleBuilder_ = null;
-        }
+        satName_ = "";
+
+        jsonContent_ = "";
+
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_SetDescrambleRuleRequest_descriptor;
+        return Tm.internal_static_tm_processing_v1_UploadJsonRequest_descriptor;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetDescrambleRuleRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.SetDescrambleRuleRequest.getDefaultInstance();
+      @Override
+      public UploadJsonRequest getDefaultInstanceForType() {
+        return UploadJsonRequest.getDefaultInstance();
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetDescrambleRuleRequest build() {
-        tm.processing.v1.Tm.SetDescrambleRuleRequest result = buildPartial();
+      @Override
+      public UploadJsonRequest build() {
+        UploadJsonRequest result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.SetDescrambleRuleRequest buildPartial() {
-        tm.processing.v1.Tm.SetDescrambleRuleRequest result = new tm.processing.v1.Tm.SetDescrambleRuleRequest(this);
-        result.code_ = code_;
-        if (ruleBuilder_ == null) {
-          result.rule_ = rule_;
-        } else {
-          result.rule_ = ruleBuilder_.build();
-        }
+      @Override
+      public UploadJsonRequest buildPartial() {
+        UploadJsonRequest result = new UploadJsonRequest(this);
+        result.satCode_ = satCode_;
+        result.satName_ = satName_;
+        result.jsonContent_ = jsonContent_;
         onBuilt();
         return result;
       }
 
-      @java.lang.Override
+      @Override
       public Builder clone() {
         return super.clone();
       }
-      @java.lang.Override
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.setField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
         return super.clearField(field);
       }
-      @java.lang.Override
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
         return super.clearOneof(oneof);
       }
-      @java.lang.Override
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return super.setRepeatedField(field, index, value);
       }
-      @java.lang.Override
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.addRepeatedField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.SetDescrambleRuleRequest) {
-          return mergeFrom((tm.processing.v1.Tm.SetDescrambleRuleRequest)other);
+        if (other instanceof UploadJsonRequest) {
+          return mergeFrom((UploadJsonRequest)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(tm.processing.v1.Tm.SetDescrambleRuleRequest other) {
-        if (other == tm.processing.v1.Tm.SetDescrambleRuleRequest.getDefaultInstance()) return this;
-        if (!other.getCode().isEmpty()) {
-          code_ = other.code_;
+      public Builder mergeFrom(UploadJsonRequest other) {
+        if (other == UploadJsonRequest.getDefaultInstance()) return this;
+        if (!other.getSatCode().isEmpty()) {
+          satCode_ = other.satCode_;
           onChanged();
         }
-        if (other.hasRule()) {
-          mergeRule(other.getRule());
+        if (!other.getSatName().isEmpty()) {
+          satName_ = other.satName_;
+          onChanged();
+        }
+        if (!other.getJsonContent().isEmpty()) {
+          jsonContent_ = other.jsonContent_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public final boolean isInitialized() {
         return true;
       }
 
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        tm.processing.v1.Tm.SetDescrambleRuleRequest parsedMessage = null;
+        UploadJsonRequest parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.SetDescrambleRuleRequest) e.getUnfinishedMessage();
+          parsedMessage = (UploadJsonRequest) e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
@@ -15392,1143 +5285,341 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         return this;
       }
 
-      private java.lang.Object code_ = "";
+      private Object satCode_ = "";
       /**
-       * <code>string code = 1;</code>
-       * @return The code.
+       * <pre>
+       * 卫星代号
+       * </pre>
+       *
+       * <code>string sat_code = 1;</code>
+       * @return The satCode.
        */
-      public java.lang.String getCode() {
-        java.lang.Object ref = code_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getSatCode() {
+        Object ref = satCode_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          code_ = s;
+          String s = bs.toStringUtf8();
+          satCode_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
-       * <code>string code = 1;</code>
-       * @return The bytes for code.
+       * <pre>
+       * 卫星代号
+       * </pre>
+       *
+       * <code>string sat_code = 1;</code>
+       * @return The bytes for satCode.
        */
       public com.google.protobuf.ByteString
-          getCodeBytes() {
-        java.lang.Object ref = code_;
+          getSatCodeBytes() {
+        Object ref = satCode_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          code_ = b;
+                  (String) ref);
+          satCode_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>string code = 1;</code>
-       * @param value The code to set.
+       * <pre>
+       * 卫星代号
+       * </pre>
+       *
+       * <code>string sat_code = 1;</code>
+       * @param value The satCode to set.
        * @return This builder for chaining.
        */
-      public Builder setCode(
-          java.lang.String value) {
+      public Builder setSatCode(
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   
-        code_ = value;
+        satCode_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>string code = 1;</code>
+       * <pre>
+       * 卫星代号
+       * </pre>
+       *
+       * <code>string sat_code = 1;</code>
        * @return This builder for chaining.
        */
-      public Builder clearCode() {
+      public Builder clearSatCode() {
         
-        code_ = getDefaultInstance().getCode();
+        satCode_ = getDefaultInstance().getSatCode();
         onChanged();
         return this;
       }
       /**
-       * <code>string code = 1;</code>
-       * @param value The bytes for code to set.
+       * <pre>
+       * 卫星代号
+       * </pre>
+       *
+       * <code>string sat_code = 1;</code>
+       * @param value The bytes for satCode to set.
        * @return This builder for chaining.
        */
-      public Builder setCodeBytes(
+      public Builder setSatCodeBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
         
-        code_ = value;
+        satCode_ = value;
         onChanged();
         return this;
       }
 
-      private tm.processing.v1.Tm.DescrambleRule rule_;
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.DescrambleRule, tm.processing.v1.Tm.DescrambleRule.Builder, tm.processing.v1.Tm.DescrambleRuleOrBuilder> ruleBuilder_;
+      private Object satName_ = "";
       /**
-       * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-       * @return Whether the rule field is set.
+       * <pre>
+       * 卫星名称
+       * </pre>
+       *
+       * <code>string sat_name = 2;</code>
+       * @return The satName.
        */
-      public boolean hasRule() {
-        return ruleBuilder_ != null || rule_ != null;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-       * @return The rule.
-       */
-      public tm.processing.v1.Tm.DescrambleRule getRule() {
-        if (ruleBuilder_ == null) {
-          return rule_ == null ? tm.processing.v1.Tm.DescrambleRule.getDefaultInstance() : rule_;
-        } else {
-          return ruleBuilder_.getMessage();
-        }
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-       */
-      public Builder setRule(tm.processing.v1.Tm.DescrambleRule value) {
-        if (ruleBuilder_ == null) {
-          if (value == null) {
-            throw new NullPointerException();
-          }
-          rule_ = value;
-          onChanged();
-        } else {
-          ruleBuilder_.setMessage(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-       */
-      public Builder setRule(
-          tm.processing.v1.Tm.DescrambleRule.Builder builderForValue) {
-        if (ruleBuilder_ == null) {
-          rule_ = builderForValue.build();
-          onChanged();
-        } else {
-          ruleBuilder_.setMessage(builderForValue.build());
-        }
-
-        return this;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-       */
-      public Builder mergeRule(tm.processing.v1.Tm.DescrambleRule value) {
-        if (ruleBuilder_ == null) {
-          if (rule_ != null) {
-            rule_ =
-              tm.processing.v1.Tm.DescrambleRule.newBuilder(rule_).mergeFrom(value).buildPartial();
-          } else {
-            rule_ = value;
-          }
-          onChanged();
-        } else {
-          ruleBuilder_.mergeFrom(value);
-        }
-
-        return this;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-       */
-      public Builder clearRule() {
-        if (ruleBuilder_ == null) {
-          rule_ = null;
-          onChanged();
-        } else {
-          rule_ = null;
-          ruleBuilder_ = null;
-        }
-
-        return this;
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-       */
-      public tm.processing.v1.Tm.DescrambleRule.Builder getRuleBuilder() {
-        
-        onChanged();
-        return getRuleFieldBuilder().getBuilder();
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-       */
-      public tm.processing.v1.Tm.DescrambleRuleOrBuilder getRuleOrBuilder() {
-        if (ruleBuilder_ != null) {
-          return ruleBuilder_.getMessageOrBuilder();
-        } else {
-          return rule_ == null ?
-              tm.processing.v1.Tm.DescrambleRule.getDefaultInstance() : rule_;
-        }
-      }
-      /**
-       * <code>.tm.processing.v1.DescrambleRule rule = 2;</code>
-       */
-      private com.google.protobuf.SingleFieldBuilderV3<
-          tm.processing.v1.Tm.DescrambleRule, tm.processing.v1.Tm.DescrambleRule.Builder, tm.processing.v1.Tm.DescrambleRuleOrBuilder> 
-          getRuleFieldBuilder() {
-        if (ruleBuilder_ == null) {
-          ruleBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
-              tm.processing.v1.Tm.DescrambleRule, tm.processing.v1.Tm.DescrambleRule.Builder, tm.processing.v1.Tm.DescrambleRuleOrBuilder>(
-                  getRule(),
-                  getParentForChildren(),
-                  isClean());
-          rule_ = null;
-        }
-        return ruleBuilder_;
-      }
-      @java.lang.Override
-      public final Builder setUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFields(unknownFields);
-      }
-
-      @java.lang.Override
-      public final Builder mergeUnknownFields(
-          final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
-      }
-
-
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.SetDescrambleRuleRequest)
-    }
-
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.SetDescrambleRuleRequest)
-    private static final tm.processing.v1.Tm.SetDescrambleRuleRequest DEFAULT_INSTANCE;
-    static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.SetDescrambleRuleRequest();
-    }
-
-    public static tm.processing.v1.Tm.SetDescrambleRuleRequest getDefaultInstance() {
-      return DEFAULT_INSTANCE;
-    }
-
-    private static final com.google.protobuf.Parser<SetDescrambleRuleRequest>
-        PARSER = new com.google.protobuf.AbstractParser<SetDescrambleRuleRequest>() {
-      @java.lang.Override
-      public SetDescrambleRuleRequest parsePartialFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return new SetDescrambleRuleRequest(input, extensionRegistry);
-      }
-    };
-
-    public static com.google.protobuf.Parser<SetDescrambleRuleRequest> parser() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public com.google.protobuf.Parser<SetDescrambleRuleRequest> getParserForType() {
-      return PARSER;
-    }
-
-    @java.lang.Override
-    public tm.processing.v1.Tm.SetDescrambleRuleRequest getDefaultInstanceForType() {
-      return DEFAULT_INSTANCE;
-    }
-
-  }
-
-  public interface AddTmChannelsRequestOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:tm.processing.v1.AddTmChannelsRequest)
-      com.google.protobuf.MessageOrBuilder {
-
-    /**
-     * <code>string code = 1;</code>
-     * @return The code.
-     */
-    java.lang.String getCode();
-    /**
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
-     */
-    com.google.protobuf.ByteString
-        getCodeBytes();
-
-    /**
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-     */
-    int getChannelsCount();
-    /**
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-     */
-    boolean containsChannels(
-        java.lang.String key);
-    /**
-     * Use {@link #getChannelsMap()} instead.
-     */
-    @java.lang.Deprecated
-    java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel>
-    getChannels();
-    /**
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-     */
-    java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel>
-    getChannelsMap();
-    /**
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-     */
-
-    /* nullable */
-tm.processing.v1.Tm.TmChannel getChannelsOrDefault(
-        java.lang.String key,
-        /* nullable */
-tm.processing.v1.Tm.TmChannel defaultValue);
-    /**
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-     */
-
-    tm.processing.v1.Tm.TmChannel getChannelsOrThrow(
-        java.lang.String key);
-  }
-  /**
-   * Protobuf type {@code tm.processing.v1.AddTmChannelsRequest}
-   */
-  public static final class AddTmChannelsRequest extends
-      com.google.protobuf.GeneratedMessageV3 implements
-      // @@protoc_insertion_point(message_implements:tm.processing.v1.AddTmChannelsRequest)
-      AddTmChannelsRequestOrBuilder {
-  private static final long serialVersionUID = 0L;
-    // Use AddTmChannelsRequest.newBuilder() to construct.
-    private AddTmChannelsRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
-      super(builder);
-    }
-    private AddTmChannelsRequest() {
-      code_ = "";
-    }
-
-    @java.lang.Override
-    @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
-        UnusedPrivateParameter unused) {
-      return new AddTmChannelsRequest();
-    }
-
-    @java.lang.Override
-    public final com.google.protobuf.UnknownFieldSet
-    getUnknownFields() {
-      return this.unknownFields;
-    }
-    private AddTmChannelsRequest(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
-      int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
-      try {
-        boolean done = false;
-        while (!done) {
-          int tag = input.readTag();
-          switch (tag) {
-            case 0:
-              done = true;
-              break;
-            case 10: {
-              java.lang.String s = input.readStringRequireUtf8();
-
-              code_ = s;
-              break;
-            }
-            case 18: {
-              if (!((mutable_bitField0_ & 0x00000001) != 0)) {
-                channels_ = com.google.protobuf.MapField.newMapField(
-                    ChannelsDefaultEntryHolder.defaultEntry);
-                mutable_bitField0_ |= 0x00000001;
-              }
-              com.google.protobuf.MapEntry<java.lang.String, tm.processing.v1.Tm.TmChannel>
-              channels__ = input.readMessage(
-                  ChannelsDefaultEntryHolder.defaultEntry.getParserForType(), extensionRegistry);
-              channels_.getMutableMap().put(
-                  channels__.getKey(), channels__.getValue());
-              break;
-            }
-            default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
-                done = true;
-              }
-              break;
-            }
-          }
-        }
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(this);
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(
-            e).setUnfinishedMessage(this);
-      } finally {
-        this.unknownFields = unknownFields.build();
-        makeExtensionsImmutable();
-      }
-    }
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_AddTmChannelsRequest_descriptor;
-    }
-
-    @SuppressWarnings({"rawtypes"})
-    @java.lang.Override
-    protected com.google.protobuf.MapField internalGetMapField(
-        int number) {
-      switch (number) {
-        case 2:
-          return internalGetChannels();
-        default:
-          throw new RuntimeException(
-              "Invalid map field number: " + number);
-      }
-    }
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-        internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_AddTmChannelsRequest_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.AddTmChannelsRequest.class, tm.processing.v1.Tm.AddTmChannelsRequest.Builder.class);
-    }
-
-    public static final int CODE_FIELD_NUMBER = 1;
-    private volatile java.lang.Object code_;
-    /**
-     * <code>string code = 1;</code>
-     * @return The code.
-     */
-    @java.lang.Override
-    public java.lang.String getCode() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        code_ = s;
-        return s;
-      }
-    }
-    /**
-     * <code>string code = 1;</code>
-     * @return The bytes for code.
-     */
-    @java.lang.Override
-    public com.google.protobuf.ByteString
-        getCodeBytes() {
-      java.lang.Object ref = code_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        code_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
-    }
-
-    public static final int CHANNELS_FIELD_NUMBER = 2;
-    private static final class ChannelsDefaultEntryHolder {
-      static final com.google.protobuf.MapEntry<
-          java.lang.String, tm.processing.v1.Tm.TmChannel> defaultEntry =
-              com.google.protobuf.MapEntry
-              .<java.lang.String, tm.processing.v1.Tm.TmChannel>newDefaultInstance(
-                  tm.processing.v1.Tm.internal_static_tm_processing_v1_AddTmChannelsRequest_ChannelsEntry_descriptor, 
-                  com.google.protobuf.WireFormat.FieldType.STRING,
-                  "",
-                  com.google.protobuf.WireFormat.FieldType.MESSAGE,
-                  tm.processing.v1.Tm.TmChannel.getDefaultInstance());
-    }
-    private com.google.protobuf.MapField<
-        java.lang.String, tm.processing.v1.Tm.TmChannel> channels_;
-    private com.google.protobuf.MapField<java.lang.String, tm.processing.v1.Tm.TmChannel>
-    internalGetChannels() {
-      if (channels_ == null) {
-        return com.google.protobuf.MapField.emptyMapField(
-            ChannelsDefaultEntryHolder.defaultEntry);
-      }
-      return channels_;
-    }
-
-    public int getChannelsCount() {
-      return internalGetChannels().getMap().size();
-    }
-    /**
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-     */
-
-    @java.lang.Override
-    public boolean containsChannels(
-        java.lang.String key) {
-      if (key == null) { throw new NullPointerException("map key"); }
-      return internalGetChannels().getMap().containsKey(key);
-    }
-    /**
-     * Use {@link #getChannelsMap()} instead.
-     */
-    @java.lang.Override
-    @java.lang.Deprecated
-    public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> getChannels() {
-      return getChannelsMap();
-    }
-    /**
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-     */
-    @java.lang.Override
-
-    public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> getChannelsMap() {
-      return internalGetChannels().getMap();
-    }
-    /**
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-     */
-    @java.lang.Override
-
-    public tm.processing.v1.Tm.TmChannel getChannelsOrDefault(
-        java.lang.String key,
-        tm.processing.v1.Tm.TmChannel defaultValue) {
-      if (key == null) { throw new NullPointerException("map key"); }
-      java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> map =
-          internalGetChannels().getMap();
-      return map.containsKey(key) ? map.get(key) : defaultValue;
-    }
-    /**
-     * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-     */
-    @java.lang.Override
-
-    public tm.processing.v1.Tm.TmChannel getChannelsOrThrow(
-        java.lang.String key) {
-      if (key == null) { throw new NullPointerException("map key"); }
-      java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> map =
-          internalGetChannels().getMap();
-      if (!map.containsKey(key)) {
-        throw new java.lang.IllegalArgumentException();
-      }
-      return map.get(key);
-    }
-
-    private byte memoizedIsInitialized = -1;
-    @java.lang.Override
-    public final boolean isInitialized() {
-      byte isInitialized = memoizedIsInitialized;
-      if (isInitialized == 1) return true;
-      if (isInitialized == 0) return false;
-
-      memoizedIsInitialized = 1;
-      return true;
-    }
-
-    @java.lang.Override
-    public void writeTo(com.google.protobuf.CodedOutputStream output)
-                        throws java.io.IOException {
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, code_);
-      }
-      com.google.protobuf.GeneratedMessageV3
-        .serializeStringMapTo(
-          output,
-          internalGetChannels(),
-          ChannelsDefaultEntryHolder.defaultEntry,
-          2);
-      unknownFields.writeTo(output);
-    }
-
-    @java.lang.Override
-    public int getSerializedSize() {
-      int size = memoizedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(code_)) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, code_);
-      }
-      for (java.util.Map.Entry<java.lang.String, tm.processing.v1.Tm.TmChannel> entry
-           : internalGetChannels().getMap().entrySet()) {
-        com.google.protobuf.MapEntry<java.lang.String, tm.processing.v1.Tm.TmChannel>
-        channels__ = ChannelsDefaultEntryHolder.defaultEntry.newBuilderForType()
-            .setKey(entry.getKey())
-            .setValue(entry.getValue())
-            .build();
-        size += com.google.protobuf.CodedOutputStream
-            .computeMessageSize(2, channels__);
-      }
-      size += unknownFields.getSerializedSize();
-      memoizedSize = size;
-      return size;
-    }
-
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
-      if (obj == this) {
-       return true;
-      }
-      if (!(obj instanceof tm.processing.v1.Tm.AddTmChannelsRequest)) {
-        return super.equals(obj);
-      }
-      tm.processing.v1.Tm.AddTmChannelsRequest other = (tm.processing.v1.Tm.AddTmChannelsRequest) obj;
-
-      if (!getCode()
-          .equals(other.getCode())) return false;
-      if (!internalGetChannels().equals(
-          other.internalGetChannels())) return false;
-      if (!unknownFields.equals(other.unknownFields)) return false;
-      return true;
-    }
-
-    @java.lang.Override
-    public int hashCode() {
-      if (memoizedHashCode != 0) {
-        return memoizedHashCode;
-      }
-      int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
-      hash = (37 * hash) + CODE_FIELD_NUMBER;
-      hash = (53 * hash) + getCode().hashCode();
-      if (!internalGetChannels().getMap().isEmpty()) {
-        hash = (37 * hash) + CHANNELS_FIELD_NUMBER;
-        hash = (53 * hash) + internalGetChannels().hashCode();
-      }
-      hash = (29 * hash) + unknownFields.hashCode();
-      memoizedHashCode = hash;
-      return hash;
-    }
-
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(
-        com.google.protobuf.ByteString data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(
-        com.google.protobuf.ByteString data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(byte[] data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(
-        byte[] data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseDelimitedFrom(java.io.InputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseDelimitedFrom(
-        java.io.InputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(
-        com.google.protobuf.CodedInputStream input)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input);
-    }
-    public static tm.processing.v1.Tm.AddTmChannelsRequest parseFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws java.io.IOException {
-      return com.google.protobuf.GeneratedMessageV3
-          .parseWithIOException(PARSER, input, extensionRegistry);
-    }
-
-    @java.lang.Override
-    public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder() {
-      return DEFAULT_INSTANCE.toBuilder();
-    }
-    public static Builder newBuilder(tm.processing.v1.Tm.AddTmChannelsRequest prototype) {
-      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
-    }
-    @java.lang.Override
-    public Builder toBuilder() {
-      return this == DEFAULT_INSTANCE
-          ? new Builder() : new Builder().mergeFrom(this);
-    }
-
-    @java.lang.Override
-    protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-      Builder builder = new Builder(parent);
-      return builder;
-    }
-    /**
-     * Protobuf type {@code tm.processing.v1.AddTmChannelsRequest}
-     */
-    public static final class Builder extends
-        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:tm.processing.v1.AddTmChannelsRequest)
-        tm.processing.v1.Tm.AddTmChannelsRequestOrBuilder {
-      public static final com.google.protobuf.Descriptors.Descriptor
-          getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_AddTmChannelsRequest_descriptor;
-      }
-
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMapField(
-          int number) {
-        switch (number) {
-          case 2:
-            return internalGetChannels();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
-      @SuppressWarnings({"rawtypes"})
-      protected com.google.protobuf.MapField internalGetMutableMapField(
-          int number) {
-        switch (number) {
-          case 2:
-            return internalGetMutableChannels();
-          default:
-            throw new RuntimeException(
-                "Invalid map field number: " + number);
-        }
-      }
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-          internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_AddTmChannelsRequest_fieldAccessorTable
-            .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.AddTmChannelsRequest.class, tm.processing.v1.Tm.AddTmChannelsRequest.Builder.class);
-      }
-
-      // Construct using tm.processing.v1.Tm.AddTmChannelsRequest.newBuilder()
-      private Builder() {
-        maybeForceBuilderInitialization();
-      }
-
-      private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
-        super(parent);
-        maybeForceBuilderInitialization();
-      }
-      private void maybeForceBuilderInitialization() {
-        if (com.google.protobuf.GeneratedMessageV3
-                .alwaysUseFieldBuilders) {
-        }
-      }
-      @java.lang.Override
-      public Builder clear() {
-        super.clear();
-        code_ = "";
-
-        internalGetMutableChannels().clear();
-        return this;
-      }
-
-      @java.lang.Override
-      public com.google.protobuf.Descriptors.Descriptor
-          getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_AddTmChannelsRequest_descriptor;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.AddTmChannelsRequest getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.AddTmChannelsRequest.getDefaultInstance();
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.AddTmChannelsRequest build() {
-        tm.processing.v1.Tm.AddTmChannelsRequest result = buildPartial();
-        if (!result.isInitialized()) {
-          throw newUninitializedMessageException(result);
-        }
-        return result;
-      }
-
-      @java.lang.Override
-      public tm.processing.v1.Tm.AddTmChannelsRequest buildPartial() {
-        tm.processing.v1.Tm.AddTmChannelsRequest result = new tm.processing.v1.Tm.AddTmChannelsRequest(this);
-        int from_bitField0_ = bitField0_;
-        result.code_ = code_;
-        result.channels_ = internalGetChannels();
-        result.channels_.makeImmutable();
-        onBuilt();
-        return result;
-      }
-
-      @java.lang.Override
-      public Builder clone() {
-        return super.clone();
-      }
-      @java.lang.Override
-      public Builder setField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.setField(field, value);
-      }
-      @java.lang.Override
-      public Builder clearField(
-          com.google.protobuf.Descriptors.FieldDescriptor field) {
-        return super.clearField(field);
-      }
-      @java.lang.Override
-      public Builder clearOneof(
-          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
-        return super.clearOneof(oneof);
-      }
-      @java.lang.Override
-      public Builder setRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
-        return super.setRepeatedField(field, index, value);
-      }
-      @java.lang.Override
-      public Builder addRepeatedField(
-          com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
-        return super.addRepeatedField(field, value);
-      }
-      @java.lang.Override
-      public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.AddTmChannelsRequest) {
-          return mergeFrom((tm.processing.v1.Tm.AddTmChannelsRequest)other);
-        } else {
-          super.mergeFrom(other);
-          return this;
-        }
-      }
-
-      public Builder mergeFrom(tm.processing.v1.Tm.AddTmChannelsRequest other) {
-        if (other == tm.processing.v1.Tm.AddTmChannelsRequest.getDefaultInstance()) return this;
-        if (!other.getCode().isEmpty()) {
-          code_ = other.code_;
-          onChanged();
-        }
-        internalGetMutableChannels().mergeFrom(
-            other.internalGetChannels());
-        this.mergeUnknownFields(other.unknownFields);
-        onChanged();
-        return this;
-      }
-
-      @java.lang.Override
-      public final boolean isInitialized() {
-        return true;
-      }
-
-      @java.lang.Override
-      public Builder mergeFrom(
-          com.google.protobuf.CodedInputStream input,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws java.io.IOException {
-        tm.processing.v1.Tm.AddTmChannelsRequest parsedMessage = null;
-        try {
-          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
-        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.AddTmChannelsRequest) e.getUnfinishedMessage();
-          throw e.unwrapIOException();
-        } finally {
-          if (parsedMessage != null) {
-            mergeFrom(parsedMessage);
-          }
-        }
-        return this;
-      }
-      private int bitField0_;
-
-      private java.lang.Object code_ = "";
-      /**
-       * <code>string code = 1;</code>
-       * @return The code.
-       */
-      public java.lang.String getCode() {
-        java.lang.Object ref = code_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getSatName() {
+        Object ref = satName_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          code_ = s;
+          String s = bs.toStringUtf8();
+          satName_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
-       * <code>string code = 1;</code>
-       * @return The bytes for code.
+       * <pre>
+       * 卫星名称
+       * </pre>
+       *
+       * <code>string sat_name = 2;</code>
+       * @return The bytes for satName.
        */
       public com.google.protobuf.ByteString
-          getCodeBytes() {
-        java.lang.Object ref = code_;
+          getSatNameBytes() {
+        Object ref = satName_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          code_ = b;
+                  (String) ref);
+          satName_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>string code = 1;</code>
-       * @param value The code to set.
+       * <pre>
+       * 卫星名称
+       * </pre>
+       *
+       * <code>string sat_name = 2;</code>
+       * @param value The satName to set.
        * @return This builder for chaining.
        */
-      public Builder setCode(
-          java.lang.String value) {
+      public Builder setSatName(
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   
-        code_ = value;
+        satName_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>string code = 1;</code>
+       * <pre>
+       * 卫星名称
+       * </pre>
+       *
+       * <code>string sat_name = 2;</code>
        * @return This builder for chaining.
        */
-      public Builder clearCode() {
+      public Builder clearSatName() {
         
-        code_ = getDefaultInstance().getCode();
+        satName_ = getDefaultInstance().getSatName();
         onChanged();
         return this;
       }
       /**
-       * <code>string code = 1;</code>
-       * @param value The bytes for code to set.
+       * <pre>
+       * 卫星名称
+       * </pre>
+       *
+       * <code>string sat_name = 2;</code>
+       * @param value The bytes for satName to set.
        * @return This builder for chaining.
        */
-      public Builder setCodeBytes(
+      public Builder setSatNameBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
         
-        code_ = value;
+        satName_ = value;
         onChanged();
         return this;
       }
 
-      private com.google.protobuf.MapField<
-          java.lang.String, tm.processing.v1.Tm.TmChannel> channels_;
-      private com.google.protobuf.MapField<java.lang.String, tm.processing.v1.Tm.TmChannel>
-      internalGetChannels() {
-        if (channels_ == null) {
-          return com.google.protobuf.MapField.emptyMapField(
-              ChannelsDefaultEntryHolder.defaultEntry);
+      private Object jsonContent_ = "";
+      /**
+       * <pre>
+       * json内容
+       * </pre>
+       *
+       * <code>string json_content = 3;</code>
+       * @return The jsonContent.
+       */
+      public String getJsonContent() {
+        Object ref = jsonContent_;
+        if (!(ref instanceof String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          String s = bs.toStringUtf8();
+          jsonContent_ = s;
+          return s;
+        } else {
+          return (String) ref;
         }
-        return channels_;
       }
-      private com.google.protobuf.MapField<java.lang.String, tm.processing.v1.Tm.TmChannel>
-      internalGetMutableChannels() {
-        onChanged();;
-        if (channels_ == null) {
-          channels_ = com.google.protobuf.MapField.newMapField(
-              ChannelsDefaultEntryHolder.defaultEntry);
+      /**
+       * <pre>
+       * json内容
+       * </pre>
+       *
+       * <code>string json_content = 3;</code>
+       * @return The bytes for jsonContent.
+       */
+      public com.google.protobuf.ByteString
+          getJsonContentBytes() {
+        Object ref = jsonContent_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (String) ref);
+          jsonContent_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
         }
-        if (!channels_.isMutable()) {
-          channels_ = channels_.copy();
-        }
-        return channels_;
-      }
-
-      public int getChannelsCount() {
-        return internalGetChannels().getMap().size();
       }
       /**
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
+       * <pre>
+       * json内容
+       * </pre>
+       *
+       * <code>string json_content = 3;</code>
+       * @param value The jsonContent to set.
+       * @return This builder for chaining.
        */
-
-      @java.lang.Override
-      public boolean containsChannels(
-          java.lang.String key) {
-        if (key == null) { throw new NullPointerException("map key"); }
-        return internalGetChannels().getMap().containsKey(key);
-      }
-      /**
-       * Use {@link #getChannelsMap()} instead.
-       */
-      @java.lang.Override
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> getChannels() {
-        return getChannelsMap();
-      }
-      /**
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-       */
-      @java.lang.Override
-
-      public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> getChannelsMap() {
-        return internalGetChannels().getMap();
-      }
-      /**
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-       */
-      @java.lang.Override
-
-      public tm.processing.v1.Tm.TmChannel getChannelsOrDefault(
-          java.lang.String key,
-          tm.processing.v1.Tm.TmChannel defaultValue) {
-        if (key == null) { throw new NullPointerException("map key"); }
-        java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> map =
-            internalGetChannels().getMap();
-        return map.containsKey(key) ? map.get(key) : defaultValue;
-      }
-      /**
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-       */
-      @java.lang.Override
-
-      public tm.processing.v1.Tm.TmChannel getChannelsOrThrow(
-          java.lang.String key) {
-        if (key == null) { throw new NullPointerException("map key"); }
-        java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> map =
-            internalGetChannels().getMap();
-        if (!map.containsKey(key)) {
-          throw new java.lang.IllegalArgumentException();
-        }
-        return map.get(key);
-      }
-
-      public Builder clearChannels() {
-        internalGetMutableChannels().getMutableMap()
-            .clear();
-        return this;
-      }
-      /**
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-       */
-
-      public Builder removeChannels(
-          java.lang.String key) {
-        if (key == null) { throw new NullPointerException("map key"); }
-        internalGetMutableChannels().getMutableMap()
-            .remove(key);
-        return this;
-      }
-      /**
-       * Use alternate mutation accessors instead.
-       */
-      @java.lang.Deprecated
-      public java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel>
-      getMutableChannels() {
-        return internalGetMutableChannels().getMutableMap();
-      }
-      /**
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
-       */
-      public Builder putChannels(
-          java.lang.String key,
-          tm.processing.v1.Tm.TmChannel value) {
-        if (key == null) { throw new NullPointerException("map key"); }
+      public Builder setJsonContent(
+          String value) {
         if (value == null) {
-  throw new NullPointerException("map value");
-}
-
-        internalGetMutableChannels().getMutableMap()
-            .put(key, value);
+    throw new NullPointerException();
+  }
+  
+        jsonContent_ = value;
+        onChanged();
         return this;
       }
       /**
-       * <code>map&lt;string, .tm.processing.v1.TmChannel&gt; channels = 2;</code>
+       * <pre>
+       * json内容
+       * </pre>
+       *
+       * <code>string json_content = 3;</code>
+       * @return This builder for chaining.
        */
-
-      public Builder putAllChannels(
-          java.util.Map<java.lang.String, tm.processing.v1.Tm.TmChannel> values) {
-        internalGetMutableChannels().getMutableMap()
-            .putAll(values);
+      public Builder clearJsonContent() {
+        
+        jsonContent_ = getDefaultInstance().getJsonContent();
+        onChanged();
         return this;
       }
-      @java.lang.Override
+      /**
+       * <pre>
+       * json内容
+       * </pre>
+       *
+       * <code>string json_content = 3;</code>
+       * @param value The bytes for jsonContent to set.
+       * @return This builder for chaining.
+       */
+      public Builder setJsonContentBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        jsonContent_ = value;
+        onChanged();
+        return this;
+      }
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
-      @java.lang.Override
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
       }
 
 
-      // @@protoc_insertion_point(builder_scope:tm.processing.v1.AddTmChannelsRequest)
+      // @@protoc_insertion_point(builder_scope:tm.processing.v1.UploadJsonRequest)
     }
 
-    // @@protoc_insertion_point(class_scope:tm.processing.v1.AddTmChannelsRequest)
-    private static final tm.processing.v1.Tm.AddTmChannelsRequest DEFAULT_INSTANCE;
+    // @@protoc_insertion_point(class_scope:tm.processing.v1.UploadJsonRequest)
+    private static final UploadJsonRequest DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.AddTmChannelsRequest();
+      DEFAULT_INSTANCE = new UploadJsonRequest();
     }
 
-    public static tm.processing.v1.Tm.AddTmChannelsRequest getDefaultInstance() {
+    public static UploadJsonRequest getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
-    private static final com.google.protobuf.Parser<AddTmChannelsRequest>
-        PARSER = new com.google.protobuf.AbstractParser<AddTmChannelsRequest>() {
-      @java.lang.Override
-      public AddTmChannelsRequest parsePartialFrom(
+    private static final com.google.protobuf.Parser<UploadJsonRequest>
+        PARSER = new com.google.protobuf.AbstractParser<UploadJsonRequest>() {
+      @Override
+      public UploadJsonRequest parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new AddTmChannelsRequest(input, extensionRegistry);
+        return new UploadJsonRequest(input, extensionRegistry);
       }
     };
 
-    public static com.google.protobuf.Parser<AddTmChannelsRequest> parser() {
+    public static com.google.protobuf.Parser<UploadJsonRequest> parser() {
       return PARSER;
     }
 
-    @java.lang.Override
-    public com.google.protobuf.Parser<AddTmChannelsRequest> getParserForType() {
+    @Override
+    public com.google.protobuf.Parser<UploadJsonRequest> getParserForType() {
       return PARSER;
     }
 
-    @java.lang.Override
-    public tm.processing.v1.Tm.AddTmChannelsRequest getDefaultInstanceForType() {
+    @Override
+    public UploadJsonRequest getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
@@ -16556,7 +5647,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>string message = 2;</code>
      * @return The message.
      */
-    java.lang.String getMessage();
+    String getMessage();
     /**
      * <pre>
      * 错误描述，成功时为空
@@ -16584,14 +5675,14 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       message_ = "";
     }
 
-    @java.lang.Override
+    @Override
     @SuppressWarnings({"unused"})
-    protected java.lang.Object newInstance(
+    protected Object newInstance(
         UnusedPrivateParameter unused) {
       return new ManagementResponse();
     }
 
-    @java.lang.Override
+    @Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
       return this.unknownFields;
@@ -16602,7 +5693,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
       if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
+        throw new NullPointerException();
       }
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -16620,7 +5711,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
               break;
             }
             case 18: {
-              java.lang.String s = input.readStringRequireUtf8();
+              String s = input.readStringRequireUtf8();
 
               message_ = s;
               break;
@@ -16648,15 +5739,15 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_ManagementResponse_descriptor;
+      return Tm.internal_static_tm_processing_v1_ManagementResponse_descriptor;
     }
 
-    @java.lang.Override
-    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+    @Override
+    protected FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return tm.processing.v1.Tm.internal_static_tm_processing_v1_ManagementResponse_fieldAccessorTable
+      return Tm.internal_static_tm_processing_v1_ManagementResponse_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              tm.processing.v1.Tm.ManagementResponse.class, tm.processing.v1.Tm.ManagementResponse.Builder.class);
+              ManagementResponse.class, Builder.class);
     }
 
     public static final int CODE_FIELD_NUMBER = 1;
@@ -16669,13 +5760,13 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>int32 code = 1;</code>
      * @return The code.
      */
-    @java.lang.Override
+    @Override
     public int getCode() {
       return code_;
     }
 
     public static final int MESSAGE_FIELD_NUMBER = 2;
-    private volatile java.lang.Object message_;
+    private volatile Object message_;
     /**
      * <pre>
      * 错误描述，成功时为空
@@ -16684,15 +5775,15 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>string message = 2;</code>
      * @return The message.
      */
-    @java.lang.Override
-    public java.lang.String getMessage() {
-      java.lang.Object ref = message_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
+    @Override
+    public String getMessage() {
+      Object ref = message_;
+      if (ref instanceof String) {
+        return (String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
+        String s = bs.toStringUtf8();
         message_ = s;
         return s;
       }
@@ -16705,14 +5796,14 @@ tm.processing.v1.Tm.TmChannel defaultValue);
      * <code>string message = 2;</code>
      * @return The bytes for message.
      */
-    @java.lang.Override
+    @Override
     public com.google.protobuf.ByteString
         getMessageBytes() {
-      java.lang.Object ref = message_;
-      if (ref instanceof java.lang.String) {
+      Object ref = message_;
+      if (ref instanceof String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
+                (String) ref);
         message_ = b;
         return b;
       } else {
@@ -16721,7 +5812,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     }
 
     private byte memoizedIsInitialized = -1;
-    @java.lang.Override
+    @Override
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
       if (isInitialized == 1) return true;
@@ -16731,7 +5822,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public void writeTo(com.google.protobuf.CodedOutputStream output)
                         throws java.io.IOException {
       if (code_ != 0) {
@@ -16743,7 +5834,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       unknownFields.writeTo(output);
     }
 
-    @java.lang.Override
+    @Override
     public int getSerializedSize() {
       int size = memoizedSize;
       if (size != -1) return size;
@@ -16761,15 +5852,15 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return size;
     }
 
-    @java.lang.Override
-    public boolean equals(final java.lang.Object obj) {
+    @Override
+    public boolean equals(final Object obj) {
       if (obj == this) {
        return true;
       }
-      if (!(obj instanceof tm.processing.v1.Tm.ManagementResponse)) {
+      if (!(obj instanceof ManagementResponse)) {
         return super.equals(obj);
       }
-      tm.processing.v1.Tm.ManagementResponse other = (tm.processing.v1.Tm.ManagementResponse) obj;
+      ManagementResponse other = (ManagementResponse) obj;
 
       if (getCode()
           != other.getCode()) return false;
@@ -16779,7 +5870,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return true;
     }
 
-    @java.lang.Override
+    @Override
     public int hashCode() {
       if (memoizedHashCode != 0) {
         return memoizedHashCode;
@@ -16795,69 +5886,69 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return hash;
     }
 
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(
+    public static ManagementResponse parseFrom(
         java.nio.ByteBuffer data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(
+    public static ManagementResponse parseFrom(
         java.nio.ByteBuffer data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(
+    public static ManagementResponse parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(
+    public static ManagementResponse parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(byte[] data)
+    public static ManagementResponse parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(
+    public static ManagementResponse parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(java.io.InputStream input)
+    public static ManagementResponse parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(
+    public static ManagementResponse parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseDelimitedFrom(java.io.InputStream input)
+    public static ManagementResponse parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseDelimitedFrom(
+    public static ManagementResponse parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(
+    public static ManagementResponse parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return com.google.protobuf.GeneratedMessageV3
           .parseWithIOException(PARSER, input);
     }
-    public static tm.processing.v1.Tm.ManagementResponse parseFrom(
+    public static ManagementResponse parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -16865,23 +5956,23 @@ tm.processing.v1.Tm.TmChannel defaultValue);
           .parseWithIOException(PARSER, input, extensionRegistry);
     }
 
-    @java.lang.Override
+    @Override
     public Builder newBuilderForType() { return newBuilder(); }
     public static Builder newBuilder() {
       return DEFAULT_INSTANCE.toBuilder();
     }
-    public static Builder newBuilder(tm.processing.v1.Tm.ManagementResponse prototype) {
+    public static Builder newBuilder(ManagementResponse prototype) {
       return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
     }
-    @java.lang.Override
+    @Override
     public Builder toBuilder() {
       return this == DEFAULT_INSTANCE
           ? new Builder() : new Builder().mergeFrom(this);
     }
 
-    @java.lang.Override
+    @Override
     protected Builder newBuilderForType(
-        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        BuilderParent parent) {
       Builder builder = new Builder(parent);
       return builder;
     }
@@ -16891,18 +5982,18 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     public static final class Builder extends
         com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
         // @@protoc_insertion_point(builder_implements:tm.processing.v1.ManagementResponse)
-        tm.processing.v1.Tm.ManagementResponseOrBuilder {
+        ManagementResponseOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_ManagementResponse_descriptor;
+        return Tm.internal_static_tm_processing_v1_ManagementResponse_descriptor;
       }
 
-      @java.lang.Override
-      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      @Override
+      protected FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_ManagementResponse_fieldAccessorTable
+        return Tm.internal_static_tm_processing_v1_ManagementResponse_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                tm.processing.v1.Tm.ManagementResponse.class, tm.processing.v1.Tm.ManagementResponse.Builder.class);
+                ManagementResponse.class, Builder.class);
       }
 
       // Construct using tm.processing.v1.Tm.ManagementResponse.newBuilder()
@@ -16911,7 +6002,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       }
 
       private Builder(
-          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+          BuilderParent parent) {
         super(parent);
         maybeForceBuilderInitialization();
       }
@@ -16920,7 +6011,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
                 .alwaysUseFieldBuilders) {
         }
       }
-      @java.lang.Override
+      @Override
       public Builder clear() {
         super.clear();
         code_ = 0;
@@ -16930,79 +6021,79 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return tm.processing.v1.Tm.internal_static_tm_processing_v1_ManagementResponse_descriptor;
+        return Tm.internal_static_tm_processing_v1_ManagementResponse_descriptor;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.ManagementResponse getDefaultInstanceForType() {
-        return tm.processing.v1.Tm.ManagementResponse.getDefaultInstance();
+      @Override
+      public ManagementResponse getDefaultInstanceForType() {
+        return ManagementResponse.getDefaultInstance();
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.ManagementResponse build() {
-        tm.processing.v1.Tm.ManagementResponse result = buildPartial();
+      @Override
+      public ManagementResponse build() {
+        ManagementResponse result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      @java.lang.Override
-      public tm.processing.v1.Tm.ManagementResponse buildPartial() {
-        tm.processing.v1.Tm.ManagementResponse result = new tm.processing.v1.Tm.ManagementResponse(this);
+      @Override
+      public ManagementResponse buildPartial() {
+        ManagementResponse result = new ManagementResponse(this);
         result.code_ = code_;
         result.message_ = message_;
         onBuilt();
         return result;
       }
 
-      @java.lang.Override
+      @Override
       public Builder clone() {
         return super.clone();
       }
-      @java.lang.Override
+      @Override
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.setField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder clearField(
           com.google.protobuf.Descriptors.FieldDescriptor field) {
         return super.clearField(field);
       }
-      @java.lang.Override
+      @Override
       public Builder clearOneof(
           com.google.protobuf.Descriptors.OneofDescriptor oneof) {
         return super.clearOneof(oneof);
       }
-      @java.lang.Override
+      @Override
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return super.setRepeatedField(field, index, value);
       }
-      @java.lang.Override
+      @Override
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return super.addRepeatedField(field, value);
       }
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof tm.processing.v1.Tm.ManagementResponse) {
-          return mergeFrom((tm.processing.v1.Tm.ManagementResponse)other);
+        if (other instanceof ManagementResponse) {
+          return mergeFrom((ManagementResponse)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(tm.processing.v1.Tm.ManagementResponse other) {
-        if (other == tm.processing.v1.Tm.ManagementResponse.getDefaultInstance()) return this;
+      public Builder mergeFrom(ManagementResponse other) {
+        if (other == ManagementResponse.getDefaultInstance()) return this;
         if (other.getCode() != 0) {
           setCode(other.getCode());
         }
@@ -17015,21 +6106,21 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         return this;
       }
 
-      @java.lang.Override
+      @Override
       public final boolean isInitialized() {
         return true;
       }
 
-      @java.lang.Override
+      @Override
       public Builder mergeFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        tm.processing.v1.Tm.ManagementResponse parsedMessage = null;
+        ManagementResponse parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (tm.processing.v1.Tm.ManagementResponse) e.getUnfinishedMessage();
+          parsedMessage = (ManagementResponse) e.getUnfinishedMessage();
           throw e.unwrapIOException();
         } finally {
           if (parsedMessage != null) {
@@ -17048,7 +6139,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * <code>int32 code = 1;</code>
        * @return The code.
        */
-      @java.lang.Override
+      @Override
       public int getCode() {
         return code_;
       }
@@ -17082,7 +6173,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         return this;
       }
 
-      private java.lang.Object message_ = "";
+      private Object message_ = "";
       /**
        * <pre>
        * 错误描述，成功时为空
@@ -17091,16 +6182,16 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * <code>string message = 2;</code>
        * @return The message.
        */
-      public java.lang.String getMessage() {
-        java.lang.Object ref = message_;
-        if (!(ref instanceof java.lang.String)) {
+      public String getMessage() {
+        Object ref = message_;
+        if (!(ref instanceof String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
+          String s = bs.toStringUtf8();
           message_ = s;
           return s;
         } else {
-          return (java.lang.String) ref;
+          return (String) ref;
         }
       }
       /**
@@ -17113,11 +6204,11 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        */
       public com.google.protobuf.ByteString
           getMessageBytes() {
-        java.lang.Object ref = message_;
+        Object ref = message_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
+                  (String) ref);
           message_ = b;
           return b;
         } else {
@@ -17134,7 +6225,7 @@ tm.processing.v1.Tm.TmChannel defaultValue);
        * @return This builder for chaining.
        */
       public Builder setMessage(
-          java.lang.String value) {
+          String value) {
         if (value == null) {
     throw new NullPointerException();
   }
@@ -17177,13 +6268,13 @@ tm.processing.v1.Tm.TmChannel defaultValue);
         onChanged();
         return this;
       }
-      @java.lang.Override
+      @Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
       }
 
-      @java.lang.Override
+      @Override
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.mergeUnknownFields(unknownFields);
@@ -17194,18 +6285,18 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     }
 
     // @@protoc_insertion_point(class_scope:tm.processing.v1.ManagementResponse)
-    private static final tm.processing.v1.Tm.ManagementResponse DEFAULT_INSTANCE;
+    private static final ManagementResponse DEFAULT_INSTANCE;
     static {
-      DEFAULT_INSTANCE = new tm.processing.v1.Tm.ManagementResponse();
+      DEFAULT_INSTANCE = new ManagementResponse();
     }
 
-    public static tm.processing.v1.Tm.ManagementResponse getDefaultInstance() {
+    public static ManagementResponse getDefaultInstance() {
       return DEFAULT_INSTANCE;
     }
 
     private static final com.google.protobuf.Parser<ManagementResponse>
         PARSER = new com.google.protobuf.AbstractParser<ManagementResponse>() {
-      @java.lang.Override
+      @Override
       public ManagementResponse parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
@@ -17218,13 +6309,13 @@ tm.processing.v1.Tm.TmChannel defaultValue);
       return PARSER;
     }
 
-    @java.lang.Override
+    @Override
     public com.google.protobuf.Parser<ManagementResponse> getParserForType() {
       return PARSER;
     }
 
-    @java.lang.Override
-    public tm.processing.v1.Tm.ManagementResponse getDefaultInstanceForType() {
+    @Override
+    public ManagementResponse getDefaultInstanceForType() {
       return DEFAULT_INSTANCE;
     }
 
@@ -17241,90 +6332,20 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_tm_processing_v1_FrameResponse_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_DescrambleRule_descriptor;
+    internal_static_tm_processing_v1_SetSatEnabledRequest_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_DescrambleRule_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_TmChannel_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_TmChannel_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_SatelliteInfo_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_SatelliteInfo_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_SatelliteInfo_TmChannelsEntry_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_SatelliteInfo_TmChannelsEntry_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_ListSatellitesResponse_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_ListSatellitesResponse_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_CreateSatelliteRequest_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_CreateSatelliteRequest_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_UpdateSatelliteRequest_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_UpdateSatelliteRequest_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_GetSatelliteRequest_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_GetSatelliteRequest_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_GetSatelliteResponse_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_GetSatelliteResponse_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_DeleteSatelliteRequest_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_DeleteSatelliteRequest_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_SetEnabledRequest_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_SetEnabledRequest_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_SetChannelEnabledRequest_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_SetChannelEnabledRequest_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_SetChannelDescrambleRequest_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_SetChannelDescrambleRequest_fieldAccessorTable;
+      internal_static_tm_processing_v1_SetSatEnabledRequest_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_tm_processing_v1_UploadTableRequest_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_tm_processing_v1_UploadTableRequest_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_SetDescrambleRuleRequest_descriptor;
+    internal_static_tm_processing_v1_UploadJsonRequest_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_SetDescrambleRuleRequest_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_AddTmChannelsRequest_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_AddTmChannelsRequest_fieldAccessorTable;
-  private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_tm_processing_v1_AddTmChannelsRequest_ChannelsEntry_descriptor;
-  private static final 
-    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
-      internal_static_tm_processing_v1_AddTmChannelsRequest_ChannelsEntry_fieldAccessorTable;
+      internal_static_tm_processing_v1_UploadJsonRequest_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_tm_processing_v1_ManagementResponse_descriptor;
   private static final 
@@ -17338,94 +6359,39 @@ tm.processing.v1.Tm.TmChannel defaultValue);
   private static  com.google.protobuf.Descriptors.FileDescriptor
       descriptor;
   static {
-    java.lang.String[] descriptorData = {
-      "\n\010tm.proto\022\020tm.processing.v1\032\033google/pro" +
-      "tobuf/empty.proto\032\037google/protobuf/times" +
-      "tamp.proto\032\027TelemetryMessages.proto\032\rVer" +
-      "sion.proto\"\256\001\n\014FrameRequest\022\020\n\010sat_code\030" +
-      "\001 \001(\t\022\017\n\007channel\030\002 \001(\t\022\014\n\004data\030\003 \001(\014\022-\n\t" +
-      "send_time\030\004 \001(\0132\032.google.protobuf.Timest" +
-      "amp\022\020\n\010sequence\030\005 \001(\004\022\016\n\006length\030\006 \001(\005\022\023\n" +
-      "\013data_source\030\007 \001(\t:\007\212\265\030\0031.0\"Q\n\rFrameResp" +
-      "onse\022\014\n\004code\030\001 \001(\005\022\017\n\007message\030\002 \001(\t\022!\n\006t" +
-      "m_msg\030\003 \001(\0132\021.TelemetryMessage\"]\n\016Descra" +
-      "mbleRule\022\021\n\tstart_pos\030\001 \001(\005\022\016\n\006length\030\002 " +
-      "\001(\005\022\021\n\tfeed_back\030\003 \001(\t\022\025\n\rinitial_value\030" +
-      "\004 \001(\010\"j\n\tTmChannel\022\014\n\004name\030\001 \001(\t\022\016\n\006enab" +
-      "le\030\002 \001(\010\022\022\n\nchannel_id\030\003 \001(\t\022\025\n\rto_descr" +
-      "amble\030\004 \001(\010\022\024\n\014tm_sync_head\030\005 \001(\t\"\320\002\n\rSa" +
-      "telliteInfo\022\014\n\004name\030\001 \001(\t\022\014\n\004code\030\002 \001(\t\022" +
-      "\016\n\006enable\030\003 \001(\010\022\017\n\007table_a\030\004 \001(\t\022\017\n\007tabl" +
-      "e_b\030\005 \001(\t\022\020\n\010lua_path\030\006 \001(\t\022\016\n\006tm_len\030\007 " +
-      "\001(\005\0229\n\017descramble_rule\030\010 \001(\0132 .tm.proces" +
-      "sing.v1.DescrambleRule\022D\n\013tm_channels\030\t " +
-      "\003(\0132/.tm.processing.v1.SatelliteInfo.TmC" +
-      "hannelsEntry\032N\n\017TmChannelsEntry\022\013\n\003key\030\001" +
-      " \001(\t\022*\n\005value\030\002 \001(\0132\033.tm.processing.v1.T" +
-      "mChannel:\0028\001\"l\n\026ListSatellitesResponse\022\014" +
-      "\n\004code\030\001 \001(\005\022\017\n\007message\030\002 \001(\t\0223\n\nsatelli" +
-      "tes\030\003 \003(\0132\037.tm.processing.v1.SatelliteIn" +
-      "fo\"G\n\026CreateSatelliteRequest\022-\n\004info\030\001 \001" +
-      "(\0132\037.tm.processing.v1.SatelliteInfo\"U\n\026U" +
-      "pdateSatelliteRequest\022\014\n\004code\030\001 \001(\t\022-\n\004i" +
-      "nfo\030\002 \001(\0132\037.tm.processing.v1.SatelliteIn" +
-      "fo\"#\n\023GetSatelliteRequest\022\014\n\004code\030\001 \001(\t\"" +
-      "i\n\024GetSatelliteResponse\022\014\n\004code\030\001 \001(\005\022\017\n" +
-      "\007message\030\002 \001(\t\0222\n\tsatellite\030\003 \001(\0132\037.tm.p" +
-      "rocessing.v1.SatelliteInfo\"&\n\026DeleteSate" +
-      "lliteRequest\022\014\n\004code\030\001 \001(\t\"1\n\021SetEnabled" +
-      "Request\022\014\n\004code\030\001 \001(\t\022\016\n\006enable\030\002 \001(\010\"P\n" +
-      "\030SetChannelEnabledRequest\022\020\n\010sat_code\030\001 " +
-      "\001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\016\n\006enable\030\003 \001(\010\"" +
-      "Z\n\033SetChannelDescrambleRequest\022\020\n\010sat_co" +
-      "de\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\025\n\rto_descr" +
-      "amble\030\003 \001(\010\"U\n\022UploadTableRequest\022\014\n\004cod" +
-      "e\030\001 \001(\t\022\r\n\005table\030\002 \001(\t\022\021\n\tfile_name\030\003 \001(" +
-      "\t\022\017\n\007content\030\004 \001(\014\"X\n\030SetDescrambleRuleR" +
-      "equest\022\014\n\004code\030\001 \001(\t\022.\n\004rule\030\002 \001(\0132 .tm." +
-      "processing.v1.DescrambleRule\"\272\001\n\024AddTmCh" +
-      "annelsRequest\022\014\n\004code\030\001 \001(\t\022F\n\010channels\030" +
-      "\002 \003(\01324.tm.processing.v1.AddTmChannelsRe" +
-      "quest.ChannelsEntry\032L\n\rChannelsEntry\022\013\n\003" +
-      "key\030\001 \001(\t\022*\n\005value\030\002 \001(\0132\033.tm.processing" +
-      ".v1.TmChannel:\0028\001\"3\n\022ManagementResponse\022" +
-      "\014\n\004code\030\001 \001(\005\022\017\n\007message\030\002 \001(\t2k\n\023Teleme" +
-      "tryProcessing\022T\n\rProcessFrames\022\036.tm.proc" +
-      "essing.v1.FrameRequest\032\037.tm.processing.v" +
-      "1.FrameResponse(\0010\0012\310\010\n\023SatelliteManagem" +
-      "ent\022R\n\016ListSatellites\022\026.google.protobuf." +
-      "Empty\032(.tm.processing.v1.ListSatellitesR" +
-      "esponse\022]\n\014GetSatellite\022%.tm.processing." +
-      "v1.GetSatelliteRequest\032&.tm.processing.v" +
-      "1.GetSatelliteResponse\022a\n\017CreateSatellit" +
-      "e\022(.tm.processing.v1.CreateSatelliteRequ" +
-      "est\032$.tm.processing.v1.ManagementRespons" +
-      "e\022a\n\017UpdateSatellite\022(.tm.processing.v1." +
-      "UpdateSatelliteRequest\032$.tm.processing.v" +
-      "1.ManagementResponse\022a\n\017DeleteSatellite\022" +
-      "(.tm.processing.v1.DeleteSatelliteReques" +
-      "t\032$.tm.processing.v1.ManagementResponse\022" +
-      "`\n\023SetSatelliteEnabled\022#.tm.processing.v" +
-      "1.SetEnabledRequest\032$.tm.processing.v1.M" +
-      "anagementResponse\022e\n\021SetChannelEnabled\022*" +
-      ".tm.processing.v1.SetChannelEnabledReque" +
-      "st\032$.tm.processing.v1.ManagementResponse" +
-      "\022k\n\024SetChannelDescramble\022-.tm.processing" +
-      ".v1.SetChannelDescrambleRequest\032$.tm.pro" +
-      "cessing.v1.ManagementResponse\022Y\n\013UploadT" +
-      "able\022$.tm.processing.v1.UploadTableReque" +
-      "st\032$.tm.processing.v1.ManagementResponse" +
-      "\022e\n\021SetDescrambleRule\022*.tm.processing.v1" +
-      ".SetDescrambleRuleRequest\032$.tm.processin" +
-      "g.v1.ManagementResponse\022]\n\rAddTmChannels" +
-      "\022&.tm.processing.v1.AddTmChannelsRequest" +
-      "\032$.tm.processing.v1.ManagementResponseB\024" +
-      "\252\002\021TmProcessing.Grpcb\006proto3"
+    String[] descriptorData = {
+      "\n\010tm.proto\022\020tm.processing.v1\032\037google/pro" +
+      "tobuf/timestamp.proto\032\027TelemetryMessages" +
+      ".proto\032\rVersion.proto\"\256\001\n\014FrameRequest\022\020" +
+      "\n\010sat_code\030\001 \001(\t\022\017\n\007channel\030\002 \001(\t\022\014\n\004dat" +
+      "a\030\003 \001(\014\022-\n\tsend_time\030\004 \001(\0132\032.google.prot" +
+      "obuf.Timestamp\022\020\n\010sequence\030\005 \001(\004\022\016\n\006leng" +
+      "th\030\006 \001(\005\022\023\n\013data_source\030\007 \001(\t:\007\212\265\030\0031.0\"{" +
+      "\n\rFrameResponse\022\014\n\004code\030\001 \001(\005\022\017\n\007message" +
+      "\030\002 \001(\t\022!\n\006tm_msg\030\003 \001(\0132\021.TelemetryMessag" +
+      "e\022(\n\rextra_tm_msgs\030\004 \003(\0132\021.TelemetryMess" +
+      "age\"4\n\024SetSatEnabledRequest\022\014\n\004code\030\001 \001(" +
+      "\t\022\016\n\006enable\030\002 \001(\010\"M\n\022UploadTableRequest\022" +
+      "\020\n\010sat_code\030\001 \001(\t\022\022\n\ntable_path\030\002 \001(\t\022\021\n" +
+      "\tfile_name\030\003 \001(\t\"M\n\021UploadJsonRequest\022\020\n" +
+      "\010sat_code\030\001 \001(\t\022\020\n\010sat_name\030\002 \001(\t\022\024\n\014jso" +
+      "n_content\030\003 \001(\t\"3\n\022ManagementResponse\022\014\n" +
+      "\004code\030\001 \001(\005\022\017\n\007message\030\002 \001(\t2k\n\023Telemetr" +
+      "yProcessing\022T\n\rProcessFrames\022\036.tm.proces" +
+      "sing.v1.FrameRequest\032\037.tm.processing.v1." +
+      "FrameResponse(\0010\0012\250\002\n\023SatelliteManagemen" +
+      "t\022Y\n\013UploadTable\022$.tm.processing.v1.Uplo" +
+      "adTableRequest\032$.tm.processing.v1.Manage" +
+      "mentResponse\022W\n\nUploadJson\022#.tm.processi" +
+      "ng.v1.UploadJsonRequest\032$.tm.processing." +
+      "v1.ManagementResponse\022]\n\rSetSatEnabled\022&" +
+      ".tm.processing.v1.SetSatEnabledRequest\032$" +
+      ".tm.processing.v1.ManagementResponseB\024\252\002" +
+      "\021TmProcessing.Grpcb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
-          com.google.protobuf.EmptyProto.getDescriptor(),
           com.google.protobuf.TimestampProto.getDescriptor(),
           SatDataCenter.DataExchange.TmTc.TelemetryMessages.getDescriptor(),
           SatDataCenter.DataExchange.TmTc.Version.getDescriptor(),
@@ -17435,127 +6401,42 @@ tm.processing.v1.Tm.TmChannel defaultValue);
     internal_static_tm_processing_v1_FrameRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_tm_processing_v1_FrameRequest_descriptor,
-        new java.lang.String[] { "SatCode", "Channel", "Data", "SendTime", "Sequence", "Length", "DataSource", });
+        new String[] { "SatCode", "Channel", "Data", "SendTime", "Sequence", "Length", "DataSource", });
     internal_static_tm_processing_v1_FrameResponse_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_tm_processing_v1_FrameResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_tm_processing_v1_FrameResponse_descriptor,
-        new java.lang.String[] { "Code", "Message", "TmMsg", });
-    internal_static_tm_processing_v1_DescrambleRule_descriptor =
+        new String[] { "Code", "Message", "TmMsg", "ExtraTmMsgs", });
+    internal_static_tm_processing_v1_SetSatEnabledRequest_descriptor =
       getDescriptor().getMessageTypes().get(2);
-    internal_static_tm_processing_v1_DescrambleRule_fieldAccessorTable = new
+    internal_static_tm_processing_v1_SetSatEnabledRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_DescrambleRule_descriptor,
-        new java.lang.String[] { "StartPos", "Length", "FeedBack", "InitialValue", });
-    internal_static_tm_processing_v1_TmChannel_descriptor =
-      getDescriptor().getMessageTypes().get(3);
-    internal_static_tm_processing_v1_TmChannel_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_TmChannel_descriptor,
-        new java.lang.String[] { "Name", "Enable", "ChannelId", "ToDescramble", "TmSyncHead", });
-    internal_static_tm_processing_v1_SatelliteInfo_descriptor =
-      getDescriptor().getMessageTypes().get(4);
-    internal_static_tm_processing_v1_SatelliteInfo_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_SatelliteInfo_descriptor,
-        new java.lang.String[] { "Name", "Code", "Enable", "TableA", "TableB", "LuaPath", "TmLen", "DescrambleRule", "TmChannels", });
-    internal_static_tm_processing_v1_SatelliteInfo_TmChannelsEntry_descriptor =
-      internal_static_tm_processing_v1_SatelliteInfo_descriptor.getNestedTypes().get(0);
-    internal_static_tm_processing_v1_SatelliteInfo_TmChannelsEntry_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_SatelliteInfo_TmChannelsEntry_descriptor,
-        new java.lang.String[] { "Key", "Value", });
-    internal_static_tm_processing_v1_ListSatellitesResponse_descriptor =
-      getDescriptor().getMessageTypes().get(5);
-    internal_static_tm_processing_v1_ListSatellitesResponse_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_ListSatellitesResponse_descriptor,
-        new java.lang.String[] { "Code", "Message", "Satellites", });
-    internal_static_tm_processing_v1_CreateSatelliteRequest_descriptor =
-      getDescriptor().getMessageTypes().get(6);
-    internal_static_tm_processing_v1_CreateSatelliteRequest_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_CreateSatelliteRequest_descriptor,
-        new java.lang.String[] { "Info", });
-    internal_static_tm_processing_v1_UpdateSatelliteRequest_descriptor =
-      getDescriptor().getMessageTypes().get(7);
-    internal_static_tm_processing_v1_UpdateSatelliteRequest_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_UpdateSatelliteRequest_descriptor,
-        new java.lang.String[] { "Code", "Info", });
-    internal_static_tm_processing_v1_GetSatelliteRequest_descriptor =
-      getDescriptor().getMessageTypes().get(8);
-    internal_static_tm_processing_v1_GetSatelliteRequest_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_GetSatelliteRequest_descriptor,
-        new java.lang.String[] { "Code", });
-    internal_static_tm_processing_v1_GetSatelliteResponse_descriptor =
-      getDescriptor().getMessageTypes().get(9);
-    internal_static_tm_processing_v1_GetSatelliteResponse_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_GetSatelliteResponse_descriptor,
-        new java.lang.String[] { "Code", "Message", "Satellite", });
-    internal_static_tm_processing_v1_DeleteSatelliteRequest_descriptor =
-      getDescriptor().getMessageTypes().get(10);
-    internal_static_tm_processing_v1_DeleteSatelliteRequest_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_DeleteSatelliteRequest_descriptor,
-        new java.lang.String[] { "Code", });
-    internal_static_tm_processing_v1_SetEnabledRequest_descriptor =
-      getDescriptor().getMessageTypes().get(11);
-    internal_static_tm_processing_v1_SetEnabledRequest_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_SetEnabledRequest_descriptor,
-        new java.lang.String[] { "Code", "Enable", });
-    internal_static_tm_processing_v1_SetChannelEnabledRequest_descriptor =
-      getDescriptor().getMessageTypes().get(12);
-    internal_static_tm_processing_v1_SetChannelEnabledRequest_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_SetChannelEnabledRequest_descriptor,
-        new java.lang.String[] { "SatCode", "ChannelId", "Enable", });
-    internal_static_tm_processing_v1_SetChannelDescrambleRequest_descriptor =
-      getDescriptor().getMessageTypes().get(13);
-    internal_static_tm_processing_v1_SetChannelDescrambleRequest_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_SetChannelDescrambleRequest_descriptor,
-        new java.lang.String[] { "SatCode", "ChannelId", "ToDescramble", });
+        internal_static_tm_processing_v1_SetSatEnabledRequest_descriptor,
+        new String[] { "Code", "Enable", });
     internal_static_tm_processing_v1_UploadTableRequest_descriptor =
-      getDescriptor().getMessageTypes().get(14);
+      getDescriptor().getMessageTypes().get(3);
     internal_static_tm_processing_v1_UploadTableRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_tm_processing_v1_UploadTableRequest_descriptor,
-        new java.lang.String[] { "Code", "Table", "FileName", "Content", });
-    internal_static_tm_processing_v1_SetDescrambleRuleRequest_descriptor =
-      getDescriptor().getMessageTypes().get(15);
-    internal_static_tm_processing_v1_SetDescrambleRuleRequest_fieldAccessorTable = new
+        new String[] { "SatCode", "TablePath", "FileName", });
+    internal_static_tm_processing_v1_UploadJsonRequest_descriptor =
+      getDescriptor().getMessageTypes().get(4);
+    internal_static_tm_processing_v1_UploadJsonRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_SetDescrambleRuleRequest_descriptor,
-        new java.lang.String[] { "Code", "Rule", });
-    internal_static_tm_processing_v1_AddTmChannelsRequest_descriptor =
-      getDescriptor().getMessageTypes().get(16);
-    internal_static_tm_processing_v1_AddTmChannelsRequest_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_AddTmChannelsRequest_descriptor,
-        new java.lang.String[] { "Code", "Channels", });
-    internal_static_tm_processing_v1_AddTmChannelsRequest_ChannelsEntry_descriptor =
-      internal_static_tm_processing_v1_AddTmChannelsRequest_descriptor.getNestedTypes().get(0);
-    internal_static_tm_processing_v1_AddTmChannelsRequest_ChannelsEntry_fieldAccessorTable = new
-      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
-        internal_static_tm_processing_v1_AddTmChannelsRequest_ChannelsEntry_descriptor,
-        new java.lang.String[] { "Key", "Value", });
+        internal_static_tm_processing_v1_UploadJsonRequest_descriptor,
+        new String[] { "SatCode", "SatName", "JsonContent", });
     internal_static_tm_processing_v1_ManagementResponse_descriptor =
-      getDescriptor().getMessageTypes().get(17);
+      getDescriptor().getMessageTypes().get(5);
     internal_static_tm_processing_v1_ManagementResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_tm_processing_v1_ManagementResponse_descriptor,
-        new java.lang.String[] { "Code", "Message", });
+        new String[] { "Code", "Message", });
     com.google.protobuf.ExtensionRegistry registry =
         com.google.protobuf.ExtensionRegistry.newInstance();
     registry.add(SatDataCenter.DataExchange.TmTc.Version.version);
     com.google.protobuf.Descriptors.FileDescriptor
         .internalUpdateFileDescriptor(descriptor, registry);
-    com.google.protobuf.EmptyProto.getDescriptor();
     com.google.protobuf.TimestampProto.getDescriptor();
     SatDataCenter.DataExchange.TmTc.TelemetryMessages.getDescriptor();
     SatDataCenter.DataExchange.TmTc.Version.getDescriptor();

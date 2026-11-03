@@ -71,7 +71,12 @@ public final class ControllerEnumData {
     /** 返回卫星目录管理模块枚举。 */
     public static Map<String, List<EnumOptionVO>> satelliteManagement() {
         Map<String, List<EnumOptionVO>> data = EnumData.create();
-        EnumData.add(data, "tableType", SatelliteTableType.values());
+        // 复用通用启用枚举，仅为本模块提供英文值，其他模块保持原有数字值。
+        List<EnumOptionVO> options = new ArrayList<>();
+        for (BusinessEnums.Enabled status : BusinessEnums.Enabled.values()) {
+            options.add(new EnumOptionVO(status.getStorageValue(), status.getLabel()));
+        }
+        data.put("enable", options);
         return data;
     }
 

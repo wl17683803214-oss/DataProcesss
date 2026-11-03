@@ -70,7 +70,8 @@ public class OperationLogAdvice extends RequestBodyAdviceAdapter
             {"processParam","处理参数"},{"normalValue","正常值范围"},{"warningValue","预警值范围"},
             {"alarmFlag","参数报警开关"},{"storeFlag","参数存储开关"},{"calibrationFormula","校准公式"},
             {"selectionType","筛选框类型"},{"targetId","筛选框目标ID"},{"checked","勾选状态"},
-            {"systemId","所属系统ID"},{"bitWidth","参数位宽"},{"decimalPlaces","小数位数"},{"satelliteName","卫星名称"},{"tableType","参数表类型"}};
+            {"systemId","所属系统ID"},{"bitWidth","参数位宽"},{"decimalPlaces","小数位数"},{"satelliteName","卫星名称"},
+            {"ids","卫星主键列表"},{"tablePath","遥测参数表地址"}};
         for (String[] pair : pairs) { LABELS.put(pair[0], pair[1]); }
     }
     public OperationLogAdvice(OperationLogService logs, CollectInterfaceConfigMapper interfaces,
@@ -110,9 +111,16 @@ public class OperationLogAdvice extends RequestBodyAdviceAdapter
                     }
                     before = snapshots.toString();
                 }
-                if (request.getServletPath().startsWith("/satellite-management/")
-                        && property(body, "code") != null && !request.getServletPath().endsWith("/create")) {
-                    before = satelliteService.getSatellite(text(property(body, "code")));
+                // 批量删除按本地主键取得快照，不用允许重复的卫星代号定位。
+                if ("/satellite-management/satellites/batch-delete".equals(request.getServletPath())) {
+                    StringBuilder snapshots = new StringBuilder();
+                    Object selected = property(body, "ids");
+                    if (selected instanceof Iterable) {
+                        for (Object selectedId : (Iterable<?>) selected) {
+                            snapshots.append(describe(satelliteService.getSatellite(number(selectedId)))).append("\n");
+                        }
+                    }
+                    before = snapshots.toString();
                 }
                 if ("/processing/telemetry-filter-selection/update".equals(request.getServletPath())) {
                     before = rules.findActiveById(text(property(body, "taskId")), number(property(body, "parseRuleId")));
@@ -144,6 +152,10 @@ public class OperationLogAdvice extends RequestBodyAdviceAdapter
         Object before = request.getAttribute(BEFORE);
         Object resultData = result.getData();
         Long id = number(property(command, "id"));
+        // 文件上传参数位于表单中，仍按本地主键记录修改后的卫星档案。
+        if (id == null && request.getServletPath().startsWith("/satellite-management/")) {
+            id = number(request.getParameter("id"));
+        }
         if (id == null) { id = number(property(command, "roleId")); }
         if (id == null && request.getServletPath().endsWith("/create")) {
             id = number(resultData);
@@ -166,6 +178,14 @@ public class OperationLogAdvice extends RequestBodyAdviceAdapter
             if (value != null) { detail += "；" + field.getValue() + "：" + value; }
         }
         boolean failedSync = Boolean.TRUE.equals(request.getAttribute(SYNC_FAILED));
+        // 基线同步逐条提交，部分失败需要在操作日志中明确展示，不能记成全部成功。
+        if (resultData instanceof com.example.dataadmin.vo.satellite.SatelliteBaselineSyncVO) {
+            com.example.dataadmin.vo.satellite.SatelliteBaselineSyncVO sync =
+                    (com.example.dataadmin.vo.satellite.SatelliteBaselineSyncVO) resultData;
+            failedSync = failedSync || sync.getFailedCount() > 0;
+            detail += "\n基线同步：查询" + sync.getQueriedCount() + "条，新增"
+                    + sync.getCreatedCount() + "条，失败" + sync.getFailedCount() + "条";
+        }
         Object syncResult = request.getAttribute(SYNC_RESULT);
         if (syncResult != null) { detail += "\n运行同步情况：" + syncResult; }
         SystemLogLevel level = Integer.valueOf(200).equals(result.getCode())
@@ -193,6 +213,8 @@ public class OperationLogAdvice extends RequestBodyAdviceAdapter
     private Object snapshot(String path, Long id) {
         if (id == null) { return null; }
         try {
+            // 卫星详情已经改为主键查询，不会因同代号记录而取错快照。
+            if (path.startsWith("/satellite-management/")) { return satelliteService.getSatellite(id); }
             if (path.startsWith("/collection/interfaces/")) { return interfaces.findById(id); }
             if (path.startsWith("/collection/protocols/")) { return protocols.findById(id); }
             if (path.startsWith("/calibration/channels/")) { return channels.findById(id); }
@@ -223,8 +245,8 @@ public class OperationLogAdvice extends RequestBodyAdviceAdapter
                     try { display = com.example.dataadmin.enums.BusinessEnums.SelectionType.fromCode(Integer.valueOf(display)).getLabel(); }
                     catch (Exception ignored) { /* 无效请求保留原编码用于排查。 */ }
                 } else if ("enabled".equals(field.getKey()) || "enable".equals(field.getKey()) || field.getKey().endsWith("Enabled")) {
-                    display = "1".equals(display) || "true".equals(display) ? "已启用"
-                            : "0".equals(display) || "false".equals(display) ? "已禁用" : display;
+                    display = "1".equals(display) || "true".equals(display) || "enabled".equals(display) ? "已启用"
+                            : "0".equals(display) || "false".equals(display) || "disabled".equals(display) ? "已禁用" : display;
                 } else if ("checked".equals(field.getKey())) {
                     display = "true".equals(display) ? "已勾选" : "未勾选";
                 }

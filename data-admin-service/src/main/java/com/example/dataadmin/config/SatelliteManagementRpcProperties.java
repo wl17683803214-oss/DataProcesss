@@ -16,7 +16,7 @@ public class SatelliteManagementRpcProperties {
     private long timeoutMillis = 5000L;
     /** 单次响应允许的最大消息大小。 */
     private int maxInboundMessageSize = 16 * 1024 * 1024;
-    /** 参数表上传允许的最大文件大小。 */
+    /** 参数表下载、参数表上传和配置文件上传允许的最大字节数。 */
     private int maxUploadFileSize = 16 * 1024 * 1024;
 
     public String getHost() {

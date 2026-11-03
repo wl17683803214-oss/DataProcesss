@@ -15,6 +15,22 @@ public final class BusinessEnums {
         Enabled(int value, String label) { this.value = value; this.label = label; }
         public Object getValue() { return value; }
         public String getLabel() { return label; }
+
+        /** 为新业务提供英文存储值，保留现有数字接口兼容性。 */
+        public String getStorageValue() {
+            return name().toLowerCase(java.util.Locale.ROOT);
+        }
+
+        /** 校验英文状态，复用已有启用枚举，不重复创建枚举。 */
+        public static Enabled fromStorageValue(String value) {
+            // 只接受枚举中声明的英文值，中文标签仅用于展示。
+            for (Enabled status : values()) {
+                if (status.getStorageValue().equals(value)) {
+                    return status;
+                }
+            }
+            throw new IllegalArgumentException("启用状态只能为enabled（启用）或disabled（禁用）");
+        }
     }
 
     /** 通用是否状态。 */

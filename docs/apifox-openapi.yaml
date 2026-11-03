@@ -185,8 +185,8 @@ paths:
   /rpc-api/knowledge/knowledge/satellite/list:
     get:
       tags: [基线卫星目录]
-      summary: 查询基线卫星及通道名称
-      description: 采集任务提交前按协议fields中的sat_code查询；RPC返回后按sat_code匹配satelliteCode赋值sat_name，再在该卫星channelList中按channel_code匹配channelCode赋值channel_name。匹配不到或名称为空时保留RPC原值。此接口属于基线服务。
+      summary: 查询基线卫星、遥测参数表及通道信息
+      description: 此接口属于基线服务。卫星档案同步时不传satelliteCode，按pageNum和pageSize读取全部分页；提取satelliteName、satelliteCode、telemetryUrl和telemetryName用于本地新增及下载参数表。采集任务仍可按协议fields中的sat_code查询，并匹配channelList中的通道名称。
       servers:
         - url: http://10.126.100.249:16001/prod-api
       security: []
@@ -203,7 +203,8 @@ paths:
           example: 10
         - name: satelliteCode
           in: query
-          required: true
+          required: false
+          description: 可选卫星代号；同步全部卫星时不传
           schema: {type: string}
           example: '111'
       responses:
@@ -215,9 +216,12 @@ paths:
                 code: 200
                 msg: 操作成功
                 data:
+                  total: 1
                   rows:
                     - satelliteCode: '111'
                       satelliteName: XX12卫星
+                      telemetryUrl: 'http://baseline-files.example/遥测参数表.xlsx'
+                      telemetryName: 遥测参数表.xlsx
                       channelList:
                         - channelCode: '1111'
                           channelName: '1122'
@@ -4747,7 +4751,7 @@ paths:
   /satellite-management/findData:
     get:
       tags: [卫星目录管理]
-      summary: 查询卫星目录管理枚举
+      summary: 查询卫星启用状态枚举
       responses:
         '200':
           description: 操作成功
@@ -4755,224 +4759,291 @@ paths:
             application/json:
               example:
                 code: 200
-                message: "操作成功"
+                message: 操作成功
                 data:
-                  tableType:
-                    - { value: "A", label: "遥测参数表" }
-                    - { value: "B", label: "帧结构表" }
+                  enable:
+                    - { value: disabled, label: 禁用 }
+                    - { value: enabled, label: 启用 }
 
   /satellite-management/satellites:
     get:
       tags: [卫星目录管理]
-      summary: 查询全部卫星完整配置
+      summary: 查询本地卫星档案
+      description: 独立于任务设备卫星表；名称和代号允许重复。返回本地主键及中文启用状态，列表不加载jsonContent。
+      parameters:
+        - name: name
+          in: query
+          description: 卫星名称模糊查询，空值不筛选
+          schema: { type: string }
+        - name: code
+          in: query
+          description: 卫星代号精确查询，同代号返回全部匹配记录，空值不筛选
+          schema: { type: string }
+        - name: enable
+          in: query
+          description: 英文启用状态，空值不筛选
+          schema: { type: string, enum: [enabled, disabled] }
       responses:
         '200':
-          description: 操作成功
+          description: 本地卫星列表
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/SatelliteInfoVO' }
               example:
                 code: 200
-                message: "操作成功"
+                message: 操作成功
                 data:
-                  - name: "试验卫星74"
-                    code: "74"
-                    enable: true
-                    tableA: "74/table/a/遥测参数表.xlsx"
-                    tableB: "74/table/b/帧结构表.xlsx"
-                    luaPath: "74/lua"
-                    tmLen: 1024
-                    descrambleRule: { startPos: 4, length: 1020, feedBack: "x^8+x^5+1", initialValue: true }
-                    tmChannels:
-                      - { name: "遥测通道12", enable: true, channelId: "12", toDescramble: true, tmSyncHead: "1ACFFC1D" }
+                  - { id: 1, name: 试验卫星74, code: '74', enable: 禁用, enableValue: disabled, tablePath: '/data/satellite-tables/独立目录/遥测参数表.xlsx', createTime: '2026-11-03T10:00:00', updateTime: '2026-11-03T10:00:00' }
 
-  /satellite-management/satellites/{code}:
+  /satellite-management/satellites/{id}:
     get:
       tags: [卫星目录管理]
-      summary: 查询卫星完整配置详情
+      summary: 按本地主键查询卫星详情
+      description: 不使用可能重复的卫星代号定位。已上传配置文件时，详情返回jsonContent完整原文；未上传时省略该字段。
       parameters:
-        - name: code
+        - name: id
           in: path
           required: true
-          schema: { type: string }
-          example: "74"
+          schema: { type: integer, format: int64 }
+          example: 1
       responses:
         '200':
-          description: 操作成功
+          description: 本地档案详情
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data: { $ref: '#/components/schemas/SatelliteInfoVO' }
               example:
                 code: 200
-                message: "操作成功"
+                message: 操作成功
                 data:
-                  name: "试验卫星74"
-                  code: "74"
-                  enable: true
-                  tableA: "74/table/a/遥测参数表.xlsx"
-                  tableB: "74/table/b/帧结构表.xlsx"
-                  luaPath: "74/lua"
-                  tmLen: 1024
-                  descrambleRule: { startPos: 4, length: 1020, feedBack: "x^8+x^5+1", initialValue: true }
-                  tmChannels:
-                    - { name: "遥测通道12", enable: true, channelId: "12", toDescramble: true, tmSyncHead: "1ACFFC1D" }
+                  id: 1
+                  name: 试验卫星74
+                  code: '74'
+                  enable: 禁用
+                  enableValue: disabled
+                  tablePath: /data/satellite-tables/独立目录/遥测参数表.xlsx
+                  jsonContent: '{"tmChannels": {}}'
+                  createTime: '2026-11-03T10:00:00'
+                  updateTime: '2026-11-03T10:00:00'
         '404':
-          description: 卫星不存在
-          content:
-            application/json:
-              example: { code: 404, message: "未找到指定的卫星配置" }
+          description: 本地主键不存在
 
   /satellite-management/satellites/create:
     post:
       tags: [卫星目录管理]
-      summary: 创建卫星完整配置
+      summary: 新增本地卫星档案
+      description: 名称与代号均允许重复。返回新主键后可调用/json/upload上传配置文件。提供tablePath时立即调用UploadTable，并下发目标启用状态；默认禁用且未配置参数表的空档案只在本地创建。远程失败时本条本地新增回滚。
       requestBody:
         required: true
         content:
           application/json:
             schema: { $ref: '#/components/schemas/SatelliteInfoRequest' }
-            example:
-              name: "试验卫星74"
-              code: "74"
-              enable: false
-              tableA: ""
-              tableB: ""
-              luaPath: ""
-              tmLen: 1024
-              descrambleRule: { startPos: 4, length: 1020, feedBack: "x^8+x^5+1", initialValue: true }
-              tmChannels:
-                - { name: "遥测通道12", enable: true, channelId: "12", toDescramble: true, tmSyncHead: "1ACFFC1D" }
+            example: { name: 试验卫星74, code: '74', enable: disabled, tablePath: '' }
       responses:
         '200':
-          description: 操作成功
+          description: 新建成功，data为本地主键
           content:
             application/json:
-              example: { code: 200, message: "操作成功" }
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data: { type: integer, format: int64 }
+              example: { code: 200, message: 操作成功, data: 1 }
         '400':
-          description: 参数或远程业务校验失败
-          content:
-            application/json:
-              example: { code: 400, message: "卫星代号已存在" }
+          description: 必填信息或远程业务校验失败
+        '502':
+          description: 远程服务不可用
+        '504':
+          description: 远程调用超时
 
   /satellite-management/satellites/update:
     post:
       tags: [卫星目录管理]
-      summary: 整体更新卫星完整配置
+      summary: 按本地主键编辑卫星档案
+      description: 名称与代号均允许重复和修改。省略enable保留原状态。修改名称或代号时重新下发已有JSON配置；修改参数表地址或代号时立即下发参数表。tablePath省略时保留原值，空串仅清空本地地址；远程没有参数表删除及卫星改名接口。远程成功后提交本地修改，原有JSON文本保留。
       requestBody:
         required: true
         content:
           application/json:
-            schema:
-              type: object
-              required: [code, info]
-              properties:
-                code: { type: string, description: "用于定位原卫星的代号" }
-                info: { $ref: '#/components/schemas/SatelliteInfoRequest' }
-            example:
-              code: "74"
-              info:
-                name: "试验卫星74号"
-                code: "074"
-                enable: true
-                tableA: "74/table/a/遥测参数表.xlsx"
-                tableB: "74/table/b/帧结构表.xlsx"
-                luaPath: "74/lua"
-                tmLen: 1024
-                descrambleRule: { startPos: 4, length: 1020, feedBack: "x^8+x^5+1", initialValue: true }
-                tmChannels:
-                  - { name: "遥测通道12", enable: true, channelId: "12", toDescramble: true, tmSyncHead: "1ACFFC1D" }
+            schema: { $ref: '#/components/schemas/SatelliteUpdateRequest' }
+            example: { id: 1, name: 试验卫星74号, code: '74', enable: disabled }
       responses:
         '200':
           description: 操作成功
           content:
             application/json:
-              example: { code: 200, message: "操作成功" }
+              example: { code: 200, message: 操作成功 }
 
   /satellite-management/satellites/delete:
     post:
       tags: [卫星目录管理]
-      summary: 删除卫星
+      summary: 按本地主键删除单条卫星
+      description: 仅删除本地档案，不调用远程删除，不删除可能仍被远程使用的参数表文件。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SatelliteIdRequest' }
+            example: { id: 1 }
+      responses:
+        '200':
+          description: data为删除条数
+          content:
+            application/json:
+              example: { code: 200, message: 操作成功, data: 1 }
+
+  /satellite-management/satellites/batch-delete:
+    post:
+      tags: [卫星目录管理]
+      summary: 按本地主键批量删除卫星
+      description: 只合并重复提交的同一主键，不按卫星代号去重。所有主键必须存在；任一项不存在时整批不删除。使用数据库事务，仅删除本地档案。
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [code]
+              required: [ids]
               properties:
-                code: { type: string, description: "卫星代号" }
-            example: { code: "74" }
+                ids:
+                  type: array
+                  minItems: 1
+                  items: { type: integer, format: int64 }
+                  description: 本地主键列表
+            example: { ids: [1, 2, 3] }
       responses:
         '200':
-          description: 操作成功
+          description: data为实际删除条数
           content:
             application/json:
-              example: { code: 200, message: "操作成功" }
+              example: { code: 200, message: 操作成功, data: 3 }
+        '400':
+          description: 未选择卫星或存在无效主键，整批未删除
 
   /satellite-management/satellites/enabled:
     post:
       tags: [卫星目录管理]
-      summary: 修改卫星启用状态
+      summary: 修改卫星启用状态并立即下发
+      description: 用id定位单条本地档案，使用其code调用SetSatEnabled。远程失败时本地状态不变。同代号在远程是否共享配置由远程服务决定。
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [code, enable]
+              required: [id, enable]
               properties:
-                code: { type: string, description: "卫星代号" }
-                enable: { type: boolean, description: "是否启用" }
-            example: { code: "74", enable: true }
+                id: { type: integer, format: int64, description: 本地卫星主键 }
+                enable: { type: string, enum: [enabled, disabled], description: 英文启用状态 }
+            example: { id: 1, enable: enabled }
       responses:
         '200':
-          description: 操作成功
+          description: 远程调用及本地保存成功
           content:
             application/json:
-              example: { code: 200, message: "操作成功" }
-
-  /satellite-management/channels/enabled:
-    post:
-      tags: [卫星目录管理]
-      summary: 修改遥测通道启用状态
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/ChannelEnabledRequest' }
-            example: { satelliteCode: "74", channelId: "12", enable: true }
-      responses:
-        '200':
-          description: 操作成功
-          content:
-            application/json:
-              example: { code: 200, message: "操作成功" }
+              example: { code: 200, message: 操作成功 }
 
   /satellite-management/tables/upload:
     post:
       tags: [卫星目录管理]
-      summary: 上传卫星参数表
-      description: 文件内容通过gRPC直接转发给卫星管理服务，tableType只能为A或B。
+      summary: 上传或下发遥测参数表配置
+      description: 支持上传文件或提交已有文件地址。上传文件先保存到satellite-management.storage.table-directory的独立子目录，保留原文件名；提交地址时要求文件在管理服务端存在且可读。随后立即调用UploadTable，sat_code取选中档案code，table_path为本地绝对路径，file_name为实际文件名，再下发档案的目标启用状态。远程成功后保存本地地址。双方须能读取相同绝对路径，本接口不向远程传输文件字节。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, tablePath]
+              properties:
+                id: { type: integer, format: int64, description: 本地卫星主键 }
+                tablePath: { type: string, description: 本机或共享目录中的参数表文件地址 }
+            example: { id: 1, tablePath: '/data/satellite-tables/独立目录/遥测参数表.xlsx' }
+          multipart/form-data:
+            schema:
+              type: object
+              required: [id, file]
+              properties:
+                id: { type: integer, format: int64, description: 本地卫星主键 }
+                file: { type: string, format: binary, description: 遥测参数表文件，不再传tableType }
+      responses:
+        '200':
+          description: 远程下发及本地保存成功
+          content:
+            application/json:
+              example: { code: 200, message: 操作成功 }
+        '400':
+          description: 文件为空、不可读或超过已有文件大小配置
+        '502':
+          description: 远程服务不可用
+        '504':
+          description: 远程调用超时
+
+  /satellite-management/json/upload:
+    post:
+      tags: [卫星目录管理]
+      summary: 上传卫星JSON配置并立即下发
+      description: 先新建卫星档案取得id，再上传UTF-8配置文件。校验完整JSON语法，保留缩进和换行，不拆解业务字段。立即调用UploadJson，sat_code及sat_name取选中的本地档案，json_content为文件原文；如有本地参数表则再次下发本地路径，最后恢复档案的目标启用状态。全部远程调用成功后保存jsonContent，失败时本地旧配置保留。
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
-              required: [code, tableType, file]
+              required: [id, file]
               properties:
-                code: { type: string, description: "卫星代号" }
-                tableType: { type: string, enum: [A, B], description: "A为遥测参数表，B为帧结构表" }
-                file: { type: string, format: binary, description: "参数表文件" }
+                id: { type: integer, format: int64, description: 本地卫星主键 }
+                file: { type: string, format: binary, description: UTF-8编码的完整JSON配置文件 }
       responses:
         '200':
-          description: 操作成功
+          description: 远程下发及本地保存成功
           content:
             application/json:
-              example: { code: 200, message: "操作成功" }
+              example: { code: 200, message: 操作成功 }
         '400':
-          description: 文件校验失败
+          description: 文件为空、编码或语法错误，或超过已有文件大小配置
+
+  /satellite-management/satellites/sync-baseline:
+    post:
+      tags: [卫星目录管理]
+      summary: 同步基线卫星并新增本地档案
+      description: 复用baseline.sso配置查询全部卫星分页，不传taskId，不按名称或代号去重；重复同步仍逐条新增。提取satelliteName、satelliteCode，通过telemetryUrl下载，以telemetryName为文件名存入本地独立子目录。使用本地绝对路径立即调用UploadTable，并下发默认禁用状态；成功后提交新增，jsonContent为空。每条卫星独立事务，失败不影响其他记录，必须检查failedCount及failures。本接口不改变原/processing/rules/sync-baseline按任务导入参数的行为。
+      responses:
+        '200':
+          description: 查询完成，data包含逐条同步结果；存在失败时也返回成功及失败明细
           content:
             application/json:
-              example: { code: 400, message: "参数表类型只能为A或B" }
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data: { $ref: '#/components/schemas/SatelliteBaselineSyncVO' }
+              example:
+                code: 200
+                message: 操作成功
+                data:
+                  queriedCount: 2
+                  createdCount: 1
+                  failedCount: 1
+                  failures:
+                    - { rowNumber: 2, satelliteName: 试验卫星75, satelliteCode: '75', message: 基线遥测参数表下载地址不能为空 }
+        '400':
+          description: 基线接口配置或分页结构错误，未执行新增
 
 components:
   securitySchemes:
@@ -5949,45 +6020,56 @@ components:
           receiverId: ""
           receiverName: ""
           time: "2026-09-02 16:35:28.123"
-    DescrambleRule:
-      type: object
-      required: [startPos, length, feedBack, initialValue]
-      properties:
-        startPos: { type: integer, minimum: 0, description: "解扰起始位置" }
-        length: { type: integer, minimum: 1, description: "解扰长度" }
-        feedBack: { type: string, description: "解扰多项式" }
-        initialValue: { type: boolean, description: "是否使用全1初始值" }
-    TmChannel:
-      type: object
-      required: [name, enable, channelId, toDescramble, tmSyncHead]
-      properties:
-        name: { type: string, description: "通道名称" }
-        enable: { type: boolean, description: "是否启用" }
-        channelId: { type: string, description: "十六进制通道代号" }
-        toDescramble: { type: boolean, description: "是否需要解扰" }
-        tmSyncHead: { type: string, description: "同步头" }
     SatelliteInfoRequest:
       type: object
-      required: [name, code, enable, tmLen]
+      required: [name, code]
       properties:
-        name: { type: string, description: "卫星名称" }
-        code: { type: string, description: "卫星代号" }
-        enable: { type: boolean, description: "是否启用" }
-        tableA: { type: string, description: "遥测参数表A相对路径" }
-        tableB: { type: string, description: "帧结构表B相对路径" }
-        luaPath: { type: string, description: "Lua脚本目录" }
-        tmLen: { type: integer, minimum: 1, description: "遥测帧长" }
-        descrambleRule: { $ref: '#/components/schemas/DescrambleRule' }
-        tmChannels:
-          type: array
-          items: { $ref: '#/components/schemas/TmChannel' }
-    ChannelEnabledRequest:
+        name: { type: string, description: 卫星名称，允许重复 }
+        code: { type: string, description: 卫星代号，允许重复 }
+        enable: { type: string, enum: [enabled, disabled], default: disabled, description: 英文启用状态 }
+        tablePath: { type: string, nullable: true, description: 可选的本机或共享目录参数表地址，提供时立即下发 }
+    SatelliteUpdateRequest:
       type: object
-      required: [satelliteCode, channelId, enable]
+      required: [id, name, code]
       properties:
-        satelliteCode: { type: string, description: "卫星代号" }
-        channelId: { type: string, description: "十六进制通道代号" }
-        enable: { type: boolean, description: "是否启用" }
+        id: { type: integer, format: int64, description: 本地主键 }
+        name: { type: string, description: 卫星名称，允许重复 }
+        code: { type: string, description: 卫星代号，允许重复和修改 }
+        enable: { type: string, enum: [enabled, disabled], description: 省略时保留原启用状态 }
+        tablePath: { type: string, nullable: true, description: 省略时保留原值，空串仅清空本地地址 }
+    SatelliteIdRequest:
+      type: object
+      required: [id]
+      properties:
+        id: { type: integer, format: int64, description: 本地卫星主键，不是卫星代号 }
+    SatelliteInfoVO:
+      type: object
+      properties:
+        id: { type: integer, format: int64, description: 本地卫星主键 }
+        name: { type: string, description: 卫星名称，允许重复 }
+        code: { type: string, description: 卫星代号，允许重复 }
+        enable: { type: string, enum: [启用, 禁用], description: 查询返回的中文状态标签 }
+        enableValue: { type: string, enum: [enabled, disabled], description: 前端编辑回填使用的英文状态 }
+        tablePath: { type: string, nullable: true, description: 遥测参数表本地绝对路径 }
+        jsonContent: { type: string, description: 详情中返回已上传文件的原文，列表和未上传时省略 }
+        createTime: { type: string, format: date-time, description: 创建时间 }
+        updateTime: { type: string, format: date-time, description: 更新时间 }
+    SatelliteBaselineSyncVO:
+      type: object
+      properties:
+        queriedCount: { type: integer, description: 基线记录数，重复代号分别计数 }
+        createdCount: { type: integer, description: 新增及远程下发成功的数量 }
+        failedCount: { type: integer, description: 同步失败数量 }
+        failures:
+          type: array
+          description: 每条失败的定位信息及中文原因
+          items:
+            type: object
+            properties:
+              rowNumber: { type: integer, description: 本次基线结果中的行号，从一开始 }
+              satelliteName: { type: string }
+              satelliteCode: { type: string }
+              message: { type: string, description: 中文失败原因 }
 
   parameters:
     Id:

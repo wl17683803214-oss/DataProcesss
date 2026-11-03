@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.SatelliteConfigMapper">
+    <!-- 列表只查询元数据，配置原文仅在详情和下发时加载。 -->
+    <sql id="metadata">id, name, code, enable, table_path, create_time, update_time</sql>
+    <!-- 复用已有事务级锁方式，避免并发编辑和删除互相覆盖。 -->
+    <select id="lockManagement" resultType="string">
+        select pg_advisory_xact_lock(hashtext('卫星档案管理'))
+    </select>
+    <!-- 仅对非空字段拼接筛选条件，代号筛选可返回多条记录。 -->
+    <select id="findList" resultType="com.example.dataadmin.entity.SatelliteConfig">
+        select <include refid="metadata"/> from satellite_config
+        <where>
+            <if test="name != null and name != ''">name like concat('%', #{name}, '%')</if>
+            <if test="code != null and code != ''">and code = #{code}</if>
+            <if test="enable != null and enable != ''">and enable = #{enable}</if>
+        </where>
+        order by id desc
+    </select>
+    <!-- 缺少主键时不允许退化为全表详情查询。 -->
+    <select id="findById" resultType="com.example.dataadmin.entity.SatelliteConfig">
+        select <include refid="metadata"/>, json_content from satellite_config
+        <where>
+            <if test="id != null">id = #{id}</if>
+            <if test="id == null">1 = 0</if>
+        </where>
+    </select>
+    <!-- 批量查询与删除共用主键条件，空集合不匹配任何记录。 -->
+    <sql id="idFilter">
+        <where>
+            <if test="ids != null and ids.size() > 0">
+                id in
+                <foreach collection="ids" item="id" open="(" close=")" separator=",">#{id}</foreach>
+            </if>
+            <if test="ids == null or ids.size() == 0">1 = 0</if>
+        </where>
+    </sql>
+    <!-- 删除前核对整个批次均存在，避免静默部分成功。 -->
+    <select id="findIds" resultType="long">
+        select id from satellite_config <include refid="idFilter"/> order by id
+    </select>
+    <!-- 与现有金仓业务表一致，使用数据库序列回填主键。 -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select nextval('satellite_config_id_seq')
+        </selectKey>
+        insert into satellite_config (id, name, code, enable, table_path, json_content)
+        values (#{id}, #{name}, #{code}, #{enable}, #{tablePath}, #{jsonContent})
+    </insert>
+    <!-- 名称和代号均可重复和修改，始终通过主键定位本地记录。 -->
+    <update id="update">
+        update satellite_config
+        set name = #{name}, code = #{code}, enable = #{enable}, table_path = #{tablePath},
+            json_content = #{jsonContent}, update_time = current_timestamp
+        <where>
+            <if test="id != null">id = #{id}</if>
+            <if test="id == null">1 = 0</if>
+        </where>
+    </update>
+    <!-- 仅删除本地档案，不调用已经移除的远程删除接口。 -->
+    <delete id="deleteByIds">
+        delete from satellite_config <include refid="idFilter"/>
+    </delete>
+</mapper>

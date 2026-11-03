@@ -328,6 +328,29 @@ CREATE INDEX IF NOT EXISTS idx_calib_channel_config_task_id ON calib_channel_con
 CREATE UNIQUE INDEX IF NOT EXISTS uk_calib_channel_task_formula
     ON calib_channel_config (task_id, calibration_formula) WHERE is_deleted = 0;
 
+-- 卫星档案独立于任务设备卫星表，名称及代号均允许重复。
+CREATE TABLE IF NOT EXISTS satellite_config (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    code TEXT NOT NULL,
+    enable VARCHAR(16) NOT NULL DEFAULT 'disabled',
+    table_path TEXT,
+    json_content TEXT,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+COMMENT ON TABLE satellite_config IS '本地卫星档案，支持重复名称和重复代号';
+COMMENT ON COLUMN satellite_config.id IS '本地主键，查询详情、编辑、上传、启停和删除均按此字段定位';
+COMMENT ON COLUMN satellite_config.name IS '卫星名称，允许重复';
+COMMENT ON COLUMN satellite_config.code IS '卫星代号，允许重复，仅作为远程调用参数';
+COMMENT ON COLUMN satellite_config.enable IS '英文启用状态：enabled启用，disabled禁用';
+COMMENT ON COLUMN satellite_config.table_path IS '遥测参数表本地绝对路径，远程服务须能读取同一路径';
+COMMENT ON COLUMN satellite_config.json_content IS '上传配置文件的完整文本，不拆解业务字段';
+COMMENT ON COLUMN satellite_config.create_time IS '创建时间';
+COMMENT ON COLUMN satellite_config.update_time IS '更新时间';
+-- 代号索引仅用于筛选，不添加唯一约束。
+CREATE INDEX IF NOT EXISTS idx_satellite_config_code ON satellite_config (code);
+
 -- 设备卫星表：编码和名称来自Excel页签，类型由前端选择。
 CREATE TABLE IF NOT EXISTS device_satellite (
     id BIGSERIAL PRIMARY KEY,

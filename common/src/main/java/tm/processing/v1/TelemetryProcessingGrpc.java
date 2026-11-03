@@ -16,32 +16,32 @@ public final class TelemetryProcessingGrpc {
 
   private TelemetryProcessingGrpc() {}
 
-  public static final java.lang.String SERVICE_NAME = "tm.processing.v1.TelemetryProcessing";
+  public static final String SERVICE_NAME = "tm.processing.v1.TelemetryProcessing";
 
   // Static method descriptors that strictly reflect the proto.
-  private static volatile io.grpc.MethodDescriptor<tm.processing.v1.Tm.FrameRequest,
-      tm.processing.v1.Tm.FrameResponse> getProcessFramesMethod;
+  private static volatile io.grpc.MethodDescriptor<Tm.FrameRequest,
+      Tm.FrameResponse> getProcessFramesMethod;
 
   @io.grpc.stub.annotations.RpcMethod(
       fullMethodName = SERVICE_NAME + '/' + "ProcessFrames",
-      requestType = tm.processing.v1.Tm.FrameRequest.class,
-      responseType = tm.processing.v1.Tm.FrameResponse.class,
+      requestType = Tm.FrameRequest.class,
+      responseType = Tm.FrameResponse.class,
       methodType = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
-  public static io.grpc.MethodDescriptor<tm.processing.v1.Tm.FrameRequest,
-      tm.processing.v1.Tm.FrameResponse> getProcessFramesMethod() {
-    io.grpc.MethodDescriptor<tm.processing.v1.Tm.FrameRequest, tm.processing.v1.Tm.FrameResponse> getProcessFramesMethod;
+  public static io.grpc.MethodDescriptor<Tm.FrameRequest,
+      Tm.FrameResponse> getProcessFramesMethod() {
+    io.grpc.MethodDescriptor<Tm.FrameRequest, Tm.FrameResponse> getProcessFramesMethod;
     if ((getProcessFramesMethod = TelemetryProcessingGrpc.getProcessFramesMethod) == null) {
       synchronized (TelemetryProcessingGrpc.class) {
         if ((getProcessFramesMethod = TelemetryProcessingGrpc.getProcessFramesMethod) == null) {
           TelemetryProcessingGrpc.getProcessFramesMethod = getProcessFramesMethod =
-              io.grpc.MethodDescriptor.<tm.processing.v1.Tm.FrameRequest, tm.processing.v1.Tm.FrameResponse>newBuilder()
+              io.grpc.MethodDescriptor.<Tm.FrameRequest, Tm.FrameResponse>newBuilder()
               .setType(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
               .setFullMethodName(generateFullMethodName(SERVICE_NAME, "ProcessFrames"))
               .setSampledToLocalTracing(true)
               .setRequestMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  tm.processing.v1.Tm.FrameRequest.getDefaultInstance()))
+                  Tm.FrameRequest.getDefaultInstance()))
               .setResponseMarshaller(io.grpc.protobuf.ProtoUtils.marshaller(
-                  tm.processing.v1.Tm.FrameResponse.getDefaultInstance()))
+                  Tm.FrameResponse.getDefaultInstance()))
               .setSchemaDescriptor(new TelemetryProcessingMethodDescriptorSupplier("ProcessFrames"))
               .build();
         }
@@ -56,7 +56,7 @@ public final class TelemetryProcessingGrpc {
   public static TelemetryProcessingStub newStub(io.grpc.Channel channel) {
     io.grpc.stub.AbstractStub.StubFactory<TelemetryProcessingStub> factory =
       new io.grpc.stub.AbstractStub.StubFactory<TelemetryProcessingStub>() {
-        @java.lang.Override
+        @Override
         public TelemetryProcessingStub newStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
           return new TelemetryProcessingStub(channel, callOptions);
         }
@@ -71,7 +71,7 @@ public final class TelemetryProcessingGrpc {
       io.grpc.Channel channel) {
     io.grpc.stub.AbstractStub.StubFactory<TelemetryProcessingBlockingStub> factory =
       new io.grpc.stub.AbstractStub.StubFactory<TelemetryProcessingBlockingStub>() {
-        @java.lang.Override
+        @Override
         public TelemetryProcessingBlockingStub newStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
           return new TelemetryProcessingBlockingStub(channel, callOptions);
         }
@@ -86,7 +86,7 @@ public final class TelemetryProcessingGrpc {
       io.grpc.Channel channel) {
     io.grpc.stub.AbstractStub.StubFactory<TelemetryProcessingFutureStub> factory =
       new io.grpc.stub.AbstractStub.StubFactory<TelemetryProcessingFutureStub>() {
-        @java.lang.Override
+        @Override
         public TelemetryProcessingFutureStub newStub(io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
           return new TelemetryProcessingFutureStub(channel, callOptions);
         }
@@ -104,8 +104,8 @@ public final class TelemetryProcessingGrpc {
 
     /**
      */
-    default io.grpc.stub.StreamObserver<tm.processing.v1.Tm.FrameRequest> processFrames(
-        io.grpc.stub.StreamObserver<tm.processing.v1.Tm.FrameResponse> responseObserver) {
+    default io.grpc.stub.StreamObserver<Tm.FrameRequest> processFrames(
+        io.grpc.stub.StreamObserver<Tm.FrameResponse> responseObserver) {
       return io.grpc.stub.ServerCalls.asyncUnimplementedStreamingCall(getProcessFramesMethod(), responseObserver);
     }
   }
@@ -120,7 +120,7 @@ public final class TelemetryProcessingGrpc {
   public static abstract class TelemetryProcessingImplBase
       implements io.grpc.BindableService, AsyncService {
 
-    @java.lang.Override public final io.grpc.ServerServiceDefinition bindService() {
+    @Override public final io.grpc.ServerServiceDefinition bindService() {
       return TelemetryProcessingGrpc.bindService(this);
     }
   }
@@ -139,7 +139,7 @@ public final class TelemetryProcessingGrpc {
       super(channel, callOptions);
     }
 
-    @java.lang.Override
+    @Override
     protected TelemetryProcessingStub build(
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       return new TelemetryProcessingStub(channel, callOptions);
@@ -147,8 +147,8 @@ public final class TelemetryProcessingGrpc {
 
     /**
      */
-    public io.grpc.stub.StreamObserver<tm.processing.v1.Tm.FrameRequest> processFrames(
-        io.grpc.stub.StreamObserver<tm.processing.v1.Tm.FrameResponse> responseObserver) {
+    public io.grpc.stub.StreamObserver<Tm.FrameRequest> processFrames(
+        io.grpc.stub.StreamObserver<Tm.FrameResponse> responseObserver) {
       return io.grpc.stub.ClientCalls.asyncBidiStreamingCall(
           getChannel().newCall(getProcessFramesMethod(), getCallOptions()), responseObserver);
     }
@@ -168,7 +168,7 @@ public final class TelemetryProcessingGrpc {
       super(channel, callOptions);
     }
 
-    @java.lang.Override
+    @Override
     protected TelemetryProcessingBlockingStub build(
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       return new TelemetryProcessingBlockingStub(channel, callOptions);
@@ -189,7 +189,7 @@ public final class TelemetryProcessingGrpc {
       super(channel, callOptions);
     }
 
-    @java.lang.Override
+    @Override
     protected TelemetryProcessingFutureStub build(
         io.grpc.Channel channel, io.grpc.CallOptions callOptions) {
       return new TelemetryProcessingFutureStub(channel, callOptions);
@@ -211,8 +211,8 @@ public final class TelemetryProcessingGrpc {
       this.methodId = methodId;
     }
 
-    @java.lang.Override
-    @java.lang.SuppressWarnings("unchecked")
+    @Override
+    @SuppressWarnings("unchecked")
     public void invoke(Req request, io.grpc.stub.StreamObserver<Resp> responseObserver) {
       switch (methodId) {
         default:
@@ -220,14 +220,14 @@ public final class TelemetryProcessingGrpc {
       }
     }
 
-    @java.lang.Override
-    @java.lang.SuppressWarnings("unchecked")
+    @Override
+    @SuppressWarnings("unchecked")
     public io.grpc.stub.StreamObserver<Req> invoke(
         io.grpc.stub.StreamObserver<Resp> responseObserver) {
       switch (methodId) {
         case METHODID_PROCESS_FRAMES:
           return (io.grpc.stub.StreamObserver<Req>) serviceImpl.processFrames(
-              (io.grpc.stub.StreamObserver<tm.processing.v1.Tm.FrameResponse>) responseObserver);
+              (io.grpc.stub.StreamObserver<Tm.FrameResponse>) responseObserver);
         default:
           throw new AssertionError();
       }
@@ -240,8 +240,8 @@ public final class TelemetryProcessingGrpc {
           getProcessFramesMethod(),
           io.grpc.stub.ServerCalls.asyncBidiStreamingCall(
             new MethodHandlers<
-              tm.processing.v1.Tm.FrameRequest,
-              tm.processing.v1.Tm.FrameResponse>(
+              Tm.FrameRequest,
+              Tm.FrameResponse>(
                 service, METHODID_PROCESS_FRAMES)))
         .build();
   }
@@ -250,12 +250,12 @@ public final class TelemetryProcessingGrpc {
       implements io.grpc.protobuf.ProtoFileDescriptorSupplier, io.grpc.protobuf.ProtoServiceDescriptorSupplier {
     TelemetryProcessingBaseDescriptorSupplier() {}
 
-    @java.lang.Override
+    @Override
     public com.google.protobuf.Descriptors.FileDescriptor getFileDescriptor() {
-      return tm.processing.v1.Tm.getDescriptor();
+      return Tm.getDescriptor();
     }
 
-    @java.lang.Override
+    @Override
     public com.google.protobuf.Descriptors.ServiceDescriptor getServiceDescriptor() {
       return getFileDescriptor().findServiceByName("TelemetryProcessing");
     }
@@ -269,13 +269,13 @@ public final class TelemetryProcessingGrpc {
   private static final class TelemetryProcessingMethodDescriptorSupplier
       extends TelemetryProcessingBaseDescriptorSupplier
       implements io.grpc.protobuf.ProtoMethodDescriptorSupplier {
-    private final java.lang.String methodName;
+    private final String methodName;
 
-    TelemetryProcessingMethodDescriptorSupplier(java.lang.String methodName) {
+    TelemetryProcessingMethodDescriptorSupplier(String methodName) {
       this.methodName = methodName;
     }
 
-    @java.lang.Override
+    @Override
     public com.google.protobuf.Descriptors.MethodDescriptor getMethodDescriptor() {
       return getServiceDescriptor().findMethodByName(methodName);
     }

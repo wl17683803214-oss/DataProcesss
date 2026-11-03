@@ -1,0 +1,28 @@
+{
+  "sourceName": "指令响应_0504",
+  "transferProtocol": 2,
+  "transferType": 1,
+  "filePath": "D:\\工作文档\\数据处理软件\\code\\data-processing\\docs\\模拟源_100帧_6组_无附加头\\04_指令响应\\指令响应_0504.dat",
+  "sendMode": "UNICAST",
+  "targetHost": "127.0.0.1",
+  "targetPort": 19104,
+  "sendIntervalMillis": 100,
+  "loopEnabled": 0,
+  "pdxp": {
+    "sourceId": null,
+    "inputFrameLength": 32,
+    "transportHeaderLength": 0,
+    "telemetryHeaderLength": 0,
+    "customDataLength": 0,
+    "transportHeader": "",
+    "customData": "",
+    "ver": "80",
+    "mid": "0004",
+    "sid": "00000001",
+    "did": "00000001",
+    "bid": "05010003",
+    "initialNo": "00000000",
+    "flag": "00"
+  },
+  "remark": "100帧"
+}

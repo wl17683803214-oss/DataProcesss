@@ -2,7 +2,6 @@ package com.example.dataadmin.grpc;
 
 import com.example.dataadmin.config.SatelliteManagementRpcProperties;
 import com.example.dataadmin.exception.SatelliteManagementException;
-import com.google.protobuf.Empty;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
@@ -37,62 +36,19 @@ public class SatelliteManagementGrpcClient {
         this.timeoutMillis = properties.getTimeoutMillis();
     }
 
-    /** 查询全部卫星配置。 */
-    public Tm.ListSatellitesResponse listSatellites() {
-        return invoke(stub -> stub.listSatellites(
-                Empty.getDefaultInstance()));
-    }
-
-    /** 按卫星代号查询完整配置。 */
-    public Tm.GetSatelliteResponse getSatellite(
-            Tm.GetSatelliteRequest request) {
-        return invoke(stub -> stub.getSatellite(request));
-    }
-
-    /** 创建卫星。 */
-    public void createSatellite(Tm.CreateSatelliteRequest request) {
-        requireSuccess(invoke(stub -> stub.createSatellite(request)));
-    }
-
-    /** 整体更新卫星。 */
-    public void updateSatellite(Tm.UpdateSatelliteRequest request) {
-        requireSuccess(invoke(stub -> stub.updateSatellite(request)));
-    }
-
-    /** 删除卫星。 */
-    public void deleteSatellite(Tm.DeleteSatelliteRequest request) {
-        requireSuccess(invoke(stub -> stub.deleteSatellite(request)));
-    }
-
-    /** 修改卫星启用状态。 */
-    public void setSatelliteEnabled(Tm.SetEnabledRequest request) {
-        requireSuccess(invoke(stub -> stub.setSatelliteEnabled(request)));
-    }
-
-    /** 修改遥测通道启用状态。 */
-    public void setChannelEnabled(Tm.SetChannelEnabledRequest request) {
-        requireSuccess(invoke(stub -> stub.setChannelEnabled(request)));
-    }
-
-    /** 修改遥测通道解扰状态。 */
-    public void setChannelDescramble(
-            Tm.SetChannelDescrambleRequest request) {
-        requireSuccess(invoke(stub -> stub.setChannelDescramble(request)));
-    }
-
-    /** 上传卫星参数表。 */
+    /** 上传参数表配置，文件已经保存至本地或双方可读取的共享目录。 */
     public void uploadTable(Tm.UploadTableRequest request) {
         requireSuccess(invoke(stub -> stub.uploadTable(request)));
     }
 
-    /** 保存卫星解扰规则。 */
-    public void setDescrambleRule(Tm.SetDescrambleRuleRequest request) {
-        requireSuccess(invoke(stub -> stub.setDescrambleRule(request)));
+    /** 上传完整配置文本，名称和代号来自选中的本地档案。 */
+    public void uploadJson(Tm.UploadJsonRequest request) {
+        requireSuccess(invoke(stub -> stub.uploadJson(request)));
     }
 
-    /** 添加卫星遥测通道。 */
-    public void addTmChannels(Tm.AddTmChannelsRequest request) {
-        requireSuccess(invoke(stub -> stub.addTmChannels(request)));
+    /** 使用新协议修改卫星启用状态。 */
+    public void setSatelliteEnabled(Tm.SetSatEnabledRequest request) {
+        requireSuccess(invoke(stub -> stub.setSatEnabled(request)));
     }
 
     /** 使用统一截止时间执行一次阻塞式gRPC调用。 */

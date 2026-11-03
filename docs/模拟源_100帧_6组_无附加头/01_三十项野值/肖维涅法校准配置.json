@@ -1,0 +1,16 @@
+{
+  "taskId" : "TASK_100FRAME_20261030",
+  "channelName" : "肖维涅法验证",
+  "calibrationFormula" : "CAL_CHAUVENET",
+  "detectMethod" : 3,
+  "sigmaValue" : 3,
+  "sampleWindow" : 20,
+  "fluctuationRate" : 10,
+  "normalRange" : null,
+  "chauvenetCoef" : 0.5,
+  "minSampleCount" : 20,
+  "iterateCount" : 2,
+  "dynamicUpdate" : 1,
+  "autoClean" : 1,
+  "enabled" : 1
+}
