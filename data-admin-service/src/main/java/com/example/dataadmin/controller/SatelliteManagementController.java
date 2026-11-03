@@ -145,7 +145,7 @@ public class SatelliteManagementController {
         }
     }
 
-    /** 将基线返回的每条卫星新增到本地，并下载和下发参数表。 */
+    /** 按卫星代号新增或覆盖本地档案，可选下载参数表，同步完成不调用远程接口。 */
     @PostMapping("/satellites/sync-baseline")
     public ApiResponse<SatelliteBaselineSyncVO> synchronizeBaseline() {
         return ApiResponse.success(baselineSyncService.synchronize());

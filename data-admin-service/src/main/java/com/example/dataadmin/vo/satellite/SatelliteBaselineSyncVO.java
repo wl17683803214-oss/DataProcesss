@@ -3,11 +3,11 @@ package com.example.dataadmin.vo.satellite;
 import java.util.ArrayList;
 import java.util.List;
 
-/** 基线卫星逐条新增的结果，明确展示成功及失败，不隐瞒部分成功。 */
+/** 基线同步的既有返回结构，新增与失败数量不包含覆盖和重复忽略记录。 */
 public class SatelliteBaselineSyncVO {
     /** 基线查询到的记录数，重复代号仍分别计数。 */
     private int queriedCount;
-    /** 已新增并完成远程下发的记录数。 */
+    /** 本次新建的本地档案数量，覆盖已有档案不计入，不涉及远程下发。 */
     private int createdCount;
     /** 同步失败的记录，原有卫星不受影响。 */
     private final List<Failure> failures = new ArrayList<>();

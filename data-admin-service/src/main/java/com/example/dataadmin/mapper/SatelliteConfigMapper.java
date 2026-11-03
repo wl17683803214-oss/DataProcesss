@@ -13,6 +13,11 @@ public interface SatelliteConfigMapper {
             @Param("enable") String enable);
     /** 按本地主键查询唯一记录。 */
     SatelliteConfig findById(@Param("id") Long id);
+    /** 按代号统计全部匹配档案，供基线同步在事务锁内判断新增或覆盖。 */
+    long countByCode(@Param("code") String code);
+    /** 基线覆盖同代号档案的名称及可选参数表地址，保留状态和配置原文。 */
+    int updateBaselineByCode(@Param("name") String name, @Param("code") String code,
+            @Param("tablePath") String tablePath);
     /** 查询批次实际存在的主键。 */
     List<Long> findIds(@Param("ids") List<Long> ids);
     /** 插入档案并回填生成的主键。 */

@@ -211,13 +211,33 @@ public class SatelliteManagementServiceImpl implements SatelliteManagementServic
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long createBaselineSatellite(String name, String code, String tablePath) {
-        // 每条基线记录单独执行新增事务，重复名称及代号不做跳过或覆盖。
-        SatelliteInfoRequest request = new SatelliteInfoRequest();
-        request.setName(name);
-        request.setCode(code);
-        request.setTablePath(tablePath);
-        return createSatellite(request);
+    public boolean synchronizeBaselineSatellite(String name, String code, String tablePath) {
+        // 第一步：只要求名称及代号完整，可选参数表缺失时保留现有文件地址。
+        String normalizedName = requireText(name, "基线卫星名称不能为空");
+        String normalizedCode = requireText(code, "基线卫星代号不能为空");
+        String localPath = normalize(tablePath);
+        if (localPath != null) {
+            localPath = storage.existingPath(localPath);
+        }
+        // 第二步：复用管理事务锁，在锁内按代号重新检查，避免并发同步重复新增。
+        mapper.lockManagement();
+        long existingCount = mapper.countByCode(normalizedCode);
+        if (existingCount == 0) {
+            // 第三步：没有匹配记录时只新增本地档案，状态默认禁用，不调用任何远程接口。
+            SatelliteConfig satellite = new SatelliteConfig();
+            satellite.setName(normalizedName);
+            satellite.setCode(normalizedCode);
+            satellite.setEnable(Enabled.DISABLED.getStorageValue());
+            satellite.setTablePath(localPath);
+            requireUpdated(mapper.insert(satellite));
+            return true;
+        }
+        // 第四步：基线覆盖全部同代号档案的已提供字段，保留各自主键、状态及配置原文。
+        int updated = mapper.updateBaselineByCode(normalizedName, normalizedCode, localPath);
+        if (updated != existingCount) {
+            throw new IllegalStateException("卫星档案在同步期间发生变化，本条覆盖已回滚，请重试");
+        }
+        return false;
     }
 
     /** 将请求转换为英文状态的本地实体。 */

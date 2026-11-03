@@ -25,6 +25,27 @@
             <if test="id == null">1 = 0</if>
         </where>
     </select>
+    <!-- 基线只按非空卫星代号定位，缺少代号时不能查询或覆盖整表。 -->
+    <sql id="baselineCodeFilter">
+        <where>
+            <if test="code != null and code != ''">code = #{code}</if>
+            <if test="code == null or code == ''">1 = 0</if>
+        </where>
+    </sql>
+    <!-- 与档案管理共用事务锁后查询，避免并发同步重复新增。 -->
+    <select id="countByCode" resultType="long">
+        select count(id) from satellite_config <include refid="baselineCodeFilter"/>
+    </select>
+    <!-- 基线名称优先；未下载新文件时不修改原有参数表地址。 -->
+    <update id="updateBaselineByCode">
+        update satellite_config
+        set name = #{name},
+            update_time = current_timestamp
+        <if test="tablePath != null and tablePath != ''">
+            , table_path = #{tablePath}
+        </if>
+        <include refid="baselineCodeFilter"/>
+    </update>
     <!-- 批量查询与删除共用主键条件，空集合不匹配任何记录。 -->
     <sql id="idFilter">
         <where>

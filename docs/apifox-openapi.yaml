@@ -5020,8 +5020,8 @@ paths:
   /satellite-management/satellites/sync-baseline:
     post:
       tags: [卫星目录管理]
-      summary: 同步基线卫星并新增本地档案
-      description: 复用baseline.sso配置查询全部卫星分页，不传taskId，不按名称或代号去重；重复同步仍逐条新增。提取satelliteName、satelliteCode，通过telemetryUrl下载，以telemetryName为文件名存入本地独立子目录。使用本地绝对路径立即调用UploadTable，并下发默认禁用状态；成功后提交新增，jsonContent为空。每条卫星独立事务，失败不影响其他记录，必须检查failedCount及failures。本接口不改变原/processing/rules/sync-baseline按任务导入参数的行为。
+      summary: 按卫星代号同步并覆盖本地档案
+      description: 复用baseline.sso配置查询全部卫星分页，不传taskId，同批按satelliteCode去重，取第一条名称及代号有效的记录。以基线名称和代号为主：本地无同代号档案则新增并默认禁用；已有时覆盖全部同代号档案的名称，保留各自主键、启用状态和JSON。telemetryUrl与telemetryName均存在时下载并更新本地参数表地址，缺失或为空时不限制同步且保留原地址。同步不调用UploadTable、UploadJson或启停RPC。每个代号独立事务。返回字段保持不变，createdCount只统计实际新增，不包含覆盖；queriedCount为原始查询记录数，包含同批重复记录，覆盖及重复忽略数量不单独返回。本接口不改变原/processing/rules/sync-baseline按任务导入参数的行为。
       responses:
         '200':
           description: 查询完成，data包含逐条同步结果；存在失败时也返回成功及失败明细
@@ -5041,7 +5041,7 @@ paths:
                   createdCount: 1
                   failedCount: 1
                   failures:
-                    - { rowNumber: 2, satelliteName: 试验卫星75, satelliteCode: '75', message: 基线遥测参数表下载地址不能为空 }
+                    - { rowNumber: 2, satelliteName: '', satelliteCode: '75', message: 基线卫星名称不能为空 }
         '400':
           description: 基线接口配置或分页结构错误，未执行新增
 
@@ -6058,7 +6058,7 @@ components:
       type: object
       properties:
         queriedCount: { type: integer, description: 基线记录数，重复代号分别计数 }
-        createdCount: { type: integer, description: 新增及远程下发成功的数量 }
+        createdCount: { type: integer, description: 实际新增的本地档案数量，不含覆盖与重复忽略记录，同步不调用远程接口 }
         failedCount: { type: integer, description: 同步失败数量 }
         failures:
           type: array

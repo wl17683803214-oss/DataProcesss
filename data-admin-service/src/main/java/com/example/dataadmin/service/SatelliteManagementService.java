@@ -24,6 +24,6 @@ public interface SatelliteManagementService {
     void uploadTable(Long id, String tablePath);
     /** 上传配置原文，远程成功后保存，不拆解配置字段。 */
     void uploadJson(Long id, String fileName, byte[] content);
-    /** 每条基线卫星独立新增并下发参数表，不对名称或代号去重。 */
-    Long createBaselineSatellite(String name, String code, String tablePath);
+    /** 按代号新增或覆盖本地档案，不调用远程接口；返回是否新建了档案。 */
+    boolean synchronizeBaselineSatellite(String name, String code, String tablePath);
 }

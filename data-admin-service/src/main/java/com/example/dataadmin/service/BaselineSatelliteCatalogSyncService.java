@@ -13,9 +13,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-/** 复用基线卫星查询接口，将每条卫星及下载后的参数表新增至本地档案。 */
+/** 复用基线查询接口，按卫星代号去重并优先覆盖本地档案，同步不下发远程配置。 */
 @Service
 public class BaselineSatelliteCatalogSyncService {
     /** 使用中文记录同步失败，便于与结果中的行号对应。 */
@@ -40,28 +42,42 @@ public class BaselineSatelliteCatalogSyncService {
         this.http = new HttpRequestTool(properties.getConnectTimeoutMillis(), properties.getReadTimeoutMillis());
     }
 
-    /** 查询和下载均在写事务之外进行，每条记录独立提交并立即下发参数表。 */
+    /** 查询和可选下载均在写事务之外进行，每个代号独立新增或覆盖本地档案。 */
     public SatelliteBaselineSyncVO synchronize() {
-        // 第一步：完整查询基线分页，不按名称或代号去重。
+        // 第一步：先完整查询分页，保留原始记录数，不让去重影响分页完整性检查。
         String baseUrl = requireBaseUrl();
         List<JsonNode> rows = queryAll(baseUrl);
         SatelliteBaselineSyncVO result = new SatelliteBaselineSyncVO();
         result.setQueriedCount(rows.size());
-        // 第二步：逐条下载，重复文件名使用不同目录，不覆盖旧卫星文件。
+        Set<String> processedCodes = new HashSet<>();
+        int updatedCount = 0;
+        int duplicateCount = 0;
+        // 第二步：按代号只处理本批第一条名称及代号有效的记录，不强制要求参数表信息。
         for (int index = 0; index < rows.size(); index++) {
             JsonNode satellite = rows.get(index);
             try {
-                String name = requiredText(satellite, "satelliteName", "基线卫星名称不能为空");
                 String code = requiredText(satellite, "satelliteCode", "基线卫星代号不能为空");
-                String url = requiredText(satellite, "telemetryUrl", "基线遥测参数表下载地址不能为空");
-                String fileName = requiredText(satellite, "telemetryName", "基线遥测参数表文件名不能为空");
-                String downloadUrl = resolveDownloadUrl(baseUrl, url);
-                String localPath = storage.download(downloadUrl, fileName);
-                // 第三步：通过代理开启独立事务，远程下发成功后提交本条新增。
-                satelliteService.createBaselineSatellite(name, code, localPath);
-                result.addCreated();
+                if (processedCodes.contains(code)) {
+                    duplicateCount++;
+                    continue;
+                }
+                String name = requiredText(satellite, "satelliteName", "基线卫星名称不能为空");
+                processedCodes.add(code);
+                String url = optionalText(satellite, "telemetryUrl");
+                String fileName = optionalText(satellite, "telemetryName");
+                String localPath = null;
+                // 第三步：仅在下载地址及文件名均存在时下载，缺少信息仍同步名称和代号。
+                if (url != null && fileName != null) {
+                    localPath = storage.download(resolveDownloadUrl(baseUrl, url), fileName);
+                }
+                // 第四步：通过代理在独立事务中新增或覆盖，绝不调用上传参数表或启停接口。
+                if (satelliteService.synchronizeBaselineSatellite(name, code, localPath)) {
+                    result.addCreated();
+                } else {
+                    updatedCount++;
+                }
             } catch (RuntimeException exception) {
-                // 第四步：如实返回每条失败，不将已经成功提交的记录报告为整体失败。
+                // 第五步：只记录实际处理失败，缺少可选参数表字段不产生失败记录。
                 String message = failureMessage(exception);
                 result.getFailures().add(new SatelliteBaselineSyncVO.Failure(index + 1,
                         satellite.path("satelliteName").asText(""),
@@ -69,6 +85,9 @@ public class BaselineSatelliteCatalogSyncService {
                 LOGGER.warn("基线卫星同步第{}条失败，请查看同步结果中的失败明细", index + 1);
             }
         }
+        // 新增数量仍只统计新建档案；覆盖与去重数量记录日志，不增加接口字段。
+        LOGGER.info("基线卫星同步完成，查询{}条，新增{}条，覆盖{}个代号，忽略重复{}条，失败{}条",
+                rows.size(), result.getCreatedCount(), updatedCount, duplicateCount, result.getFailedCount());
         return result;
     }
 
@@ -152,6 +171,17 @@ public class BaselineSatelliteCatalogSyncService {
             throw new IllegalArgumentException(message);
         }
         return value.asText().trim();
+    }
+
+    /** 可选文件信息缺失、为空或不是文本值时按未提供处理，不限制名称和代号同步。 */
+    private String optionalText(JsonNode satellite, String field) {
+        // 只提取可用文本，不将可选字段校验变成卫星同步前置条件。
+        JsonNode value = satellite.path(field);
+        if (!value.isTextual()) {
+            return null;
+        }
+        String text = value.asText().trim();
+        return text.isEmpty() ? null : text;
     }
 
     /** 只将业务中文提示返回前端，不暴露数据库和底层网络异常。 */
