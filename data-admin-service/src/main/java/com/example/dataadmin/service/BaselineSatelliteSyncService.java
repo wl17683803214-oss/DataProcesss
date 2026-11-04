@@ -4,9 +4,9 @@ import com.example.common.tool.HttpRequestTool;
 import com.example.dataadmin.config.BaselineSsoProperties;
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.service.support.ParameterWorkbookParser;
+import com.example.dataadmin.storage.SatelliteTableStorage;
 import com.example.dataadmin.vo.processing.BaselineSatelliteSyncVO;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -25,8 +25,8 @@ public class BaselineSatelliteSyncService {
     private final BaselineSsoProperties properties;
     /** 复用公共请求工具。 */
     private final HttpRequestTool http;
-    /** 统一读取响应和遥测字符串。 */
-    private final ObjectMapper objectMapper;
+    /** 复用卫星管理的基线文件下载。 */
+    private final SatelliteTableStorage storage;
     /** 复用参数转换和业务字段校验。 */
     private final ParameterWorkbookParser parser;
     /** 通过代理调用现有写事务。 */
@@ -34,12 +34,12 @@ public class BaselineSatelliteSyncService {
 
     /** 初始化共享配置及业务组件，不增加独立配置项。 */
     public BaselineSatelliteSyncService(BaselineSsoProperties properties,
-            ObjectMapper objectMapper, ParameterWorkbookParser parser,
+            SatelliteTableStorage storage, ParameterWorkbookParser parser,
             DataProcessingService processingService) {
         // 复用公共工具及基线超时，不在配置中引入占位表达式。
         this.properties = properties;
         this.http = new HttpRequestTool(properties.getConnectTimeoutMillis(), properties.getReadTimeoutMillis());
-        this.objectMapper = objectMapper;
+        this.storage = storage;
         this.parser = parser;
         this.processingService = processingService;
     }
@@ -85,30 +85,29 @@ public class BaselineSatelliteSyncService {
             } else if (expectedTotal != total.asLong()) {
                 throw new IllegalStateException("基线卫星总数在同步期间发生变化，请重试");
             }
-            // 第三步：按卫星编码识别身份，空遥测保留旧配置，其余数据必须完整有效。
+            // 第三步：按卫星编码识别身份，有表名和地址时下载并解析目标工作表。
             for (JsonNode satellite : rows) {
                 String code = requiredText(satellite.path("satelliteCode"), "卫星编码");
                 String name = requiredText(satellite.path("satelliteName"), "卫星名称");
                 if (!seenCodes.add(code)) {
                     throw new IllegalArgumentException("基线返回重复卫星编码：" + code);
                 }
-                JsonNode telemetry = satellite.get("telemetryData");
-                if (telemetry == null || telemetry.isNull()
-                        || (telemetry.isTextual() && telemetry.asText().trim().isEmpty())) {
+                String tableName = optionalText(satellite.path("satelliteParameterTableName"));
+                String tableUrl = optionalText(satellite.path("satelliteParameterTableUrl"));
+                if (tableName.isEmpty() || tableUrl.isEmpty()) {
+                    // 基线未提供完整的参数表信息时保留当前任务已有配置。
                     skipped++;
                     continue;
                 }
-                if (telemetry.isTextual()) {
-                    try {
-                        telemetry = objectMapper.readTree(telemetry.asText());
-                    } catch (java.io.IOException exception) {
-                        throw new IllegalArgumentException("卫星【" + name + "】遥测数据不是有效JSON", exception);
-                    }
+                try {
+                    byte[] content = storage.downloadContent(baseUrl, tableUrl);
+                    rules.put(code, parser.parseSatelliteWorkbook(taskId, tableName, content)
+                            .values().iterator().next());
+                } catch (IllegalArgumentException exception) {
+                    throw new IllegalArgumentException("卫星【" + name + "】" + exception.getMessage(), exception);
+                } catch (IllegalStateException exception) {
+                    throw new IllegalStateException("卫星【" + name + "】" + exception.getMessage(), exception);
                 }
-                if (telemetry == null || !telemetry.isObject()) {
-                    throw new IllegalArgumentException("卫星【" + name + "】遥测数据必须为对象");
-                }
-                rules.put(code, parser.parseBaseline(taskId, name, telemetry));
                 names.put(code, name);
             }
             // 第四步：核对分页完整性，防止基线忽略翻页或提前返回空页而覆盖部分配置。
@@ -125,6 +124,11 @@ public class BaselineSatelliteSyncService {
         // 第五步：所有远程数据校验完成后，通过独立写事务统一替换并返回统计。
         int imported = processingService.importBaselineRules(taskId, rules, names);
         return new BaselineSatelliteSyncVO(seenCodes.size(), rules.size(), skipped, imported);
+    }
+
+    /** 参数表名称和下载地址只接受非空文本。 */
+    private String optionalText(JsonNode value) {
+        return value.isTextual() ? value.asText().trim() : "";
     }
 
     /** 卫星名称与编码使用现有目录字段长度，禁止截断引起身份冲突。 */

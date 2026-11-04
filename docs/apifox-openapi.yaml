@@ -3815,7 +3815,7 @@ paths:
     post:
       tags: [数据处理]
       summary: 同步基线全部卫星遥测参数
-      description: 不传卫星和通道筛选，使用pageSize=99999查询基线并按total继续翻页。解析telemetryData的全部工作表，按当前任务和卫星编码匹配，仅替换本次具有有效遥测数据的卫星参数及系统层级，名称取satelliteName，编码取satelliteCode；缺少校准公式按空值处理，反斜线列忽略。空遥测跳过并保留旧数据，未返回的卫星和设备不受影响。全部数据校验成功后统一事务入库，任一校验或入库失败整体不更新；已有参数勾选按遥测代号保留，运行接口快照在下次接口同步时更新。
+      description: 不传卫星和通道筛选，使用pageSize=99999查询基线并按total继续翻页。使用satelliteParameterTableUrl下载Excel，从satelliteParameterTableName去掉Excel扩展名后拼接-A作为目标工作表。跳过首行表头，按A至S列的固定顺序解析参数，位宽、遥测名称和遥测代号均空的占位行跳过。表名或地址为空时跳过该卫星并保留已有参数。全部文件校验成功后按任务和satelliteCode匹配并在同一事务中替换参数及系统层级，卫星名称取satelliteName，已有参数勾选按遥测代号保留。运行接口快照在下次接口同步时更新。
       parameters:
         - name: taskId
           in: query
@@ -3846,7 +3846,7 @@ paths:
                         description: 成功导入参数的卫星数
                       skippedSatelliteCount:
                         type: integer
-                        description: telemetryData为空而跳过的卫星数
+                        description: 基线参数表名称或下载地址为空而跳过的卫星数
                       importedParameterCount:
                         type: integer
                         description: 导入参数总数
@@ -3890,7 +3890,7 @@ paths:
                   "example": "1"
                 "file":
                   "type": "string"
-                  "description": "Excel工作簿或制表符TXT；Excel使用页签名称，TXT使用文件名作为设备卫星编码和名称"
+                  "description": "卫星Excel只读文件名去掉扩展名后拼接-A的工作表，跳过首行表头，按A至S列的固定顺序解析，位宽、遥测名称和遥测代号均空的占位行跳过。Excel使用页签名称，TXT使用文件名作为设备卫星编码和名称。"
                   "format": "binary"
       "responses":
         "200":

@@ -24,6 +24,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -68,9 +69,7 @@ public class ParameterWorkbookParser {
                     String text = value == null || value.isNull() ? "" : value.asText();
                     // 基线系统路径可能使用连续反斜线，统一为本地层级分隔符。
                     if ("systemName".equals(column[1])) {
-                        while (text.contains("\\\\")) {
-                            text = text.replace("\\\\", "\\");
-                        }
+                        text = normalizeSystemName(text);
                     }
                     values.add(text);
                 }
@@ -113,7 +112,8 @@ public class ParameterWorkbookParser {
     public Map<String, List<TelemetryParseRuleConfig>> parse(
             String taskId,
             String fileName,
-            byte[] content) {
+            byte[] content,
+            boolean satellite) {
         // 第一步：统一校验文件名称和大小，失败时不能触发旧数据删除。
         validateContent(content);
         String safeFileName = safeFileName(fileName);
@@ -122,15 +122,28 @@ public class ParameterWorkbookParser {
             return parseText(taskId, safeFileName, content);
         }
         if ("xls".equals(extension) || "xlsx".equals(extension)) {
-            return parseWorkbook(taskId, content);
+            return satellite ? parseSatelliteWorkbook(taskId, safeFileName, content)
+                    : parseWorkbook(taskId, content, null);
         }
         throw new IllegalArgumentException("仅支持.xls、.xlsx或.txt格式的参数文件");
     }
 
-    /** 解析Excel工作簿，返回按页签顺序排列的参数集合。 */
+    /** 卫星Excel按表名选定目标页，基线下载和手动上传共用此入口。 */
+    public Map<String, List<TelemetryParseRuleConfig>> parseSatelliteWorkbook(
+            String taskId, String tableName, byte[] content) {
+        // 表名可以包含Excel扩展名，目标页使用不带扩展名的表名。
+        validateContent(content);
+        String name = safeFileName(tableName);
+        String suffix = extension(name);
+        String sheetName = ("xls".equals(suffix) || "xlsx".equals(suffix) ? baseName(name) : name) + "-A";
+        return parseWorkbook(taskId, content, sheetName);
+    }
+
+    /** 解析指定卫星页或按页签顺序解析设备工作簿。 */
     private Map<String, List<TelemetryParseRuleConfig>> parseWorkbook(
             String taskId,
-            byte[] content) {
+            byte[] content,
+            String satelliteSheetName) {
         Map<String, List<TelemetryParseRuleConfig>> result =
                 new LinkedHashMap<String, List<TelemetryParseRuleConfig>>();
         try (Workbook workbook = WorkbookFactory.create(
@@ -138,15 +151,28 @@ public class ParameterWorkbookParser {
             // 第一步：按显示格式读取文本，包括前导零；公式单元格只读取缓存结果。
             DataFormatter formatter = new DataFormatter(Locale.ROOT);
             formatter.setUseCachedValuesForFormulaCells(true);
-            for (Sheet sheet : workbook) {
+            boolean positional = satelliteSheetName != null;
+            Iterable<Sheet> sheets = workbook;
+            if (positional) {
+                // 卫星表只读取同名的目标工作表。
+                Sheet target = workbook.getSheet(satelliteSheetName);
+                if (target == null) {
+                    throw new IllegalArgumentException("Excel缺少工作表【" + satelliteSheetName + "】");
+                }
+                sheets = Collections.singletonList(target);
+            }
+            for (Sheet sheet : sheets) {
                 String sheetName = sheet.getSheetName();
                 Row header = sheet.getRow(sheet.getFirstRowNum());
                 if (header == null) {
                     throw new IllegalArgumentException(
                             "工作表【" + sheetName + "】没有表头");
                 }
-                Map<String, Integer> indexes = workbookHeaders(
-                        sheetName, header, formatter);
+                Map<String, Integer> indexes = positional ? null : workbookHeaders(sheetName, header, formatter);
+                int[] columns = new int[COLUMNS.length];
+                for (int column = 0; column < COLUMNS.length; column++) {
+                    columns[column] = positional ? column : indexes.get(COLUMNS[column][0]);
+                }
                 List<TelemetryParseRuleConfig> rules =
                         new ArrayList<TelemetryParseRuleConfig>();
                 Set<String> serials = new HashSet<String>();
@@ -158,9 +184,17 @@ public class ParameterWorkbookParser {
                         continue;
                     }
                     List<String> values = new ArrayList<String>();
-                    for (String[] column : COLUMNS) {
-                        values.add(formatter.formatCellValue(
-                                row.getCell(indexes.get(column[0]))));
+                    for (int column : columns) {
+                        values.add(formatter.formatCellValue(row.getCell(column)));
+                    }
+                    if (positional) {
+                        // 位宽、遥测名称和遥测代号均空的行是卫星表占位行。
+                        if (values.get(1).trim().isEmpty() && values.get(2).trim().isEmpty()
+                                && values.get(3).trim().isEmpty()) {
+                            continue;
+                        }
+                        // 卫星表所属系统统一使用单个反斜线分隔层级。
+                        values.set(13, normalizeSystemName(values.get(13)));
                     }
                     addRule(taskId, values, rules, serials,
                             "工作表【" + sheetName + "】第"
@@ -393,7 +427,7 @@ public class ParameterWorkbookParser {
                 ? "" : fileName.substring(index + 1).toLowerCase(Locale.ROOT);
     }
 
-    /** 取得不包含扩展名的TXT设备卫星名称。 */
+    /** 取得不包含扩展名的设备卫星文件名。 */
     private String baseName(String fileName) {
         int index = fileName.lastIndexOf('.');
         String result = (index <= 0
@@ -434,6 +468,14 @@ public class ParameterWorkbookParser {
         // 只处理整个单元格为横线的情况，避免破坏负数和状态范围。
         if ("-".equals(value) || "—".equals(value) || "–".equals(value)) {
             return "";
+        }
+        return value;
+    }
+
+    /** 将所属系统的连续反斜线统一为单个层级分隔符。 */
+    private String normalizeSystemName(String value) {
+        while (value.contains("\\\\")) {
+            value = value.replace("\\\\", "\\");
         }
         return value;
     }

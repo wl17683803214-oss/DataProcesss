@@ -615,8 +615,9 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             byte[] content) {
         requireTaskId(taskId);
         DeviceSatelliteType.requireValid(type);
+        // 按已校验的类型为卫星Excel选择指定页和固定列顺序。
         Map<String, List<TelemetryParseRuleConfig>> sheets =
-                workbookParser.parse(taskId, fileName, content);
+                workbookParser.parse(taskId, fileName, content, DeviceSatelliteType.SATELLITE.getValue().equals(type));
         return persistImportedRules(taskId, type, sheets, null);
     }
 
