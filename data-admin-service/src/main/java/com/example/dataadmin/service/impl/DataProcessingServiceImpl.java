@@ -149,11 +149,11 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         this.processedTelemetryQueryService = processedTelemetryQueryService;
     }
 
-    /** 查询页面筛选框使用的已启用采集接口。 */
+    /** 按名称查询页面筛选框使用的未删除采集接口。 */
     @Override
-    public List<CollectInterfaceOptionVO> listEnabledCollectInterfaces() {
+    public List<CollectInterfaceOptionVO> listCollectInterfaceOptions(String interfaceName) {
         // 仅返回接口主键和名称，避免向页面暴露无关配置字段。
-        return collectInterfaceMapper.findEnabledOptions();
+        return collectInterfaceMapper.findOptions(interfaceName);
     }
 
     /** 查询页面顶部统计卡片。 */

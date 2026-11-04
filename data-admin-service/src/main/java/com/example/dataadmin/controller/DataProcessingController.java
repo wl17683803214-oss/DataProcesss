@@ -74,11 +74,11 @@ public class DataProcessingController {
         return ApiResponse.success(ControllerEnumData.processing());
     }
 
-    /** 查询数据处理页面筛选框使用的已启用采集接口。 */
+    /** 按名称查询数据处理页面使用的采集接口筛选项。 */
     @GetMapping("/collect-interfaces")
-    public ApiResponse<List<CollectInterfaceOptionVO>> listCollectInterfaces() {
-        return ApiResponse.success(
-                processingService.listEnabledCollectInterfaces());
+    public ApiResponse<List<CollectInterfaceOptionVO>> listCollectInterfaces(
+            @RequestParam(value = "interfaceName", required = false) String interfaceName) {
+        return ApiResponse.success(processingService.listCollectInterfaceOptions(interfaceName));
     }
 
     /** 按试验任务查询今日处理量和历史累计去重数量。 */

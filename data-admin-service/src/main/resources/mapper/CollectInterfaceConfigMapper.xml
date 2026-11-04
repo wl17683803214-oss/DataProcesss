@@ -42,15 +42,15 @@
         <result column="interface_name" property="interfaceName"/>
     </resultMap>
 
-    <!-- 查询数据处理页面使用的已启用采集接口，只返回主键和名称。 -->
-    <select id="findEnabledOptions"
+    <!-- 查询数据处理页面使用的未删除采集接口，只返回主键和名称。 -->
+    <select id="findOptions"
             resultMap="collectInterfaceOptionMap">
         select
             id,
             interface_name
         from collect_interface_config
-        where enabled = 1
-          and is_deleted = 0
+        where is_deleted = 0
+        <include refid="interfaceNameCondition"/>
         order by id
     </select>
 
@@ -80,16 +80,20 @@
         update_time
     </sql>
 
+    <!-- 筛选项、分页列表和总数共用名称包含匹配条件。 -->
+    <sql id="interfaceNameCondition">
+        <if test="interfaceName != null and interfaceName != ''">
+            <bind name="interfaceNamePattern" value="'%' + interfaceName + '%'"/>
+            and interface_name like #{interfaceNamePattern}
+        </if>
+    </sql>
+
     <!-- 采集接口公共筛选条件。 -->
     <sql id="queryConditions">
         <if test="taskId != null and taskId != ''">
             and task_id = #{taskId}
         </if>
-        <if test="interfaceName != null and interfaceName != ''">
-            <!-- 分页和总数共用名称条件，在MyBatis中生成包含匹配参数。 -->
-            <bind name="interfaceNamePattern" value="'%' + interfaceName + '%'"/>
-            and interface_name like #{interfaceNamePattern}
-        </if>
+        <include refid="interfaceNameCondition"/>
         <if test="interfaceType != null">
             and interface_type = #{interfaceType}
         </if>

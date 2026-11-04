@@ -29,8 +29,8 @@ public interface DataProcessingService {
             java.util.Map<String, String> names);
     /** 仅使用设备卫星主键删除目录及关联参数配置。 */
     void deleteParseRules(Long deviceSatelliteId);
-    /** 查询数据处理页面使用的已启用采集接口筛选项。 */
-    List<CollectInterfaceOptionVO> listEnabledCollectInterfaces();
+    /** 按名称查询数据处理页面使用的采集接口筛选项。 */
+    List<CollectInterfaceOptionVO> listCollectInterfaceOptions(String interfaceName);
     /** 查询数据处理页面顶部统计数据。 */
     DataProcessingOverviewVO getOverview(String taskId);
     /** 查询数据处理页面实时监控指标。 */

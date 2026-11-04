@@ -3182,11 +3182,19 @@ paths:
   /processing/collect-interfaces:
     get:
       tags: [数据处理]
-      summary: 查询已启用采集接口筛选项
-      description: 只查询已启用且未删除的采集接口，页面展示接口名称并使用接口主键筛选遥测数据。
+      summary: 查询采集接口筛选项
+      description: 查询未删除的采集接口，包含已启用和已停用的接口。页面展示接口名称并使用接口主键筛选遥测数据。
+      parameters:
+        - name: interfaceName
+          in: query
+          required: false
+          description: 按接口名称包含匹配，不传或为空时返回全部未删除的采集接口。
+          schema:
+            type: string
+          example: 实时遥测
       responses:
         '200':
-          $ref: '#/components/responses/EnabledCollectInterfaceOptions'
+          $ref: '#/components/responses/CollectInterfaceOptions'
 
   /processing/realtime/telemetry:
     get:
@@ -8853,7 +8861,7 @@ components:
               cpuUsage: "36.50%"
               memoryUsage: "23.50%"
 
-    EnabledCollectInterfaceOptions:
+    CollectInterfaceOptions:
       description: 操作成功
       content:
         application/json:
