@@ -14,8 +14,7 @@ import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.protocol.rpc.PdxpDataPayloadParser;
 import com.example.dataprocess.service.IoTDBTelemetryStorageService;
 import com.example.dataprocess.tool.PdxpParser;
-import com.google.protobuf.Timestamp;
-import java.time.ZoneOffset;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +49,8 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
     /** 身份和数据域完整的本地解析失败帧仍允许单独保存。 */
     @Override
     public void markPdxpRawFrameAbnormal(CollectInterfaceRuntimeConfig config, PdxpParser.PdxpPacket packet) {
+        // 固定本帧的入库时间，后续写入重试复用同一个时间。
+        Timestamp writeTime = new Timestamp(System.currentTimeMillis());
         // 第一步：保留本地异常回退的身份和报文校验，不将远程失败改写成本地帧。
         requireConfig(config);
         if (packet == null || Integer.valueOf(1).equals(config.getRpcEnabled())) {
@@ -66,10 +67,8 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
         // 第二步：复用当前按本地和远程分别配置的附加头长度。
         PdxpFramingProperties.Framing framing = framingProperties.select(config.getRpcEnabled());
         PdxpDataPayloadParser.parse(packet.getData(), framing.getCustomDataLength(), framing.getTelemetryHeaderLength());
-        long time = packet.getSendDate().atStartOfDay().plus(packet.getTimeSinceMidnight())
-                .toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
         // 第三步：异常帧仅写整帧表，不产生参数或消息。
-        TelemetryFrameRecord frame = frame(config, time, TelemetrySourceType.LOCAL, identity,
+        TelemetryFrameRecord frame = frame(config, writeTime, TelemetrySourceType.LOCAL, identity,
                 TelemetryType.TM_TYPE_DEVICE_TM, deviceName, deviceName.substring(0, separator).trim(),
                 packet.getRawPacket(), TelemetryFrameStatus.ABNORMAL);
         store.save(frame, Collections.emptyList());
@@ -79,6 +78,8 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
     @Override
     public void saveProcessedParameters(CollectInterfaceRuntimeConfig config,
             TelemetryMessage message, byte[] rawFrame) {
+        // 整帧和同批参数共用入库时刻，分批写入和重试时保持一致。
+        Timestamp writeTime = new Timestamp(System.currentTimeMillis());
         // 第一步：写入必须有真实任务、接口和完整采集报文。
         requireConfig(config);
         if (message == null || !message.hasProtoHead() || !config.getTaskId().equals(message.getProtoHead().getTaskId())) {
@@ -91,12 +92,10 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
         TelemetrySourceType source = remote ? TelemetrySourceType.RPC : TelemetrySourceType.LOCAL;
         String identity = remote ? TelemetryIdentity.rpc(message.getSatCode(), message.getChannelCode())
                 : TelemetryIdentity.local(config.getDeviceSatelliteId());
-        long time = sourceTimeMillis(message);
-        java.sql.Timestamp processedAt = new java.sql.Timestamp(System.currentTimeMillis());
         // 第二步：帧检查状态与参数告警独立，本地正常结果保持整帧正常。
         TelemetryFrameStatus status = remote && !message.getFrameCheckStatus()
                 ? TelemetryFrameStatus.ABNORMAL : TelemetryFrameStatus.NORMAL;
-        TelemetryFrameRecord frame = frame(config, time, source, identity, message.getTmType(),
+        TelemetryFrameRecord frame = frame(config, writeTime, source, identity, message.getTmType(),
                 remote ? displayName(message.getSatName(), message.getSatCode()) : config.getDeviceSatelliteName(),
                 remote ? displayName(message.getChannelName(), message.getChannelCode()) : message.getChannelName(),
                 rawFrame, status);
@@ -105,7 +104,7 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
         for (Map.Entry<String, Telemetry> entry : message.getTelemetriesMap().entrySet()) {
             Telemetry telemetry = entry.getValue();
             TelemetryParameterRecord row = new TelemetryParameterRecord();
-            row.setSourceTime(new java.sql.Timestamp(time));
+            row.setSourceTime(writeTime);
             row.setTaskId(config.getTaskId());
             row.setSourceType(source.getValue());
             row.setSourceIdentity(identity);
@@ -124,19 +123,19 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
             row.setStateName(telemetry.getStateName());
             row.setStateType(telemetry.getStateType().name());
             row.setStateIndex(telemetry.getStateIndex());
-            row.setProcessedAt(processedAt);
+            row.setProcessedAt(writeTime);
             rows.add(row);
         }
         // 第四步：存储组件按稳定主键重试，失败沿用现有异步告警链路。
         store.save(frame, rows);
     }
 
-    /** 两种来源和正常异常帧共用相同字段，完整原码始终保持二进制。 */
-    private TelemetryFrameRecord frame(CollectInterfaceRuntimeConfig config, long time,
+    /** 整帧统一保存本次入库时间和完整二进制原码。 */
+    private TelemetryFrameRecord frame(CollectInterfaceRuntimeConfig config, Timestamp writeTime,
             TelemetrySourceType source, String identity, TelemetryType type,
             String deviceName, String channelName, byte[] raw, TelemetryFrameStatus status) {
         TelemetryFrameRecord frame = new TelemetryFrameRecord();
-        frame.setSourceTime(new java.sql.Timestamp(time));
+        frame.setSourceTime(writeTime);
         frame.setTaskId(config.getTaskId());
         frame.setInterfaceId(config.getInterfaceId());
         frame.setSourceType(source.getValue());
@@ -155,15 +154,6 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
                 || config.getInterfaceId() == null || config.getInterfaceId() <= 0) {
             throw new IllegalArgumentException("遥测写入缺少有效任务或采集接口");
         }
-    }
-
-    /** 无源时间时沿用当前时间的既有回退规则。 */
-    private long sourceTimeMillis(TelemetryMessage message) {
-        if (!message.hasTime()) {
-            return System.currentTimeMillis();
-        }
-        Timestamp time = message.getTime();
-        return time.getSeconds() * 1000L + time.getNanos() / 1000000L;
     }
 
     /** 远程名称缺失时显示返回编码。 */

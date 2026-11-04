@@ -8904,7 +8904,7 @@ components:
                       type: object
                       properties:
                         deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC使用返回卫星通道身份，此字段为null" }
-                        time: { type: string, format: date-time, description: "遥测时间" }
+                        time: { type: string, format: date-time, description: "整帧时间，新写入记录取处理服务开始入库时的系统时间" }
                         deviceSatelliteName: { type: string, description: "本地导入设备名称；RPC卫星名称，缺失时显示返回代号" }
                         channelName: { type: string, description: "通道名称" }
                         rawLength: { type: integer, description: "实际完整采集帧字节数，包含PDXP包头及按data-processing.pdxp配置实际存在的传输头、自定义数据和遥测帧头，0长度不补头；旧记录保持原格式" }
@@ -8947,7 +8947,7 @@ components:
                       type: object
                       properties:
                         deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC使用返回卫星通道身份，此字段为null" }
-                        receiveTime: { type: string, format: date-time, description: "遥测时间" }
+                        receiveTime: { type: string, format: date-time, description: "异常整帧时间，新写入记录取处理服务开始入库时的系统时间" }
                         deviceSatelliteName: { type: string, description: "本地导入设备名称；RPC卫星名称，缺失时显示返回代号" }
                         channelName: { type: string, description: "Proto通道名称；本地解析失败时取设备名称首个下划线前缀" }
                         checkResultName: { type: string, enum: [正常, 异常], description: "帧检查结果：RPC检查失败或本地参数解析失败为异常，其余已生成的有效结果为正常；历史非正常名称仍可能返回" }
@@ -8993,7 +8993,7 @@ components:
                         - { type: number, format: double }
                         - { type: string }
                     status: { type: string, nullable: true, description: "Proto状态中文名称，无数据时为空" }
-                    processTime: { type: string, format: date-time, nullable: true, description: "处理时间，无数据时为空" }
+                    processTime: { type: string, format: date-time, nullable: true, description: "处理服务开始入库时的系统时间，无数据时为空" }
           example:
             code: 200
             message: "操作成功"
@@ -9030,7 +9030,7 @@ components:
                     parameter: { type: string, description: "遥测参数名称" }
                     times:
                       type: array
-                      description: "各曲线自己的X轴时间，Unix毫秒时间戳，按时间升序"
+                      description: "各曲线自己的X轴时间，Unix毫秒时间戳，按时间升序。新写入数据点取处理服务开始入库时的系统时间"
                       items: { type: integer, format: int64 }
                     values:
                       type: array
