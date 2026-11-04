@@ -51,6 +51,10 @@ public class CollectInterfaceStatistics {
     /** 等待数据库落库的统计窗口索引。 */
     private static final String PENDING_BUCKET_INDEX =
             "dashboard:statistics:pending-buckets";
+    /** 每个五秒窗口最多发起三次数据库写入。 */
+    private static final int MAX_BUCKET_WRITE_ATTEMPTS = 3;
+    /** 写入次数随窗口保存，独立于按接口累计的统计字段。 */
+    private static final String BUCKET_WRITE_ATTEMPTS_FIELD = "writeAttempts";
     /** 统计窗口缓存保留时间。 */
     private static final long BUCKET_TTL_DAYS = 2L;
     /** 实时采样时间格式。 */
@@ -59,16 +63,26 @@ public class CollectInterfaceStatistics {
     /** 统计组件日志。 */
     private static final Logger LOGGER = LoggerFactory.getLogger(
             CollectInterfaceStatistics.class);
-    /** 原子累加五项指标、登记窗口并设置过期时间的Redis脚本。 */
+    /** 原子累加五项指标，只登记仍可尝试写入的窗口。 */
     private static final DefaultRedisScript<Long> INCREMENT_BUCKET_SCRIPT =
             new DefaultRedisScript<Long>(
                     "for i = 1, 10, 2 do "
                             + "local amount = tonumber(ARGV[i + 1]); "
                             + "if amount > 0 then redis.call('HINCRBY', KEYS[1], ARGV[i], amount); end; "
                             + "end; "
-                            + "redis.call('SADD', KEYS[2], KEYS[1]); "
+                            + "local attempts = tonumber(redis.call('HGET', KEYS[1], ARGV[12]) or '0'); "
+                            + "if attempts < tonumber(ARGV[13]) then redis.call('SADD', KEYS[2], KEYS[1]); end; "
                             + "redis.call('EXPIRE', KEYS[1], ARGV[11]); "
                             + "return 1;",
+                    Long.class);
+    /** 原子登记本次写入，多个实例共用同一个窗口的次数上限。 */
+    private static final DefaultRedisScript<Long> RESERVE_BUCKET_WRITE_SCRIPT =
+            new DefaultRedisScript<Long>(
+                    "if redis.call('SISMEMBER', KEYS[2], KEYS[1]) == 0 then return 0; end; "
+                            + "local attempts = tonumber(redis.call('HGET', KEYS[1], ARGV[1]) or '0'); "
+                            + "if redis.call('EXISTS', KEYS[1]) == 0 or attempts >= tonumber(ARGV[2]) then "
+                            + "redis.call('SREM', KEYS[2], KEYS[1]); return 0; end; "
+                            + "return redis.call('HINCRBY', KEYS[1], ARGV[1], 1);",
                     Long.class);
 
     /** 各任务和接口尚未生成秒级快照的内存计数器。 */
@@ -190,11 +204,16 @@ public class CollectInterfaceStatistics {
             bucketKeys.sort(Comparator.comparingLong(this::bucketEpoch));
             for (String bucketKey : bucketKeys) {
                 if (bucketEpoch(bucketKey) < currentBucket) {
-                    flushBucket(bucketKey);
+                    // 单个窗口的缓存操作失败时，继续处理后续窗口。
+                    try {
+                        flushBucket(bucketKey);
+                    } catch (Exception exception) {
+                        LOGGER.error("五秒接口统计窗口处理失败，窗口：{}", bucketKey, exception);
+                    }
                 }
             }
         } catch (Exception exception) {
-            LOGGER.error("五秒接口统计写入数据库失败，缓存数据将在下次重试", exception);
+            LOGGER.error("读取五秒接口统计待写入窗口失败", exception);
         }
     }
 
@@ -205,12 +224,14 @@ public class CollectInterfaceStatistics {
     }
 
     /** 把一个已经关闭的Redis窗口转换为两张统计表记录。 */
-    private void flushBucket(String bucketKey) throws Exception {
+    private void flushBucket(String bucketKey) {
+        // 先读取窗口指标，窗口到期后清理遗留的待写入索引。
         Map<Object, Object> values = redisTemplate.opsForHash().entries(bucketKey);
         if (values == null || values.isEmpty()) {
-            removeBucket(bucketKey);
+            redisTemplate.opsForSet().remove(PENDING_BUCKET_INDEX, bucketKey);
             return;
         }
+        // 按任务和接口整理成采集统计和处理统计。
         long epoch = bucketEpoch(bucketKey);
         LocalDateTime statisticsTime = LocalDateTime.ofInstant(
                 Instant.ofEpochSecond(epoch), ZoneId.systemDefault());
@@ -232,8 +253,28 @@ public class CollectInterfaceStatistics {
                         key, statisticsTime, value));
             }
         }
-        writer.write(collectionRecords, processingRecords);
-        // 数据库事务成功返回后才删除Redis窗口，异常时完整保留供下次重试。
+        // 发起数据库事务前登记次数，达到上限的窗口直接退出。
+        Long attempt = redisTemplate.execute(RESERVE_BUCKET_WRITE_SCRIPT,
+                Arrays.asList(bucketKey, PENDING_BUCKET_INDEX),
+                BUCKET_WRITE_ATTEMPTS_FIELD, String.valueOf(MAX_BUCKET_WRITE_ATTEMPTS));
+        if (attempt == null || attempt == 0L) {
+            return;
+        }
+        try {
+            writer.write(collectionRecords, processingRecords);
+        } catch (RuntimeException exception) {
+            // 最后一次失败只移除待写入索引，统计数据按原有效期保留。
+            if (attempt == MAX_BUCKET_WRITE_ATTEMPTS) {
+                LOGGER.error("五秒接口统计达到写入上限，停止重试，窗口：{}，次数：{}",
+                        bucketKey, attempt, exception);
+                redisTemplate.opsForSet().remove(PENDING_BUCKET_INDEX, bucketKey);
+            } else {
+                LOGGER.warn("五秒接口统计写入失败，等待下次重试，窗口：{}，次数：{}/{}",
+                        bucketKey, attempt, MAX_BUCKET_WRITE_ATTEMPTS, exception);
+            }
+            return;
+        }
+        // 数据库事务成功返回后清理窗口及其待写入索引。
         removeBucket(bucketKey);
     }
 
@@ -287,7 +328,8 @@ public class CollectInterfaceStatistics {
                 field("processingCount", key), String.valueOf(snapshot.processingCount),
                 field("duplicateCount", key), String.valueOf(snapshot.duplicateCount),
                 field("wildValueCount", key), String.valueOf(snapshot.wildValueCount),
-                String.valueOf(TimeUnit.DAYS.toSeconds(BUCKET_TTL_DAYS)));
+                String.valueOf(TimeUnit.DAYS.toSeconds(BUCKET_TTL_DAYS)),
+                BUCKET_WRITE_ATTEMPTS_FIELD, String.valueOf(MAX_BUCKET_WRITE_ATTEMPTS));
     }
 
     /** 按任务和接口归并Redis窗口中的不同指标。 */
