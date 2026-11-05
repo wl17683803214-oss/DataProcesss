@@ -59,6 +59,23 @@
           and task_id = #{taskId}
     </update>
 
+    <!-- HTTP传输方式编码为3，与接收路径的唯一索引条件一致。 -->
+    <update id="incrementHttpCollectionCount">
+        update collect_interface_config
+        set data_packet_count = coalesce(data_packet_count, 0) + 1
+        where transfer_type = 3
+          and enabled = 1
+          and is_deleted = 0
+        <choose>
+            <when test="receivePath != null and receivePath != ''">
+                and receive_path = #{receivePath}
+            </when>
+            <otherwise>
+                and 1 = 0
+            </otherwise>
+        </choose>
+    </update>
+
     <!-- 批量写入已结束的处理五秒窗口，重试时覆盖同一窗口避免重复累计。 -->
     <insert id="saveProcessingStatistics">
         insert into data_processing_statistics (

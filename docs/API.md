@@ -175,7 +175,7 @@ Authorization: Bearer <token>
 
 采集事件列表中的 `logLevel` 返回稳定枚举编码，`logLevelName` 返回对应中文名称（调试、信息、警告、错误）。
 
-`InterfaceSaveRequest`：`id`、`taskId`、`interfaceName`、`interfaceType`、`sendFrom`、`messageContent`、`transferType`、`transferProtocol`、`protocolConfigId`、`host`、`port`、`receivePath`、`enabled`、`rpcEnabled`、`remark`。其中 `transferProtocol` 为整数枚举：1 JSON、2 PDXP、3 FEP；`port` 范围为 1～65535；`rpcEnabled` 为 0 时使用本地处理，为 1 时进入 RPC 处理流程。FEP（`transferProtocol=3`）无需传 `rpcEnabled` 和 `protocolConfigId`，后端固定保存为 `0` 和 `null`，切换到FEP或提交旧值时也会清理。HTTP（`transferType=3`）固定JSON传输协议，必须传当前任务下已启用JSON配置的 `protocolConfigId` 和接收路径 `receivePath`；处理开关固定为0，组播地址保存为空，路径在所有未删除HTTP配置中唯一。列表和详情计算返回 `receiveUrl`，访问协议读取 `data-processing.http.scheme`，默认http。HTTP统一入口 `POST /collection/receive/**` 已提供，当前只解析JSON并确认收到请求，不关联采集配置、不校验任务或启用状态、不处理业务、不入库、不统计。其他非HTTP、非FEP协议的两种处理方式都必须传 `protocolConfigId`：处理（`rpcEnabled=0`）只能选 PDXP（`protocolType=2`），转发（`rpcEnabled=1`）只能选 RPC（`protocolType=4`），类型不匹配时后端拒绝保存。采集接口不再接收或返回 `sheetName`。
+`InterfaceSaveRequest`：`id`、`taskId`、`interfaceName`、`interfaceType`、`sendFrom`、`messageContent`、`transferType`、`transferProtocol`、`protocolConfigId`、`host`、`port`、`receivePath`、`enabled`、`rpcEnabled`、`remark`。其中 `transferProtocol` 为整数枚举：1 JSON、2 PDXP、3 FEP；`port` 范围为 1～65535；`rpcEnabled` 为 0 时使用本地处理，为 1 时进入 RPC 处理流程。FEP（`transferProtocol=3`）无需传 `rpcEnabled` 和 `protocolConfigId`，后端固定保存为 `0` 和 `null`，切换到FEP或提交旧值时也会清理。HTTP（`transferType=3`）固定JSON传输协议，必须传当前任务下已启用JSON配置的 `protocolConfigId` 和接收路径 `receivePath`；处理开关固定为0，组播地址保存为空，路径在所有未删除HTTP配置中唯一。列表和详情计算返回 `receiveUrl`，访问协议读取 `data-processing.http.scheme`，默认http。HTTP统一入口 `POST /collection/receive/**` 收到合法JSON后，按路径为已启用且未删除的HTTP采集接口累计一次。其他非HTTP、非FEP协议的两种处理方式都必须传 `protocolConfigId`：处理（`rpcEnabled=0`）只能选 PDXP（`protocolType=2`），转发（`rpcEnabled=1`）只能选 RPC（`protocolType=4`），类型不匹配时后端拒绝保存。采集接口不再接收或返回 `sheetName`。
 
 UDP单播的 `host` 支持 `0.0.0.0`，表示监听服务所在运行环境的全部IPv4网卡，不依赖容器当前IP；组播仍填写实际网卡地址。已启用的UDP单播接口跨任务检查冲突：端口相同且地址相同或任意一方为 `0.0.0.0` 时禁止重复启用，不同具体地址或不同端口允许；TCP和组播规则保持原样。禁用配置允许重复保存。已启用的采集接口禁止修改，必须先通过启用状态接口禁用；修改请求同时传 `enabled=0` 也不能绕过。禁用后编辑保存时仍可按 `enabled` 决定是否重新启用。Docker桥接部署仍需映射实际使用的UDP端口。
 
@@ -441,7 +441,7 @@ OpenAPI 文件已为各模块请求 DTO 配置独立 Schema，包括字段类型
 
 数据处理服务提供 `POST /collection/receive/**`，默认服务地址为 `http://localhost:8083`。前缀下所有路径由同一个Controller接收JSON并返回 `{ "code": 200, "message": "操作成功" }`，没有data字段。请求头使用application/json，鉴权沿用现有开关与白名单。
 
-当前不查询采集配置，不检查任务或启用状态，不解析业务、不入库、不统计。空请求体或无法解析的JSON返回400，非POST返回405，内容类型不支持返回415。完整前端联调说明见[前端对接文档](前端对接-HTTP采集与协议配置变更.md)。
+请求路径精确匹配已启用且未删除的HTTP接口时，长期累计量 `dataPacketCount` 加1。未配置、已禁用或已删除的路径仍返回200，但不计数。该入口不要求任务处于运行状态，不保存请求正文，也不写入五秒统计。空请求体或无法解析的JSON返回400，非POST返回405，内容类型不支持返回415。完整前端联调说明见[前端对接文档](前端对接-HTTP采集与协议配置变更.md)。
 
 ### 采集总览速度字段
 

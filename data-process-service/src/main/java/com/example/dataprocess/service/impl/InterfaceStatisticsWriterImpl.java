@@ -22,6 +22,13 @@ public class InterfaceStatisticsWriterImpl implements InterfaceStatisticsWriter 
         this.mapper = mapper;
     }
 
+    /** 将路径匹配和计数放在同一次更新中，零行更新表示没有可计数的接口。 */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void recordHttpCollection(String receivePath) {
+        mapper.incrementHttpCollectionCount(receivePath);
+    }
+
     /** 两张统计表在同一事务中写入，防止同一窗口只完成一半。 */
     @Override
     @Transactional(rollbackFor = Exception.class)

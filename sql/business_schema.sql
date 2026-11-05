@@ -655,6 +655,7 @@ CREATE TABLE IF NOT EXISTS fep_file_transfer_record (
     file_type VARCHAR(50),
     file_length BIGINT NOT NULL,
     resolution VARCHAR(32),
+    evaluation_status VARCHAR(32) NOT NULL DEFAULT 'completed',
     local_path VARCHAR(1000) NOT NULL,
     object_name VARCHAR(1000) NOT NULL,
     file_url VARCHAR(2000),
@@ -675,6 +676,10 @@ ALTER TABLE fep_file_transfer_record
 ALTER TABLE fep_file_transfer_record
     ADD COLUMN IF NOT EXISTS resolution VARCHAR(32);
 
+-- 新接收和历史文件的评价状态统一初始化为完成。
+ALTER TABLE fep_file_transfer_record
+    ADD COLUMN IF NOT EXISTS evaluation_status VARCHAR(32) NOT NULL DEFAULT 'completed';
+
 -- 已有环境允许接收登记阶段的文件地址为空，上传成功后再回填；可重复执行。
 ALTER TABLE fep_file_transfer_record
     ALTER COLUMN file_url DROP NOT NULL;
@@ -687,6 +692,7 @@ COMMENT ON COLUMN fep_file_transfer_record.file_name IS '发送方提供的文�
 COMMENT ON COLUMN fep_file_transfer_record.file_type IS '文件后缀，小写且不包含点号';
 COMMENT ON COLUMN fep_file_transfer_record.file_length IS '文件字节长度';
 COMMENT ON COLUMN fep_file_transfer_record.resolution IS '图片像素分辨率，宽×高；普通文件或未识别时为空';
+COMMENT ON COLUMN fep_file_transfer_record.evaluation_status IS '评价状态：completed表示完成';
 COMMENT ON COLUMN fep_file_transfer_record.local_path IS '本地完整文件路径';
 COMMENT ON COLUMN fep_file_transfer_record.object_name IS '对象存储中的对象名称';
 COMMENT ON COLUMN fep_file_transfer_record.file_url IS '文件对外访问地址；已接收未上传时允许为空，上传成功后回填';

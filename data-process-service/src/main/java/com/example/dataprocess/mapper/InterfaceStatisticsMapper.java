@@ -7,8 +7,11 @@ import org.apache.ibatis.annotations.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** 采集和处理五秒统计数据访问接口。 */
+/** 采集累计量和采集、处理五秒统计的数据访问接口。 */
 public interface InterfaceStatisticsMapper {
+
+    /** 按接收路径为已启用的HTTP接口原子累加一次采集。 */
+    int incrementHttpCollectionCount(@Param("receivePath") String receivePath);
 
     /** 锁定采集接口累计计数行，保证同一接口的窗口差量串行计算。 */
     Long lockCollectionInterface(

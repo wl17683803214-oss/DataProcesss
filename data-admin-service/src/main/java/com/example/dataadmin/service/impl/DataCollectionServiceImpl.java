@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -190,15 +191,34 @@ public class DataCollectionServiceImpl implements DataCollectionService {
                 if (rate != null && rate.isNumber()) {
                     double rateKbps = rate.asDouble();
                     if (Double.isFinite(rateKbps) && rateKbps >= 0) {
-                        // 复用总览的单位选择和格式化规则，保持单字段返回格式一致。
-                        CollectionRateUnit rateUnit = CollectionRateUnit.fromKilobytes(rateKbps);
-                        records.get(index).setInterfaceRateKbps(rateUnit.format(rateKbps));
+                        // 在列表返回前按当前接口配置限制显示速度。
+                        CollectInterfaceConfig config = records.get(index);
+                        config.setInterfaceRateKbps(formatCollectionRate(config, rateKbps));
                     }
                 }
             } catch (JsonProcessingException ignored) {
                 // 无效实时指标保持默认零值，其他接口继续解析。
             }
         }
+    }
+
+    /** 按现有格式展示采集速率，配置了上限时确保显示值不超限。 */
+    private String formatCollectionRate(CollectInterfaceConfig config, double rateKbps) {
+        // 先选择实时速率的显示单位，再读取接口配置的上限和单位。
+        CollectionRateUnit rateUnit = CollectionRateUnit.fromKilobytes(rateKbps);
+        BigDecimal limit = config.getReceiveRateLimit();
+        String limitUnitValue = config.getReceiveRateLimitUnit();
+        if (limit != null && limitUnitValue != null) {
+            // 将配置上限和舍入后的显示值统一换算为千字节每秒再比较。
+            CollectionRateUnit limitUnit = CollectionRateUnit.require(limitUnitValue);
+            double limitKbps = limitUnit.toKilobytes(limit.doubleValue());
+            if (rateKbps > limitKbps || rateUnit.toKilobytes(rateUnit.convert(rateKbps)) > limitKbps) {
+                // 达到显示封顶条件时保留配置精度和单位。
+                return limit.stripTrailingZeros().toPlainString() + " " + limitUnit.getLabel();
+            }
+        }
+        // 其余情况沿用已有的自动单位换算和显示格式。
+        return rateUnit.format(rateKbps);
     }
 
     @Override

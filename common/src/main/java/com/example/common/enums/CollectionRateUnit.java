@@ -34,6 +34,11 @@ public enum CollectionRateUnit {
     return rateKbps >= MEGABYTES.divisor ? MEGABYTES : KILOBYTES;
   }
 
+  /** 将当前单位的速率换算为千字节每秒，保留原有精度。 */
+  public double toKilobytes(double rate) {
+    return rate * divisor;
+  }
+
   /** 按当前单位换算，并沿用总览保留两位小数的修约规则。 */
   public double convert(double rateKbps) {
     return Math.round(rateKbps / divisor * 100D) / 100D;

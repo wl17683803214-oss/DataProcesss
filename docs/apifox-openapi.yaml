@@ -1424,7 +1424,7 @@ paths:
     get:
       tags: [数据采集]
       summary: 分页查询采集接口
-      description: '支持按接口名称包含筛选，空白名称不参与筛选；分页记录与总数使用相同条件。dataPacketCount直接读取采集接口表中的长期累计量，五秒统计明细过期删除不会使其减少；PDXP按完整帧、FEP按完整文件计数，新接口初始为0。interfaceRateKbps读取Redis最新采集速率并返回包含数值与单位的字符串，小于1024 KB/s使用KB/s，达到1024时换算为MB/s，最多两位小数；缓存有效期5秒，缓存缺失或Redis不可用时返回0 KB/s。'
+      description: '支持按接口名称包含筛选，空白名称不参与筛选；分页记录与总数使用相同条件。dataPacketCount直接读取采集接口表中的长期累计量，五秒统计明细过期删除不会使其减少；PDXP按完整帧、FEP按完整文件、HTTP按匹配接收路径的合法JSON请求次数计数，新接口初始为0。interfaceRateKbps读取Redis最新采集速率并返回包含数值与单位的字符串，小于1024 KB/s使用KB/s，达到1024时换算为MB/s，最多两位小数；缓存有效期5秒，缓存缺失或Redis不可用时返回0 KB/s。'
       parameters:
         - $ref: '#/components/parameters/TaskId'
         - name: interfaceName
@@ -1509,7 +1509,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 新增采集接口
-      description: 'HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP另有统一接收入口，当前仅确认收到JSON，不查询配置、不处理业务、不入库、不统计。'
+      description: 'HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP统一接收入口按路径为已启用且未删除的采集接口累计合法JSON请求次数。'
       requestBody:
         required: true
         content:
@@ -1722,7 +1722,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 修改采集接口
-      description: '已启用的采集接口禁止修改，请先通过启用状态接口禁用；修改请求同时传enabled=0也不能绕过。taskId必须与采集接口原所属试验任务编号一致，修改任务编号返回参数错误；累计采集量不会因编辑接口而清零。HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP另有统一接收入口，当前仅确认收到JSON，不查询配置、不处理业务、不入库、不统计。'
+      description: '已启用的采集接口禁止修改，请先通过启用状态接口禁用；修改请求同时传enabled=0也不能绕过。taskId必须与采集接口原所属试验任务编号一致，修改任务编号返回参数错误；累计采集量不会因编辑接口而清零。HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP统一接收入口按路径为已启用且未删除的采集接口累计合法JSON请求次数。'
       requestBody:
         required: true
         content:
@@ -1965,7 +1965,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 修改采集接口启用状态
-      description: '保存启用或禁用设置后立即返回，实际运行状态由后台串行同步；连续操作合并并按最新配置执行。成功仅表示配置已保存，不保证监听已启动或停止，执行结果查看运行日志和采集告警。HTTP启用时复核JSON配置与接收路径，但当前通用HTTP入口不读取启用状态；HTTP不进入套接字监听列表。请求和响应字段保持不变。'
+      description: '保存启用或禁用设置后立即返回，实际运行状态由后台串行同步；连续操作合并并按最新配置执行。成功仅表示配置已保存，不保证监听已启动或停止，执行结果查看运行日志和采集告警。HTTP启用时复核JSON配置与接收路径，保存后的启用状态决定该路径的后续请求是否计入累计量；HTTP不进入套接字监听列表。请求和响应字段保持不变。'
       requestBody:
         required: true
         content:
@@ -2000,8 +2000,8 @@ paths:
   /collection/receive/{receivePath}:
     post:
       tags: [数据处理-HTTP采集]
-      summary: 统一接收HTTP采集JSON并返回成功
-      description: '处理服务实际匹配POST /collection/receive/**，所有子路径共用一个Controller。receivePath为前缀后的路径名称，也支持多级路径，联调多级路径时直接编辑请求URL。当前仅由框架解析JSON并返回成功，不查询采集配置，不检查任务、接口启用状态或协议配置，不入库、不发布消息、不统计；成功仅表示请求已到达入口且JSON可解析。沿用处理服务现有鉴权开关与白名单，未豁免时携带Bearer Token。'
+      summary: 接收HTTP采集JSON并按路径累计采集量
+      description: '处理服务实际匹配POST /collection/receive/**，所有子路径共用一个Controller。receivePath为前缀后的路径名称，也支持多级路径，联调多级路径时直接编辑请求URL。路径精确匹配已启用且未删除的HTTP采集接口时，每个合法JSON请求将其长期累计采集量dataPacketCount加1。未配置、已禁用或已删除的路径仍返回成功，但不计数。不要求任务运行，不保存请求正文，不写五秒统计。沿用处理服务现有鉴权开关与白名单，未豁免时携带Bearer Token。'
       servers:
         - url: http://localhost:8083
           description: 数据处理服务，按实际部署地址替换
@@ -2009,7 +2009,7 @@ paths:
         - name: receivePath
           in: path
           required: true
-          description: 接收前缀后的路径，例如telemetry或status，不要求已创建对应采集配置
+          description: 接收前缀后的路径，例如telemetry。需要计数时，完整路径必须匹配已启用的HTTP采集接口
           schema: { type: string }
           example: telemetry
       requestBody:
@@ -2024,11 +2024,11 @@ paths:
                   source: "测试发送端"
                   payload: { value: 123 }
               array:
-                summary: JSON数组，同样只确认收到请求
+                summary: JSON数组，匹配采集接口时整条请求计一次
                 value: [{ value: 123 }, { value: 456 }]
       responses:
         '200':
-          description: 已接收JSON，不代表业务处理或入库完成
+          description: 已接收JSON。匹配已启用且未删除的HTTP采集接口时，累计量已加1
           content:
             application/json:
               schema:
@@ -2950,6 +2950,7 @@ paths:
                             fileType: { type: string, nullable: true, description: 文件小写后缀 }
                             fileLength: { type: integer, format: int64, description: 文件字节数 }
                             resolution: { type: string, nullable: true, description: "图片像素分辨率，格式为宽×高，例如1920×1080；普通文件、历史未识别记录或当前解析器不支持时为null" }
+                            evaluation: { type: string, description: "图片和普通文件的评价中文名称，当前默认完成" }
                             fileUrl: { type: string, description: "临时签名读取地址，默认3600秒有效；直接用于图片展示或下载，过期后重新查询列表，不要修改地址及查询参数" }
                             completedTime: { type: string, format: date-time }
               example:
@@ -2967,6 +2968,7 @@ paths:
                       fileType: png
                       fileLength: 245760
                       resolution: "1920×1080"
+                      evaluation: 完成
                       fileUrl: 'http://192.168.112.215:9002/fep-files/2026/10/15/example.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=example%2F20261015%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261015T043000Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=示例签名以实际返回值为准'
                       completedTime: '2026-09-29T10:30:15'
 
@@ -7650,7 +7652,7 @@ components:
                         dataPacketCount:
                           type: integer
                           format: int64
-                          description: "采集接口表保存的长期累计采集量；PDXP为完整帧数，FEP为完整文件数，五秒统计明细过期清理后仍保留"
+                          description: "采集接口表保存的长期累计采集量；PDXP为完整帧数，FEP为完整文件数，HTTP为匹配接收路径的合法JSON请求次数，五秒统计明细过期清理后仍保留"
                         interfaceRateKbps:
                           type: string
                           description: "Redis最新采集速率，包含数值和单位，自动切换KB/s与MB/s，最多两位小数；缓存缺失或Redis不可用时返回0 KB/s"
@@ -7858,7 +7860,7 @@ components:
                     description: "是否启用RPC处理中文名称"
                   dataPacketCount:
                     type: integer
-                    description: "采集接口表保存的长期累计采集量，五秒统计明细过期清理后仍保留"
+                    description: "采集接口表保存的长期累计采集量，HTTP按匹配接收路径的合法JSON请求次数累计，五秒统计明细过期清理后仍保留"
                   remark:
                     type: string
                     description: "备注信息"
