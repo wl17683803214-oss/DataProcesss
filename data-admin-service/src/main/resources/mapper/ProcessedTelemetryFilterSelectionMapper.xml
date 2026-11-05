@@ -60,6 +60,25 @@
         on conflict (task_id, selection_type, target_id, device_satellite_id, telemetry_code)
         do update set is_deleted = excluded.is_deleted, update_time = current_timestamp
     </insert>
+    <!-- 只清除当前页面或组件；缺少任意范围条件时不允许更新记录。 -->
+    <update id="clearByScope">
+        update processed_telemetry_filter_selection
+        set is_deleted = 1, update_time = current_timestamp
+        where is_deleted = 0
+        <if test="taskId != null and taskId != ''">
+            and task_id = #{taskId}
+        </if>
+        <if test="selectionType != null">
+            and selection_type = #{selectionType}
+        </if>
+        <if test="targetId != null">
+            and target_id = #{targetId}
+        </if>
+        <!-- 防止空参数使清除范围扩大，目标主键为零仍是有效条件。 -->
+        <if test="taskId == null or taskId == '' or selectionType == null or targetId == null">
+            and 1 = 0
+        </if>
+    </update>
     <!-- 删除组件时只清理该组件的两种遥测参数勾选。 -->
     <delete id="deleteByTarget">
         delete from processed_telemetry_filter_selection

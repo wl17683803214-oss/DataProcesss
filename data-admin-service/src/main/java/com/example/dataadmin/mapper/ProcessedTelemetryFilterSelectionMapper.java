@@ -22,6 +22,9 @@ public interface ProcessedTelemetryFilterSelectionMapper {
              @Param("telemetryCode") String telemetryCode,
              @Param("selectionType") int selectionType, @Param("targetId") Long targetId,
              @Param("deleted") int deleted);
+    /** 按任务、场景和目标逻辑清除全部有效勾选，返回实际清除数量。 */
+    int clearByScope(@Param("taskId") String taskId,
+            @Param("selectionType") Integer selectionType, @Param("targetId") Long targetId);
     /** 删除组件时清除其所有参数勾选。 */
     int deleteByTarget(@Param("taskId") String taskId, @Param("targetId") Long targetId);
     /** 把原代号的有效勾选记录设为取消，待所有旧代号处理完再恢复新代号。 */

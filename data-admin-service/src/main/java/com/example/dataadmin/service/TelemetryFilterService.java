@@ -1,10 +1,16 @@
 package com.example.dataadmin.service;
 
+import com.example.dataadmin.config.OperationLogAdvice;
+import com.example.dataadmin.dto.processing.TelemetryFilterClearRequest;
 import com.example.dataadmin.dto.processing.TelemetryFilterSelectionRequest;
+import com.example.dataadmin.entity.MonitorDashboardWidget;
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.entity.TelemetryFilterSearchRecord;
 import com.example.dataadmin.entity.TelemetrySystemConfig;
 import com.example.dataadmin.enums.TelemetryFilterNodeType;
+import com.example.dataadmin.enums.BusinessEnums;
+import com.example.dataadmin.enums.SystemLogLevel;
+import com.example.dataadmin.enums.SystemLogSource;
 import com.example.dataadmin.mapper.DeviceSatelliteMapper;
 import com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper;
 import com.example.dataadmin.mapper.TelemetryParseRuleConfigMapper;
@@ -14,6 +20,8 @@ import com.example.dataadmin.vo.processing.TelemetryFilterNodeVO;
 import com.example.dataadmin.vo.processing.TelemetrySystemNodeVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -188,6 +196,41 @@ public class TelemetryFilterService {
                     com.example.dataadmin.enums.SystemLogLevel.INFO,
                     scope + "遥测参数" + (after ? "已勾选" : "已取消勾选"), detail);
         }
+    }
+
+    /** 按现有勾选场景清除单个页面或组件，整个操作失败时统一回滚。 */
+    @Transactional(rollbackFor = Exception.class)
+    public void clear(TelemetryFilterClearRequest request) {
+        // 第一步：校验任务并复用任务锁，与单项勾选和配置导入保持串行。
+        String taskId = request.getTaskId();
+        requireTask(taskId);
+        if (deviceMapper.lockForReplacement(taskId) == null) {
+            throw new IllegalArgumentException("目标试验任务不存在");
+        }
+
+        // 第二步：锁内复用场景校验，确保组件属于当前任务、当前用户且类型匹配。
+        long scopeId = scopeService.require(taskId, request.getSelectionType(), request.getTargetId());
+
+        // 第三步：一次取消当前范围内全部设备和系统的勾选，不受树展开或搜索条件影响。
+        int clearedCount = selectionMapper.clearByScope(taskId, request.getSelectionType(), scopeId);
+
+        // 第四步：业务层负责真实变化日志，重复清除成功时不生成重复日志。
+        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            attributes.setAttribute(OperationLogAdvice.SELECTION_RECORDED, true, RequestAttributes.SCOPE_REQUEST);
+        }
+        if (clearedCount == 0 || operationLogs == null) {
+            return;
+        }
+
+        // 第五步：复用已有枚举中文名称和事务提交后日志，记录清除范围及实际数量。
+        String scope = BusinessEnums.SelectionType.fromCode(request.getSelectionType()).getLabel();
+        MonitorDashboardWidget widget = scopeId == 0 ? null : widgetMapper.findById(scopeId);
+        String detail = "筛选框：" + scope + "；目标ID：" + scopeId
+                + (widget == null ? "" : "；组件名称：" + widget.getWidgetTitle() + "；组件ID：" + widget.getId())
+                + "；清除参数数量：" + clearedCount + "；状态：已勾选 → 未勾选";
+        operationLogs.record(taskId, SystemLogSource.TELEMETRY_FILTER, SystemLogLevel.INFO,
+                scope + "遥测参数筛选已清除", detail);
     }
 
     private void requireTask(String taskId) {

@@ -1,6 +1,7 @@
 package com.example.dataadmin.controller;
 
 import com.example.common.response.ApiResponse;
+import com.example.dataadmin.dto.processing.TelemetryFilterClearRequest;
 import com.example.dataadmin.dto.processing.TelemetryFilterSelectionRequest;
 import com.example.dataadmin.vo.processing.TelemetrySystemNodeVO;
 import com.example.dataadmin.service.TelemetryFilterService;
@@ -49,6 +50,15 @@ public class TelemetryFilterController {
     @PostMapping("/telemetry-filter-selection/update")
     public ApiResponse<Boolean> update(@Valid @RequestBody TelemetryFilterSelectionRequest request) {
         service.update(request);
+        return ApiResponse.success(true);
+    }
+
+    /** 只清除指定任务下当前页面或组件的全部参数勾选。 */
+    @PostMapping("/telemetry-filter-selection/clear")
+    public ApiResponse<Boolean> clear(@Valid @RequestBody TelemetryFilterClearRequest request) {
+        // 第一步：由业务层校验清除范围并在事务内取消勾选。
+        service.clear(request);
+        // 第二步：当前范围没有勾选记录时也返回成功，允许重复调用。
         return ApiResponse.success(true);
     }
 }

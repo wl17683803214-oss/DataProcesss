@@ -3603,6 +3603,96 @@ paths:
                   data: { type: boolean }
               example: { code: 200, message: 操作成功, data: true }
 
+  # 清除范围复用筛选树场景，三个范围字段全部必填且放在请求体中。
+  /processing/telemetry-filter-selection/clear:
+    post:
+      tags: [数据处理]
+      summary: 清除当前页面全部遥测参数勾选
+      description: |
+        按taskId、selectionType、targetId批量取消当前页面或组件下全部设备和系统的参数勾选，不受当前树展开位置、遥测代号搜索或分页影响。
+        selectionType为1或2时targetId必须为0，表格和曲线分别清除；这些固定页面的勾选按任务共享，清除后同任务其他用户看到的对应场景也会更新。
+        selectionType为3或4时targetId必须为当前任务、当前用户的对应组件widgetId，仅清除该组件，不清除可视化整页的其他组件。
+        使用逻辑删除，不删除参数解析配置或历史遥测数据；无已选参数或重复清除均返回成功。前端成功后应刷新当前范围的勾选树及表格或曲线，并清理该范围的勾选缓存。
+        三个参数直接复用当前筛选树请求，全部放在JSON请求体中；不需要parseRuleId、设备主键、系统主键或遥测代号。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [taskId, selectionType, targetId]
+              properties:
+                taskId:
+                  type: string
+                  minLength: 1
+                  description: 当前试验任务编号，不能为空或空白。
+                selectionType:
+                  type: integer
+                  enum: [1, 2, 3, 4]
+                  description: 勾选场景，与当前筛选树请求一致。
+                  x-apifox-enum:
+                    - value: 1
+                      name: 处理后数据表格
+                      description: 仅清除当前任务处理后表格的勾选，targetId必须为0。
+                    - value: 2
+                      name: 处理后数据曲线
+                      description: 仅清除当前任务处理后曲线的勾选，targetId必须为0。
+                    - value: 3
+                      name: 数据可视化表格
+                      description: 仅清除指定实时数据组件的勾选，targetId为组件widgetId。
+                    - value: 4
+                      name: 数据可视化曲线
+                      description: 仅清除指定实时曲线组件的勾选，targetId为组件widgetId。
+                targetId:
+                  type: integer
+                  format: int64
+                  minimum: 0
+                  description: 处理后数据页面固定为0；可视化场景填写对应组件widgetId，须匹配当前任务、当前用户和组件类型。不是设备、系统或参数主键。
+            examples:
+              processedTable:
+                summary: 清除处理后数据表格勾选
+                value: { taskId: TASK-20260908-001, selectionType: 1, targetId: 0 }
+              processedCurve:
+                summary: 清除处理后数据曲线勾选
+                value: { taskId: TASK-20260908-001, selectionType: 2, targetId: 0 }
+              visualizationTable:
+                summary: 清除单个实时数据组件勾选
+                value: { taskId: TASK-20260908-001, selectionType: 3, targetId: 205 }
+              visualizationCurve:
+                summary: 清除单个实时曲线组件勾选
+                value: { taskId: TASK-20260908-001, selectionType: 4, targetId: 206 }
+      responses:
+        '200':
+          description: 清除成功，无勾选或重复清除也返回成功。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+                  data: { type: boolean }
+              example: { code: 200, message: 操作成功, data: true }
+        '400':
+          description: 必填字段缺失、场景无效、任务不存在、固定页面目标不为0或组件任务归属、用户归属及类型不匹配，不清除任何记录。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code: { type: integer }
+                  message: { type: string }
+              examples:
+                invalidSelectionType:
+                  summary: 场景编码无效
+                  value: { code: 400, message: 参数勾选类型无效 }
+                invalidProcessedTarget:
+                  summary: 固定页面目标主键错误
+                  value: { code: 400, message: 处理后数据页面的目标主键必须为零 }
+                invalidWidget:
+                  summary: 可视化组件归属或类型不匹配
+                  value: { code: 400, message: 当前任务下不存在匹配的可视化组件 }
+
   /processing/rules:
     get:
       tags: [数据处理]

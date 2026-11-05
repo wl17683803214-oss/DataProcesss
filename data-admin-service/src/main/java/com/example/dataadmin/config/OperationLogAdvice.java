@@ -141,10 +141,11 @@ public class OperationLogAdvice extends RequestBodyAdviceAdapter
         OperationAction action = request == null ? null : action(request);
         if (action == null || !(body instanceof ApiResponse)) { return body; }
         ApiResponse<?> result = (ApiResponse<?>) body;
-        // 参数勾选由业务层记录真实变化，成功响应不能重复写一条笼统日志。
+        // 参数勾选和整页清除由业务层记录真实变化，成功响应不能重复写一条笼统日志。
         if (Boolean.TRUE.equals(request.getAttribute(SELECTION_RECORDED))
                 && ("/visualization/items/selected".equals(request.getServletPath())
-                    || "/processing/telemetry-filter-selection/update".equals(request.getServletPath()))
+                    || "/processing/telemetry-filter-selection/update".equals(request.getServletPath())
+                    || "/processing/telemetry-filter-selection/clear".equals(request.getServletPath()))
                 && Integer.valueOf(200).equals(result.getCode())) {
             return body;
         }

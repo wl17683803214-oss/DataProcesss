@@ -49,6 +49,8 @@ public enum OperationAction {
     AUTH_LOGIN("/auth/login", SystemLogSource.AUTHENTICATION, "用户登录"),
     AUTH_SSO_LOGIN("/auth/sso/login", SystemLogSource.AUTHENTICATION, "统一身份登录"),
     PROCESSING_TELEMETRY_FILTER_SELECTION_UPDATE("/processing/telemetry-filter-selection/update", SystemLogSource.TELEMETRY_FILTER, "修改遥测参数筛选"),
+    /** 清除当前页面或组件的全部遥测参数勾选。 */
+    PROCESSING_TELEMETRY_FILTER_SELECTION_CLEAR("/processing/telemetry-filter-selection/clear", SystemLogSource.TELEMETRY_FILTER, "清除当前页面遥测参数筛选"),
     AUTH_LOGOUT("/auth/logout", SystemLogSource.AUTHENTICATION, "用户退出");
 
     /** 人工写操作的接口路径。 */
