@@ -178,10 +178,18 @@ public class TelemetryFilterService {
             attributes.setAttribute(com.example.dataadmin.config.OperationLogAdvice.SELECTION_RECORDED,
                     true, org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST);
         }
+        // 勾选时只保存有效记录；取消时物理删除，同时清理同身份的历史取消记录。
+        if (after) {
+            if (!before) {
+                selectionMapper.save(request.getTaskId(), rule.getDeviceSatelliteId(),
+                        rule.getTelemetryCode(), request.getSelectionType(), scopeId);
+            }
+        } else {
+            selectionMapper.deleteSelected(request.getTaskId(), rule.getDeviceSatelliteId(),
+                    rule.getTelemetryCode(), request.getSelectionType(), scopeId);
+        }
+        // 重复取消可清理历史记录，但勾选状态未变化时仍不生成重复日志。
         if (before == after) { return; }
-        selectionMapper.save(request.getTaskId(), rule.getDeviceSatelliteId(),
-                rule.getTelemetryCode(), request.getSelectionType(), scopeId,
-                after ? 0 : 1);
         if (operationLogs != null) {
             com.example.dataadmin.entity.DeviceSatellite device = deviceMapper.findActive(request.getTaskId(), rule.getDeviceSatelliteId());
             String scope = com.example.dataadmin.enums.BusinessEnums.SelectionType.fromCode(request.getSelectionType()).getLabel();
@@ -211,7 +219,7 @@ public class TelemetryFilterService {
         // 第二步：锁内复用场景校验，确保组件属于当前任务、当前用户且类型匹配。
         long scopeId = scopeService.require(taskId, request.getSelectionType(), request.getTargetId());
 
-        // 第三步：一次取消当前范围内全部设备和系统的勾选，不受树展开或搜索条件影响。
+        // 第三步：物理删除当前范围内全部勾选记录，不受树展开或搜索条件影响。
         int clearedCount = selectionMapper.clearByScope(taskId, request.getSelectionType(), scopeId);
 
         // 第四步：业务层负责真实变化日志，重复清除成功时不生成重复日志。
@@ -228,7 +236,7 @@ public class TelemetryFilterService {
         MonitorDashboardWidget widget = scopeId == 0 ? null : widgetMapper.findById(scopeId);
         String detail = "筛选框：" + scope + "；目标ID：" + scopeId
                 + (widget == null ? "" : "；组件名称：" + widget.getWidgetTitle() + "；组件ID：" + widget.getId())
-                + "；清除参数数量：" + clearedCount + "；状态：已勾选 → 未勾选";
+                + "；删除勾选记录数量：" + clearedCount + "；结果：勾选记录已清除";
         operationLogs.record(taskId, SystemLogSource.TELEMETRY_FILTER, SystemLogLevel.INFO,
                 scope + "遥测参数筛选已清除", detail);
     }

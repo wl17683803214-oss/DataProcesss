@@ -97,7 +97,7 @@ LE是小端，BE是大端。公式109示例中 `3F 80 00 00` 按BE浮点解码�
 | POST /processing/formulas/import | multipart字段file，接收.lua或.zip |
 | GET /processing/formulas/export?code=100 | 下载当前脚本，文件名100.lua，不支持版本参数 |
 | GET /processing/formulas/export-zip?codes=100,109 | 下载指定编号的当前脚本，不传codes则导出全部当前公式 |
-| POST /processing/formulas/batch-delete | JSON传codes，单次1到100个；未引用公式才能整批删除，成功后提交后台同步 |
+| POST /processing/formulas/batch-delete | JSON传codes，单次1到100个；允许删除被引用公式，编号全部存在时整批删除，成功后提交后台同步 |
 
 ## 异常与恢复
 
@@ -131,6 +131,6 @@ LE是小端，BE是大端。公式109示例中 `3F 80 00 00` 按BE浮点解码�
 
 查询：GET /processing/formulas?pageNum=1&pageSize=20&code=109。响应data包含pageNum、pageSize、total、records，记录字段为code、name、createTime、updateTime，不返回源码或版本字段。
 
-删除：POST /processing/formulas/batch-delete，请求体为{"codes":["100","109"]}，成功响应data为实际删除数量。重复编号只计一次。任一编号不存在或被任意任务的有效参数配置引用时，整批不删除，错误消息列出相关编号。检查与删除使用同一事务，期间参数写入会短暂等待。
+删除：POST /processing/formulas/batch-delete，请求体为{"codes":["100","109"]}，成功响应data为实际删除数量。重复编号只计一次。任一编号不存在时，整批不删除，错误消息列出相关编号。允许删除被参数配置引用的公式，不查询、锁定或修改参数配置表。存在性检查与删除使用同一事务。
 
 删除成功后通过已有队列提交后台配置同步。响应不代表同步已经完成；同步前的内存快照及已开始的帧不会被强行中断，完成情况查看运行日志和告警。

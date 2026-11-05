@@ -38,10 +38,6 @@
     <select id="lockManagement" resultType="string">
         select pg_advisory_xact_lock(hashtext('处理公式管理'))
     </select>
-    <!-- 删除事务结束前阻止参数并发写入，消除引用检查期间的写入间隙。 -->
-    <update id="lockParameterReferences">
-        lock table telemetry_parse_rule_config in share mode
-    </update>
     <!-- 空批次必须不匹配任何公式。 -->
     <sql id="codeFilter">
         <choose>
@@ -56,20 +52,6 @@
         select code from formula_script where <include refid="codeFilter"/>
         order by code
     </select>
-    <!-- 和运行时一致去除编号两侧空白，检查所有任务的有效参数配置。 -->
-    <select id="findReferencedCodes" resultType="string">
-        select distinct trim(formula_type) as code
-        from telemetry_parse_rule_config
-        where is_deleted = 0
-        <choose>
-            <when test="codes != null and codes.size() > 0">
-                and trim(formula_type) in
-                <foreach collection="codes" item="code" open="(" close=")" separator=",">#{code}</foreach>
-            </when>
-            <otherwise>and 1 = 0</otherwise>
-        </choose>
-        order by code
-    </select>
     <!-- 复用项目现有冲突更新语法，编号是唯一主键。 -->
     <insert id="upsert" parameterType="com.example.common.formula.FormulaScript">
         insert into formula_script(code, name, source, create_time, update_time)
@@ -77,7 +59,7 @@
         on conflict (code) do update
         set name = excluded.name, source = excluded.source, update_time = excluded.update_time
     </insert>
-    <!-- 整批引用检查通过后才物理删除，不保留历史源码。 -->
+    <!-- 整批编号存在性检查通过后物理删除，不保留历史源码。 -->
     <delete id="deleteByCodes">
         delete from formula_script where <include refid="codeFilter"/>
     </delete>

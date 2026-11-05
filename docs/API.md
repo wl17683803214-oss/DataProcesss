@@ -175,7 +175,7 @@ Authorization: Bearer <token>
 
 采集事件列表中的 `logLevel` 返回稳定枚举编码，`logLevelName` 返回对应中文名称（调试、信息、警告、错误）。
 
-`InterfaceSaveRequest`：`id`、`taskId`、`interfaceName`、`interfaceType`、`sendFrom`、`messageContent`、`transferType`、`transferProtocol`、`protocolConfigId`、`host`、`port`、`receivePath`、`enabled`、`rpcEnabled`、`remark`。其中 `transferProtocol` 为整数枚举：1 JSON、2 PDXP、3 FEP；`port` 范围为 1～65535；`rpcEnabled` 为 0 时使用本地处理，为 1 时进入 RPC 处理流程。FEP（`transferProtocol=3`）无需传 `rpcEnabled` 和 `protocolConfigId`，后端固定保存为 `0` 和 `null`，切换到FEP或提交旧值时也会清理。HTTP（`transferType=3`）固定JSON传输协议，必须传当前任务下已启用JSON配置的 `protocolConfigId` 和接收路径 `receivePath`；处理开关固定为0，组播地址保存为空，路径在所有未删除HTTP配置中唯一。列表和详情计算返回 `receiveUrl`，访问协议读取 `data-processing.http.scheme`，默认http。HTTP统一入口 `POST /collection/receive/**` 收到合法JSON后，按路径为已启用且未删除的HTTP采集接口累计一次。其他非HTTP、非FEP协议的两种处理方式都必须传 `protocolConfigId`：处理（`rpcEnabled=0`）只能选 PDXP（`protocolType=2`），转发（`rpcEnabled=1`）只能选 RPC（`protocolType=4`），类型不匹配时后端拒绝保存。采集接口不再接收或返回 `sheetName`。
+`InterfaceSaveRequest`：`id`、`taskId`、`interfaceName`、`interfaceType`、`sendFrom`、`messageContent`、`transferType`、`transferProtocol`、`protocolConfigId`、`host`、`port`、`receivePath`、`enabled`、`rpcEnabled`、`remark`。其中 `transferProtocol` 为整数枚举：1 JSON、2 PDXP、3 FEP；`port` 范围为 1～65535；`rpcEnabled` 为采集数据类型，0设备、1卫星、2指令响应，默认0；`GET /collection/findData` 返回同名枚举，列表和详情的 `rpcEnabledName` 返回中文类型名称。FEP（`transferProtocol=3`）无需传 `rpcEnabled` 和 `protocolConfigId`，后端固定保存为 `0` 和 `null`，切换到FEP或提交旧值时也会清理。HTTP（`transferType=3`）固定JSON传输协议，必须传当前任务下已启用JSON配置的 `protocolConfigId` 和接收路径 `receivePath`；处理开关固定为0，组播地址保存为空，路径在所有未删除HTTP配置中唯一。列表和详情计算返回 `receiveUrl`，访问协议读取 `data-processing.http.scheme`，默认http。HTTP统一入口 `POST /collection/receive/**` 收到合法JSON后，按路径为已启用且未删除的HTTP采集接口累计一次。指令响应（`rpcEnabled=2`）使用UDP（`transferType=1`）和PDXP（`transferProtocol=2`），无需协议配置，保存时清空 `protocolConfigId`；接口启停、监听地址、组播和限速均由采集接口管理。收到完整响应后组装 `CommandExecResultMsg` 的五个字段，经现有有界消息线程池发送到 `data-processing.command-response.topic`；发送任务提交成功后按帧累计处理量，实际发送异常记录消息告警，采集速率和统计沿用现有链路。设备（`rpcEnabled=0`）必须选PDXP协议配置（`protocolType=2`），卫星（`rpcEnabled=1`）必须选RPC协议配置（`protocolType=4`），类型不匹配时拒绝保存。采集接口不再接收或返回 `sheetName`。
 
 UDP单播的 `host` 支持 `0.0.0.0`，表示监听服务所在运行环境的全部IPv4网卡，不依赖容器当前IP；组播仍填写实际网卡地址。已启用的UDP单播接口跨任务检查冲突：端口相同且地址相同或任意一方为 `0.0.0.0` 时禁止重复启用，不同具体地址或不同端口允许；TCP和组播规则保持原样。禁用配置允许重复保存。已启用的采集接口禁止修改，必须先通过启用状态接口禁用；修改请求同时传 `enabled=0` 也不能绕过。禁用后编辑保存时仍可按 `enabled` 决定是否重新启用。Docker桥接部署仍需映射实际使用的UDP端口。
 
@@ -428,7 +428,9 @@ OpenAPI 文件已为各模块请求 DTO 配置独立 Schema，包括字段类型
 
 ## 数据保留与过期清理
 
-保留天数统一使用Nacos中的 `data-retention` 配置，不填或留空不删除，填写正整数N时删除早于当前时间减N天的数据；0和负数不合法。管理服务按分类分批物理删除金仓记录，处理服务删除GreptimeDB中同一截止时间之前的参数和整帧记录，每小时第15分钟执行。原固定7天清理不再使用。
+全部保留天数统一配置在Nacos管理服务配置 `data-admin-service.yaml` 的 `data-retention` 下，不填或留空不删除，填写正整数N时删除早于当前时间减N天的数据；0和负数不合法。管理服务统一执行金仓业务记录和GreptimeDB遥测数据清理，每小时第15分钟执行，变更保留天数后重启管理服务生效。`telemetry-days` 控制遥测参数、正常帧、异常帧及遥测曲线，当前示例为7天，要求管理服务启用GreptimeDB并连接与处理服务相同的数据库。处理服务不再绑定保留策略或执行过期删除。
+
+清理日志均在管理服务控制台查看：业务记录搜索 `本轮过期数据清理结束`，遥测记录搜索 `遥测过期数据清理完成`；失败日志搜索 `过期数据清理失败`。升级时同步更新两份Nacos配置并部署、重启两个服务，避免旧版处理服务继续执行清理；后续只需在管理服务调整保留天数。
 
 采集接口累计量及处理累计去重数按仍保留的统计记录计算，清理后可减少。遥测参数曲线仍查询最近120条已有数据，查询 `range` 与保留天数互相独立。校准只删除野值详情，保留汇总记录、ID和历史累计数量；详情分页total是当前保留的详情条数，允许小于汇总的outlierCount。文件图片只清理数据库记录，不删除MinIO对象；超期未完成的记录也删除，之后不再被数据库重试扫描选中。系统告警和数据告警包含已处理、未处理或仍活动的过期记录。配置项、配置所属服务和时间依据详见 `docs/数据保留与过期清理配置说明.md`。
 
@@ -467,7 +469,7 @@ GET /visualization/widgets/{widgetId}/files 的 data.records 增加可空字符�
 - POST /processing/formulas/import：multipart字段file上传.lua或.zip，整批事务导入；同编号覆盖当前源码，不保留历史版本。
 - GET /processing/formulas/export：code必填，下载当前脚本，不支持版本参数。
 - GET /processing/formulas/export-zip：codes为可选逗号分隔编号，下载当前脚本压缩包。
-- POST /processing/formulas/batch-delete：JSON传codes数组，1到100项；任一编号不存在或被有效参数配置引用时整批不删，成功后自动提交后台同步。
+- POST /processing/formulas/batch-delete：JSON传codes数组，1到100项；任一编号不存在时整批不删，允许删除被参数配置引用的公式，不查询或修改参数配置，成功后自动提交后台同步。
 
 单脚本64KB、上传包8MB、每批100公式。导入、覆盖及删除成功后自动提交内部配置同步，前端不再提供手动同步或试算操作。源码、统一输入输出、原码字节序及七个可导入示例见[lua-formulas/README.md](lua-formulas/README.md)。脚本输入为原始字节、位宽和有序参数；可选parameterTypes声明number常量或telemetry_raw同帧原码引用，未声明的旧脚本仍按数值解析，formulaDesc仅保留描述，不再执行。
 
@@ -481,3 +483,5 @@ GET /visualization/widgets/{widgetId}/files 的 data.records 增加可空字符�
 处理后表格、曲线和勾选仍按设备及遥测代号识别，同代号配置共用一份勾选及最终值，不展示两条相同结果。修改其中一条代号时，仍有其他同代号记录的原勾选继续保留。
 
 已部署环境需执行sql/20261030_allow_duplicate_telemetry_codes.sql解除旧唯一索引，尚未执行数据库迁移。新库使用更新后的business_schema.sql。当前PDXP本地处理的tm_type仍固定为TM_TYPE_DEVICE_TM，实时和延迟测试数据暂不制作。
+
+正常值范围与预警值范围仅用于遥测参数状态判定，由参数表的“是否报警”控制；优先采用预警值范围，未配置时回退到正常值范围，两者均未配置时不生成状态。参数越限不新增或恢复告警管理记录，本地及远程结果均适用。任务参数范围检查开关仅控制校准野值检测，校准野值告警保持原有逻辑。历史参数越限告警记录保留供查询。

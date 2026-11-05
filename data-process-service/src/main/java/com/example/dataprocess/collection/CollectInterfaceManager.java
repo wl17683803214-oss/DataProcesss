@@ -1,5 +1,6 @@
 package com.example.dataprocess.collection;
 
+import com.example.common.enums.CollectionDataType;
 import com.example.dataprocess.collection.receive.CollectInterfaceReceiver;
 import com.example.dataprocess.collection.receive.TcpInterfaceReceiver;
 import com.example.dataprocess.collection.receive.UdpInterfaceReceiver;
@@ -176,6 +177,15 @@ public class CollectInterfaceManager implements DisposableBean {
             if (taskId == null || taskId.trim().isEmpty()) {
                 throw new IllegalArgumentException("启用采集接口未配置试验任务编号");
             }
+            // 指令响应只依赖固定协议，启动前校验承载方式并跳过遥测校准配置。
+            if (CollectionDataType.require(config.getRpcEnabled())
+                    == CollectionDataType.COMMAND_RESPONSE) {
+                if (!Integer.valueOf(TRANSFER_TYPE_UDP).equals(config.getTransferType())
+                        || !Integer.valueOf(2).equals(config.getTransferProtocol())) {
+                    throw new IllegalArgumentException("指令响应采集必须使用UDP和PDXP");
+                }
+                continue;
+            }
             Map<String, CalibrationChannelRuntimeConfig> calibrationConfigs =
                     configsByTask.computeIfAbsent(taskId, calibrationConfigManager::load);
             config.setCalibrationConfigMap(calibrationConfigs);
@@ -194,8 +204,9 @@ public class CollectInterfaceManager implements DisposableBean {
             if (!Integer.valueOf(2).equals(config.getTransferProtocol())) {
                 continue;
             }
-            // RPC以卫星和通道代号确定身份，清理旧快照且不查询本地设备或参数。
-            if (Integer.valueOf(1).equals(config.getRpcEnabled())) {
+            // 卫星与指令响应都无需加载本地设备参数，切换类型时清理旧快照。
+            if (CollectionDataType.require(config.getRpcEnabled())
+                    != CollectionDataType.DEVICE) {
                 config.setDeviceSatelliteId(null);
                 config.setDeviceSatelliteName(null);
                 config.setPdxpFields(java.util.Collections.emptyList());

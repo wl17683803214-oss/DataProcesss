@@ -21,7 +21,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-/** 公式按编号唯一保存，覆盖导入和引用检查后的批量删除均使用事务。 */
+/** 公式按编号唯一保存，覆盖导入和批量删除均使用事务。 */
 @Service
 public class FormulaScriptService {
     /** 上传包和解压内容最多八兆，避免压缩包无限展开。 */
@@ -131,7 +131,7 @@ public class FormulaScriptService {
         return script;
     }
 
-    /** 任一公式不存在或仍被有效参数引用时整批回滚，不进行部分删除。 */
+    /** 校验编号和存在性后整批删除，参数配置引用不阻止删除。 */
     @Transactional(rollbackFor = Exception.class)
     public int deleteBatch(List<String> codes) {
         // 完整校验请求后再加锁，重复编号只计一次。
@@ -153,12 +153,7 @@ public class FormulaScriptService {
             unique.removeAll(existing);
             throw new IllegalArgumentException("以下公式不存在，整批未删除：" + String.join("、", unique));
         }
-        // 检查期间阻止参数并发写入，保证检查与删除处于同一事务。
-        mapper.lockParameterReferences();
-        List<String> referenced = mapper.findReferencedCodes(requested);
-        if (!referenced.isEmpty()) {
-            throw new IllegalArgumentException("以下公式被参数配置引用，整批未删除：" + String.join("、", referenced));
-        }
+        // 公式全部存在后直接删除，不再查询或锁定参数配置表。
         int deleted = mapper.deleteByCodes(requested);
         if (deleted != requested.size()) {
             throw new IllegalArgumentException("公式记录发生变化，整批未删除，请刷新后重试");

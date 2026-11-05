@@ -123,7 +123,7 @@ public class CollectInterfaceStatistics {
         counter(taskId, interfaceId).processingCount.increment();
     }
 
-    /** 记录业务处理完成且两个结果任务提交成功的PDXP帧，不代表异步入库或发送成功。 */
+    /** 记录业务处理完成且所需结果任务提交成功的PDXP帧，不代表异步入库或发送成功。 */
     public void recordFrameProcessing(String taskId, Long interfaceId) {
         InterfaceCounter counter = counter(taskId, interfaceId);
         // 第一步：累计历史处理量，继续写入五秒数据库统计窗口。

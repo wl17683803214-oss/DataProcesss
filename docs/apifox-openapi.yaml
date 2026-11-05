@@ -84,7 +84,7 @@ paths:
     post:
       tags: [数据处理]
       summary: 批量删除Lua处理公式
-      description: 单次1至100个编号，重复编号只计一次。任一编号不存在或被任意任务的有效参数配置引用时整批不删，错误消息列出受影响编号。引用检查与删除在同一事务中执行；成功后提交后台配置同步，响应不表示同步完成，已经开始的帧仍完成当前快照。
+      description: 单次1至100个编号，重复编号只计一次。任一编号不存在时整批不删，错误消息列出受影响编号。允许删除被参数配置引用的公式，不查询或修改参数配置。存在性检查与删除在同一事务中执行；成功后提交后台配置同步，响应不表示同步完成，已经开始的帧仍完成当前快照。
       requestBody:
         required: true
         content:
@@ -111,7 +111,7 @@ paths:
                   message: {type: string, example: 操作成功}
                   data: {type: integer, example: 2}
         '400':
-          description: 请求无效、公式不存在或仍被参数引用，整批不删除
+          description: 请求无效或公式不存在，整批不删除
   /processing/formulas/import:
     post:
       tags: [数据处理]
@@ -444,6 +444,7 @@ paths:
                   interfaceType: [{ value: 1, label: "外部接口" }, { value: 2, label: "内部接口" }]
                   transferType: [{ value: 1, label: "UDP" }, { value: 2, label: "TCP" }, { value: 3, label: "HTTP" }]
                   transferProtocol: [{ value: 1, label: "JSON" }, { value: 2, label: "PDXP" }, { value: 3, label: "FEP" }]
+                  rpcEnabled: [{ value: 0, label: "设备" }, { value: 1, label: "卫星" }, { value: 2, label: "指令响应" }]
                   protocolType: [{ value: 1, label: "JSON" }, { value: 2, label: "PDXP" }, { value: 3, label: "Protobuf" }, { value: 4, label: "RPC" }]
                   status: [{ value: 0, label: "离线" }, { value: 1, label: "在线" }]
                   enabled: [{ value: 0, label: "禁用" }, { value: 1, label: "启用" }]
@@ -1509,7 +1510,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 新增采集接口
-      description: 'HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP统一接收入口按路径为已启用且未删除的采集接口累计合法JSON请求次数。'
+      description: 'HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。设备类型选PDXP配置，卫星类型选RPC配置；指令响应类型rpcEnabled=2必须使用UDP和PDXP，无需协议配置，保存protocolConfigId=null。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP统一接收入口按路径为已启用且未删除的采集接口累计合法JSON请求次数。'
       requestBody:
         required: true
         content:
@@ -1522,16 +1523,23 @@ paths:
                   properties:
                     transferType: { type: integer, enum: [3] }
                     transferProtocol: { type: integer, enum: [1] }
+                    rpcEnabled: { type: integer, nullable: true, enum: [0] }
                     protocolConfigId: { type: integer, format: int64, nullable: false }
                 - properties:
                     transferType: { type: integer, enum: [1, 2] }
-                  oneOf:
-                    - properties:
-                        transferProtocol: { type: integer, enum: [3] }
-                    - required: [protocolConfigId]
-                      properties:
-                        transferProtocol: { type: integer, enum: [1, 2] }
-                        protocolConfigId: { type: integer, format: int64, nullable: false }
+                    transferProtocol: { type: integer, enum: [3] }
+                    rpcEnabled: { type: integer, nullable: true, enum: [0] }
+                - required: [rpcEnabled]
+                  properties:
+                    transferType: { type: integer, enum: [1] }
+                    transferProtocol: { type: integer, enum: [2] }
+                    rpcEnabled: { type: integer, enum: [2] }
+                - required: [protocolConfigId]
+                  properties:
+                    transferType: { type: integer, enum: [1, 2] }
+                    transferProtocol: { type: integer, enum: [1, 2] }
+                    rpcEnabled: { type: integer, nullable: true, enum: [0, 1] }
+                    protocolConfigId: { type: integer, format: int64, nullable: false }
               properties:
                 taskId:
                   type: string
@@ -1592,7 +1600,7 @@ paths:
                 protocolConfigId:
                   type: integer
                   nullable: true
-                  description: "HTTP必选当前任务的已启用JSON配置；FEP省略且保存为空；其他协议处理选PDXP、转发选RPC"
+                  description: "HTTP必选当前任务的已启用JSON配置；FEP和指令响应可省略且保存为空；设备选PDXP配置，卫星选RPC配置"
                   format: int64
                 host:
                   type: string
@@ -1641,17 +1649,12 @@ paths:
                 rpcEnabled:
                   type: integer
                   nullable: true
-                  description: "HTTP和FEP省略且固定保存0；其他协议0处理（选PDXP）、1转发（选RPC），默认0"
-                  enum:
-                    - 0
-                    - 1
+                  description: "采集数据类型，0设备、1卫星、2指令响应；默认0，HTTP和FEP沿用0。指令响应使用UDP和PDXP，协议配置保存为空。"
+                  enum: [0, 1, 2]
                   x-apifox-enum:
-                    - value: 0
-                      name: "禁用"
-                      description: "0 表示不使用RPC处理"
-                    - value: 1
-                      name: "启用"
-                      description: "1 表示使用RPC处理"
+                    - { value: 0, name: "设备", description: "本地设备处理，选择PDXP协议配置" }
+                    - { value: 1, name: "卫星", description: "卫星RPC处理，选择RPC协议配置" }
+                    - { value: 2, name: "指令响应", description: "UDP承载PDXP，协议配置可省略或为空，固定响应组装后发送MQ" }
                 remark:
                   type: string
                   description: "备注信息"
@@ -1690,6 +1693,19 @@ paths:
                   enabled: 1
                   rpcEnabled: 0
                   remark: "主链路"
+              commandResponse:
+                summary: 指令响应，使用采集接口直接发送MQ
+                value:
+                  taskId: "TASK-20260908-001"
+                  interfaceName: "指令响应UDP采集接口"
+                  interfaceType: 1
+                  transferType: 1
+                  transferProtocol: 2
+                  rpcEnabled: 2
+                  protocolConfigId: null
+                  host: "0.0.0.0"
+                  port: 19104
+                  enabled: 0
               fep:
                 summary: FEP文件采集，无需处理方式和协议配置
                 value:
@@ -1722,7 +1738,7 @@ paths:
     post:
       tags: [数据采集]
       summary: 修改采集接口
-      description: '已启用的采集接口禁止修改，请先通过启用状态接口禁用；修改请求同时传enabled=0也不能绕过。taskId必须与采集接口原所属试验任务编号一致，修改任务编号返回参数错误；累计采集量不会因编辑接口而清零。HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。其他协议处理选PDXP、转发选RPC。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP统一接收入口按路径为已启用且未删除的采集接口累计合法JSON请求次数。'
+      description: '已启用的采集接口禁止修改，请先通过启用状态接口禁用；修改请求同时传enabled=0也不能绕过。taskId必须与采集接口原所属试验任务编号一致，修改任务编号返回参数错误；累计采集量不会因编辑接口而清零。HTTP（transferType=3）固定JSON（transferProtocol=1），必选当前任务下已启用的JSON类型协议配置，receivePath必填；允许共用host、port，路径在所有未删除HTTP配置中唯一，禁用记录也保留路径。HTTP固定rpcEnabled=0、multicastIp=null。FEP（transferProtocol=3）省略rpcEnabled和protocolConfigId，固定保存0和null。设备类型选PDXP配置，卫星类型选RPC配置；指令响应类型rpcEnabled=2必须使用UDP和PDXP，无需协议配置，保存protocolConfigId=null。其他传输方式保存时清空receivePath。启用时跨任务校验监听冲突：UDP单播同端口且地址相同或任意一方为0.0.0.0时冲突，不同端口不冲突；TCP和组播沿用原有规则。HTTP统一接收入口按路径为已启用且未删除的采集接口累计合法JSON请求次数。'
       requestBody:
         required: true
         content:
@@ -1735,16 +1751,23 @@ paths:
                   properties:
                     transferType: { type: integer, enum: [3] }
                     transferProtocol: { type: integer, enum: [1] }
+                    rpcEnabled: { type: integer, nullable: true, enum: [0] }
                     protocolConfigId: { type: integer, format: int64, nullable: false }
                 - properties:
                     transferType: { type: integer, enum: [1, 2] }
-                  oneOf:
-                    - properties:
-                        transferProtocol: { type: integer, enum: [3] }
-                    - required: [protocolConfigId]
-                      properties:
-                        transferProtocol: { type: integer, enum: [1, 2] }
-                        protocolConfigId: { type: integer, format: int64, nullable: false }
+                    transferProtocol: { type: integer, enum: [3] }
+                    rpcEnabled: { type: integer, nullable: true, enum: [0] }
+                - required: [rpcEnabled]
+                  properties:
+                    transferType: { type: integer, enum: [1] }
+                    transferProtocol: { type: integer, enum: [2] }
+                    rpcEnabled: { type: integer, enum: [2] }
+                - required: [protocolConfigId]
+                  properties:
+                    transferType: { type: integer, enum: [1, 2] }
+                    transferProtocol: { type: integer, enum: [1, 2] }
+                    rpcEnabled: { type: integer, nullable: true, enum: [0, 1] }
+                    protocolConfigId: { type: integer, format: int64, nullable: false }
               properties:
                 id:
                   type: integer
@@ -1809,7 +1832,7 @@ paths:
                 protocolConfigId:
                   type: integer
                   nullable: true
-                  description: "HTTP必选当前任务的已启用JSON配置；FEP省略且保存为空；其他协议处理选PDXP、转发选RPC"
+                  description: "HTTP必选当前任务的已启用JSON配置；FEP和指令响应可省略且保存为空；设备选PDXP配置，卫星选RPC配置"
                   format: int64
                 host:
                   type: string
@@ -1858,17 +1881,12 @@ paths:
                 rpcEnabled:
                   type: integer
                   nullable: true
-                  description: "HTTP和FEP省略且固定保存0；其他协议0处理（选PDXP）、1转发（选RPC），默认0"
-                  enum:
-                    - 0
-                    - 1
+                  description: "采集数据类型，0设备、1卫星、2指令响应；默认0，HTTP和FEP沿用0。指令响应使用UDP和PDXP，协议配置保存为空。"
+                  enum: [0, 1, 2]
                   x-apifox-enum:
-                    - value: 0
-                      name: "禁用"
-                      description: "0 表示不使用RPC处理"
-                    - value: 1
-                      name: "启用"
-                      description: "1 表示使用RPC处理"
+                    - { value: 0, name: "设备", description: "本地设备处理，选择PDXP协议配置" }
+                    - { value: 1, name: "卫星", description: "卫星RPC处理，选择RPC协议配置" }
+                    - { value: 2, name: "指令响应", description: "UDP承载PDXP，协议配置可省略或为空，固定响应组装后发送MQ" }
                 remark:
                   type: string
                   description: "备注信息"
@@ -1909,6 +1927,20 @@ paths:
                   enabled: 1
                   rpcEnabled: 0
                   remark: "主链路"
+              commandResponse:
+                summary: 指令响应，使用采集接口直接发送MQ
+                value:
+                  id: 11
+                  taskId: "TASK-20260908-001"
+                  interfaceName: "指令响应UDP采集接口"
+                  interfaceType: 1
+                  transferType: 1
+                  transferProtocol: 2
+                  rpcEnabled: 2
+                  protocolConfigId: null
+                  host: "0.0.0.0"
+                  port: 19104
+                  enabled: 0
               fep:
                 summary: 修改为FEP文件采集，清空原协议关联
                 value:
@@ -3238,7 +3270,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最新数据
-      description: 按表格场景查询已保存勾选参数的最新值。先沿用业务库的一次勾选列表查询，再用一条GreptimeDB批量SQL读取全部参数各自的最新记录，不逐参数查询；无勾选时返回空数组且不查询时序库。设备按任务、local来源、设备主键身份和遥测代号查询；卫星按任务、rpc来源和遥测代号查询全部远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，在取最新记录前筛选；不传或留空时查询全部类型，非法值返回中文提示。设备卫星类型仍从所属资料读取。无匹配记录时保留已勾选参数身份并返回空值。数据可视化表格传selectionType=3及组件主键targetId，接口入参与返回字段保持不变。
+      description: 按表格场景查询已保存勾选参数的最新值，沿用业务库的一次勾选列表查询，再按连接池容量分批并发查询各参数；无勾选时返回空数组且不查询时序库。设备按任务、local来源、设备主键身份和遥测代号查询；卫星按任务、rpc来源和遥测代号查询全部远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，在取最新记录前筛选；不传或留空时查询全部类型，非法值返回中文提示。设备卫星类型仍从所属资料读取。无匹配记录时保留已勾选参数身份并返回空值。数据可视化表格传selectionType=3及组件主键targetId。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - name: telemetryType
@@ -3282,7 +3314,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最近曲线
-      description: 按曲线场景读取已保存勾选参数。先沿用业务库的一次勾选列表查询，再用一条GreptimeDB批量SQL读取全部参数各自最近最多120个数值有效点，不逐参数查询；无勾选时返回空数组且不查询时序库。设备限定当前任务和本地设备身份，卫星限定当前任务的远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，先筛选并排除空数值再按参数分别取点，按时间升序返回；不传或留空查询全部类型，非法值返回中文提示。无匹配记录时保留参数身份并返回空曲线。默认处理后数据曲线，可视化曲线传selectionType=4及组件主键targetId，各曲线携带自己的毫秒时间戳数组，接口入参与返回字段保持不变。
+      description: 按曲线场景读取已保存勾选参数，沿用业务库的一次勾选列表查询，再按连接池容量分批并发查询各参数；无勾选时返回空数组且不查询时序库。设备限定当前任务和本地设备身份，卫星限定当前任务的远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，先筛选再取最近最多120个数值有效点并按时间升序返回；不传或留空查询全部类型，非法值返回中文提示。无匹配记录时保留参数身份并返回空曲线。默认处理后数据曲线，可视化曲线传selectionType=4及组件主键targetId，各曲线携带自己的毫秒时间戳数组。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - name: telemetryType
@@ -3326,7 +3358,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理规则配置
-      description: 只查询参数值范围检查开关；如果任务尚无配置，则先插入关闭状态的默认配置。
+      description: 只查询校准野值检测开关；如果任务尚无配置，则先插入关闭状态的默认配置。正常值与预警值范围仅标记遥测状态，参数越限不新增或恢复告警管理记录，历史记录仍可查询。
       parameters:
         - name: taskId
           in: query
@@ -3363,7 +3395,7 @@ paths:
                   description: "外部试验任务编号"
                 parameterRangeCheckEnabled:
                   type: integer
-                  description: "参数值范围检查开关"
+                  description: "校准野值检测开关：仅控制野值检测，不控制正常值或预警值范围状态判定；参数越限仅标记状态，不新增或恢复告警管理记录"
                   enum: [0, 1]
                   x-apifox-enum:
                     - value: 0
@@ -3549,7 +3581,7 @@ paths:
     post:
       tags: [数据处理]
       summary: 即时保存遥测参数勾选状态
-      description: "勾选或取消时立即保存，按taskId、selectionType、targetId隔离。设备卫星主键和遥测代号由parseRuleId对应的有效参数解析配置确定，无需单独提交；取消勾选采用逻辑删除。筛选树与后续数据查询必须使用相同的场景和目标。"
+      description: "勾选或取消时立即生效，按taskId、selectionType、targetId隔离。设备卫星主键和遥测代号由parseRuleId对应的有效参数解析配置确定，无需单独提交；勾选时保存有效记录，取消勾选时物理删除当前场景和目标下该参数的勾选记录，重复取消仍返回成功。只删除勾选关系，不删除参数解析配置或历史遥测数据。筛选树与后续数据查询必须使用相同的场景和目标。"
       requestBody:
         required: true
         content:
@@ -3612,7 +3644,7 @@ paths:
         按taskId、selectionType、targetId批量取消当前页面或组件下全部设备和系统的参数勾选，不受当前树展开位置、遥测代号搜索或分页影响。
         selectionType为1或2时targetId必须为0，表格和曲线分别清除；这些固定页面的勾选按任务共享，清除后同任务其他用户看到的对应场景也会更新。
         selectionType为3或4时targetId必须为当前任务、当前用户的对应组件widgetId，仅清除该组件，不清除可视化整页的其他组件。
-        使用逻辑删除，不删除参数解析配置或历史遥测数据；无已选参数或重复清除均返回成功。前端成功后应刷新当前范围的勾选树及表格或曲线，并清理该范围的勾选缓存。
+        物理删除当前范围内的勾选记录，不删除参数解析配置或历史遥测数据；范围内历史取消记录一并清理，无已选参数或重复清除均返回成功。前端成功后应刷新当前范围的勾选树及表格或曲线，并清理该范围的勾选缓存。
         三个参数直接复用当前筛选树请求，全部放在JSON请求体中；不需要parseRuleId、设备主键、系统主键或遥测代号。
       requestBody:
         required: true
@@ -5158,11 +5190,20 @@ components:
       description: >-
         指令响应UDP输入协议说明，并非JSON或HTTP请求。标准PDXP包头32字节，VER=0x80，
         MID为无符号卫星代号，SID=DID=0x00000006，BID=0x05040001。
-        数据域严格按以下字段顺序排列，整数均为小端；字符串按UTF-8字节长度读取。
-        地址、端口、预留topic和可选传输头长度由data-processing.command-response配置。
-        接收后仅组装CommandExecResultMsg并打印中文日志，不向RocketMQ发送。
-      required: [command_number, cm_symbol_length, cm_symbol, result_code, command_id_length, command_id]
+        数据域依次为ID长度2字节、ID变长字节、指令号4字节、指令代号长度2字节、指令代号变长字节、指令结果1字节。
+        整数均为小端；字符串按UTF-8字节长度读取，ID与指令代号分别使用各自的长度字段。
+        通过采集接口配置UDP监听地址和端口，rpcEnabled=2且transferProtocol=2，无需协议配置；主题及传输头长度由data-processing.command-response配置。
+        接收后组装CommandExecResultMsg并发送到指令响应主题，复用采集接口限速、速率、帧级采集量和处理量。
+      required: [command_id_length, command_id, command_number, cm_symbol_length, cm_symbol, result_code]
       properties:
+        command_id_length:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: 数据域开头的2字节无符号指令标识长度，单位字节。
+        command_id:
+          type: string
+          description: 按声明长度读取完整指令标识并原样保留。
         command_number:
           type: integer
           format: int64
@@ -5181,19 +5222,18 @@ components:
           type: string
           enum: ['0', '1', '2']
           description: 1字节结果先转字符串；0成功、1失败、2超时，再映射到Proto枚举。
-        command_id_length:
-          type: integer
-          minimum: 1
-          maximum: 65535
-          description: 2字节无符号指令标识长度，单位字节。
-        command_id:
-          type: string
-          description: 完整接收指令代号及随机后缀，不生成或修改指令标识。
+      example:
+        command_id_length: 36
+        command_id: a94bea26-82ff-4c96-9c7a-0313f8234489
+        command_number: 2
+        cm_symbol_length: 4
+        cm_symbol: K002
+        result_code: '0'
     CommandExecResultMsg:
       type: object
       description: >-
         TelecommandMessages.CommandExecResultMsg的本次赋值字段说明；实际对象为Protobuf消息。
-        只赋以下五个字段，其余字段保留默认值；当前只打印日志，不提供新增HTTP接口。
+        只赋以下五个字段，其余字段保留默认值；由指令响应采集接口接收后发送原始Protobuf消息。
         日志结果使用成功、失败、超时三个中文名称。
       properties:
         sat_code:
@@ -5913,7 +5953,7 @@ components:
           properties:
             parameterRangeCheckEnabled:
               type: integer
-              description: "参数值范围检查开关"
+              description: "校准野值检测开关：仅控制野值检测，不控制正常值或预警值范围状态判定；参数越限仅标记状态，不新增或恢复告警管理记录"
               enum: [0, 1]
               x-apifox-enum:
                 - value: 0
@@ -7728,17 +7768,19 @@ components:
                             - { value: megabytes_per_second, name: "MB/s" }
                         rpcEnabled:
                           type: integer
-                          description: "处理方式：HTTP和FEP固定返回0；其他协议0处理（选PDXP）、1转发（选RPC）"
-                          enum:
-                            - 0
-                            - 1
+                          description: "采集数据类型，0设备、1卫星、2指令响应；默认0，HTTP和FEP沿用0。指令响应使用UDP和PDXP，协议配置保存为空。"
+                          enum: [0, 1, 2]
+                          x-apifox-enum:
+                            - { value: 0, name: "设备", description: "本地设备处理，选择PDXP协议配置" }
+                            - { value: 1, name: "卫星", description: "卫星RPC处理，选择RPC协议配置" }
+                            - { value: 2, name: "指令响应", description: "UDP承载PDXP，协议配置可省略或为空，固定响应组装后发送MQ" }
                         receiveRateLimitUnitName:
                           type: string
                           nullable: true
                           description: "接收速率单位显示标签：KB/s或MB/s；不限速时为空"
                         rpcEnabledName:
                           type: string
-                          description: "是否启用RPC处理中文名称"
+                          description: "采集数据类型中文名称：设备、卫星、指令响应"
                         dataPacketCount:
                           type: integer
                           format: int64
@@ -7774,7 +7816,7 @@ components:
                   statusName: "在线"
                   enabled: 1
                   rpcEnabled: 1
-                  rpcEnabledName: "是"
+                  rpcEnabledName: "卫星"
                   dataPacketCount: 25600
                   interfaceRateKbps: "128.5 KB/s"
                   remark: "主链路"
@@ -7937,17 +7979,19 @@ components:
                       - { value: megabytes_per_second, name: "MB/s" }
                   rpcEnabled:
                     type: integer
-                    description: "处理方式：HTTP和FEP固定返回0；其他协议0处理（选PDXP）、1转发（选RPC）"
-                    enum:
-                      - 0
-                      - 1
+                    description: "采集数据类型，0设备、1卫星、2指令响应；默认0，HTTP和FEP沿用0。指令响应使用UDP和PDXP，协议配置保存为空。"
+                    enum: [0, 1, 2]
+                    x-apifox-enum:
+                      - { value: 0, name: "设备", description: "本地设备处理，选择PDXP协议配置" }
+                      - { value: 1, name: "卫星", description: "卫星RPC处理，选择RPC协议配置" }
+                      - { value: 2, name: "指令响应", description: "UDP承载PDXP，协议配置可省略或为空，固定响应组装后发送MQ" }
                   receiveRateLimitUnitName:
                     type: string
                     nullable: true
                     description: "接收速率单位显示标签：KB/s或MB/s；不限速时为空"
                   rpcEnabledName:
                     type: string
-                    description: "是否启用RPC处理中文名称"
+                    description: "采集数据类型中文名称：设备、卫星、指令响应"
                   dataPacketCount:
                     type: integer
                     description: "采集接口表保存的长期累计采集量，HTTP按匹配接收路径的合法JSON请求次数累计，五秒统计明细过期清理后仍保留"
@@ -7976,7 +8020,7 @@ components:
               statusName: "在线"
               enabled: 1
               rpcEnabled: 1
-              rpcEnabledName: "是"
+              rpcEnabledName: "卫星"
               dataPacketCount: 25600
               remark: "主链路"
 

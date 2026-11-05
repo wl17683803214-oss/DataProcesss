@@ -555,7 +555,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             for (String code : group.getValue()) {
                 if (parseRuleMapper.countUnchangedCode(taskId, group.getKey(), code,
                         renamedIdsByDevice.get(group.getKey())) == 0) {
-                    selectionMapper.markDeleted(taskId, group.getKey(), code);
+                    selectionMapper.deleteByParameter(taskId, group.getKey(), code);
                 }
             }
         }
@@ -565,7 +565,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             for (ProcessedTelemetryFilterSelection selected : rename.getValue()) {
                 selectionMapper.save(taskId, update.getDeviceSatelliteId(),
                         update.getTelemetryCode(), selected.getSelectionType(),
-                        selected.getTargetId(), 0);
+                        selected.getTargetId());
             }
         }
         // 第六步：只刷新本批可视化筛选项；运行中的采集快照保持不变。

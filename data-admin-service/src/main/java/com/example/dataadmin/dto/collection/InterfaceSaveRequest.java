@@ -64,7 +64,7 @@ public class InterfaceSaveRequest {
     @Max(value = 3, message = "传输协议只能为1到3")
     private Integer transferProtocol;
 
-    /** 关联协议配置主键：HTTP必选JSON，FEP省略；其他协议处理选PDXP，转发选RPC。 */
+    /** 关联协议配置主键：设备选PDXP，卫星选RPC，指令响应与FEP省略，HTTP选JSON。 */
     private Long protocolConfigId;
 
     @NotBlank(message = "主机地址不能为空")
@@ -89,9 +89,9 @@ public class InterfaceSaveRequest {
     /** 是否启用：0 否，1 是。 */
     private Integer enabled;
 
-    /** 处理方式：HTTP和FEP可省略且固定保存0；其他协议0处理、1转发，默认0。 */
-    @Min(value = 0, message = "RPC处理开关不能小于0")
-    @Max(value = 1, message = "RPC处理开关不能大于1")
+    /** 采集数据类型：0设备、1卫星、2指令响应；HTTP和FEP沿用0，未传默认0。 */
+    @Min(value = 0, message = "采集数据类型不能小于0")
+    @Max(value = 2, message = "采集数据类型不能大于2")
     private Integer rpcEnabled;
 
     @Size(max = 500, message = "备注不能超过500个字符")

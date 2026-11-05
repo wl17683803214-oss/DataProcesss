@@ -68,7 +68,7 @@ public class CollectInterfaceRuntimeConfig {
     private Integer transferType;
     /** 传输协议：1JSON、2PDXP、3FEP。 */
     private Integer transferProtocol;
-    /** 是否启用RPC处理。 */
+    /** 采集数据类型：0设备、1卫星、2指令响应。 */
     private Integer rpcEnabled;
     /** 关联协议配置主键。 */
     private Long protocolConfigId;

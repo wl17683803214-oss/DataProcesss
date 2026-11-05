@@ -4,6 +4,7 @@ import SatDataCenter.DataExchange.TmTc.TelemetryMessages.Telemetry;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryType;
 import com.example.common.enums.TelemetryFrameStatus;
+import com.example.common.enums.CollectionDataType;
 import com.example.common.greptime.GreptimeStore;
 import com.example.common.greptime.TelemetryFrameRecord;
 import com.example.common.greptime.TelemetryIdentity;
@@ -53,7 +54,7 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
         Timestamp writeTime = new Timestamp(System.currentTimeMillis());
         // 第一步：保留本地异常回退的身份和报文校验，不将远程失败改写成本地帧。
         requireConfig(config);
-        if (packet == null || Integer.valueOf(1).equals(config.getRpcEnabled())) {
+        if (packet == null || CollectionDataType.require(config.getRpcEnabled()) != CollectionDataType.DEVICE) {
             throw new IllegalArgumentException("异常整帧回退需要有效的本地处理报文");
         }
         String identity = TelemetryIdentity.local(config.getDeviceSatelliteId());
@@ -88,7 +89,7 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
         if (rawFrame == null || rawFrame.length == 0) {
             throw new IllegalArgumentException("遥测整帧写入缺少完整采集原码");
         }
-        boolean remote = Integer.valueOf(1).equals(config.getRpcEnabled());
+        boolean remote = CollectionDataType.require(config.getRpcEnabled()) == CollectionDataType.SATELLITE;
         TelemetrySourceType source = remote ? TelemetrySourceType.RPC : TelemetrySourceType.LOCAL;
         String identity = remote ? TelemetryIdentity.rpc(message.getSatCode(), message.getChannelCode())
                 : TelemetryIdentity.local(config.getDeviceSatelliteId());

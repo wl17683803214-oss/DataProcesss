@@ -1,6 +1,7 @@
 package com.example.dataprocess.collection;
 
 import com.example.common.tool.HttpRequestTool;
+import com.example.common.enums.CollectionDataType;
 import com.example.dataprocess.entity.BaselineSatelliteInfo;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.protocol.rpc.ProtocolConfigParser;
@@ -45,7 +46,7 @@ public class BaselineSatelliteDirectory {
 
     /** 加载当前接口的目录，查询失败时允许保留远程返回的名称。 */
     public Map<String, BaselineSatelliteInfo> load(CollectInterfaceRuntimeConfig config) {
-        if (!Integer.valueOf(1).equals(config.getRpcEnabled())) {
+        if (CollectionDataType.require(config.getRpcEnabled()) != CollectionDataType.SATELLITE) {
             return Collections.emptyMap();
         }
         // 固定本次查询上下文，失败时也能打印请求参数、耗时和完整异常链。

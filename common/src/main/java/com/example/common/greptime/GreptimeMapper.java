@@ -23,14 +23,6 @@ public interface GreptimeMapper {
     TelemetryParameterRecord latest(Map<String, Object> query);
     /** 查询单个遥测代号的最近一百二十个点。 */
     List<TelemetryParameterRecord> curve(Map<String, Object> query);
-    /** 一条语句查询全部勾选参数的最新值。 */
-    List<TelemetryParameterBatchRecord> latestBatch(@Param("taskId") String taskId,
-            @Param("queries") List<TelemetryParameterQuery> queries,
-            @Param("telemetryType") String telemetryType);
-    /** 一条语句查询全部勾选参数各自最近一百二十个有效点。 */
-    List<TelemetryParameterBatchRecord> curveBatch(@Param("taskId") String taskId,
-            @Param("queries") List<TelemetryParameterQuery> queries,
-            @Param("telemetryType") String telemetryType);
     /** 删除截止时间之前的整帧。 */
     int deleteFramesBefore(@Param("beforeTime") Timestamp beforeTime);
     /** 删除截止时间之前的参数。 */

@@ -2,10 +2,11 @@ package com.example.dataprocess.config;
 
 import com.example.dataprocess.protocol.rpc.PdxpDataPayloadParser;
 import com.example.dataprocess.tool.PdxpParser;
+import com.example.common.enums.CollectionDataType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-/** 本地与远程分别维护PDXP附加数据长度配置，零表示没有该部分。 */
+/** 设备与卫星分别维护遥测PDXP附加数据长度配置，零表示没有该部分。 */
 @Component
 @ConfigurationProperties(prefix = "data-processing.pdxp")
 public class PdxpFramingProperties {
@@ -24,9 +25,9 @@ public class PdxpFramingProperties {
         return rpc;
     }
 
-    /** 按接口远程开关选择长度，未开启时使用本地配置。 */
+    /** 按采集数据类型选择遥测拆帧长度，指令响应由独立配置提供。 */
     public Framing select(Integer rpcEnabled) {
-        return Integer.valueOf(1).equals(rpcEnabled) ? rpc : local;
+        return CollectionDataType.require(rpcEnabled) == CollectionDataType.SATELLITE ? rpc : local;
     }
 
     /** 两种处理模式复用长度定义和校验，各自保存配置值。 */

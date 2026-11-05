@@ -1,5 +1,6 @@
 package com.example.dataadmin.service.impl;
 
+import com.example.common.enums.CollectionDataType;
 import com.example.common.response.PageResult;
 import com.example.dataadmin.config.HttpCollectionProperties;
 import com.example.dataadmin.dto.collection.InterfaceQueryRequest;
@@ -434,6 +435,9 @@ public class DataCollectionServiceImpl implements DataCollectionService {
                 .equals(request.getTransferProtocol());
         // HTTP使用统一JSON接收分支，处理开关和组播地址不参与配置。
         boolean httpInterface = isHttp(request.getTransferType());
+        // 指令响应使用固定协议解析，保存时主动清除客户端残留的协议关联。
+        boolean commandResponse = CollectionDataType.require(
+                request.getRpcEnabled()) == CollectionDataType.COMMAND_RESPONSE;
         config.setId(id);
         config.setTaskId(request.getTaskId());
         config.setInterfaceName(request.getInterfaceName());
@@ -444,7 +448,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         // 传输协议按固定枚举编码保存。
         config.setTransferProtocol(request.getTransferProtocol());
         // 文件交换使用系统配置，清空旧协议关联；其他协议保留所选配置。
-        config.setProtocolConfigId(fepProtocol ? null : request.getProtocolConfigId());
+        config.setProtocolConfigId(fepProtocol || commandResponse ? null : request.getProtocolConfigId());
         // 清理监听地址两端空白，确保重复校验与实际绑定地址一致。
         config.setHost(httpInterface ? HttpCollectionAddressSupport.normalizeHost(request.getHost())
                 : request.getHost() == null ? null : request.getHost().trim());
@@ -456,7 +460,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
                 ? HttpCollectionAddressSupport.normalizeReceivePath(request.getReceivePath()) : null);
         // 在线状态由最终启用开关派生，不接受前端单独指定状态。
         config.setEnabled(request.getEnabled() == null ? 1 : request.getEnabled());
-        // HTTP和文件交换固定关闭RPC处理，其他协议未传开关时使用本地处理。
+        // HTTP和文件交换沿用设备编码，其他接口保存三种采集数据类型。
         config.setRpcEnabled(httpInterface || fepProtocol || request.getRpcEnabled() == null
                 ? 0 : request.getRpcEnabled());
         // 接收限速仅对套接字接口生效，清空上限即同时清空单位。
@@ -485,9 +489,18 @@ public class DataCollectionServiceImpl implements DataCollectionService {
                 request.getTransferProtocol()) == null) {
             throw new IllegalArgumentException("传输协议只能为1（JSON）、2（PDXP）或3（FEP）");
         }
-        // RPC开关与通用启用开关复用相同的枚举取值。
-        validateEnabled(request.getRpcEnabled() == null
-                ? 0 : request.getRpcEnabled());
+        // 三种数据类型使用公共枚举校验，指令响应只接受UDP承载的PDXP。
+        CollectionDataType dataType =
+                CollectionDataType.require(request.getRpcEnabled());
+        if (dataType == CollectionDataType.COMMAND_RESPONSE) {
+            if (!BusinessEnums.TransferType.UDP.getValue().equals(request.getTransferType())
+                    || !BusinessEnums.TransferProtocol.PDXP.getValue().equals(request.getTransferProtocol())) {
+                throw new IllegalArgumentException("指令响应采集必须选择UDP传输方式和PDXP传输协议");
+            }
+            // 组播与普通UDP使用相同校验，固定响应协议无需查询协议配置表。
+            validateMulticastIp(request.getTransferType(), request.getMulticastIp());
+            return;
+        }
         // HTTP固定JSON并选择有效JSON配置，旧组播值由保存逻辑清空。
         if (isHttp(request.getTransferType())) {
             validateHttpAddress(request.getHost(), request.getPort(), request.getReceivePath());
@@ -507,7 +520,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         }
         // 处理方式决定配置类型，前端筛选之外也校验直接提交的请求。
         CollectProtocolConfig protocol = getProtocolEntity(request.getProtocolConfigId());
-        boolean rpcProcessing = Integer.valueOf(1).equals(request.getRpcEnabled());
+        boolean rpcProcessing = dataType == CollectionDataType.SATELLITE;
         BusinessEnums.ProtocolType requiredType = rpcProcessing
                 ? BusinessEnums.ProtocolType.RPC : BusinessEnums.ProtocolType.PDXP;
         if (!requiredType.getValue().equals(protocol.getProtocolType())) {

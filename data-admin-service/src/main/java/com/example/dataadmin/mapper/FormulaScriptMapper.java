@@ -17,14 +17,10 @@ public interface FormulaScriptMapper {
     List<FormulaScript> findForExport(@Param("limit") int limit);
     /** 复用数据库事务锁，将多个实例的公式导入及删除串行化。 */
     String lockManagement();
-    /** 检查删除引用期间阻止参数表并发写入，检查与删除处于同一事务。 */
-    int lockParameterReferences();
     /** 查询批次中实际存在的公式编号。 */
     List<String> findExistingCodes(@Param("codes") List<String> codes);
-    /** 检查所有任务的有效参数配置，返回仍被引用的公式编号。 */
-    List<String> findReferencedCodes(@Param("codes") List<String> codes);
     /** 同编号覆盖更新，保留首次导入时间，不保存历史源码。 */
     int upsert(FormulaScript script);
-    /** 批量物理删除无引用公式。 */
+    /** 按已校验的编号批量物理删除公式。 */
     int deleteByCodes(@Param("codes") List<String> codes);
 }

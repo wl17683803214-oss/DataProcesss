@@ -1,5 +1,6 @@
 package com.example.dataadmin.enums;
 
+import com.example.common.enums.CollectionDataType;
 import com.example.dataadmin.vo.EnumOptionVO;
 
 import java.util.ArrayList;
@@ -48,6 +49,13 @@ public final class ControllerEnumData {
         EnumData.add(data, "interfaceType", BusinessEnums.InterfaceType.values());
         EnumData.add(data, "transferType", BusinessEnums.TransferType.values());
         EnumData.add(data, "transferProtocol", BusinessEnums.TransferProtocol.values());
+        // 采集数据类型由两个服务共用编码，向页面提供三个中文选项。
+        List<EnumOptionVO> dataTypes = new ArrayList<>();
+        for (CollectionDataType type
+                : CollectionDataType.values()) {
+            dataTypes.add(new EnumOptionVO(type.getCode(), type.getLabel()));
+        }
+        data.put("rpcEnabled", dataTypes);
         EnumData.add(data, "protocolType", BusinessEnums.ProtocolType.values());
         EnumData.add(data, "status", BusinessEnums.InterfaceStatus.values());
         EnumData.add(data, "enabled", BusinessEnums.Enabled.values());

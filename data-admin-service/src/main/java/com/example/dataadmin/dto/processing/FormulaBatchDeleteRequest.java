@@ -4,7 +4,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.util.List;
 
-/** 按公式编号批量删除，任一编号无效或被引用时整批不删除。 */
+/** 按公式编号批量删除，任一编号无效或不存在时整批不删除。 */
 public class FormulaBatchDeleteRequest {
     /** 单次提交1到100个公式编号。 */
     @NotNull(message = "公式编号列表不能为空")

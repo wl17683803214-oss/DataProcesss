@@ -5,7 +5,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Timestamp;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -119,28 +118,6 @@ public class GreptimeStore implements AutoCloseable {
     /** 查询参数曲线。 */
     public List<TelemetryParameterRecord> curve(Map<String, Object> query) {
         return execute(mapper -> mapper.curve(query));
-    }
-
-    /** 空勾选不连接时序库，其他情况用一个会话执行一次最新值查询。 */
-    public List<TelemetryParameterBatchRecord> latestBatch(String taskId,
-            List<TelemetryParameterQuery> queries, String telemetryType) {
-        // 第一步：空列表直接返回，避免构造无效参数集合。
-        if (queries.isEmpty()) {
-            return Collections.emptyList();
-        }
-        // 第二步：全部参数由同一条映射语句读取，不逐参数申请连接。
-        return execute(mapper -> mapper.latestBatch(taskId, queries, telemetryType));
-    }
-
-    /** 空勾选不连接时序库，其他情况用一个会话执行一次曲线查询。 */
-    public List<TelemetryParameterBatchRecord> curveBatch(String taskId,
-            List<TelemetryParameterQuery> queries, String telemetryType) {
-        // 第一步：空列表保持原有空结果语义。
-        if (queries.isEmpty()) {
-            return Collections.emptyList();
-        }
-        // 第二步：在数据库中分别限制各参数点数，避免整体限制遗漏参数。
-        return execute(mapper -> mapper.curveBatch(taskId, queries, telemetryType));
     }
 
     /** 两张表独立清理，可在部分完成后安全重入。 */

@@ -51,62 +51,87 @@
         where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
           and is_deleted = 0
     </select>
-    <!-- 唯一键冲突时原地更新状态，重复点击仍保持幂等。 -->
+    <!-- 只保存已勾选记录；兼容历史逻辑删除记录时恢复为有效状态。 -->
     <insert id="save">
         insert into processed_telemetry_filter_selection
             (task_id, device_satellite_id, telemetry_code, selection_type, target_id, is_deleted)
         values (#{taskId}, #{deviceSatelliteId}, #{telemetryCode},
-                #{selectionType}, #{targetId}, #{deleted})
+                #{selectionType}, #{targetId}, 0)
         on conflict (task_id, selection_type, target_id, device_satellite_id, telemetry_code)
         do update set is_deleted = excluded.is_deleted, update_time = current_timestamp
     </insert>
-    <!-- 只清除当前页面或组件；缺少任意范围条件时不允许更新记录。 -->
-    <update id="clearByScope">
-        update processed_telemetry_filter_selection
-        set is_deleted = 1, update_time = current_timestamp
-        where is_deleted = 0
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
-        <if test="selectionType != null">
-            and selection_type = #{selectionType}
-        </if>
-        <if test="targetId != null">
-            and target_id = #{targetId}
-        </if>
-        <!-- 防止空参数使清除范围扩大，目标主键为零仍是有效条件。 -->
-        <if test="taskId == null or taskId == '' or selectionType == null or targetId == null">
-            and 1 = 0
-        </if>
-    </update>
+    <!-- 单项取消按完整身份物理删除，缺少任何条件时均不扩大范围。 -->
+    <delete id="deleteSelected">
+        delete from processed_telemetry_filter_selection
+        <where>
+            <if test="taskId != null and taskId != ''">and task_id = #{taskId}</if>
+            <if test="deviceSatelliteId != null">and device_satellite_id = #{deviceSatelliteId}</if>
+            <if test="telemetryCode != null and telemetryCode != ''">and telemetry_code = #{telemetryCode}</if>
+            <if test="selectionType != null">and selection_type = #{selectionType}</if>
+            <if test="targetId != null">and target_id = #{targetId}</if>
+            <if test="taskId == null or taskId == '' or deviceSatelliteId == null
+                    or telemetryCode == null or telemetryCode == '' or selectionType == null or targetId == null">
+                and 1 = 0
+            </if>
+        </where>
+    </delete>
+    <!-- 只物理删除当前页面或组件的勾选，范围内历史取消记录一并清理。 -->
+    <delete id="clearByScope">
+        delete from processed_telemetry_filter_selection
+        <where>
+            <if test="taskId != null and taskId != ''">
+                and task_id = #{taskId}
+            </if>
+            <if test="selectionType != null">
+                and selection_type = #{selectionType}
+            </if>
+            <if test="targetId != null">
+                and target_id = #{targetId}
+            </if>
+            <!-- 防止空参数使清除范围扩大，目标主键为零仍是有效条件。 -->
+            <if test="taskId == null or taskId == '' or selectionType == null or targetId == null">
+                and 1 = 0
+            </if>
+        </where>
+    </delete>
     <!-- 删除组件时只清理该组件的两种遥测参数勾选。 -->
     <delete id="deleteByTarget">
         delete from processed_telemetry_filter_selection
         where task_id = #{taskId} and target_id = #{targetId}
           and selection_type in (3, 4)
     </delete>
-    <!-- 批量修改代号时先取消原勾选，再按新代号恢复勾选。 -->
-    <update id="markDeleted">
-        update processed_telemetry_filter_selection
-        set is_deleted = 1, update_time = current_timestamp
-        where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
-          and telemetry_code = #{telemetryCode} and is_deleted = 0
-    </update>
+    <!-- 批量修改代号时先物理删除原勾选，再按新代号恢复勾选。 -->
+    <delete id="deleteByParameter">
+        delete from processed_telemetry_filter_selection
+        <where>
+            <if test="taskId != null and taskId != ''">and task_id = #{taskId}</if>
+            <if test="deviceSatelliteId != null">and device_satellite_id = #{deviceSatelliteId}</if>
+            <if test="telemetryCode != null and telemetryCode != ''">and telemetry_code = #{telemetryCode}</if>
+            <if test="taskId == null or taskId == '' or deviceSatelliteId == null
+                    or telemetryCode == null or telemetryCode == ''">and 1 = 0</if>
+        </where>
+    </delete>
     <!-- 只清除本次导入类型中已不存在的参数，保留仍在新表中的勾选。 -->
-    <update id="removeMissing">
-        update processed_telemetry_filter_selection selection
-        set is_deleted = 1, update_time = current_timestamp
-        where selection.task_id = #{taskId} and selection.is_deleted = 0
-          and selection.device_satellite_id in (
-              select id from device_satellite
-              where task_id = #{taskId} and type = #{type}
-          )
-          and not exists (
-              select 1 from telemetry_parse_rule_config rule_config
-              where rule_config.task_id = selection.task_id
-                and rule_config.device_satellite_id = selection.device_satellite_id
-                and rule_config.telemetry_code = selection.telemetry_code
-                and rule_config.is_deleted = 0
-          )
-    </update>
+    <delete id="removeMissing">
+        delete from processed_telemetry_filter_selection selection
+        <where>
+            <choose>
+                <when test="taskId != null and taskId != '' and type != null and type != ''">
+                    selection.task_id = #{taskId}
+                </when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+            and selection.device_satellite_id in (
+                select id from device_satellite
+                where task_id = #{taskId} and type = #{type}
+            )
+            and not exists (
+                select 1 from telemetry_parse_rule_config rule_config
+                where rule_config.task_id = selection.task_id
+                  and rule_config.device_satellite_id = selection.device_satellite_id
+                  and rule_config.telemetry_code = selection.telemetry_code
+                  and rule_config.is_deleted = 0
+            )
+        </where>
+    </delete>
 </mapper>

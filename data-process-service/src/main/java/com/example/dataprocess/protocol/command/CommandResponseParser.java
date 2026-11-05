@@ -44,12 +44,13 @@ public final class CommandResponseParser {
             throw new IllegalArgumentException("指令响应版本、信源或信宿不符合协议");
         }
 
-        // 第二步：沿用PDXP小端规则读取四字节指令号，消息中没有对应字段。
+        // 第二步：沿用PDXP小端规则，先按两字节长度读取完整指令标识。
         ByteBuffer data = ByteBuffer.wrap(packet.getData()).order(ByteOrder.LITTLE_ENDIAN);
+        String commandId = readString(data, "指令标识");
+
+        // 第三步：读取四字节指令号，再按声明长度解码指令代号字符串。
         requireRemaining(data, Integer.BYTES, "指令号");
         data.getInt();
-
-        // 第三步：先读字节长度，再把指令代号解码成字符串，保留前导零。
         String commandSymbol = readString(data, "指令代号");
 
         // 第四步：结果码先转字符串，再显式映射到现有消息枚举。
@@ -57,8 +58,7 @@ public final class CommandResponseParser {
         String resultCode = Integer.toString(Byte.toUnsignedInt(data.get()));
         CommandResponseResult result = CommandResponseResult.fromProtocolCode(resultCode);
 
-        // 第五步：按两字节长度读取完整指令标识，并拒绝未定义的尾部数据。
-        String commandId = readString(data, "指令标识");
+        // 第五步：结果字段应当位于数据域末尾，校验整段数据已经读取完整。
         if (data.hasRemaining()) {
             throw new IllegalArgumentException("指令响应数据域包含多余字节：" + data.remaining());
         }

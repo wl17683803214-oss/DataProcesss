@@ -1,6 +1,7 @@
 package com.example.dataprocess.processing.dispatcher;
 
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
+import SatDataCenter.DataExchange.TmTc.TelecommandMessages.CommandExecResultMsg;
 import com.example.common.enums.DataAlarmType;
 import com.example.dataprocess.alarm.DataAlarmRecorder;
 import com.example.dataprocess.config.DataProcessingThreadPoolConfig;
@@ -8,6 +9,7 @@ import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.logging.PdxpFrameLogContext;
 import com.example.dataprocess.service.IoTDBTelemetryStorageService;
 import com.example.dataprocess.service.TelemetryMessageService;
+import com.example.dataprocess.service.CommandResponseMessageService;
 import com.example.dataprocess.tool.PdxpParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,14 @@ public class TelemetryResultDispatcher {
     /** 消息发送服务及其专用执行器。 */
     private final TelemetryMessageService messageService;
     private final Executor messageExecutor;
+    /** 指令响应复用现有消息执行器，保留原有离线构造方法。 */
+    private CommandResponseMessageService commandResponseMessageService;
+
+    /** 注入指令响应发送服务，避免旧调用方增加无关构造参数。 */
+    @Autowired
+    public void setCommandResponseMessageService(CommandResponseMessageService service) {
+        this.commandResponseMessageService = service;
+    }
     /** 复用现有异步告警记录组件。 */
     private final DataAlarmRecorder alarmRecorder;
     /** 两个结果线程池共享的关闭等待上限。 */
@@ -96,6 +106,19 @@ public class TelemetryResultDispatcher {
                         PdxpFrameLogContext.runWithInterface(config,
                                 () -> messageService.send(message.toByteArray())));
         return storageAccepted && messageAccepted;
+    }
+
+    /** 指令响应只提交消息任务，提交成功后由调用方按帧累计处理统计。 */
+    public boolean submitCommandResponse(CollectInterfaceRuntimeConfig config,
+            CommandExecResultMsg message, long sequenceNumber) {
+        // 第一步：固定接口身份，确保排队期间配置切换不改变消息所属上下文。
+        CollectInterfaceRuntimeConfig snapshot = new CollectInterfaceRuntimeConfig();
+        BeanUtils.copyProperties(config, snapshot);
+        // 第二步：复用消息队列上限、任务拒绝策略、发送异常日志和告警处理。
+        return execute(messageExecutor, snapshot, sequenceNumber,
+                DataAlarmType.MESSAGE_FAILURE, "指令响应消息发送", () ->
+                        commandResponseMessageService.send(message,
+                                snapshot.getInterfaceId(), sequenceNumber));
     }
 
     /** 本地解析失败时只向已有入库线程池提交异常整帧，不创建消息发送任务。 */

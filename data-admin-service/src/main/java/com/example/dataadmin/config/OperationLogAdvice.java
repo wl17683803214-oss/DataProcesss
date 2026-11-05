@@ -63,7 +63,7 @@ public class OperationLogAdvice extends RequestBodyAdviceAdapter
             {"telemetryName","参数名称"},{"telemetryCode","遥测代号"},{"systemName","所属系统路径"},
             {"host","监听地址"},{"port","监听端口"},{"enabled","启用状态"},{"status","状态"},
             {"isSelected","勾选状态"},{"normalRange","正常范围"},{"detectMethod","检测方法"},
-            {"parameterRangeCheckEnabled","参数范围检查开关"},{"rpcEnabled","远程处理开关"},
+            {"parameterRangeCheckEnabled","参数范围检查开关"},{"rpcEnabled","采集数据类型"},
             {"protocolConfigId","协议配置ID"},{"interfaceId","接口ID"},{"parseRuleId","参数解析配置ID"},
             {"alarmMsg","告警信息"},{"sourceName","告警来源"},{"satelliteCode","卫星编码"},
             {"channelCode","通道编码"},{"formulaType","公式类型"},{"formulaDesc","处理公式"},

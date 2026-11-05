@@ -599,7 +599,7 @@ CREATE INDEX IF NOT EXISTS idx_collect_interface_config_task_id ON collect_inter
 ALTER TABLE collect_interface_config
     ADD COLUMN IF NOT EXISTS rpc_enabled SMALLINT NOT NULL DEFAULT 0;
 
-COMMENT ON COLUMN collect_interface_config.rpc_enabled IS '是否启用RPC处理：0否 1是';
+COMMENT ON COLUMN collect_interface_config.rpc_enabled IS '采集数据类型：0设备 1卫星 2指令响应';
 COMMENT ON COLUMN collect_interface_config.receive_rate_limit IS '接收速率上限，空值不限速，仅UDP和TCP生效';
 COMMENT ON COLUMN collect_interface_config.receive_rate_limit_unit IS '接收速率单位：kilobytes_per_second为KB/s，megabytes_per_second为MB/s';
 

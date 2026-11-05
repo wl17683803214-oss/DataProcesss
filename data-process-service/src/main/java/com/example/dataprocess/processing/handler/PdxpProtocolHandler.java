@@ -1,9 +1,13 @@
 package com.example.dataprocess.processing.handler;
 
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
+import SatDataCenter.DataExchange.TmTc.TelecommandMessages.CommandExecResultMsg;
+import com.example.common.enums.CollectionDataType;
 import com.example.dataprocess.collection.CollectInterfaceStatistics;
 import com.example.dataprocess.collection.ReceivedDatagram;
 import com.example.dataprocess.config.PdxpFramingProperties;
+import com.example.dataprocess.config.CommandResponseProperties;
+import com.example.dataprocess.protocol.command.CommandResponseParser;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.processing.processor.DataProcessor;
 import com.example.dataprocess.processing.processor.LocalDataProcessor;
@@ -30,11 +34,19 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.BooleanSupplier;
 
-/** PDXP协议接收和业务处理入口，RPC仍是正常PDXP帧后的处理分支。 */
+/** PDXP统一接收入口，按采集数据类型分流设备、卫星和指令响应。 */
 @Component
 public class PdxpProtocolHandler implements ProtocolHandler {
     /** 运行环境注入同一份拆帧配置，离线构造时保持既有默认长度。 */
     private PdxpFramingProperties framingProperties = new PdxpFramingProperties();
+    /** 指令响应保留独立传输头长度，避免套用设备和卫星的遥测拆帧参数。 */
+    private CommandResponseProperties commandResponseProperties = new CommandResponseProperties();
+
+    /** 运行时绑定指令响应拆帧参数，离线调用沿用无附加头默认值。 */
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setCommandResponseProperties(CommandResponseProperties properties) {
+        this.commandResponseProperties = properties;
+    }
 
     @org.springframework.beans.factory.annotation.Autowired
     public void setFramingProperties(PdxpFramingProperties framingProperties) {
@@ -117,6 +129,10 @@ public class PdxpProtocolHandler implements ProtocolHandler {
     /** 创建一个TCP PDXP协议会话。 */
     @Override
     public TcpSession createTcpSession(CollectInterfaceRuntimeConfig config) {
+        // 指令响应当前按已约定的UDP报文格式接收，直接创建会话也需校验。
+        if (CollectionDataType.require(config.getRpcEnabled()) == CollectionDataType.COMMAND_RESPONSE) {
+            throw new IllegalArgumentException("指令响应采集必须使用UDP传输方式");
+        }
         return (connection, running) -> receiveTcpPackets(
                 config, connection, running);
     }
@@ -157,8 +173,7 @@ public class PdxpProtocolHandler implements ProtocolHandler {
         try {
             // 数据处理线程按接口模式拆帧，TCP接收端已完成定界及反转义。
             packets = PdxpParser.parseTransportUdp(datagram.getData(),
-                    framingProperties.select(datagram.getInterfaceConfig().getRpcEnabled())
-                            .getTransportHeaderLength());
+                    transportHeaderLength(datagram.getInterfaceConfig()));
         } catch (Exception exception) {
             alarm(datagram.getInterfaceConfig(), com.example.common.enums.DataAlarmType.PACKET_PARSE,
                     "报文长度：" + datagram.getData().length + "；解析失败：" + exception.getMessage());
@@ -178,7 +193,41 @@ public class PdxpProtocolHandler implements ProtocolHandler {
         for (PdxpParser.PdxpPacket packet : packets) {
             // 一个UDP报文可能包含多帧，必须按解析出的完整PDXP帧逐个统计。
             statistics.recordCollection(datagram.getInterfaceConfig());
-            handleNormalPacket(datagram.getInterfaceConfig(), packet);
+            // 先按采集类型分流，指令响应直接组装并发送消息。
+            if (CollectionDataType.require(datagram.getInterfaceConfig().getRpcEnabled())
+                    == CollectionDataType.COMMAND_RESPONSE) {
+                handleCommandResponse(datagram.getInterfaceConfig(), packet);
+            } else {
+                handleNormalPacket(datagram.getInterfaceConfig(), packet);
+            }
+        }
+    }
+
+    /** 按采集类型选择UDP传输头长度。 */
+    private int transportHeaderLength(CollectInterfaceRuntimeConfig config) {
+        // 指令响应配置独立长度，设备与卫星继续复用已有分组。
+        if (CollectionDataType.require(config.getRpcEnabled()) == CollectionDataType.COMMAND_RESPONSE) {
+            return commandResponseProperties.getTransportHeaderLength();
+        }
+        return framingProperties.select(config.getRpcEnabled()).getTransportHeaderLength();
+    }
+
+    /** 解析完整指令响应并提交已有消息队列，失败帧不累计处理成功量。 */
+    private void handleCommandResponse(CollectInterfaceRuntimeConfig config,
+            PdxpParser.PdxpPacket packet) {
+        try {
+            // 第一步：复用既有固定协议解析器，只组装约定的五个消息字段。
+            CommandExecResultMsg message = CommandResponseParser.parse(packet);
+            // 第二步：发送任务被接受后累计一次帧级处理量，与遥测异步统计口径一致。
+            if (resultDispatcher.submitCommandResponse(config, message, packet.getSequenceNumber())) {
+                statistics.recordFrameProcessing(config.getTaskId(), config.getInterfaceId());
+            }
+        } catch (Exception exception) {
+            // 第三步：单帧组装失败记录告警，后续报文继续使用同一采集接口接收。
+            alarm(config, com.example.common.enums.DataAlarmType.PACKET_PARSE,
+                    "包序号：" + packet.getSequenceNumber() + "；指令响应处理失败：" + exception.getMessage());
+            LOGGER.error("指令响应处理失败，接口编号：{}，包序号：{}",
+                    config.getInterfaceId(), packet.getSequenceNumber(), exception);
         }
     }
 
@@ -188,7 +237,7 @@ public class PdxpProtocolHandler implements ProtocolHandler {
             PdxpParser.PdxpPacket packet) {
         com.example.common.enums.DataAlarmType stage = com.example.common.enums.DataAlarmType.PACKET_PARSE;
         // 只有本地参数处理失败且数据域已成功拆分，才允许保存异常整帧。
-        boolean localProcessing = !Integer.valueOf(1).equals(config.getRpcEnabled());
+        boolean localProcessing = CollectionDataType.require(config.getRpcEnabled()) == CollectionDataType.DEVICE;
         boolean payloadParsed = false;
         // 告警组件随后报错时也不重复提交同一异常整帧。
         boolean abnormalFrameAttempted = false;
@@ -200,9 +249,9 @@ public class PdxpProtocolHandler implements ProtocolHandler {
                     framing.getTelemetryHeaderLength());
             payloadParsed = true;
             // 第二步：业务处理器与拆帧长度均使用同一远程开关选择。
-            DataProcessor processor = Integer.valueOf(1).equals(
-                    config.getRpcEnabled()) ? rpcProcessor : localProcessor;
-            stage = Integer.valueOf(1).equals(config.getRpcEnabled())
+            DataProcessor processor = CollectionDataType.require(config.getRpcEnabled())
+                    == CollectionDataType.SATELLITE ? rpcProcessor : localProcessor;
+            stage = CollectionDataType.require(config.getRpcEnabled()) == CollectionDataType.SATELLITE
                     ? com.example.common.enums.DataAlarmType.RPC_FAILURE : com.example.common.enums.DataAlarmType.PROCESS_CONFIG;
             Optional<TelemetryMessage> processedMessage =
                     processor.process(config, packet, payload);
@@ -219,19 +268,7 @@ public class PdxpProtocolHandler implements ProtocolHandler {
             }
 
             TelemetryMessage telemetryMessage = processedMessage.get();
-            // 远程处理结果已完成状态判定，仅记录接口开启范围检查后的异常参数。
-            if (Integer.valueOf(1).equals(config.getRpcEnabled())
-                    && Integer.valueOf(1).equals(config.getParameterRangeCheckEnabled()) && alarmRecorder != null) {
-                for (SatDataCenter.DataExchange.TmTc.TelemetryMessages.Telemetry telemetry : telemetryMessage.getTelemetriesMap().values()) {
-                    if (telemetry.getStateType() == SatDataCenter.DataExchange.TmTc.TelemetryMessages.StateType.STATE_TYPE_ALARM) {
-                        alarmRecorder.record(config, com.example.common.enums.DataAlarmType.PARAMETER_RANGE,
-                                telemetry.getTmSymbol(), telemetry.getTmName(), null, "远程服务状态判定",
-                                "包序号：" + packet.getSequenceNumber() + "；遥测值：" + telemetry.getValue());
-                    } else if (telemetry.getStateType() == SatDataCenter.DataExchange.TmTc.TelemetryMessages.StateType.STATE_TYPE_NORMAL) {
-                        alarmRecorder.recover(config, com.example.common.enums.DataAlarmType.PARAMETER_RANGE, telemetry.getTmSymbol(), null);
-                    }
-                }
-            }
+            // 本地及远程结果保留参数状态，范围越限不写入或恢复告警管理记录。
             stage = com.example.common.enums.DataAlarmType.CALIBRATION_RULE;
             // 第三步：按每个遥测参数携带的校准公式执行野值检测。
             telemetryMessage = calibrationProcessingService.process(

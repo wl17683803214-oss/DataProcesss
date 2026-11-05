@@ -155,8 +155,7 @@ public class LocalDataProcessor implements DataProcessor {
             if (stateValue != null) {
                 try {
                     state(telemetry, item, stateValue);
-                    recordState(config, telemetry, item, stateValue);
-                    recoverFormula(config, item, true);
+                    recoverFormula(config, item);
                 } catch (RuntimeException exception) {
                     telemetry.clearStateType();
                     parameterFailure(config, item, "状态规则解析失败：" + exception.getMessage());
@@ -253,7 +252,7 @@ public class LocalDataProcessor implements DataProcessor {
             telemetry.setValueType(type);
             if (type == ValueType.VALUE_TYPE_TEXT) {
                 telemetry.setValueText(result.getText());
-                recoverFormula(config, field, false);
+                recoverFormula(config, field);
                 return null;
             }
             BigDecimal physicalValue = result.getValue();
@@ -293,11 +292,9 @@ public class LocalDataProcessor implements DataProcessor {
     }
 
     /** 后续数据正常计算后恢复该参数的处理告警。 */
-    private void recoverFormula(CollectInterfaceRuntimeConfig config, PdxpProtocolField field, boolean numeric) {
-        if (alarmRecorder != null && (!numeric
-                || !Integer.valueOf(1).equals(config.getParameterRangeCheckEnabled())
-                || !"1".equals(trim(field.getAlarmFlag()))
-                || configuredRange(field.getWarningValue()) || configuredRange(field.getNormalValue()))) {
+    private void recoverFormula(CollectInterfaceRuntimeConfig config, PdxpProtocolField field) {
+        // 公式及状态规则处理成功后恢复配置告警，不依赖校准野值检测开关。
+        if (alarmRecorder != null) {
             alarmRecorder.recover(config, com.example.common.enums.DataAlarmType.PROCESS_CONFIG,
                     field.getTelemetryCode(), null);
         }
@@ -335,6 +332,11 @@ public class LocalDataProcessor implements DataProcessor {
         // 预警范围未配置或使用横线占位时，继续回退到正常值范围。
         String ranges = configuredRange(field.getWarningValue())
                 ? field.getWarningValue() : field.getNormalValue();
+        // 未配置允许范围时不生成状态，范围判定仅标记遥测，不写入告警管理。
+        if (!configuredRange(ranges)) {
+            telemetry.clearStateType();
+            return;
+        }
         StateMatch match = stateMatch(ranges, value);
         if (match == null) {
             telemetry.setStateType(StateType.STATE_TYPE_ALARM);
@@ -342,28 +344,6 @@ public class LocalDataProcessor implements DataProcessor {
             telemetry.setStateType(StateType.STATE_TYPE_NORMAL)
                     .setStateIndex(match.index)
                     .setStateName(match.name);
-        }
-    }
-
-    /** 范围检查关闭时不生成数据告警，缺失规则作为配置异常记录。 */
-    private void recordState(CollectInterfaceRuntimeConfig config, Telemetry.Builder telemetry,
-            PdxpProtocolField field, BigDecimal value) {
-        if (alarmRecorder == null || !Integer.valueOf(1).equals(config.getParameterRangeCheckEnabled())
-                || !"1".equals(trim(field.getAlarmFlag()))) { return; }
-        String ranges = configuredRange(field.getWarningValue()) ? field.getWarningValue() : field.getNormalValue();
-        if (!configuredRange(ranges)) {
-            alarmRecorder.record(config, com.example.common.enums.DataAlarmType.PROCESS_CONFIG,
-                    field.getTelemetryCode(), field.getTelemetryName(), null, null,
-                    "参数已开启报警，但未配置有效范围；停止该参数的告警判定");
-            // 无范围不能把所有值都误判为越限。
-            telemetry.clearStateType();
-        } else if (telemetry.getStateType() == StateType.STATE_TYPE_ALARM) {
-            alarmRecorder.record(config, com.example.common.enums.DataAlarmType.PARAMETER_RANGE,
-                    field.getTelemetryCode(), field.getTelemetryName(), null, ranges,
-                    "判定结果值：" + value + "；未命中允许范围，当前任务继续处理");
-        } else {
-            alarmRecorder.recover(config, com.example.common.enums.DataAlarmType.PARAMETER_RANGE,
-                    field.getTelemetryCode(), null);
         }
     }
 

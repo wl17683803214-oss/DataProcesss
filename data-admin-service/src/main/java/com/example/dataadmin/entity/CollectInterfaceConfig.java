@@ -1,5 +1,6 @@
 package com.example.dataadmin.entity;
 
+import com.example.common.enums.CollectionDataType;
 import com.example.dataadmin.enums.BusinessEnums;
 import com.example.dataadmin.enums.EnumData;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -65,7 +66,7 @@ public class CollectInterfaceConfig {
     private String receiveUrl;
     /** 启用状态：0禁用 1启用。 */
     private Integer enabled;
-    /** 是否启用RPC处理：0否 1是。 */
+    /** 采集数据类型：0设备、1卫星、2指令响应。 */
     private Integer rpcEnabled;
     /** 长期累计采集量，PDXP按完整帧、FEP按完整文件计数。 */
     private Long dataPacketCount;
@@ -254,9 +255,9 @@ public class CollectInterfaceConfig {
         this.rpcEnabled = rpcEnabled;
     }
 
-    /** 返回是否启用RPC处理的中文名称。 */
+    /** 返回采集数据类型的中文名称。 */
     public String getRpcEnabledName() {
-        return EnumData.labelOf(BusinessEnums.YesNo.values(), rpcEnabled);
+        return CollectionDataType.require(rpcEnabled).getLabel();
     }
 
     public Long getDataPacketCount() {

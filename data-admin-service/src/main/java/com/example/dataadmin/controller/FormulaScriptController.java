@@ -39,7 +39,7 @@ public class FormulaScriptController {
         return ApiResponse.success(service.page(code, name, pageNum, pageSize));
     }
 
-    /** 按编号批量删除无引用公式，任一项无效时整批不删除。 */
+    /** 按编号批量删除公式，任一项无效时整批不删除。 */
     @PostMapping("/batch-delete")
     public ApiResponse<Integer> deleteBatch(
             @javax.validation.Valid @org.springframework.web.bind.annotation.RequestBody
