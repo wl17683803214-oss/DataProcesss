@@ -22,10 +22,4 @@ public class GreptimeConfig {
     public GreptimeStore greptimeStore(GreptimeProperties properties) throws IOException {
         return new GreptimeStore(properties);
     }
-
-    /** 并发查询上限为连接池容量减一，为整帧查询保留连接。 */
-    @Bean(destroyMethod = "shutdown")
-    public java.util.concurrent.ExecutorService processedTelemetryQueryExecutor(GreptimeProperties properties) {
-        return java.util.concurrent.Executors.newFixedThreadPool(properties.getMaxPoolSize() - 1);
-    }
 }

@@ -3238,7 +3238,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最新数据
-      description: 按表格场景查询已保存勾选参数的最新值，设备按任务、local来源、设备主键身份和遥测代号查询；卫星按任务、rpc来源和遥测代号查询全部远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，在取最新记录前筛选；不传或留空时查询全部类型，非法值返回中文提示。设备卫星类型仍从所属资料读取。无匹配记录时保留已勾选参数身份并返回空值。数据可视化表格传selectionType=3及组件主键targetId。
+      description: 按表格场景查询已保存勾选参数的最新值。先沿用业务库的一次勾选列表查询，再用一条GreptimeDB批量SQL读取全部参数各自的最新记录，不逐参数查询；无勾选时返回空数组且不查询时序库。设备按任务、local来源、设备主键身份和遥测代号查询；卫星按任务、rpc来源和遥测代号查询全部远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，在取最新记录前筛选；不传或留空时查询全部类型，非法值返回中文提示。设备卫星类型仍从所属资料读取。无匹配记录时保留已勾选参数身份并返回空值。数据可视化表格传selectionType=3及组件主键targetId，接口入参与返回字段保持不变。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - name: telemetryType
@@ -3282,7 +3282,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最近曲线
-      description: 按曲线场景读取已保存勾选参数，设备限定当前任务和本地设备身份，卫星限定当前任务的远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，先筛选再取最近最多120个数值有效点并按时间升序返回；不传或留空查询全部类型，非法值返回中文提示。无匹配记录时保留参数身份并返回空曲线。默认处理后数据曲线，可视化曲线传selectionType=4及组件主键targetId，各曲线携带自己的毫秒时间戳数组。
+      description: 按曲线场景读取已保存勾选参数。先沿用业务库的一次勾选列表查询，再用一条GreptimeDB批量SQL读取全部参数各自最近最多120个数值有效点，不逐参数查询；无勾选时返回空数组且不查询时序库。设备限定当前任务和本地设备身份，卫星限定当前任务的远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，先筛选并排除空数值再按参数分别取点，按时间升序返回；不传或留空查询全部类型，非法值返回中文提示。无匹配记录时保留参数身份并返回空曲线。默认处理后数据曲线，可视化曲线传selectionType=4及组件主键targetId，各曲线携带自己的毫秒时间戳数组，接口入参与返回字段保持不变。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - name: telemetryType
