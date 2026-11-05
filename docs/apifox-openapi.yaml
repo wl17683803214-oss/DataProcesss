@@ -2950,6 +2950,7 @@ paths:
                             fileType: { type: string, nullable: true, description: 文件小写后缀 }
                             fileLength: { type: integer, format: int64, description: 文件字节数 }
                             resolution: { type: string, nullable: true, description: "图片像素分辨率，格式为宽×高，例如1920×1080；普通文件、历史未识别记录或当前解析器不支持时为null" }
+                            evaluation: { type: string, description: "图片和普通文件的评价中文名称，当前默认完成" }
                             fileUrl: { type: string, description: "临时签名读取地址，默认3600秒有效；直接用于图片展示或下载，过期后重新查询列表，不要修改地址及查询参数" }
                             completedTime: { type: string, format: date-time }
               example:
@@ -2967,6 +2968,7 @@ paths:
                       fileType: png
                       fileLength: 245760
                       resolution: "1920×1080"
+                      evaluation: 完成
                       fileUrl: 'http://192.168.112.215:9002/fep-files/2026/10/15/example.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=example%2F20261015%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20261015T043000Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=示例签名以实际返回值为准'
                       completedTime: '2026-09-29T10:30:15'
 

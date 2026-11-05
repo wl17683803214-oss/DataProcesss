@@ -18,7 +18,7 @@
           and file_length = #{fileLength}
     </select>
 
-    <!-- 登记已经完整落到本地的文件，并返回生成的主键。 -->
+    <!-- 登记已经完整落到本地的文件，评价状态由数据库默认填充，并返回生成的主键。 -->
     <insert id="insertReceived"
             parameterType="com.example.dataprocess.entity.FepFileTransferRecord"
             useGeneratedKeys="true" keyProperty="id" keyColumn="id">

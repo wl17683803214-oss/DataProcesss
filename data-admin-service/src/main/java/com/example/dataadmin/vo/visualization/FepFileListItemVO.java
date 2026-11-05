@@ -1,5 +1,6 @@
 package com.example.dataadmin.vo.visualization;
 
+import com.example.common.enums.FileEvaluationStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 
@@ -19,6 +20,9 @@ public class FepFileListItemVO {
     private Long fileLength;
     /** 图片像素分辨率，格式为宽×高，普通文件或未识别时为空。 */
     private String resolution;
+    /** 数据库保存的评价状态编码，仅用于转换查询结果。 */
+    @JsonIgnore
+    private String evaluationStatus;
     /** 查询时生成的临时签名地址，默认一小时有效，前端可以直接展示或下载。 */
     private String fileUrl;
     /** 内部签名所需的对象名称，不属于接口出参。 */
@@ -43,6 +47,14 @@ public class FepFileListItemVO {
     public String getResolution() { return resolution; }
     /** 设置图片分辨率。 */
     public void setResolution(String value) { resolution = value; }
+    /** 接收查询映射的评价状态编码。 */
+    public void setEvaluationStatus(String evaluationStatus) {
+        this.evaluationStatus = evaluationStatus;
+    }
+    /** 返回页面展示的评价名称。 */
+    public String getEvaluation() {
+        return FileEvaluationStatus.labelOf(evaluationStatus);
+    }
     public String getFileUrl() { return fileUrl; }
     public void setFileUrl(String value) { this.fileUrl = value; }
     public String getObjectName() { return objectName; }
