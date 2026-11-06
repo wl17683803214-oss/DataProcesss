@@ -17,12 +17,10 @@ public interface GreptimeMapper {
     int insertParameters(@Param("rows") List<TelemetryParameterRecord> rows);
     /** 查询正常或异常整帧。 */
     List<TelemetryFrameRecord> frames(Map<String, Object> query);
-    /** 统计相同条件下的整帧数量。 */
-    long countFrames(Map<String, Object> query);
-    /** 查询单个遥测代号的最新值。 */
-    TelemetryParameterRecord latest(Map<String, Object> query);
-    /** 查询单个遥测代号的最近一百二十个点。 */
-    List<TelemetryParameterRecord> curve(Map<String, Object> query);
+    /** 一次查询所选参数在时间范围内各自的最新值。 */
+    List<TelemetryParameterRecord> latestBatch(Map<String, Object> query);
+    /** 一次查询所选参数在时间范围内的全部有效数值点。 */
+    List<TelemetryParameterRecord> curves(Map<String, Object> query);
     /** 删除截止时间之前的整帧。 */
     int deleteFramesBefore(@Param("beforeTime") Timestamp beforeTime);
     /** 删除截止时间之前的参数。 */

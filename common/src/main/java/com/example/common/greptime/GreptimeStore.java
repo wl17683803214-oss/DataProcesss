@@ -105,19 +105,16 @@ public class GreptimeStore implements AutoCloseable {
         return execute(mapper -> mapper.frames(query));
     }
 
-    /** 统计整帧数量。 */
-    public long countFrames(Map<String, Object> query) {
-        return execute(mapper -> mapper.countFrames(query));
+    /** 单条语句查询全部所选参数在时间范围内的最新值。 */
+    public List<TelemetryParameterRecord> latestBatch(Map<String, Object> query) {
+        // 独占一个会话完成批量查询，不再逐参数申请连接。
+        return execute(mapper -> mapper.latestBatch(query));
     }
 
-    /** 查询参数最新值。 */
-    public TelemetryParameterRecord latest(Map<String, Object> query) {
-        return execute(mapper -> mapper.latest(query));
-    }
-
-    /** 查询参数曲线。 */
-    public List<TelemetryParameterRecord> curve(Map<String, Object> query) {
-        return execute(mapper -> mapper.curve(query));
+    /** 单条语句查询全部所选参数在时间范围内的曲线点。 */
+    public List<TelemetryParameterRecord> curves(Map<String, Object> query) {
+        // 返回身份字段和时间数值，由管理服务组装既有曲线结构。
+        return execute(mapper -> mapper.curves(query));
     }
 
     /** 两张表独立清理，可在部分完成后安全重入。 */

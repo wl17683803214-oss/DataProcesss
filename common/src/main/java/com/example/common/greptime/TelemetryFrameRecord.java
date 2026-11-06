@@ -12,7 +12,7 @@ public class TelemetryFrameRecord {
     private Long interfaceId;
     /** 来源类型。 */
     private String sourceType;
-    /** 设备或远程组合身份。 */
+    /** 本地设备卫星主键或远程卫星代号。 */
     private String sourceIdentity;
     /** 遥测类型。 */
     private String telemetryType;
@@ -65,12 +65,12 @@ public class TelemetryFrameRecord {
         this.sourceType = sourceType;
     }
 
-    /** 获取设备或远程组合身份。 */
+    /** 获取本地设备卫星主键或远程卫星代号。 */
     public String getSourceIdentity() {
         return sourceIdentity;
     }
 
-    /** 设置设备或远程组合身份。 */
+    /** 设置本地设备卫星主键或远程卫星代号。 */
     public void setSourceIdentity(String sourceIdentity) {
         this.sourceIdentity = sourceIdentity;
     }

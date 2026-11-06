@@ -293,15 +293,19 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 ## 8. 数据处理
 
-`GET /processing/processed` 和 `GET /processing/processed/curve` 均支持可选查询参数 `telemetryType`，对应 Proto 的 `TelemetryType tm_type = 7`，传数据库使用的英文枚举名。不传或留空查询全部类型，非法值返回“遥测类型不正确”。筛选在取最新值或最近120个数值有效点之前生效；无匹配数据时保留原勾选参数，最新值为空、曲线点为空数组。原勾选场景与设备卫星身份范围保持不变，适用于处理后数据和可视化场景。
+四个遥测查询接口均支持可选startTime、endTime，格式为2026-11-06T10:00:00，按source_time包含起止边界筛选。都不传时固定本次请求当前时间并向前查询15分钟；只传startTime时endTime取当前时间；只传endTime时startTime取endTime前15分钟；开始时间晚于结束时间返回中文提示。
+
+最新值和曲线各使用一条GreptimeDB SQL读取全部勾选参数。最新值每参数返回范围内最新一条；曲线返回范围内全部有效点，由后端按勾选归属组装现有times、values数组，时间升序且逐项对应。
+
+`GET /processing/processed` 和 `GET /processing/processed/curve` 均支持可选查询参数 `telemetryType`，对应 Proto 的 `TelemetryType tm_type = 7`，传数据库使用的英文枚举名。不传或留空查询全部类型，非法值返回“遥测类型不正确”。筛选在取时间范围内最新值或全部数值有效曲线点之前生效；无匹配数据时保留原勾选参数，最新值为空、曲线点为空数组。原勾选场景与设备卫星身份范围保持不变，适用于处理后数据和可视化场景。
 
 前端通过 `GET /processing/findData` 的 `data.telemetryType` 获取 `{value, label}` 选项：`TM_TYPE_UNSPECIFIED`（未指定）、`TM_TYPE_REAL_TM`（实时遥测）、`TM_TYPE_DELAY_TM`（延时遥测）、`TM_TYPE_MEMORY_TM`（存储遥测）、`TM_TYPE_DEVICE_TM`（设备遥测）。展示中文 label，查询提交英文 value；“全部”不传参数，不等同于“未指定”。
 
 `GET /processing/processed` 的 `parameterValue` 按已有值类型返回：`VALUE_TYPE_TEXT` 返回数据库 `value_text` 字符串（例如 `FKT007` 返回 `"T001"`），其他类型继续返回 `value` 数值，无记录时为 `null`。查询支持数值为空的文本记录，取身份范围内最新记录。此规则同时适用于处理后表格和可视化表格；`/processing/processed/curve` 的数值查询及响应保持不变。
 
-原始帧与异常帧接口的查询参数为必填 `taskId`、可选 `interfaceId`、`pageNum`、`pageSize`。接口主键必须大于零；对应关系由任务路径隔离，正数但在当前任务下没有数据的接口返回空页。响应仍保留设备卫星、通道、时间、原码及检查结果，不新增 `interfaceId`、`interfaceName`。旧整帧不自动迁移，缺少接口层级时不推断来源，仅在不筛选接口时返回。
+正常帧与异常帧接口的查询参数为必填 `taskId`、可选 `interfaceId`、`startTime`、`endTime`，默认最近15分钟。取消分页参数、分页包装和总数查询，`data`直接返回数组，按时间倒序各最多100条。接口主键必须大于零；当前任务范围内没有匹配数据时返回空数组。响应仍保留设备卫星、通道、时间、原码及检查结果，不新增 `interfaceId`、`interfaceName`。旧整帧不自动迁移，缺少接口层级时不推断来源，仅在不筛选接口时返回。
 
-`/processing/processed` 和 `/processing/processed/curve` 仍按taskId、selectionType、targetId读取已保存勾选；实际GreptimeDB查询按勾选所属类型分支：设备使用当前任务、local来源、设备主键身份与遥测代号，卫星使用当前任务、rpc来源与遥测代号。类型复用DeviceSatelliteType枚举并从已有设备卫星资料读取；卫星资料主键不用于拼接RPC存储路径。同一代号在各自范围内存在多个身份或遥测类型时按时间取最新一条或最近120个有效点。勾选目录、保存机制和返回结构保持现有约定。完整前端改动见[遥测代号查询与整帧接口筛选](前端对接-遥测代号查询与整帧接口筛选.md)。
+`/processing/processed` 和 `/processing/processed/curve` 仍按taskId、selectionType、targetId读取已保存勾选；实际GreptimeDB查询按勾选所属类型分支：设备使用当前任务、local来源、设备主键身份与遥测代号，卫星使用当前任务、rpc来源与遥测代号。类型复用DeviceSatelliteType枚举并从已有设备卫星资料读取；卫星资料主键不用于拼接RPC存储路径。同一代号在各自范围内存在多个身份或遥测类型时按时间取所选范围内最新一条或全部有效曲线点。勾选目录、保存机制和返回结构保持现有约定。完整前端改动见[遥测代号查询与整帧接口筛选](前端对接-遥测代号查询与整帧接口筛选.md)。
 
 | 方法 | 地址 | 说明 | 参数 |
 | --- | --- | --- | --- |
@@ -389,13 +393,15 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 ### 遥测整帧异常记录
 
-遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，接口原码、分页、设备身份和中文检查结果字段保持不变。
+两张遥测表的 `source_identity` 在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的 `sat_code` 并去掉两端空白，不再拼接 `channel_code` 或编码长度，卫星代号为空时拒绝入库。历史组合身份数据不迁移，接口入参、出参和查询范围保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
 
-遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，接口原码、分页、设备身份和中文检查结果字段保持不变。
+遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，原码、设备身份和中文检查结果记录字段保持不变；整帧接口取消分页，直接返回最多100条记录的数组。
+
+遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，原码、设备身份和中文检查结果记录字段保持不变；整帧接口取消分页，直接返回最多100条记录的数组。
 
 本地参数解析失败或未生成结果时，若PDXP包和数据域已正确拆分，并且采集配置具有有效任务编号、设备卫星ID及“通道名称_业务标识”格式的设备名称，则允许没有Proto而保存异常整帧。设备名称来自运行配置，通道名称取首个下划线前的内容，原码保存包含传输头、PDXP包头、自定义数据和遥测帧头的当前完整采集帧，类型节点为 `device`，时间使用PDXP包头发送时间。该分支复用遥测入库线程池，只写完整异常 `_frame`，不写任何参数，不发布遥测消息，不计入成功处理量。身份不完整、无法拆分数据域、RPC调用失败及校准失败不使用此回退；入库队列满或写入失败会保留原始解析错误并另外记录存储告警。
 
-`GET /processing/realtime/telemetry` 可查询正常和异常整帧，`GET /processing/realtime/invalid` 仍按 `checkResultName != '正常'` 查询异常记录。两个接口返回字段不增加，rawLength与rawFrame分别展示完整帧字节数和完整帧十六进制原码；旧记录不会重新补头。`checkResultName` 返回中文“正常”或“异常”，旧数据中的其他非正常名称仍可被异常接口筛选。RPC异常Proto已有的参数入库和消息发布流程保持原有行为。
+`GET /processing/realtime/telemetry` 查询 `check_status=normal` 的正常整帧，`GET /processing/realtime/invalid` 查询 `check_status=abnormal` 的异常整帧；均按指定时间范围倒序最多返回100条。两个接口返回字段不增加，rawLength与rawFrame分别展示完整帧字节数和完整帧十六进制原码；旧记录不会重新补头。`checkResultName` 返回中文“正常”或“异常”，旧数据中的其他非正常名称仍可被异常接口筛选。RPC异常Proto已有的参数入库和消息发布流程保持原有行为。
 
 ### 采集传输协议编号升级
 
@@ -432,7 +438,7 @@ OpenAPI 文件已为各模块请求 DTO 配置独立 Schema，包括字段类型
 
 清理日志均在管理服务控制台查看：业务记录搜索 `本轮过期数据清理结束`，遥测记录搜索 `遥测过期数据清理完成`；失败日志搜索 `过期数据清理失败`。升级时同步更新两份Nacos配置并部署、重启两个服务，避免旧版处理服务继续执行清理；后续只需在管理服务调整保留天数。
 
-采集接口累计量及处理累计去重数按仍保留的统计记录计算，清理后可减少。遥测参数曲线仍查询最近120条已有数据，查询 `range` 与保留天数互相独立。校准只删除野值详情，保留汇总记录、ID和历史累计数量；详情分页total是当前保留的详情条数，允许小于汇总的outlierCount。文件图片只清理数据库记录，不删除MinIO对象；超期未完成的记录也删除，之后不再被数据库重试扫描选中。系统告警和数据告警包含已处理、未处理或仍活动的过期记录。配置项、配置所属服务和时间依据详见 `docs/数据保留与过期清理配置说明.md`。
+采集接口累计量及处理累计去重数按仍保留的统计记录计算，清理后可减少。遥测参数曲线默认查询最近15分钟内的全部有效点，也可通过startTime、endTime指定范围；查询范围与数据保留天数互相独立。校准只删除野值详情，保留汇总记录、ID和历史累计数量；详情分页total是当前保留的详情条数，允许小于汇总的outlierCount。文件图片只清理数据库记录，不删除MinIO对象；超期未完成的记录也删除，之后不再被数据库重试扫描选中。系统告警和数据告警包含已处理、未处理或仍活动的过期记录。配置项、配置所属服务和时间依据详见 `docs/数据保留与过期清理配置说明.md`。
 
 ## PDXP接收附加长度配置
 

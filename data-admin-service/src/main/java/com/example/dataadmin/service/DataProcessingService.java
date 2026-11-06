@@ -13,6 +13,7 @@ import com.example.dataadmin.entity.InvalidTelemetryFrame;
 import com.example.dataadmin.dto.processing.TelemetryParseRuleBatchUpdateRequest;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 /**
  * 数据处理页面业务接口。
@@ -35,24 +36,24 @@ public interface DataProcessingService {
     DataProcessingOverviewVO getOverview(String taskId);
     /** 查询数据处理页面实时监控指标。 */
     DataProcessingRealtimeVO getRealtime(String taskId);
-    /** 按任务和设备卫星分页筛选GreptimeDB中的数据域整帧。 */
-    PageResult<RealtimeTelemetryFrameVO> pageRealtimeTelemetryFrames(
+    /** 按任务、接口和时间范围查询最新的一百条正常整帧。 */
+    List<RealtimeTelemetryFrameVO> listRealtimeTelemetryFrames(
             String taskId,
             Long interfaceId,
-            Integer pageNum,
-            Integer pageSize);
+            LocalDateTime startTime,
+            LocalDateTime endTime);
     /** 查询当前任务全部已勾选参数的最新处理结果。 */
     List<ProcessedTelemetryVO> listProcessedTelemetry(String taskId,
-            Integer selectionType, Long targetId, String telemetryType);
+            Integer selectionType, Long targetId, String telemetryType, LocalDateTime startTime, LocalDateTime endTime);
     /** 查询当前任务全部已勾选参数的最近曲线点。 */
     List<ProcessedTelemetryCurveVO> listProcessedTelemetryCurves(String taskId,
-            Integer selectionType, Long targetId, String telemetryType);
-    /** 按任务和页面条件分页筛选帧检查异常的遥测原始帧。 */
-    PageResult<InvalidTelemetryFrame> pageInvalidTelemetryFrames(
+            Integer selectionType, Long targetId, String telemetryType, LocalDateTime startTime, LocalDateTime endTime);
+    /** 按任务、接口和时间范围查询最新的一百条异常整帧。 */
+    List<InvalidTelemetryFrame> listInvalidTelemetryFrames(
             String taskId,
             Long interfaceId,
-            Integer pageNum,
-            Integer pageSize);
+            LocalDateTime startTime,
+            LocalDateTime endTime);
     /** 查询任务级处理规则开关；不存在时插入默认配置后返回。 */
     ProcessingRuleConfig getProcessingRuleConfig(String taskId);
     /** 新增或更新任务级处理规则开关。 */

@@ -4,6 +4,10 @@
 
 ## 阅读说明
 
+四个遥测查询接口均支持可选startTime、endTime，格式为2026-11-06T10:00:00，按source_time包含起止边界筛选。都不传时固定本次请求当前时间并向前查询15分钟；只传startTime时endTime取当前时间；只传endTime时startTime取endTime前15分钟；开始时间晚于结束时间返回中文提示。
+
+示例：`GET /processing/processed/curve?taskId=TASK-20260908-001&startTime=2026-11-06T10:00:00&endTime=2026-11-06T10:15:00`。最新值和曲线各用一条GreptimeDB SQL查询全部勾选参数；最新值每参数一条，曲线全部有效点按参数归组，返回结构保持不变。
+
 `GET /processing/processed` 的 `parameterValue` 支持字符串或数值：`VALUE_TYPE_TEXT` 从 `value_text` 返回，例如 `{"telemetryCode":"FKT007","parameter":"字符串类","parameterValue":"T001"}`；其他类型继续返回数值，无记录时为空。曲线接口保持原有数值格式。
 
 两个接口均可增加 `telemetryType` 筛选，例如：
@@ -27,7 +31,7 @@ GET /processing/processed/curve?taskId=TASK-20260908-001&selectionType=2&targetI
 }
 ```
 
-以上对象位于统一响应的 `data` 中。筛选参数传选项的英文 `value`，对应 Proto 的 `tm_type`，不传或留空表示全部；`TM_TYPE_UNSPECIFIED` 仅筛选未指定类型。非法类型返回“遥测类型不正确”。无匹配数据时保留勾选参数，最新值为空，曲线时间和数值数组为空。类型条件在取最新记录或最近120个有效曲线点之前生效。
+以上对象位于统一响应的 `data` 中。筛选参数传选项的英文 `value`，对应 Proto 的 `tm_type`，不传或留空表示全部；`TM_TYPE_UNSPECIFIED` 仅筛选未指定类型。非法类型返回“遥测类型不正确”。无匹配数据时保留勾选参数，最新值为空，曲线时间和数值数组为空。类型条件在取所选时间范围内最新记录或全部有效曲线点之前生效。
 
 `GET /visualization/widgets/{widgetId}/files` 返回的 `fileUrl` 是临时签名读取地址，默认3600秒有效，完整参数必须保留，过期后重新查询列表。前端调用及部署配置见[图片与文件访问地址](前端对接-图片与文件访问地址.md)。MQ文件消息中的持久地址沿用原有格式。
 
@@ -2378,7 +2382,7 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
 找不到公式、参数无效、脚本执行失败或结果不合法时，仅将当前参数保留为BINARY原码，不生成计算值，并写参数处理失败告警；同帧其他参数继续。BINARY不参与数值校准，数据库value存NULL。导入、覆盖或修正配置后由内部同步机制更新运行快照，后续计算正常时自动恢复告警；历史失败数据不自动补算。完整规范及文件见docs/lua-formulas/README.md。
 ### 遥测整帧检查结果与查询
 
-`GET /processing/realtime/telemetry?taskId=728101&interfaceId=14` 查询正常及异常整帧。当前记录示例：
+`GET /processing/realtime/telemetry?taskId=728101&interfaceId=14` 查询最近15分钟的正常整帧，按时间倒序最多100条，data直接返回数组。当前记录示例：
 
 ```json
 {"deviceSatelliteId":11,"time":"2026-10-13T10:00:00","deviceSatelliteName":"设备通道_001","channelName":"设备通道","rawLength":46,"rawFrame":"34 12 80 01 00 01 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 37 26 00 2A 75 15 0C 00 05 04 03 02 01 41 42 43 01 00 00 00","checkResultName":"正常"}
@@ -2388,13 +2392,15 @@ RPC消息的frame_check_status=false时，checkResultName写“异常”；true�
 
 本地参数解析失败时，只要PDXP包和去头数据域已提取、任务编号和设备卫星ID有效、设备名称符合“通道名称_业务标识”，便通过已有入库线程池保存异常_frame。设备名称来自接口配置，通道名称取首个下划线前缀，raw保存传输头、PDXP包头、自定义数据、遥测数据和遥测帧头组成的完整帧，时间使用PDXP发送时间；不写参数、不发送遥测消息、不计入成功处理量。不能拆分数据域或缺少有效身份时，不创建占位路径；该回退仍要求报文和数据域可正确拆分。
 
-`GET /processing/realtime/invalid?taskId=728101&interfaceId=14` 按checkResultName不为“正常”分页查询，记录示例：
+`GET /processing/realtime/invalid?taskId=728101&interfaceId=14` 查询最近15分钟check_status为abnormal的异常帧，按时间倒序最多100条，data直接返回数组，记录示例：
 
 ```json
 {"deviceSatelliteId":11,"receiveTime":"2026-10-13T10:00:00","deviceSatelliteName":"设备通道_001","channelName":"设备通道","rawLength":46,"rawFrame":"34 12 80 01 00 01 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 37 26 00 2A 75 15 0C 00 05 04 03 02 01 41 42 43 01 00 00 00","checkResultName":"异常"}
 ```
 
-遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，接口原码、分页、设备身份和中文检查结果字段保持不变。
+遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，原码、设备身份和中文检查结果记录字段保持不变；整帧接口取消分页，直接返回最多100条记录的数组。
+
+两张遥测表的 `source_identity` 在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的 `sat_code` 并去掉两端空白，不再拼接 `channel_code` 或编码长度，卫星代号为空时拒绝入库。例如返回 `sat_code=SAT01`、`channel_code=CH01` 时，整帧和参数均保存 `source_identity=SAT01`。历史组合身份数据不迁移，接口入参、出参和查询范围保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
 
 ### `GET /alarms/findData`
 
@@ -2681,17 +2687,13 @@ RPC消息的frame_check_status=false时，checkResultName写“异常”；true�
 
 ### RPC完整帧查询说明
 
-查询 `GET /processing/realtime/telemetry?taskId=TASK-20260908-001&pageNum=1&pageSize=20`，不传 `interfaceId` 时包含当前任务下新旧路径的RPC及本地帧；传 `interfaceId` 时只查对应接口节点；查询异常帧时使用相同参数调用 `/processing/realtime/invalid`。RPC帧的设备主键为 `null`，不是需要前端补填的值。
+查询 `GET /processing/realtime/telemetry?taskId=TASK-20260908-001&startTime=2026-10-14T09:45:00&endTime=2026-10-14T10:00:00`，不传 `interfaceId` 时查询当前任务时间范围内的RPC及本地正常帧，最多100条；传 `interfaceId` 时只查对应接口节点；查询异常帧时使用相同参数调用 `/processing/realtime/invalid`。RPC帧的设备主键为 `null`，不是需要前端补填的值。
 
 ```jsonc
 {
   "code": 200, // 查询成功
   "message": "操作成功", // 提示信息
-  "data": {
-    "pageNum": 1, // 当前页码
-    "pageSize": 20, // 每页记录数
-    "total": 1, // 符合条件的完整帧总数
-    "records": [
+  "data": [
       {
         "deviceSatelliteId": null, // RPC独立卫星通道身份，没有本地设备主键
         "time": "2026-10-14T10:00:00", // 消息时间
@@ -2701,12 +2703,11 @@ RPC消息的frame_check_status=false时，checkResultName写“异常”；true�
         "rawFrame": "01 02", // 原码展示格式示例
         "checkResultName": "正常" // 帧检查结果
       }
-    ]
-  }
+  ]
 }
 ```
 
-RPC存储按返回卫星和通道代号构造独立身份节点。返回缺少任一代号时不使用未知节点替代，并记录本帧入库失败。旧RPC设备节点数据保留，不自动迁移。
+RPC存储身份只保存返回的卫星代号；卫星代号为空时拒绝入库。旧RPC设备节点数据保留，不自动迁移。
 
 
 ### `POST /collection/receive/**`（数据处理服务）

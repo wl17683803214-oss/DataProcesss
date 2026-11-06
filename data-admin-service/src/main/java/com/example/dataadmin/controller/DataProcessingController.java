@@ -29,8 +29,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -96,17 +98,20 @@ public class DataProcessingController {
         return ApiResponse.success(processingService.getRealtime(taskId));
     }
 
-    /** 按任务分页查询GreptimeDB中最新的遥测帧。 */
+    /** 按任务、接口和时间范围查询最新的一百条正常帧。 */
     @GetMapping("/realtime/telemetry")
-    public ApiResponse<PageResult<RealtimeTelemetryFrameVO>> pageRealtimeTelemetry(
+    public ApiResponse<List<RealtimeTelemetryFrameVO>> listRealtimeTelemetry(
             @RequestParam String taskId,
             @RequestParam(required = false) Long interfaceId,
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "20") Integer pageSize) {
-        // 查询参数统一交给业务层校验并转换为GreptimeDB分页范围。
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime startTime,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime endTime) {
+        // 时间默认值和范围校验统一交给业务层，响应直接返回数组。
         return ApiResponse.success(
-                processingService.pageRealtimeTelemetryFrames(
-                        taskId, interfaceId, pageNum, pageSize));
+                processingService.listRealtimeTelemetryFrames(taskId, interfaceId, startTime, endTime));
     }
 
     /** 查询当前任务全部已勾选参数的最新处理结果。 */
@@ -115,10 +120,16 @@ public class DataProcessingController {
             @RequestParam String taskId,
             @RequestParam(defaultValue = "1") Integer selectionType,
             @RequestParam(defaultValue = "0") Long targetId,
-            @RequestParam(required = false) String telemetryType) {
+            @RequestParam(required = false) String telemetryType,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime startTime,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime endTime) {
         // 按表格场景取得已勾选参数；可视化表格传自己的组件主键。
         return ApiResponse.success(processingService.listProcessedTelemetry(
-                taskId, selectionType, targetId, telemetryType));
+                taskId, selectionType, targetId, telemetryType, startTime, endTime));
     }
 
     /** 查询当前任务全部已勾选参数的最近曲线点。 */
@@ -127,26 +138,32 @@ public class DataProcessingController {
             @RequestParam String taskId,
             @RequestParam(defaultValue = "2") Integer selectionType,
             @RequestParam(defaultValue = "0") Long targetId,
-            @RequestParam(required = false) String telemetryType) {
+            @RequestParam(required = false) String telemetryType,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime startTime,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime endTime) {
         // 每条曲线按自己的组件勾选查询，并保留实际采样时间轴。
         return ApiResponse.success(processingService.listProcessedTelemetryCurves(
-                taskId, selectionType, targetId, telemetryType));
+                taskId, selectionType, targetId, telemetryType, startTime, endTime));
     }
 
-    /** 按任务和页面条件分页查询GreptimeDB中帧检查异常的遥测原始帧。 */
+    /** 按任务、接口和时间范围查询最新的一百条异常帧。 */
     @GetMapping("/realtime/invalid")
-    public ApiResponse<PageResult<InvalidTelemetryFrame>> pageInvalidTelemetry(
+    public ApiResponse<List<InvalidTelemetryFrame>> listInvalidTelemetry(
             @RequestParam String taskId,
             @RequestParam(required = false) Long interfaceId,
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "20") Integer pageSize) {
-        // 查询参数统一交给业务层校验并转换为GreptimeDB分页范围。
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime startTime,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime endTime) {
+        // 正常和异常帧共用时间范围规则，各自最多返回一百条。
         return ApiResponse.success(
-                processingService.pageInvalidTelemetryFrames(
-                        taskId,
-                        interfaceId,
-                        pageNum,
-                        pageSize));
+                processingService.listInvalidTelemetryFrames(taskId, interfaceId, startTime, endTime));
     }
 
     /** 查询任务级参数值范围检查开关。 */

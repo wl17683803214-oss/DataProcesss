@@ -29,6 +29,7 @@ import com.example.dataadmin.mapper.TelemetryParseRuleConfigMapper;
 import com.example.dataadmin.mapper.ProcessingRuleConfigMapper;
 import com.example.dataadmin.service.DataProcessingService;
 import com.example.dataadmin.service.ProcessedTelemetryQueryService;
+import com.example.dataadmin.service.support.TelemetryQueryTimeRange;
 import com.example.dataadmin.service.CollectInterfaceRuntimeSyncService;
 import com.example.dataadmin.service.VisualizationParameterSyncService;
 import com.example.dataadmin.vo.processing.DataProcessingOverviewVO;
@@ -76,8 +77,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     /** 任务下各采集接口实时处理速率Redis键前缀。 */
     private static final String PROCESSING_CURRENT_PREFIX =
             "dashboard:processing:current:";
-    /** GreptimeDB页面查询允许的最大单页数量。 */
-    private static final int MAX_TELEMETRY_PAGE_SIZE = 200;
 
     /** 数据处理统计数据访问组件。 */
     private final DashboardMapper dashboardMapper;
@@ -93,7 +92,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     private final CollectInterfaceRuntimeSyncService runtimeSyncService;
     /** 独立遥测数据访问组件，不参与金仓事务。 */
     private final GreptimeStore telemetryStore;
-    /** 已勾选参数的独立并发查询组件。 */
+    /** 已勾选参数的独立批量查询组件。 */
     private final ProcessedTelemetryQueryService processedTelemetryQueryService;
     /** 可视化参数筛选项同步服务。 */
     private final VisualizationParameterSyncService parameterSyncService;
@@ -211,14 +210,13 @@ public class DataProcessingServiceImpl implements DataProcessingService {
                 Locale.ROOT, "%.2f%%", systemResourceMetrics.readMemoryUsage()));
     }
 
-    /** 将数据库记录转换为既有正常帧响应，保持字段和分页规则。 */
+    /** 将时间范围内最新的一百条正常帧转换为数组响应。 */
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public PageResult<RealtimeTelemetryFrameVO> pageRealtimeTelemetryFrames(
-            String taskId, Long interfaceId, Integer pageNum, Integer pageSize) {
+    public List<RealtimeTelemetryFrameVO> listRealtimeTelemetryFrames(
+            String taskId, Long interfaceId, LocalDateTime startTime, LocalDateTime endTime) {
         // 第一步：校验条件，公共映射使用绑定变量限定任务和接口。
-        TelemetryPage page = requireTelemetryPage(pageNum, pageSize);
-        Map<String, Object> query = frameQuery(taskId, interfaceId, TelemetryFrameStatus.NORMAL, page);
+        Map<String, Object> query = frameQuery(taskId, interfaceId, TelemetryFrameStatus.NORMAL, startTime, endTime);
         List<RealtimeTelemetryFrameVO> records = new ArrayList<>();
         // 第二步：从原始字节派生长度和十六进制文本，接口继续显示中文检查结果。
         for (TelemetryFrameRecord row : telemetryStore.frames(query)) {
@@ -232,36 +230,35 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             record.setCheckResultName(TelemetryFrameStatus.labelOf(row.getCheckStatus()));
             records.add(record);
         }
-        // 第三步：计数复用同一套筛选条件，不受金仓分页插件影响。
-        return new PageResult<>(page.pageNum, page.pageSize, telemetryStore.countFrames(query), records);
+        // 第三步：直接返回最多一百条记录，不再查询总数。
+        return records;
     }
 
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<ProcessedTelemetryVO> listProcessedTelemetry(String taskId,
-            Integer selectionType, Long targetId, String telemetryType) {
-        // 将可选协议遥测类型传递到最新值查询条件。
+            Integer selectionType, Long targetId, String telemetryType, LocalDateTime startTime, LocalDateTime endTime) {
+        // 将可选协议类型和时间范围传递给单条语句的批量最新值查询。
         return processedTelemetryQueryService.latest(
-                requireTelemetryTaskId(taskId), selectionType, targetId, telemetryType);
+                requireTelemetryTaskId(taskId), selectionType, targetId, telemetryType, startTime, endTime);
     }
 
-    /** 与最新值使用同一批勾选参数，分别查询各参数的最近曲线点。 */
+    /** 使用一条语句读取勾选参数在时间范围内的全部有效曲线点。 */
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<ProcessedTelemetryCurveVO> listProcessedTelemetryCurves(String taskId,
-            Integer selectionType, Long targetId, String telemetryType) {
-        // 将可选协议遥测类型传递到曲线查询条件。
+            Integer selectionType, Long targetId, String telemetryType, LocalDateTime startTime, LocalDateTime endTime) {
+        // 查询组件按参数归属组装时间和数值，保持原有曲线结构。
         return processedTelemetryQueryService.curves(
-                requireTelemetryTaskId(taskId), selectionType, targetId, telemetryType);
+                requireTelemetryTaskId(taskId), selectionType, targetId, telemetryType, startTime, endTime);
     }
-    /** 异常帧继续使用原分页接口和响应字段。 */
+    /** 异常帧保留记录字段，按时间范围返回最新的一百条。 */
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public PageResult<InvalidTelemetryFrame> pageInvalidTelemetryFrames(
-            String taskId, Long interfaceId, Integer pageNum, Integer pageSize) {
-        // 第一步：正常和异常整帧共用相同的身份与分页校验。
-        TelemetryPage page = requireTelemetryPage(pageNum, pageSize);
-        Map<String, Object> query = frameQuery(taskId, interfaceId, TelemetryFrameStatus.ABNORMAL, page);
+    public List<InvalidTelemetryFrame> listInvalidTelemetryFrames(
+            String taskId, Long interfaceId, LocalDateTime startTime, LocalDateTime endTime) {
+        // 第一步：正常和异常整帧共用相同的身份与时间范围校验。
+        Map<String, Object> query = frameQuery(taskId, interfaceId, TelemetryFrameStatus.ABNORMAL, startTime, endTime);
         List<InvalidTelemetryFrame> records = new ArrayList<>();
         // 第二步：远程帧不伪造本地设备主键，检查编码通过已有枚举转换为中文。
         for (TelemetryFrameRecord row : telemetryStore.frames(query)) {
@@ -275,12 +272,15 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             record.setRawFrame(toHex(row.getRaw()));
             records.add(record);
         }
-        return new PageResult<>(page.pageNum, page.pageSize, telemetryStore.countFrames(query), records);
+        // 第三步：直接返回数组，数据库已按时间倒序限制为一百条。
+        return records;
     }
 
     /** 构造绑定参数，接口不再接收或暴露数据库路径。 */
     private Map<String, Object> frameQuery(String taskId, Long interfaceId,
-            TelemetryFrameStatus status, TelemetryPage page) {
+            TelemetryFrameStatus status, LocalDateTime startTime, LocalDateTime endTime) {
+        // 第一步：固定本次时间范围，四个接口使用相同的十五分钟缺省规则。
+        TelemetryQueryTimeRange range = TelemetryQueryTimeRange.resolve(startTime, endTime);
         // 可选接口存在时必须是真实主键；任务必填，禁止扩大查询范围。
         if (interfaceId != null && interfaceId <= 0) {
             throw new IllegalArgumentException("采集接口主键必须大于零");
@@ -289,29 +289,9 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         query.put("taskId", requireTelemetryTaskId(taskId));
         query.put("interfaceId", interfaceId);
         query.put("checkStatus", status.getValue());
-        query.put("limit", page.pageSize);
-        query.put("offset", page.offset);
+        // 第二步：使用已校验边界绑定时间参数，条数限制由映射固定。
+        range.applyTo(query);
         return query;
-    }
-
-    /** 校验GreptimeDB页面查询的页码和每页数量。 */
-    private TelemetryPage requireTelemetryPage(
-            Integer pageNum,
-            Integer pageSize) {
-        int normalizedPageNum = pageNum == null ? 1 : pageNum;
-        int normalizedPageSize = pageSize == null ? 20 : pageSize;
-        if (normalizedPageNum < 1) {
-            throw new IllegalArgumentException("页码不能小于1");
-        }
-        if (normalizedPageSize < 1
-                || normalizedPageSize > MAX_TELEMETRY_PAGE_SIZE) {
-            throw new IllegalArgumentException("每页数量必须在1到200之间");
-        }
-        // 使用长整型计算偏移量，避免较大页码发生整数溢出。
-        long offset = (long) (normalizedPageNum - 1)
-                * normalizedPageSize;
-        return new TelemetryPage(
-                normalizedPageNum, normalizedPageSize, offset);
     }
 
     /** 校验并规范化GreptimeDB查询使用的外部任务编号。 */
@@ -337,22 +317,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         return result.toString();
     }
 
-    /** GreptimeDB页面查询使用的已校验分页参数。 */
-    private static final class TelemetryPage {
-        /** 当前页码。 */
-        private final int pageNum;
-        /** 每页记录数。 */
-        private final int pageSize;
-        /** 当前页起始偏移量。 */
-        private final long offset;
-
-        /** 保存一次查询所需的分页参数。 */
-        private TelemetryPage(int pageNum, int pageSize, long offset) {
-            this.pageNum = pageNum;
-            this.pageSize = pageSize;
-            this.offset = offset;
-        }
-    }
 
     private static String trimToNull(String value) {
         if (value == null) {

@@ -91,7 +91,8 @@ public class GreptimeTelemetryStorageServiceImpl implements IoTDBTelemetryStorag
         }
         boolean remote = CollectionDataType.require(config.getRpcEnabled()) == CollectionDataType.SATELLITE;
         TelemetrySourceType source = remote ? TelemetrySourceType.RPC : TelemetrySourceType.LOCAL;
-        String identity = remote ? TelemetryIdentity.rpc(message.getSatCode(), message.getChannelCode())
+        // 远程身份只使用返回消息的卫星代号，本地继续使用设备卫星主键。
+        String identity = remote ? TelemetryIdentity.rpc(message.getSatCode())
                 : TelemetryIdentity.local(config.getDeviceSatelliteId());
         // 第二步：帧检查状态与参数告警独立，本地正常结果保持整帧正常。
         TelemetryFrameStatus status = remote && !message.getFrameCheckStatus()

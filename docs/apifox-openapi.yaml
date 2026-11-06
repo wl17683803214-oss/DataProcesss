@@ -4,6 +4,8 @@ info:
   description: |
     系统健康遥测：管理服务默认每秒采样并更新Redis，独立周期向运行中的任务分别发送TelemetryMessage原始Protobuf字节，主题topic_yc_out_sjcl，bussiness=8，bussiness_id=sjcl，channel_name=sjcl。参数为SJCL001至SJCL010，不包含消息积压数；字段见SystemHealthTelemetryMqMessage模型。没有运行任务、快照过期或采样不完整时不发送。
     遥测存储已切换为GreptimeDB，服务启动时自动创建telemetry_frame和telemetry_parameter两张表。参数额外保存Proto的value_type、value_text、state_type、state_index，状态名称保存为state_name；telemetry_type仍来自消息级tm_type。新增存储字段不增加接口入参或出参。
+    两张遥测表的source_identity在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的sat_code并去掉两端空白，不再拼接channel_code或编码长度，卫星代号为空时拒绝入库。历史组合身份数据不迁移，接口入参、出参和查询范围保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
+    四个遥测查询接口均支持可选startTime、endTime，格式为2026-11-06T10:00:00，按source_time包含起止边界筛选。都不传时固定本次请求当前时间并向前查询15分钟；只传startTime时endTime取当前时间；只传endTime时startTime取endTime前15分钟；开始时间晚于结束时间返回中文提示。
     data-admin-service 后台管理接口文档。
     查询接口统一使用 GET，写操作统一使用 POST；普通写操作使用 JSON DTO，文件导入使用 multipart/form-data。
     登录成功后，请在 Apifox 中配置 Bearer Token。
@@ -3233,17 +3235,17 @@ paths:
   /processing/realtime/telemetry:
     get:
       tags: [数据处理]
-      summary: 查询实时遥测数据
-      description: "查询GreptimeDB整帧，包括正常处理结果及本地参数解析失败时保存的完整异常帧。RPC的frame_check_status=false写异常，true写正常；本地成功解析写正常。本地参数解析失败只保存异常整帧，不写参数、不发布消息，前提是PDXP包、数据域及任务设备通道身份完整。"
+      summary: 查询正常遥测整帧
+      description: 查询check_status为normal的正常整帧，默认最近15分钟，可用startTime、endTime筛选。保留taskId和可选interfaceId，按source_time倒序最多返回100条；取消pageNum、pageSize及总数查询，data直接返回数组，无数据返回空数组。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
+        - $ref: '#/components/parameters/TelemetryStartTime'
+        - $ref: '#/components/parameters/TelemetryEndTime'
         - name: interfaceId
           in: query
           required: false
           description: 采集接口主键，必须大于零；不传时查询当前任务全部本地及RPC整帧，以interface_id筛选新整帧表；旧IoTDB历史数据需另行迁移，不自动跨库查询。
           schema: { type: integer, format: int64, minimum: 1 }
-        - $ref: '#/components/parameters/PageNum'
-        - $ref: '#/components/parameters/IoTDBPageSize'
       responses:
         '200':
           $ref: '#/components/responses/RealtimeTelemetryList'
@@ -3252,16 +3254,16 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询帧检查异常数据
-      description: "仅查询check_status为abnormal的整帧，响应checkResultName为异常，包含RPC帧检查失败及已入库的本地参数解析失败帧；缺少有效身份或无法正确拆分数据域的报文不会按此结构入库。数据库check_status保存英文枚举，响应checkResultName仍返回中文。"
+      description: 查询check_status为abnormal的异常整帧，包含RPC帧检查失败及已保存的本地参数解析失败帧。默认最近15分钟，可用startTime、endTime筛选。保留taskId和可选interfaceId，按source_time倒序最多返回100条；取消pageNum、pageSize及总数查询，data直接返回数组，无数据返回空数组。checkResultName返回中文异常。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
+        - $ref: '#/components/parameters/TelemetryStartTime'
+        - $ref: '#/components/parameters/TelemetryEndTime'
         - name: interfaceId
           in: query
           required: false
           description: 采集接口主键，必须大于零；不传时查询当前任务全部本地及RPC整帧，以interface_id筛选新整帧表；旧IoTDB历史数据需另行迁移，不自动跨库查询。
           schema: { type: integer, format: int64, minimum: 1 }
-        - $ref: '#/components/parameters/PageNum'
-        - $ref: '#/components/parameters/IoTDBPageSize'
       responses:
         '200':
           $ref: '#/components/responses/InvalidTelemetryList'
@@ -3270,9 +3272,11 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最新数据
-      description: 按表格场景查询已保存勾选参数的最新值，沿用业务库的一次勾选列表查询，再按连接池容量分批并发查询各参数；无勾选时返回空数组且不查询时序库。设备按任务、local来源、设备主键身份和遥测代号查询；卫星按任务、rpc来源和遥测代号查询全部远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，在取最新记录前筛选；不传或留空时查询全部类型，非法值返回中文提示。设备卫星类型仍从所属资料读取。无匹配记录时保留已勾选参数身份并返回空值。数据可视化表格传selectionType=3及组件主键targetId。
+      description: 按表格场景读取一次业务库勾选列表，再用一条GreptimeDB SQL查询全部勾选参数在时间范围内各自的最新记录，每个参数最多一条；无勾选不查询时序库。设备按任务、local来源、设备主键身份和代号查询；卫星沿用任务、rpc来源与代号查询全部远程身份。可选telemetryType在窗口排名前筛选；不传或留空查询全部类型。默认最近15分钟，可传startTime、endTime指定范围。无匹配记录保留参数身份并返回空值，文本类型仍返回value_text。返回结构保持不变，selectionType=3用于可视化表格。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
+        - $ref: '#/components/parameters/TelemetryStartTime'
+        - $ref: '#/components/parameters/TelemetryEndTime'
         - name: telemetryType
           in: query
           required: false
@@ -3313,10 +3317,12 @@ paths:
   /processing/processed/curve:
     get:
       tags: [数据处理]
-      summary: 查询处理后遥测参数最近曲线
-      description: 按曲线场景读取已保存勾选参数，沿用业务库的一次勾选列表查询，再按连接池容量分批并发查询各参数；无勾选时返回空数组且不查询时序库。设备限定当前任务和本地设备身份，卫星限定当前任务的远程身份。可选telemetryType对应Proto的tm_type，传英文枚举名，先筛选再取最近最多120个数值有效点并按时间升序返回；不传或留空查询全部类型，非法值返回中文提示。无匹配记录时保留参数身份并返回空曲线。默认处理后数据曲线，可视化曲线传selectionType=4及组件主键targetId，各曲线携带自己的毫秒时间戳数组。
+      summary: 查询时间范围内的遥测参数曲线
+      description: 按曲线场景读取一次业务库勾选列表，再用一条GreptimeDB SQL查询全部勾选参数在时间范围内的所有数值非空点，不再限制120条；无勾选不查询时序库。设备限定任务和本地设备身份，卫星沿用任务下的远程代号范围。可选telemetryType在读取曲线点前筛选，不传或留空查询全部类型。默认最近15分钟，可传startTime、endTime指定范围。后端按勾选参数归组，保持deviceSatelliteId、telemetryCode、parameter、times、values结构，时间升序且两个数组逐项对应；无数据保留参数并返回空数组。selectionType=4用于可视化曲线。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
+        - $ref: '#/components/parameters/TelemetryStartTime'
+        - $ref: '#/components/parameters/TelemetryEndTime'
         - name: telemetryType
           in: query
           required: false
@@ -6235,6 +6241,20 @@ components:
       schema:
         type: string
       example: TASK-20260908-001
+    TelemetryStartTime:
+      name: startTime
+      in: query
+      required: false
+      description: "查询开始时间，包含边界；不传时取最终endTime之前15分钟。开始时间不能晚于结束时间。"
+      schema: { type: string, format: date-time }
+      example: "2026-11-06T10:00:00"
+    TelemetryEndTime:
+      name: endTime
+      in: query
+      required: false
+      description: "查询结束时间，包含边界；不传时取本次请求的当前时间。时间格式为yyyy-MM-ddTHH:mm:ss，可带毫秒。"
+      schema: { type: string, format: date-time }
+      example: "2026-11-06T10:15:00"
     CollectInterfaceId:
       name: interfaceId
       description: "采集接口主键，不传时查询全部采集接口"
@@ -9037,38 +9057,29 @@ components:
               code: { type: integer, description: "业务状态码" }
               message: { type: string, description: "处理结果" }
               data:
-                type: object
-                properties:
-                  pageNum: { type: integer, description: "当前页码" }
-                  pageSize: { type: integer, description: "每页记录数" }
-                  total: { type: integer, format: int64, description: "符合条件的记录总数" }
-                  records:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC使用返回卫星通道身份，此字段为null" }
-                        time: { type: string, format: date-time, description: "整帧时间，新写入记录取处理服务开始入库时的系统时间" }
-                        deviceSatelliteName: { type: string, description: "本地导入设备名称；RPC卫星名称，缺失时显示返回代号" }
-                        channelName: { type: string, description: "通道名称" }
-                        rawLength: { type: integer, description: "实际完整采集帧字节数，包含PDXP包头及按data-processing.pdxp配置实际存在的传输头、自定义数据和遥测帧头，0长度不补头；旧记录保持原格式" }
-                        rawFrame: { type: string, description: "包含各类头的完整采集帧大写十六进制原码；旧记录保持原格式" }
-                        checkResultName: { type: string, enum: [正常, 异常], description: "帧检查结果：RPC检查失败或本地参数解析失败为异常，其余已生成的有效结果为正常；历史非正常名称仍可能返回" }
+                type: array
+                maxItems: 100
+                items:
+                  type: object
+                  properties:
+                    deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC使用返回卫星通道身份，此字段为null" }
+                    time: { type: string, format: date-time, description: "整帧时间，新写入记录取处理服务开始入库时的系统时间" }
+                    deviceSatelliteName: { type: string, description: "本地导入设备名称；RPC卫星名称，缺失时显示返回代号" }
+                    channelName: { type: string, description: "通道名称" }
+                    rawLength: { type: integer, description: "实际完整采集帧字节数，包含PDXP包头及按data-processing.pdxp配置实际存在的传输头、自定义数据和遥测帧头，0长度不补头；旧记录保持原格式" }
+                    rawFrame: { type: string, description: "包含各类头的完整采集帧大写十六进制原码；旧记录保持原格式" }
+                    checkResultName: { type: string, enum: [正常, 异常], description: "帧检查结果：RPC检查失败或本地参数解析失败为异常，其余已生成的有效结果为正常；历史非正常名称仍可能返回" }
           example:
             code: 200
             message: "操作成功"
             data:
-              pageNum: 1
-              pageSize: 20
-              total: 1
-              records:
-                - deviceSatelliteId: 12
-                  time: "2026-10-13T10:00:00"
-                  deviceSatelliteName: "发控台_05"
-                  channelName: "发控台"
-                  rawLength: 46
-                  rawFrame: "34 12 80 01 00 01 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 37 26 00 2A 75 15 0C 00 05 04 03 02 01 41 42 43 01 00 00 00"
-                  checkResultName: "正常"
+              - deviceSatelliteId: 12
+                time: "2026-10-13T10:00:00"
+                deviceSatelliteName: "发控台_05"
+                channelName: "发控台"
+                rawLength: 46
+                rawFrame: "34 12 80 01 00 01 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 37 26 00 2A 75 15 0C 00 05 04 03 02 01 41 42 43 01 00 00 00"
+                checkResultName: "正常"
 
     InvalidTelemetryList:
       description: 操作成功
@@ -9080,38 +9091,29 @@ components:
               code: { type: integer, description: "业务状态码" }
               message: { type: string, description: "处理结果" }
               data:
-                type: object
-                properties:
-                  pageNum: { type: integer, description: "当前页码" }
-                  pageSize: { type: integer, description: "每页记录数" }
-                  total: { type: integer, format: int64, description: "符合条件的记录总数" }
-                  records:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC使用返回卫星通道身份，此字段为null" }
-                        receiveTime: { type: string, format: date-time, description: "异常整帧时间，新写入记录取处理服务开始入库时的系统时间" }
-                        deviceSatelliteName: { type: string, description: "本地导入设备名称；RPC卫星名称，缺失时显示返回代号" }
-                        channelName: { type: string, description: "Proto通道名称；本地解析失败时取设备名称首个下划线前缀" }
-                        checkResultName: { type: string, enum: [正常, 异常], description: "帧检查结果：RPC检查失败或本地参数解析失败为异常，其余已生成的有效结果为正常；历史非正常名称仍可能返回" }
-                        rawLength: { type: integer, description: "实际完整采集帧字节数，包含PDXP包头及按data-processing.pdxp配置实际存在的传输头、自定义数据和遥测帧头，0长度不补头；旧记录保持原格式" }
-                        rawFrame: { type: string, description: "包含各类头的完整采集帧大写十六进制原码；旧记录保持原格式" }
+                type: array
+                maxItems: 100
+                items:
+                  type: object
+                  properties:
+                    deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC使用返回卫星通道身份，此字段为null" }
+                    receiveTime: { type: string, format: date-time, description: "异常整帧时间，新写入记录取处理服务开始入库时的系统时间" }
+                    deviceSatelliteName: { type: string, description: "本地导入设备名称；RPC卫星名称，缺失时显示返回代号" }
+                    channelName: { type: string, description: "Proto通道名称；本地解析失败时取设备名称首个下划线前缀" }
+                    checkResultName: { type: string, enum: [正常, 异常], description: "帧检查结果：RPC检查失败或本地参数解析失败为异常，其余已生成的有效结果为正常；历史非正常名称仍可能返回" }
+                    rawLength: { type: integer, description: "实际完整采集帧字节数，包含PDXP包头及按data-processing.pdxp配置实际存在的传输头、自定义数据和遥测帧头，0长度不补头；旧记录保持原格式" }
+                    rawFrame: { type: string, description: "包含各类头的完整采集帧大写十六进制原码；旧记录保持原格式" }
           example:
             code: 200
             message: "操作成功"
             data:
-              pageNum: 1
-              pageSize: 20
-              total: 1
-              records:
-                - deviceSatelliteId: 12
-                  receiveTime: "2026-10-13T10:00:00"
-                  deviceSatelliteName: "发控台_05"
-                  channelName: "发控台"
-                  checkResultName: "异常"
-                  rawLength: 46
-                  rawFrame: "34 12 80 01 00 01 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 37 26 00 2A 75 15 0C 00 05 04 03 02 01 41 42 43 01 00 00 00"
+              - deviceSatelliteId: 12
+                receiveTime: "2026-10-13T10:00:00"
+                deviceSatelliteName: "发控台_05"
+                channelName: "发控台"
+                checkResultName: "异常"
+                rawLength: 46
+                rawFrame: "34 12 80 01 00 01 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 37 26 00 2A 75 15 0C 00 05 04 03 02 01 41 42 43 01 00 00 00"
 
     ProcessedTelemetryList:
       description: 操作成功
@@ -9174,11 +9176,11 @@ components:
                     parameter: { type: string, description: "遥测参数名称" }
                     times:
                       type: array
-                      description: "各曲线自己的X轴时间，Unix毫秒时间戳，按时间升序。新写入数据点取处理服务开始入库时的系统时间"
+                      description: "各曲线自己的X轴时间，Unix毫秒时间戳，按时间升序；默认最近15分钟，可指定时间范围。新写入数据点取处理服务开始入库时的系统时间"
                       items: { type: integer, format: int64 }
                     values:
                       type: array
-                      description: "与times逐项对应的Proto数值，最多120条"
+                      description: "与times逐项对应的Proto数值，返回所选时间范围内全部有效点，不限制120条"
                       items: { type: number, format: double }
           example:
             code: 200
