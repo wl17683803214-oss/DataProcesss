@@ -41,24 +41,31 @@ public class WebSocketTokenInterceptor implements ChannelInterceptor {
         if (!StompCommand.CONNECT.equals(accessor.getCommand())) {
             return message;
         }
+        // 系统监控与遥测订阅共用同一套JWT和Redis会话验证。
+        LoginUser user = authenticate(accessor.getFirstNativeHeader("accessToken"));
+        accessor.setUser(new LoginUserPrincipal(user.getUsername()));
+        return message;
+    }
+
+    /** 校验浏览器首条订阅消息中的登录令牌。 */
+    public LoginUser authenticate(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new SecurityException("缺少 WebSocket 登录令牌");
+        }
         try {
-            String token = accessor.getFirstNativeHeader("accessToken");
-            if (token == null || token.trim().isEmpty()) {
-                throw new SecurityException("缺少 WebSocket 登录令牌");
-            }
             if (token.startsWith(AuthConstants.TOKEN_PREFIX)) {
                 token = token.substring(AuthConstants.TOKEN_PREFIX.length());
             }
             Claims claims = JwtUtils.parseToken(token, authProperties.getJwtSecret());
             String tokenId = claims.get("tokenId", String.class);
-            String session = redisTemplate.opsForValue().get(
-                    AuthConstants.LOGIN_KEY_PREFIX + tokenId);
+            if (tokenId == null || tokenId.trim().isEmpty()) {
+                throw new SecurityException("登录已过期");
+            }
+            String session = redisTemplate.opsForValue().get(AuthConstants.LOGIN_KEY_PREFIX + tokenId);
             if (session == null) {
                 throw new SecurityException("登录已过期");
             }
-            LoginUser user = objectMapper.readValue(session, LoginUser.class);
-            accessor.setUser(new LoginUserPrincipal(user.getUsername()));
-            return message;
+            return objectMapper.readValue(session, LoginUser.class);
         } catch (Exception exception) {
             throw new SecurityException("登录已过期");
         }

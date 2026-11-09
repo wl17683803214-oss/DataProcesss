@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 /** 帧检查结果不为正常的完整采集帧，包括本地参数解析失败的帧。 */
 public class InvalidTelemetryFrame {
-    /** 本地设备卫星主键；RPC帧使用卫星通道身份，此字段为空。 */
+    /** 本地设备卫星主键；RPC帧按卫星代号分表，此字段为空。 */
     private Long deviceSatelliteId;
     /** 消息时间。 */
     private LocalDateTime receiveTime;

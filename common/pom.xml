@@ -13,6 +13,16 @@
     <artifactId>common</artifactId>
 
     <dependencies>
+        <!-- 两个业务服务复用遥测实时缓存，沿用项目已有的Redis客户端。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- 缓存只序列化页面需要的字段，不使用Java对象序列化。 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
         <!-- 公式解释器为纯Java实现，兼容Java 8，不依赖服务器安装Lua。 -->
         <dependency>
             <groupId>org.luaj</groupId>

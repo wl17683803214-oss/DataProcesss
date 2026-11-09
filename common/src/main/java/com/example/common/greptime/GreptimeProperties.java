@@ -2,8 +2,8 @@ package com.example.common.greptime;
 
 /** 两个服务共用的独立时序连接配置。 */
 public class GreptimeProperties {
-    /** 默认连接本机预置数据库，数据库需要已经存在。 */
-    private String url = "jdbc:mysql://127.0.0.1:4002/public?useSSL=false&useServerPrepStmts=false&connectTimeout=10000&socketTimeout=30000&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true";
+    /** 默认连接本机数据处理专用库，启用自动创建时初始化数据库和分表目录。 */
+    private String url = "jdbc:mysql://127.0.0.1:4002/sjcl?useSSL=false&useServerPrepStmts=false&connectTimeout=10000&socketTimeout=30000&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true";
     private String username = "";
     private String password = "";
     private int maxPoolSize = 5;

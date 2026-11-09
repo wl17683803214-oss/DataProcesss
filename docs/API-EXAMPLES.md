@@ -4,6 +4,10 @@
 
 ## 阅读说明
 
+遥测存储使用GreptimeDB的sjcl专用数据库。每个设备分别使用telemetry_parameter_device_设备ID和telemetry_frame_device_设备ID；每个卫星分别使用telemetry_parameter_sat_编码和telemetry_frame_sat_编码，编码为去掉两端空白后的sat_code按UTF-8字节转小写十六进制。例如SAT01对应5341543031。表内保留task_id隔离任务。启动自动初始化数据库和telemetry_table_registry分表目录，对象两张表在首次写入时创建。旧public库和旧公共表不迁移、不查询、不清理。
+
+设备参数按资料主键定位分表；卫星参数通过勾选记录的device_satellite_id关联当前任务device_satellite.code，再按与RPC写入相同的规则编码定位分表。勾选表不新增code字段，关联编码仅供后端内部使用。多个对象使用UNION ALL合并为一条数据查询，每个分支均包含任务、对象、代号、时间范围及可选telemetryType条件。未创建分表的勾选参数返回空值或空曲线；不同卫星的同代号不再混合。
+
 四个遥测查询接口均支持可选startTime、endTime，格式为2026-11-06T10:00:00，按source_time包含起止边界筛选。都不传时固定本次请求当前时间并向前查询15分钟；只传startTime时endTime取当前时间；只传endTime时startTime取endTime前15分钟；开始时间晚于结束时间返回中文提示。
 
 示例：`GET /processing/processed/curve?taskId=TASK-20260908-001&startTime=2026-11-06T10:00:00&endTime=2026-11-06T10:15:00`。最新值和曲线各用一条GreptimeDB SQL查询全部勾选参数；最新值每参数一条，曲线全部有效点按参数归组，返回结构保持不变。
@@ -2363,7 +2367,7 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
 
 每个字段必须携带参数解析配置 `id`，处理时据此关联当前任务下的设备卫星信息；设备卫星 `code` 写入 `sat_code`，`name` 第一个 `_` 前写入 `channel_name`，后面写入 `bussiness_id`。每个字段自己的 `calibrationFormula` 写入对应遥测参数的 `calibration_formula`，不再作为帧级通道编号使用。消息头主题固定为试验数据，子主题固定为遥测物理值，消息来源为“数据处理”，任务主键来自当前采集接口，遥测类型固定为设备遥测。本地参数配置或解析失败时停止本帧后续处理；身份完整且数据域已成功拆分时只保存包含各类头的异常整帧，否则不写GreptimeDB。同一帧存在相同遥测代号时保留最后一项，并把该参数的 `is_dep_value` 设置为 `true`。`frame_raw_data` 只保存去掉自定义头和遥测头后的中间遥测原码，时间使用PDXP发送时间，配置未覆盖的尾部位不生成参数。
 
-正常帧的参数分批写入`telemetry_parameter`后再写入`telemetry_frame`，两张表使用相同源时间和身份。GreptimeDB不支持跨表事务，写入失败按相同主键和时间有限重试，最终失败沿用异步入库告警。参数同时保存value、value_text、value_type、raw、state_name、state_type、state_index和processed_at；新增存储字段不改变页面响应。
+正常帧的参数分批写入所属对象参数分表后，再写入该对象整帧分表，两张表使用相同入库时间和身份。GreptimeDB不支持跨表事务，写入失败按相同主键和时间有限重试，最终失败沿用异步入库告警。参数同时保存value、value_text、value_type、raw、state_name、state_type、state_index和processed_at；新增存储字段不改变页面响应。
 
 ### 本地公式与类型示例
 
@@ -2398,9 +2402,9 @@ RPC消息的frame_check_status=false时，checkResultName写“异常”；true�
 {"deviceSatelliteId":11,"receiveTime":"2026-10-13T10:00:00","deviceSatelliteName":"设备通道_001","channelName":"设备通道","rawLength":46,"rawFrame":"34 12 80 01 00 01 00 00 00 01 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 37 26 00 2A 75 15 0C 00 05 04 03 02 01 41 42 43 01 00 00 00","checkResultName":"异常"}
 ```
 
-遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，原码、设备身份和中文检查结果记录字段保持不变；整帧接口取消分页，直接返回最多100条记录的数组。
+遥测存储使用GreptimeDB的sjcl专用数据库。每个设备分别使用telemetry_parameter_device_设备ID和telemetry_frame_device_设备ID；每个卫星分别使用telemetry_parameter_sat_编码和telemetry_frame_sat_编码，编码为去掉两端空白后的sat_code按UTF-8字节转小写十六进制。例如SAT01对应5341543031。表内保留task_id隔离任务。启动自动初始化数据库和telemetry_table_registry分表目录，对象两张表在首次写入时创建。旧public库和旧公共表不迁移、不查询、不清理。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，原码、设备身份和中文检查结果记录字段保持不变；整帧接口取消分页，直接返回最多100条记录的数组。
 
-两张遥测表的 `source_identity` 在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的 `sat_code` 并去掉两端空白，不再拼接 `channel_code` 或编码长度，卫星代号为空时拒绝入库。例如返回 `sat_code=SAT01`、`channel_code=CH01` 时，整帧和参数均保存 `source_identity=SAT01`。历史组合身份数据不迁移，接口入参、出参和查询范围保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
+两张遥测表的 `source_identity` 在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的 `sat_code` 并去掉两端空白，不再拼接 `channel_code` 或编码长度，卫星代号为空时拒绝入库。例如返回 `sat_code=SAT01`、`channel_code=CH01` 时，整帧和参数均保存 `source_identity=SAT01`。旧公共表不参与查询，卫星参数按所属资料code精确路由，接口入参和出参结构保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
 
 ### `GET /alarms/findData`
 
@@ -2687,7 +2691,7 @@ RPC消息的frame_check_status=false时，checkResultName写“异常”；true�
 
 ### RPC完整帧查询说明
 
-查询 `GET /processing/realtime/telemetry?taskId=TASK-20260908-001&startTime=2026-10-14T09:45:00&endTime=2026-10-14T10:00:00`，不传 `interfaceId` 时查询当前任务时间范围内的RPC及本地正常帧，最多100条；传 `interfaceId` 时只查对应接口节点；查询异常帧时使用相同参数调用 `/processing/realtime/invalid`。RPC帧的设备主键为 `null`，不是需要前端补填的值。
+查询 `GET /processing/realtime/telemetry?taskId=TASK-20260908-001&interfaceId=14&startTime=2026-10-14T09:45:00&endTime=2026-10-14T10:00:00`，按指定接口查询范围内的正常帧，最多100条。查询异常帧时使用相同参数调用 `/processing/realtime/invalid`。RPC帧的设备主键为 `null`。
 
 ```jsonc
 {
@@ -2695,7 +2699,7 @@ RPC消息的frame_check_status=false时，checkResultName写“异常”；true�
   "message": "操作成功", // 提示信息
   "data": [
       {
-        "deviceSatelliteId": null, // RPC独立卫星通道身份，没有本地设备主键
+        "deviceSatelliteId": null, // RPC按卫星code分表，没有本地设备主键
         "time": "2026-10-14T10:00:00", // 消息时间
         "deviceSatelliteName": "卫星一号", // RPC卫星名称，缺失时显示代号
         "channelName": "通道一号", // RPC通道名称，缺失时显示代号
@@ -2777,6 +2781,22 @@ GET /visualization/widgets/{widgetId}/files 的 data.records 每项新增 resolu
 ```
 
 成功响应data为删除条数。单次1到100项，重复编号只计一次；任一编号不存在或被任意任务的有效参数配置引用时，返回400并整批不删，错误消息列出对应编号。删除成功后自动提交后台同步，响应并不表示同步已经完成。
+
+### 遥测 WebSocket
+
+曲线先调用 `GET /processing/processed/curve?taskId=TASK001&selectionType=2&targetId=0`，再连接 `/ws/telemetry`。表格与两类帧直接订阅缓存快照。
+
+```json
+{"accessToken":"登录令牌","taskId":"TASK001","stream":"curve","selectionType":2,"targetId":0}
+```
+
+正常帧和异常帧订阅必传采集接口。示例使用正常帧，异常帧改用 `stream=abnormal`。
+
+```json
+{"accessToken":"登录令牌","taskId":"TASK001","stream":"normal","interfaceId":11}
+```
+
+服务端先发快照，再发送新增帧或参数增量。完整消息示例见 [前端对接文档](前端对接-遥测实时轮询.md)。
 
 ### 关联遥测原码相加
 

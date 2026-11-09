@@ -52,12 +52,12 @@ system-monitor:
 greptime:
   # 关闭后不连接时序服务；处理服务仍可解析和发送消息，查询接口报告未启用。
   enabled: true
-  # 使用MySQL协议；保持北京时间和毫秒精度，避免时间偏移。
-  url: "jdbc:mysql://127.0.0.1:4002/public?useSSL=false&useServerPrepStmts=false&connectTimeout=10000&socketTimeout=30000&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true"
+  # 使用MySQL协议连接sjcl专用库；保持北京时间和毫秒精度。
+  url: "jdbc:mysql://127.0.0.1:4002/sjcl?useSSL=false&useServerPrepStmts=false&connectTimeout=10000&socketTimeout=30000&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true"
   # 按服务端认证配置填写，默认本机无认证环境使用空值。
   username: ""
   password: ""
-  # 独立连接池上限，至少为2；管理服务查询并发为此值减一。
+  # 独立连接池上限，至少为2；处理服务使用此连接池批量写入遥测数据。
   max-pool-size: 5
   # 等待连接的最长毫秒数。
   connection-timeout-millis: 10000
@@ -67,8 +67,29 @@ greptime:
   batch-size: 500
   # 包含首次写入在内的尝试次数，稳定主键避免重试新增时间点。
   write-attempts: 3
-  # 启动时自动建表，不覆盖已有表或迁移旧库历史数据。
+  # 启动时创建数据库和分表目录；对象两张表在首次写入时创建，不迁移旧公共表。
   auto-create-tables: true
+
+# 遥测实时缓存和推送，与管理服务使用相同的Redis地址、前缀及保留设置，修改后重启生效。
+telemetry-realtime:
+  # 控制解析结果的实时缓存和推送。
+  enabled: true
+  # 实时缓存键与Redis转发频道共用的版本前缀。
+  key-prefix: 'telemetry:live:v2:'
+  # 正常帧、异常帧和每个最新参数的保留时间，单位秒，默认三天。
+  retention-seconds: 259200
+  # 每个任务下单个接口、单种帧状态的记录字节预算，默认四兆。
+  frame-capacity-bytes: 4194304
+  # 解析完成后等待后台组装的消息上限。
+  queue-capacity: 256
+  # 排队和正在组装的参数点总量上限。
+  max-pending-parameters: 3000000
+  # 排队和正在写缓存的完整帧总字节数上限，默认十六兆。
+  max-pending-frame-bytes: 16777216
+  # 组装与缓存批量更新间隔，单位毫秒。
+  flush-interval-millis: 50
+  # 独立Redis发布队列最多等待的批次数。
+  push-queue-capacity: 64
 
 # 数据采集接口和数据处理公共配置。
 data-processing:

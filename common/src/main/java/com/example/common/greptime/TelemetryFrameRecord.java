@@ -4,6 +4,23 @@ import java.sql.Timestamp;
 
 /** 遥测整帧，仅用于存储映射，不作为接口返回对象。 */
 public class TelemetryFrameRecord {
+    /** 同一帧在缓存快照与实时推送中的共同标识。 */
+    private String realtimeId;
+    /** 该帧在缓存中的到期毫秒值。 */
+    private long expiresAt;
+    /** 缓存计入额度的记录字节数，供浏览器同步淘汰。 */
+    private int realtimeBytes;
+    /** Redis分配的接口内写入顺序，用于快照与增量交接。 */
+    private long realtimeOrder;
+
+    public String getRealtimeId() { return realtimeId; }
+    public void setRealtimeId(String value) { realtimeId = value; }
+    public long getExpiresAt() { return expiresAt; }
+    public void setExpiresAt(long value) { expiresAt = value; }
+    public int getRealtimeBytes() { return realtimeBytes; }
+    public void setRealtimeBytes(int value) { realtimeBytes = value; }
+    public long getRealtimeOrder() { return realtimeOrder; }
+    public void setRealtimeOrder(long value) { realtimeOrder = value; }
     /** 源时间。 */
     private Timestamp sourceTime;
     /** 任务编号。 */

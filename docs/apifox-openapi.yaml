@@ -3,8 +3,8 @@ info:
   title: 数据处理软件接口
   description: |
     系统健康遥测：管理服务默认每秒采样并更新Redis，独立周期向运行中的任务分别发送TelemetryMessage原始Protobuf字节，主题topic_yc_out_sjcl，bussiness=8，bussiness_id=sjcl，channel_name=sjcl。参数为SJCL001至SJCL010，不包含消息积压数；字段见SystemHealthTelemetryMqMessage模型。没有运行任务、快照过期或采样不完整时不发送。
-    遥测存储已切换为GreptimeDB，服务启动时自动创建telemetry_frame和telemetry_parameter两张表。参数额外保存Proto的value_type、value_text、state_type、state_index，状态名称保存为state_name；telemetry_type仍来自消息级tm_type。新增存储字段不增加接口入参或出参。
-    两张遥测表的source_identity在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的sat_code并去掉两端空白，不再拼接channel_code或编码长度，卫星代号为空时拒绝入库。历史组合身份数据不迁移，接口入参、出参和查询范围保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
+    遥测存储使用GreptimeDB的sjcl专用数据库。每个设备分别使用telemetry_parameter_device_设备ID和telemetry_frame_device_设备ID；每个卫星分别使用telemetry_parameter_sat_编码和telemetry_frame_sat_编码，编码为去掉两端空白后的sat_code按UTF-8字节转小写十六进制。例如SAT01对应5341543031。表内保留task_id隔离任务。启动自动初始化数据库和telemetry_table_registry分表目录，对象两张表在首次写入时创建。旧public库和旧公共表不迁移、不查询、不清理。参数继续保存Proto的value_type、value_text、state_type、state_index，状态名称为state_name，telemetry_type来自消息级tm_type。
+    两张遥测表的source_identity在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的sat_code并去掉两端空白，不再拼接channel_code或编码长度，卫星代号为空时拒绝入库。旧公共表不参与查询，卫星参数按所属资料code精确路由，接口入参和出参结构保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
     四个遥测查询接口均支持可选startTime、endTime，格式为2026-11-06T10:00:00，按source_time包含起止边界筛选。都不传时固定本次请求当前时间并向前查询15分钟；只传startTime时endTime取当前时间；只传endTime时startTime取endTime前15分钟；开始时间晚于结束时间返回中文提示。
     data-admin-service 后台管理接口文档。
     查询接口统一使用 GET，写操作统一使用 POST；普通写操作使用 JSON DTO，文件导入使用 multipart/form-data。
@@ -3232,19 +3232,89 @@ paths:
         '200':
           $ref: '#/components/responses/CollectInterfaceOptions'
 
+  /ws/telemetry:
+    get:
+      tags: [数据处理]
+      summary: 遥测 WebSocket
+      security: []
+      description: |
+        使用原生 WebSocket 连接该地址，握手成功后首条文本消息发送订阅 JSON，令牌放在 accessToken 字段。
+        一条连接订阅一个任务和页面范围。stream 为 processed、curve、normal 或 abnormal。
+        normal 和 abnormal 必传正整数 interfaceId，分别接收指定接口的正常帧与异常帧。
+        processed 先发勾选参数缓存快照，随后发送最新值。curve 先通过历史曲线接口加载，连接后逐点推送数值。
+        首包 type 为 snapshot，complete 为 true 时快照完整，后续 type 为 delta。sequence 按连接递增。
+        帧消息包含 frameId、frameOrder、expiresAt 和 cachedBytes，前端按 frameOrder 倒序最多展示 100 条，并按 frameCapacityBytes 和 expiresAt 清理。
+        使用 Apifox 的 WebSocket 请求类型连接。OpenAPI 在此描述握手，消息结构见 x-websocket。
+      x-websocket:
+        protocol: json
+        subscription:
+          type: object
+          required: [accessToken, taskId, stream]
+          properties:
+            accessToken: { type: string, description: 当前登录令牌 }
+            taskId: { type: string, description: 试验任务编号 }
+            stream:
+              type: string
+              enum: [processed, curve, normal, abnormal]
+            interfaceId:
+              description: normal 和 abnormal 必填，允许十进制主键字符串
+              oneOf:
+                - { type: integer, format: int64, minimum: 1 }
+                - { type: string, pattern: '^[1-9][0-9]*$' }
+            selectionType: { type: integer, enum: [1, 2, 3, 4], description: 表格1或3，曲线2或4 }
+            targetId: { type: integer, format: int64, default: 0, description: 组件订阅使用组件主键，也支持十进制主键字符串 }
+            telemetryType: { type: string, description: 参数订阅可选的协议遥测类型 }
+          example: { accessToken: 登录令牌, taskId: TASK001, stream: normal, interfaceId: 11 }
+        message:
+          type: object
+          properties:
+            type: { type: string, enum: [snapshot, delta, error] }
+            stream: { type: string, enum: [processed, curve, normal, abnormal] }
+            sequence: { type: integer, format: int64, minimum: 1 }
+            complete: { type: boolean, description: 当前快照或批次最后一个分片 }
+            retentionSeconds: { type: integer, format: int64, example: 259200 }
+            frameCapacityBytes: { type: integer, example: 4194304, description: 仅帧订阅返回 }
+            data:
+              type: array
+              items:
+                type: object
+                description: 参数字段沿用历史最新值。整帧字段沿用相应历史帧，并包含 frameId、expiresAt 和 cachedBytes。
+                properties:
+                  deviceSatelliteId: { type: integer, format: int64, nullable: true }
+                  telemetryCode: { type: string }
+                  parameter: { type: string }
+                  parameterValue: { nullable: true, description: 数值或文本，曲线只发送数值 }
+                  status: { type: string, nullable: true }
+                  processTime: { type: string, nullable: true }
+                  time: { type: string, description: 正常帧时间 }
+                  receiveTime: { type: string, description: 异常帧时间 }
+                  deviceSatelliteName: { type: string }
+                  channelName: { type: string }
+                  rawLength: { type: integer }
+                  rawFrame: { type: string }
+                  checkResultName: { type: string }
+                  frameId: { type: string }
+                  frameOrder: { type: integer, format: int64, description: 该接口同种帧状态的缓存写入顺序 }
+                  expiresAt: { type: integer, format: int64, description: Unix毫秒到期时刻 }
+                  cachedBytes: { type: integer, description: 帧记录的缓存计费字节数 }
+            message: { type: string, description: 错误信息 }
+      responses:
+        '101':
+          description: WebSocket 握手成功
+
   /processing/realtime/telemetry:
     get:
       tags: [数据处理]
       summary: 查询正常遥测整帧
-      description: 查询check_status为normal的正常整帧，默认最近15分钟，可用startTime、endTime筛选。保留taskId和可选interfaceId，按source_time倒序最多返回100条；取消pageNum、pageSize及总数查询，data直接返回数组，无数据返回空数组。
+      description: 查询check_status为normal的正常整帧，默认最近15分钟，可用startTime、endTime筛选。必传taskId和interfaceId，按source_time倒序最多返回100条；取消pageNum、pageSize及总数查询，data直接返回数组，无数据返回空数组。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - $ref: '#/components/parameters/TelemetryStartTime'
         - $ref: '#/components/parameters/TelemetryEndTime'
         - name: interfaceId
           in: query
-          required: false
-          description: 采集接口主键，必须大于零；不传时查询当前任务全部本地及RPC整帧，以interface_id筛选新整帧表；旧IoTDB历史数据需另行迁移，不自动跨库查询。
+          required: true
+          description: 采集接口主键，必须大于零。通过sjcl分表目录定位该接口的对象整帧表。
           schema: { type: integer, format: int64, minimum: 1 }
       responses:
         '200':
@@ -3254,15 +3324,15 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询帧检查异常数据
-      description: 查询check_status为abnormal的异常整帧，包含RPC帧检查失败及已保存的本地参数解析失败帧。默认最近15分钟，可用startTime、endTime筛选。保留taskId和可选interfaceId，按source_time倒序最多返回100条；取消pageNum、pageSize及总数查询，data直接返回数组，无数据返回空数组。checkResultName返回中文异常。
+      description: 查询check_status为abnormal的异常整帧，包含RPC帧检查失败及已保存的本地参数解析失败帧。默认最近15分钟，可用startTime、endTime筛选。必传taskId和interfaceId，按source_time倒序最多返回100条；取消pageNum、pageSize及总数查询，data直接返回数组，无数据返回空数组。checkResultName返回中文异常。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - $ref: '#/components/parameters/TelemetryStartTime'
         - $ref: '#/components/parameters/TelemetryEndTime'
         - name: interfaceId
           in: query
-          required: false
-          description: 采集接口主键，必须大于零；不传时查询当前任务全部本地及RPC整帧，以interface_id筛选新整帧表；旧IoTDB历史数据需另行迁移，不自动跨库查询。
+          required: true
+          description: 采集接口主键，必须大于零。通过sjcl分表目录定位该接口的对象整帧表。
           schema: { type: integer, format: int64, minimum: 1 }
       responses:
         '200':
@@ -3272,7 +3342,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询处理后遥测参数最新数据
-      description: 按表格场景读取一次业务库勾选列表，再用一条GreptimeDB SQL查询全部勾选参数在时间范围内各自的最新记录，每个参数最多一条；无勾选不查询时序库。设备按任务、local来源、设备主键身份和代号查询；卫星沿用任务、rpc来源与代号查询全部远程身份。可选telemetryType在窗口排名前筛选；不传或留空查询全部类型。默认最近15分钟，可传startTime、endTime指定范围。无匹配记录保留参数身份并返回空值，文本类型仍返回value_text。返回结构保持不变，selectionType=3用于可视化表格。
+      description: 按表格场景读取一次业务库勾选列表，再用一条GreptimeDB SQL查询全部勾选参数在时间范围内各自的最新记录，每个参数最多一条；无勾选不查询时序库。设备按任务、local来源、设备主键身份和代号查询；卫星通过勾选记录关联当前任务的device_satellite.code，定位对应编码分表并按卫星原始code精确筛选。多个对象通过UNION ALL合并，旧公共表不参与查询。可选telemetryType在窗口排名前筛选；不传或留空查询全部类型。默认最近15分钟，可传startTime、endTime指定范围。无匹配记录保留参数身份并返回空值，文本类型仍返回value_text。返回结构保持不变，selectionType=3用于可视化表格。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - $ref: '#/components/parameters/TelemetryStartTime'
@@ -3318,7 +3388,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询时间范围内的遥测参数曲线
-      description: 按曲线场景读取一次业务库勾选列表，再用一条GreptimeDB SQL查询全部勾选参数在时间范围内的所有数值非空点，不再限制120条；无勾选不查询时序库。设备限定任务和本地设备身份，卫星沿用任务下的远程代号范围。可选telemetryType在读取曲线点前筛选，不传或留空查询全部类型。默认最近15分钟，可传startTime、endTime指定范围。后端按勾选参数归组，保持deviceSatelliteId、telemetryCode、parameter、times、values结构，时间升序且两个数组逐项对应；无数据保留参数并返回空数组。selectionType=4用于可视化曲线。
+      description: 按曲线场景读取一次业务库勾选列表，再用一条GreptimeDB SQL查询全部勾选参数在时间范围内的所有数值非空点，不再限制120条；无勾选不查询时序库。设备定位主键对应分表，卫星通过勾选资料code定位编码分表，各分支精确筛选对象身份。多个对象通过UNION ALL合并，旧公共表不参与查询。可选telemetryType在读取曲线点前筛选，不传或留空查询全部类型。默认最近15分钟，可传startTime、endTime指定范围。后端按勾选参数归组，保持deviceSatelliteId、telemetryCode、parameter、times、values结构，时间升序且两个数组逐项对应；无数据保留参数并返回空数组。selectionType=4用于可视化曲线。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - $ref: '#/components/parameters/TelemetryStartTime'
@@ -9062,7 +9132,7 @@ components:
                 items:
                   type: object
                   properties:
-                    deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC使用返回卫星通道身份，此字段为null" }
+                    deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC按返回卫星code分表，此字段为null" }
                     time: { type: string, format: date-time, description: "整帧时间，新写入记录取处理服务开始入库时的系统时间" }
                     deviceSatelliteName: { type: string, description: "本地导入设备名称；RPC卫星名称，缺失时显示返回代号" }
                     channelName: { type: string, description: "通道名称" }
@@ -9096,7 +9166,7 @@ components:
                 items:
                   type: object
                   properties:
-                    deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC使用返回卫星通道身份，此字段为null" }
+                    deviceSatelliteId: { type: integer, format: int64, nullable: true, description: "本地设备卫星主键；RPC按返回卫星code分表，此字段为null" }
                     receiveTime: { type: string, format: date-time, description: "异常整帧时间，新写入记录取处理服务开始入库时的系统时间" }
                     deviceSatelliteName: { type: string, description: "本地导入设备名称；RPC卫星名称，缺失时显示返回代号" }
                     channelName: { type: string, description: "Proto通道名称；本地解析失败时取设备名称首个下划线前缀" }

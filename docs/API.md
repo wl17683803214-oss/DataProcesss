@@ -293,7 +293,11 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 ## 8. 数据处理
 
+设备参数按资料主键定位分表；卫星参数通过勾选记录的device_satellite_id关联当前任务device_satellite.code，再按与RPC写入相同的规则编码定位分表。勾选表不新增code字段，关联编码仅供后端内部使用。多个对象使用UNION ALL合并为一条数据查询，每个分支均包含任务、对象、代号、时间范围及可选telemetryType条件。未创建分表的勾选参数返回空值或空曲线；不同卫星的同代号不再混合。 详细表结构和发布要求见[Greptime对象分表说明](Greptime对象分表说明.md)。
+
 四个遥测查询接口均支持可选startTime、endTime，格式为2026-11-06T10:00:00，按source_time包含起止边界筛选。都不传时固定本次请求当前时间并向前查询15分钟；只传startTime时endTime取当前时间；只传endTime时startTime取endTime前15分钟；开始时间晚于结束时间返回中文提示。
+
+实时页面连接 `GET /ws/telemetry` 并发送订阅消息。参数表格和帧列表先收缓存快照再收增量，实时曲线先调用历史曲线接口再追加推送点。帧订阅必须传采集接口。连接、消息与前端更新规则见 [前端对接文档](前端对接-遥测实时轮询.md)。
 
 最新值和曲线各使用一条GreptimeDB SQL读取全部勾选参数。最新值每参数返回范围内最新一条；曲线返回范围内全部有效点，由后端按勾选归属组装现有times、values数组，时间升序且逐项对应。
 
@@ -303,9 +307,9 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 `GET /processing/processed` 的 `parameterValue` 按已有值类型返回：`VALUE_TYPE_TEXT` 返回数据库 `value_text` 字符串（例如 `FKT007` 返回 `"T001"`），其他类型继续返回 `value` 数值，无记录时为 `null`。查询支持数值为空的文本记录，取身份范围内最新记录。此规则同时适用于处理后表格和可视化表格；`/processing/processed/curve` 的数值查询及响应保持不变。
 
-正常帧与异常帧接口的查询参数为必填 `taskId`、可选 `interfaceId`、`startTime`、`endTime`，默认最近15分钟。取消分页参数、分页包装和总数查询，`data`直接返回数组，按时间倒序各最多100条。接口主键必须大于零；当前任务范围内没有匹配数据时返回空数组。响应仍保留设备卫星、通道、时间、原码及检查结果，不新增 `interfaceId`、`interfaceName`。旧整帧不自动迁移，缺少接口层级时不推断来源，仅在不筛选接口时返回。
+正常帧与异常帧接口的查询参数为必填 `taskId`、`interfaceId`，可选 `startTime`、`endTime`，默认最近15分钟。取消分页参数、分页包装和总数查询，`data`直接返回数组，按时间倒序各最多100条。接口主键必须大于零；当前任务范围内没有匹配数据时返回空数组。响应仍保留设备卫星、通道、时间、原码及检查结果，不新增 `interfaceId`、`interfaceName`。只查询sjcl分表目录登记的对象整帧表，旧公共表记录不迁移也不返回。
 
-`/processing/processed` 和 `/processing/processed/curve` 仍按taskId、selectionType、targetId读取已保存勾选；实际GreptimeDB查询按勾选所属类型分支：设备使用当前任务、local来源、设备主键身份与遥测代号，卫星使用当前任务、rpc来源与遥测代号。类型复用DeviceSatelliteType枚举并从已有设备卫星资料读取；卫星资料主键不用于拼接RPC存储路径。同一代号在各自范围内存在多个身份或遥测类型时按时间取所选范围内最新一条或全部有效曲线点。勾选目录、保存机制和返回结构保持现有约定。完整前端改动见[遥测代号查询与整帧接口筛选](前端对接-遥测代号查询与整帧接口筛选.md)。
+`/processing/processed` 和 `/processing/processed/curve` 仍按taskId、selectionType、targetId读取已保存勾选；实际GreptimeDB查询按勾选所属类型分支：设备使用当前任务、local来源、设备主键身份与遥测代号，卫星通过当前任务的device_satellite.code定位对应分表，并使用rpc来源、原始卫星code与遥测代号筛选。类型复用DeviceSatelliteType枚举并从已有设备卫星资料读取；卫星资料主键不用于拼接RPC存储路径。同一代号在各自范围内存在多个身份或遥测类型时按时间取所选范围内最新一条或全部有效曲线点。勾选目录、保存机制和返回结构保持现有约定。完整前端改动见[遥测代号查询与整帧接口筛选](前端对接-遥测代号查询与整帧接口筛选.md)。
 
 | 方法 | 地址 | 说明 | 参数 |
 | --- | --- | --- | --- |
@@ -393,15 +397,15 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 ### 遥测整帧异常记录
 
-两张遥测表的 `source_identity` 在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的 `sat_code` 并去掉两端空白，不再拼接 `channel_code` 或编码长度，卫星代号为空时拒绝入库。历史组合身份数据不迁移，接口入参、出参和查询范围保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
+两张遥测表的 `source_identity` 在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的 `sat_code` 并去掉两端空白，不再拼接 `channel_code` 或编码长度，卫星代号为空时拒绝入库。旧公共表不参与查询，卫星参数按所属资料code精确路由，接口入参和出参结构保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
 
-遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，原码、设备身份和中文检查结果记录字段保持不变；整帧接口取消分页，直接返回最多100条记录的数组。
+遥测存储使用GreptimeDB的sjcl专用数据库。每个设备分别使用telemetry_parameter_device_设备ID和telemetry_frame_device_设备ID；每个卫星分别使用telemetry_parameter_sat_编码和telemetry_frame_sat_编码，编码为去掉两端空白后的sat_code按UTF-8字节转小写十六进制。例如SAT01对应5341543031。表内保留task_id隔离任务。启动自动初始化数据库和telemetry_table_registry分表目录，对象两张表在首次写入时创建。旧public库和旧公共表不迁移、不查询、不清理。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，原码、设备身份和中文检查结果记录字段保持不变；整帧接口取消分页，直接返回最多100条记录的数组。
 
-遥测存储使用GreptimeDB的`telemetry_frame`和`telemetry_parameter`两张公共表。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，原码、设备身份和中文检查结果记录字段保持不变；整帧接口取消分页，直接返回最多100条记录的数组。
+遥测存储使用GreptimeDB的sjcl专用数据库。每个设备分别使用telemetry_parameter_device_设备ID和telemetry_frame_device_设备ID；每个卫星分别使用telemetry_parameter_sat_编码和telemetry_frame_sat_编码，编码为去掉两端空白后的sat_code按UTF-8字节转小写十六进制。例如SAT01对应5341543031。表内保留task_id隔离任务。启动自动初始化数据库和telemetry_table_registry分表目录，对象两张表在首次写入时创建。旧public库和旧公共表不迁移、不查询、不清理。整帧以task_id、interface_id、source_type、source_identity、telemetry_type和毫秒source_time区分；参数以task_id、source_type、source_identity、telemetry_type、telemetry_code和毫秒source_time区分。完整原码保存为BINARY，原码、设备身份和中文检查结果记录字段保持不变；整帧接口取消分页，直接返回最多100条记录的数组。
 
 本地参数解析失败或未生成结果时，若PDXP包和数据域已正确拆分，并且采集配置具有有效任务编号、设备卫星ID及“通道名称_业务标识”格式的设备名称，则允许没有Proto而保存异常整帧。设备名称来自运行配置，通道名称取首个下划线前的内容，原码保存包含传输头、PDXP包头、自定义数据和遥测帧头的当前完整采集帧，类型节点为 `device`，时间使用PDXP包头发送时间。该分支复用遥测入库线程池，只写完整异常 `_frame`，不写任何参数，不发布遥测消息，不计入成功处理量。身份不完整、无法拆分数据域、RPC调用失败及校准失败不使用此回退；入库队列满或写入失败会保留原始解析错误并另外记录存储告警。
 
-`GET /processing/realtime/telemetry` 查询 `check_status=normal` 的正常整帧，`GET /processing/realtime/invalid` 查询 `check_status=abnormal` 的异常整帧；均按指定时间范围倒序最多返回100条。两个接口返回字段不增加，rawLength与rawFrame分别展示完整帧字节数和完整帧十六进制原码；旧记录不会重新补头。`checkResultName` 返回中文“正常”或“异常”，旧数据中的其他非正常名称仍可被异常接口筛选。RPC异常Proto已有的参数入库和消息发布流程保持原有行为。
+`GET /processing/realtime/telemetry` 查询 `check_status=normal` 的正常整帧，`GET /processing/realtime/invalid` 查询 `check_status=abnormal` 的异常整帧；均按指定时间范围倒序最多返回100条。两个接口返回字段不增加，rawLength与rawFrame分别展示完整帧字节数和完整帧十六进制原码；旧记录不会重新补头。`checkResultName` 返回中文“正常”或“异常”，只查询新对象分表中的正常或异常状态记录。RPC异常Proto已有的参数入库和消息发布流程保持原有行为。
 
 ### 采集传输协议编号升级
 
@@ -434,7 +438,7 @@ OpenAPI 文件已为各模块请求 DTO 配置独立 Schema，包括字段类型
 
 ## 数据保留与过期清理
 
-全部保留天数统一配置在Nacos管理服务配置 `data-admin-service.yaml` 的 `data-retention` 下，不填或留空不删除，填写正整数N时删除早于当前时间减N天的数据；0和负数不合法。管理服务统一执行金仓业务记录和GreptimeDB遥测数据清理，每小时第15分钟执行，变更保留天数后重启管理服务生效。`telemetry-days` 控制遥测参数、正常帧、异常帧及遥测曲线，当前示例为7天，要求管理服务启用GreptimeDB并连接与处理服务相同的数据库。处理服务不再绑定保留策略或执行过期删除。
+全部保留天数统一配置在Nacos管理服务配置 `data-admin-service.yaml` 的 `data-retention` 下，不填或留空不删除，填写正整数N时删除早于当前时间减N天的数据；0和负数不合法。管理服务统一执行金仓业务记录和GreptimeDB遥测数据清理，每小时第15分钟执行，变更保留天数后重启管理服务生效。`telemetry-days` 控制遥测参数、正常帧、异常帧及遥测曲线，当前示例为7天，要求管理服务启用GreptimeDB并与处理服务连接相同的sjcl数据库；按数据库元数据枚举全部对象分表，即使业务对象已删除也会清理，目录表与旧公共表不删除。处理服务不再绑定保留策略或执行过期删除。
 
 清理日志均在管理服务控制台查看：业务记录搜索 `本轮过期数据清理结束`，遥测记录搜索 `遥测过期数据清理完成`；失败日志搜索 `过期数据清理失败`。升级时同步更新两份Nacos配置并部署、重启两个服务，避免旧版处理服务继续执行清理；后续只需在管理服务调整保留天数。
 

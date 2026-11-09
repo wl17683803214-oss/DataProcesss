@@ -1131,7 +1131,12 @@ public final class PdxpParser {
             return Arrays.copyOf(data, data.length);
         }
 
-        /** @return 包头和数据域组成的完整PDXP原始包副本 */
+        /** 返回完整原码字节数，队列额度计算无需复制报文。 */
+        public int getRawPacketLength() {
+            return rawPacket.length;
+        }
+
+        /** 返回包头和数据域组成的完整PDXP原始包副本。 */
         public byte[] getRawPacket() {
             return Arrays.copyOf(rawPacket, rawPacket.length);
         }

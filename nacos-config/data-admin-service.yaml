@@ -185,8 +185,8 @@ rocketmq-monitor:
 greptime:
   # 关闭后不连接时序服务；处理服务仍可解析和发送消息，查询接口报告未启用。
   enabled: true
-  # 使用MySQL协议；保持北京时间和毫秒精度，避免时间偏移。
-  url: "jdbc:mysql://127.0.0.1:4002/public?useSSL=false&useServerPrepStmts=false&connectTimeout=10000&socketTimeout=30000&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true"
+  # 使用MySQL协议连接sjcl专用库；保持北京时间和毫秒精度。
+  url: "jdbc:mysql://127.0.0.1:4002/sjcl?useSSL=false&useServerPrepStmts=false&connectTimeout=10000&socketTimeout=30000&connectionTimeZone=Asia/Shanghai&forceConnectionTimeZoneToSession=true"
   # 按服务端认证配置填写，默认本机无认证环境使用空值。
   username: ""
   password: ""
@@ -200,8 +200,21 @@ greptime:
   batch-size: 500
   # 包含首次写入在内的尝试次数，稳定主键避免重试新增时间点。
   write-attempts: 3
-  # 启动时自动建表，不覆盖已有表或迁移旧库历史数据。
+  # 启动时创建数据库和分表目录；对象两张表在首次写入时创建，不迁移旧公共表。
   auto-create-tables: true
+
+# 遥测WebSocket从Redis获取初始快照及后续增量，修改后重启生效。
+telemetry-realtime:
+  # 启用实时转发监听及快照读取。
+  enabled: true
+  # 前缀、保留秒数和单类帧字节预算与处理服务一致。
+  key-prefix: 'telemetry:live:v2:'
+  # 正常帧、异常帧与单个最新参数共用三天保留时间。
+  retention-seconds: 259200
+  # 每任务、每接口、每种帧状态的记录字节预算。
+  frame-capacity-bytes: 4194304
+  # Redis消息等待分发的批次数上限。
+  push-queue-capacity: 64
 
 # 卫星目录管理服务的gRPC客户端连接配置。
 satellite-management:

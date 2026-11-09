@@ -1,9 +1,67 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.common.greptime.GreptimeMapper">
-    <!-- 两个服务使用同一份建表定义，重复启动不修改已有表。 -->
-    <update id="createFrameTable">
-        CREATE TABLE IF NOT EXISTS telemetry_frame (
+    <!-- 启动时通过不指定数据库的连接创建目标库，不访问旧公共表。 -->
+    <update id="createDatabase" lang="com.example.common.greptime.GreptimeTableLanguageDriver">
+        CREATE DATABASE IF NOT EXISTS __greptime_database__
+    </update>
+    <update id="createTableRegistry">
+        CREATE TABLE IF NOT EXISTS telemetry_table_registry (
+            registry_time TIMESTAMP(3) COMMENT '目录固定时间键',
+            task_id STRING NOT NULL INVERTED INDEX COMMENT '任务编号',
+            interface_id BIGINT NOT NULL COMMENT '采集接口主键',
+            source_type STRING NOT NULL COMMENT '来源类型英文编码',
+            source_identity STRING NOT NULL COMMENT '设备主键或原始卫星代号',
+            parameter_table STRING NOT NULL COMMENT '参数分表名称',
+            frame_table STRING NOT NULL COMMENT '整帧分表名称',
+            TIME INDEX (registry_time),
+            PRIMARY KEY (task_id, interface_id, source_type, source_identity)
+        ) WITH ('append_mode'='false', 'merge_mode'='last_row', 'ttl'='forever')
+    </update>
+    <insert id="registerTables">
+        INSERT INTO telemetry_table_registry
+            (registry_time, task_id, interface_id, source_type, source_identity, parameter_table, frame_table)
+        VALUES (#{registryTime,jdbcType=TIMESTAMP}, #{taskId}, #{interfaceId}, #{sourceType},
+                #{sourceIdentity}, #{parameterTable}, #{frameTable})
+    </insert>
+    <select id="registeredFrameTables" resultType="string">
+        SELECT DISTINCT frame_table FROM telemetry_table_registry
+        <where>
+            <choose>
+                <when test="taskId != null and taskId != ''">task_id = #{taskId}</when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+            <if test="interfaceId != null">AND interface_id = #{interfaceId}</if>
+        </where>
+        ORDER BY frame_table
+    </select>
+    <select id="existingTables" resultType="string">
+        SELECT table_name FROM information_schema.tables
+        <where>
+            <choose>
+                <when test="databaseName != null and databaseName != '' and names != null and names.size() > 0">
+                    table_schema = #{databaseName} AND table_name IN
+                    <foreach collection="names" item="name" open="(" separator="," close=")">#{name}</foreach>
+                </when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+        </where>
+    </select>
+    <select id="shardTables" resultType="string">
+        SELECT table_name FROM information_schema.tables
+        <where>
+            <choose>
+                <when test="databaseName != null and databaseName != ''">
+                    table_schema = #{databaseName}
+                    AND (table_name LIKE 'telemetry_parameter_%' OR table_name LIKE 'telemetry_frame_%')
+                </when>
+                <otherwise>1 = 0</otherwise>
+            </choose>
+        </where>
+        ORDER BY table_name
+    </select>
+    <update id="createFrameTable" lang="com.example.common.greptime.GreptimeTableLanguageDriver">
+        CREATE TABLE IF NOT EXISTS __greptime_table__ (
             source_time TIMESTAMP(3) COMMENT '源时间',
             task_id STRING NOT NULL INVERTED INDEX COMMENT '任务编号',
             interface_id BIGINT NOT NULL COMMENT '采集接口主键',
@@ -18,8 +76,8 @@
             PRIMARY KEY (task_id, interface_id, source_type, source_identity, telemetry_type)
         ) WITH ('append_mode'='false', 'merge_mode'='last_row', 'ttl'='forever')
     </update>
-    <update id="createParameterTable">
-        CREATE TABLE IF NOT EXISTS telemetry_parameter (
+    <update id="createParameterTable" lang="com.example.common.greptime.GreptimeTableLanguageDriver">
+        CREATE TABLE IF NOT EXISTS __greptime_table__ (
             source_time TIMESTAMP(3) COMMENT '源时间',
             task_id STRING NOT NULL INVERTED INDEX COMMENT '任务编号',
             source_type STRING NOT NULL COMMENT '来源类型',
@@ -39,19 +97,26 @@
             PRIMARY KEY (task_id, source_type, source_identity, telemetry_type, telemetry_code)
         ) WITH ('append_mode'='false', 'merge_mode'='last_row', 'ttl'='forever')
     </update>
-    <!-- 整帧与参数全部使用绑定变量，二进制不转换为文本。 -->
-    <insert id="insertFrame">
-        INSERT INTO telemetry_frame (source_time, task_id, interface_id, source_type, source_identity, telemetry_type, device_satellite_name, channel_name, `raw`, check_status)
-        VALUES (#{sourceTime,jdbcType=TIMESTAMP}, #{taskId,jdbcType=VARCHAR}, #{interfaceId,jdbcType=BIGINT}, #{sourceType,jdbcType=VARCHAR}, #{sourceIdentity,jdbcType=VARCHAR}, #{telemetryType,jdbcType=VARCHAR}, #{deviceSatelliteName,jdbcType=VARCHAR}, #{channelName,jdbcType=VARCHAR}, #{raw,jdbcType=VARBINARY}, #{checkStatus,jdbcType=VARCHAR})
+    <insert id="insertFrame" lang="com.example.common.greptime.GreptimeTableLanguageDriver">
+        INSERT INTO __greptime_table__ (source_time, task_id, interface_id, source_type, source_identity,
+            telemetry_type, device_satellite_name, channel_name, `raw`, check_status)
+        VALUES (#{frame.sourceTime,jdbcType=TIMESTAMP}, #{frame.taskId}, #{frame.interfaceId}, #{frame.sourceType},
+            #{frame.sourceIdentity}, #{frame.telemetryType}, #{frame.deviceSatelliteName}, #{frame.channelName},
+            #{frame.raw,jdbcType=VARBINARY}, #{frame.checkStatus})
     </insert>
-    <insert id="insertParameters">
-        INSERT INTO telemetry_parameter (source_time, task_id, source_type, source_identity, telemetry_type, telemetry_code, telemetry_name, value_type, `value`, value_text, `raw`, state_name, state_type, state_index, processed_at)
+    <insert id="insertParameters" lang="com.example.common.greptime.GreptimeTableLanguageDriver">
+        INSERT INTO __greptime_table__ (source_time, task_id, source_type, source_identity, telemetry_type,
+            telemetry_code, telemetry_name, value_type, `value`, value_text, `raw`,
+            state_name, state_type, state_index, processed_at)
         VALUES
         <foreach collection="rows" item="row" separator=",">
-            (#{row.sourceTime,jdbcType=TIMESTAMP}, #{row.taskId,jdbcType=VARCHAR}, #{row.sourceType,jdbcType=VARCHAR}, #{row.sourceIdentity,jdbcType=VARCHAR}, #{row.telemetryType,jdbcType=VARCHAR}, #{row.telemetryCode,jdbcType=VARCHAR}, #{row.telemetryName,jdbcType=VARCHAR}, #{row.valueType,jdbcType=VARCHAR}, #{row.value,jdbcType=DOUBLE}, #{row.valueText,jdbcType=VARCHAR}, #{row.raw,jdbcType=VARBINARY}, #{row.stateName,jdbcType=VARCHAR}, #{row.stateType,jdbcType=VARCHAR}, #{row.stateIndex,jdbcType=INTEGER}, #{row.processedAt,jdbcType=TIMESTAMP})
+            (#{row.sourceTime,jdbcType=TIMESTAMP}, #{row.taskId}, #{row.sourceType}, #{row.sourceIdentity},
+             #{row.telemetryType}, #{row.telemetryCode}, #{row.telemetryName}, #{row.valueType},
+             #{row.value,jdbcType=DOUBLE}, #{row.valueText}, #{row.raw,jdbcType=VARBINARY}, #{row.stateName},
+             #{row.stateType}, #{row.stateIndex,jdbcType=INTEGER}, #{row.processedAt,jdbcType=TIMESTAMP})
         </foreach>
     </insert>
-    <!-- 所有遥测查询均要求完整时间边界，缺失时不扩大为全历史查询。 -->
+    <!-- 时间边界必须完整，避免缺少条件时读取全部历史记录。 -->
     <sql id="timeCondition">
         <choose>
             <when test="startTime != null and endTime != null">
@@ -61,54 +126,51 @@
             <otherwise>AND 1 = 0</otherwise>
         </choose>
     </sql>
-    <!-- 必填任务也判断空值，缺少身份时拒绝扩大查询范围。 -->
-    <sql id="frameCondition">
-        <where>
-            <choose>
-                <when test="taskId != null and taskId != ''">task_id = #{taskId}</when>
-                <otherwise>1 = 0</otherwise>
-            </choose>
-            <if test="interfaceId != null">AND interface_id = #{interfaceId}</if>
-            <choose>
-                <when test="checkStatus != null and checkStatus != ''">AND check_status = #{checkStatus}</when>
-                <otherwise>AND 1 = 0</otherwise>
-            </choose>
-            <include refid="timeCondition"/>
-        </where>
+    <sql id="taskCondition">
+        <choose>
+            <when test="taskId != null and taskId != ''">task_id = #{taskId}</when>
+            <otherwise>1 = 0</otherwise>
+        </choose>
+        <include refid="timeCondition"/>
     </sql>
-    <select id="frames" resultType="com.example.common.greptime.TelemetryFrameRecord">
-        SELECT source_time, task_id, interface_id, source_type, source_identity, telemetry_type, device_satellite_name, channel_name, `raw`, check_status
-        FROM telemetry_frame
-        <include refid="frameCondition"/>
+    <sql id="frameColumns">
+        source_time, task_id, interface_id, source_type, source_identity, telemetry_type,
+        device_satellite_name, channel_name, `raw`, check_status
+    </sql>
+    <!-- 目录只提供已存在的分表，最终在全部对象中统一取最新一百条。 -->
+    <select id="frames" resultType="com.example.common.greptime.TelemetryFrameRecord"
+            lang="com.example.common.greptime.GreptimeTableLanguageDriver">
+        SELECT <include refid="frameColumns"/>
+        FROM (
+            <foreach collection="tables" item="table" separator="UNION ALL">
+                SELECT <include refid="frameColumns"/> FROM __greptime_table__
+                <where>
+                    <include refid="taskCondition"/>
+                    <if test="interfaceId != null">AND interface_id = #{interfaceId}</if>
+                    <choose>
+                        <when test="checkStatus != null and checkStatus != ''">AND check_status = #{checkStatus}</when>
+                        <otherwise>AND 1 = 0</otherwise>
+                    </choose>
+                </where>
+            </foreach>
+        ) frames
         ORDER BY source_time DESC, interface_id ASC, source_type ASC, source_identity ASC, telemetry_type ASC
         LIMIT 100
     </select>
-    <!-- 所有勾选参数合并为同一条语句，本地按设备匹配，远程保留任务下的原有范围。 -->
-    <sql id="parameterBatchCondition">
+    <!-- 每个分支只筛选该对象实际勾选的代号，保持任务、来源和身份精确匹配。 -->
+    <sql id="parameterShardCondition">
         <where>
-            <choose>
-                <when test="taskId != null and taskId != ''">task_id = #{taskId}</when>
-                <otherwise>1 = 0</otherwise>
-            </choose>
-            <include refid="timeCondition"/>
-            <!-- 类型在窗口排名或曲线排序之前过滤，不传时仍查询全部类型。 -->
+            <include refid="taskCondition"/>
             <if test="telemetryType != null and telemetryType != ''">AND telemetry_type = #{telemetryType}</if>
             <choose>
-                <when test="filters != null and filters.size() > 0">
-                    <foreach collection="filters" item="filter" open="AND (" separator=" OR " close=")">
+                <when test="table.filters != null and table.filters.size() > 0">
+                    <foreach collection="table.filters" item="filter" open="AND (" separator=" OR " close=")">
                         <choose>
-                            <when test="filter.telemetryCode != null and filter.telemetryCode != '' and filter.sourceType != null and filter.sourceType != ''">
+                            <when test="filter.telemetryCode != null and filter.telemetryCode != ''
+                                    and filter.sourceType != null and filter.sourceType != ''
+                                    and filter.sourceIdentity != null and filter.sourceIdentity != ''">
                                 (telemetry_code = #{filter.telemetryCode} AND source_type = #{filter.sourceType}
-                                <choose>
-                                    <when test="filter.sourceType == localSourceType and filter.sourceIdentity != null and filter.sourceIdentity != ''">
-                                        AND source_identity = #{filter.sourceIdentity}
-                                    </when>
-                                    <when test="filter.sourceType == rpcSourceType">
-                                        <!-- 远程按任务与代号查询，兼容历史组合身份和新的卫星代号身份。 -->
-                                    </when>
-                                    <otherwise>AND 1 = 0</otherwise>
-                                </choose>
-                                )
+                                 AND source_identity = #{filter.sourceIdentity})
                             </when>
                             <otherwise>(1 = 0)</otherwise>
                         </choose>
@@ -118,44 +180,46 @@
             </choose>
         </where>
     </sql>
-    <select id="latestBatch" resultType="com.example.common.greptime.TelemetryParameterRecord">
-        <!-- 每个本地设备参数单独排名；远程同代号继续在任务全部身份中取最新值。 -->
-        SELECT source_type, source_identity, telemetry_code, telemetry_name,
-               value_type, `value`, value_text, state_name, state_type, processed_at
+    <sql id="parameterColumns">
+        source_time, source_type, source_identity, telemetry_type, telemetry_code, telemetry_name,
+        value_type, `value`, value_text, state_name, state_type, processed_at
+    </sql>
+    <!-- 先合并各对象分表，再按对象和遥测代号各取最新一条。 -->
+    <select id="latestBatch" resultType="com.example.common.greptime.TelemetryParameterRecord"
+            lang="com.example.common.greptime.GreptimeTableLanguageDriver">
+        SELECT <include refid="parameterColumns"/>
         FROM (
-            SELECT source_type, source_identity, telemetry_code, telemetry_name,
-                   value_type, `value`, value_text, state_name, state_type, processed_at,
+            SELECT <include refid="parameterColumns"/>,
                    ROW_NUMBER() OVER (
-                       PARTITION BY source_type,
-                                    CASE WHEN source_type = #{localSourceType} THEN source_identity ELSE '' END,
-                                    telemetry_code
-                       ORDER BY source_time DESC, source_identity ASC, telemetry_type ASC
+                       PARTITION BY source_type, source_identity, telemetry_code
+                       ORDER BY source_time DESC, telemetry_type ASC
                    ) AS row_num
-            FROM telemetry_parameter
-            <include refid="parameterBatchCondition"/>
+            FROM (
+                <foreach collection="tables" item="table" separator="UNION ALL">
+                    SELECT <include refid="parameterColumns"/> FROM __greptime_table__
+                    <include refid="parameterShardCondition"/>
+                </foreach>
+            ) selected_parameters
         ) ranked
         WHERE row_num = 1
     </select>
-    <select id="curves" resultType="com.example.common.greptime.TelemetryParameterRecord">
+    <!-- 曲线只读取身份、时间和数值，全部分表在一次数据查询中完成。 -->
+    <select id="curves" resultType="com.example.common.greptime.TelemetryParameterRecord"
+            lang="com.example.common.greptime.GreptimeTableLanguageDriver">
         SELECT source_type, source_identity, telemetry_code, source_time, `value`
-        FROM telemetry_parameter
-        <include refid="parameterBatchCondition"/>
-        <!-- 曲线排除空数值，返回整个时间范围的有效点，不再限制条数。 -->
-        AND `value` IS NOT NULL
+        FROM (
+            <foreach collection="tables" item="table" separator="UNION ALL">
+                SELECT source_type, source_identity, telemetry_code, source_time, telemetry_type, `value`
+                FROM __greptime_table__
+                <include refid="parameterShardCondition"/>
+                AND `value` IS NOT NULL
+            </foreach>
+        ) curve_points
         ORDER BY source_time ASC, source_type ASC, source_identity ASC, telemetry_code ASC, telemetry_type ASC
     </select>
-    <!-- 分表清理失败后可以重入；不使用持续生效的过期策略，保留留空即停止的约定。 -->
-    <delete id="deleteFramesBefore">
-        DELETE FROM telemetry_frame
-        <where>
-            <choose>
-                <when test="beforeTime != null">source_time &lt; #{beforeTime,jdbcType=TIMESTAMP}</when>
-                <otherwise>1 = 0</otherwise>
-            </choose>
-        </where>
-    </delete>
-    <delete id="deleteParametersBefore">
-        DELETE FROM telemetry_parameter
+    <!-- 清理只接收目录中通过格式校验的对象分表，不涉及旧公共表。 -->
+    <delete id="deleteBefore" lang="com.example.common.greptime.GreptimeTableLanguageDriver">
+        DELETE FROM __greptime_table__
         <where>
             <choose>
                 <when test="beforeTime != null">source_time &lt; #{beforeTime,jdbcType=TIMESTAMP}</when>

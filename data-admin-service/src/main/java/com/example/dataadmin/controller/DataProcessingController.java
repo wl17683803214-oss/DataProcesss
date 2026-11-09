@@ -102,7 +102,7 @@ public class DataProcessingController {
     @GetMapping("/realtime/telemetry")
     public ApiResponse<List<RealtimeTelemetryFrameVO>> listRealtimeTelemetry(
             @RequestParam String taskId,
-            @RequestParam(required = false) Long interfaceId,
+            @RequestParam Long interfaceId,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime startTime,
@@ -154,7 +154,7 @@ public class DataProcessingController {
     @GetMapping("/realtime/invalid")
     public ApiResponse<List<InvalidTelemetryFrame>> listInvalidTelemetry(
             @RequestParam String taskId,
-            @RequestParam(required = false) Long interfaceId,
+            @RequestParam Long interfaceId,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             LocalDateTime startTime,

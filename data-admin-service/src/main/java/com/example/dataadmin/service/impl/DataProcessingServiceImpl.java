@@ -3,8 +3,7 @@ package com.example.dataadmin.service.impl;
 import com.example.common.response.PageResult;
 import com.example.common.enums.TelemetryFrameStatus;
 import com.example.common.greptime.GreptimeStore;
-import com.example.common.greptime.TelemetryFrameRecord;
-import com.example.common.greptime.TelemetryIdentity;
+import com.example.dataadmin.service.support.TelemetryFrameAssembler;
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.entity.ProcessedTelemetryFilterSelection;
 import com.example.dataadmin.entity.DeviceSatellite;
@@ -217,21 +216,8 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             String taskId, Long interfaceId, LocalDateTime startTime, LocalDateTime endTime) {
         // 第一步：校验条件，公共映射使用绑定变量限定任务和接口。
         Map<String, Object> query = frameQuery(taskId, interfaceId, TelemetryFrameStatus.NORMAL, startTime, endTime);
-        List<RealtimeTelemetryFrameVO> records = new ArrayList<>();
-        // 第二步：从原始字节派生长度和十六进制文本，接口继续显示中文检查结果。
-        for (TelemetryFrameRecord row : telemetryStore.frames(query)) {
-            RealtimeTelemetryFrameVO record = new RealtimeTelemetryFrameVO();
-            record.setDeviceSatelliteId(TelemetryIdentity.deviceId(row.getSourceType(), row.getSourceIdentity()));
-            record.setTime(row.getSourceTime() == null ? null : row.getSourceTime().toLocalDateTime());
-            record.setDeviceSatelliteName(row.getDeviceSatelliteName());
-            record.setChannelName(row.getChannelName());
-            record.setRawLength(row.getRaw() == null ? 0 : row.getRaw().length);
-            record.setRawFrame(toHex(row.getRaw()));
-            record.setCheckResultName(TelemetryFrameStatus.labelOf(row.getCheckStatus()));
-            records.add(record);
-        }
-        // 第三步：直接返回最多一百条记录，不再查询总数。
-        return records;
+        // 第二步：历史与实时接口共用组装逻辑，保留原有字段和中文检查结果。
+        return TelemetryFrameAssembler.normal(telemetryStore.frames(query));
     }
 
     @Override
@@ -259,21 +245,8 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             String taskId, Long interfaceId, LocalDateTime startTime, LocalDateTime endTime) {
         // 第一步：正常和异常整帧共用相同的身份与时间范围校验。
         Map<String, Object> query = frameQuery(taskId, interfaceId, TelemetryFrameStatus.ABNORMAL, startTime, endTime);
-        List<InvalidTelemetryFrame> records = new ArrayList<>();
-        // 第二步：远程帧不伪造本地设备主键，检查编码通过已有枚举转换为中文。
-        for (TelemetryFrameRecord row : telemetryStore.frames(query)) {
-            InvalidTelemetryFrame record = new InvalidTelemetryFrame();
-            record.setDeviceSatelliteId(TelemetryIdentity.deviceId(row.getSourceType(), row.getSourceIdentity()));
-            record.setReceiveTime(row.getSourceTime() == null ? null : row.getSourceTime().toLocalDateTime());
-            record.setDeviceSatelliteName(row.getDeviceSatelliteName());
-            record.setChannelName(row.getChannelName());
-            record.setCheckResultName(TelemetryFrameStatus.labelOf(row.getCheckStatus()));
-            record.setRawLength(row.getRaw() == null ? 0 : row.getRaw().length);
-            record.setRawFrame(toHex(row.getRaw()));
-            records.add(record);
-        }
-        // 第三步：直接返回数组，数据库已按时间倒序限制为一百条。
-        return records;
+        // 第二步：复用相同的完整原码转换和中文状态组装，响应结构保持不变。
+        return TelemetryFrameAssembler.abnormal(telemetryStore.frames(query));
     }
 
     /** 构造绑定参数，接口不再接收或暴露数据库路径。 */
@@ -281,9 +254,9 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             TelemetryFrameStatus status, LocalDateTime startTime, LocalDateTime endTime) {
         // 第一步：固定本次时间范围，四个接口使用相同的十五分钟缺省规则。
         TelemetryQueryTimeRange range = TelemetryQueryTimeRange.resolve(startTime, endTime);
-        // 可选接口存在时必须是真实主键；任务必填，禁止扩大查询范围。
-        if (interfaceId != null && interfaceId <= 0) {
-            throw new IllegalArgumentException("采集接口主键必须大于零");
+        // 整帧历史查询限定到一个真实接口。
+        if (interfaceId == null || interfaceId <= 0) {
+            throw new IllegalArgumentException("采集接口主键不能为空且必须大于零");
         }
         Map<String, Object> query = new HashMap<>();
         query.put("taskId", requireTelemetryTaskId(taskId));
@@ -302,21 +275,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         }
         return normalizedTaskId;
     }
-
-    private static String toHex(byte[] data) {
-        if (data == null || data.length == 0) {
-            return "";
-        }
-        StringBuilder result = new StringBuilder(data.length * 3 - 1);
-        for (int i = 0; i < data.length; i++) {
-            if (i > 0) {
-                result.append(' ');
-            }
-            result.append(String.format("%02X", data[i] & 0xFF));
-        }
-        return result.toString();
-    }
-
 
     private static String trimToNull(String value) {
         if (value == null) {

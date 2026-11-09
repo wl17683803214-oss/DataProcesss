@@ -5,11 +5,14 @@ import SatDataCenter.DataExchange.TmTc.TelecommandMessages.CommandExecResultMsg;
 import com.example.common.enums.DataAlarmType;
 import com.example.dataprocess.alarm.DataAlarmRecorder;
 import com.example.dataprocess.config.DataProcessingThreadPoolConfig;
+import com.example.dataprocess.config.PdxpFramingProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.logging.PdxpFrameLogContext;
 import com.example.dataprocess.service.IoTDBTelemetryStorageService;
 import com.example.dataprocess.service.TelemetryMessageService;
 import com.example.dataprocess.service.CommandResponseMessageService;
+import com.example.dataprocess.service.TelemetryRealtimeCacheWriter;
+import com.example.dataprocess.service.TelemetryRecordFactory;
 import com.example.dataprocess.tool.PdxpParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
+import java.sql.Timestamp;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -38,6 +42,15 @@ public class TelemetryResultDispatcher {
     private final Executor messageExecutor;
     /** 指令响应复用现有消息执行器，保留原有离线构造方法。 */
     private CommandResponseMessageService commandResponseMessageService;
+    /** 实时分发与入库、消息发送分别排队，离线入口保留原有构造方式。 */
+    private TelemetryRealtimeCacheWriter realtimeWriter;
+    private PdxpFramingProperties framingProperties;
+
+    @Autowired
+    public void setRealtimeWriter(TelemetryRealtimeCacheWriter writer, PdxpFramingProperties framing) {
+        this.realtimeWriter = writer;
+        this.framingProperties = framing;
+    }
 
     /** 注入指令响应发送服务，避免旧调用方增加无关构造参数。 */
     @Autowired
@@ -96,6 +109,12 @@ public class TelemetryResultDispatcher {
         // 第二步：复制完整采集帧供入库使用，发送消息继续使用原Proto数据域。
         byte[] rawFrame = packet.getRawPacket();
         long sequenceNumber = packet.getSequenceNumber();
+        // 解析结束时只提交引用，缓存与推送组装在后台进行。
+        if (realtimeWriter != null) {
+            Timestamp processTime = new Timestamp(System.currentTimeMillis());
+            realtimeWriter.offer(message.getTelemetriesCount(), rawFrame.length,
+                    () -> TelemetryRecordFactory.processed(snapshot, message, rawFrame, processTime, false));
+        }
         // 第三步：两个任务独立提交，即使一方拒绝也尝试另一方。
         boolean storageAccepted = execute(storageExecutor, snapshot, sequenceNumber,
                 DataAlarmType.STORAGE_FAILURE, "遥测入库", () ->
@@ -121,12 +140,18 @@ public class TelemetryResultDispatcher {
                                 snapshot.getInterfaceId(), sequenceNumber));
     }
 
-    /** 本地解析失败时只向已有入库线程池提交异常整帧，不创建消息发送任务。 */
+    /** 本地解析失败时分别提交异常帧的实时展示与入库。 */
     public boolean submitAbnormalLocalFrame(CollectInterfaceRuntimeConfig config,
             PdxpParser.PdxpPacket packet) {
         // 第一步：固定本帧任务和设备身份，避免接口配置在排队期间变化。
         CollectInterfaceRuntimeConfig snapshot = new CollectInterfaceRuntimeConfig();
         BeanUtils.copyProperties(config, snapshot);
+        // 本地异常回退复用入库校验，组装失败时只影响对应实时记录。
+        if (realtimeWriter != null) {
+            Timestamp processTime = new Timestamp(System.currentTimeMillis());
+            realtimeWriter.offer(0, packet.getRawPacketLength(),
+                    () -> TelemetryRecordFactory.abnormal(snapshot, packet, framingProperties, processTime));
+        }
         // 第二步：复用队列拒绝、存储异常和告警处理，不阻塞参数解析线程。
         return execute(storageExecutor, snapshot, packet.getSequenceNumber(),
                 DataAlarmType.STORAGE_FAILURE, "本地异常整帧入库", () ->
