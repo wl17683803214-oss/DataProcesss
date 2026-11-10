@@ -1,6 +1,7 @@
 
 package com.example.dataprocess.processing.processor;
 
+import com.example.dataprocess.processing.PdxpTiming;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.StateType;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.Telemetry;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
@@ -84,6 +85,7 @@ public class LocalDataProcessor implements DataProcessor {
         // 记录本帧处理起点，用于输出完整处理耗时。
         long startNanos = System.nanoTime();
         // 第一步：解析并校验协议配置字段。
+        boolean timed = PdxpTiming.sample(packet.getSequenceNumber());
         List<PdxpProtocolField> fields = fields(config.getPdxpFields());
         // 同帧所有参数使用同一公式版本快照，配置同步不会切换到一半。
         java.util.Map<String, LuaFormulaEngine.Compiled> formulas = config.getFormulaScripts();
@@ -113,6 +115,7 @@ public class LocalDataProcessor implements DataProcessor {
                 .setBussinessId(identity.businessId)
                 .setFrameCheckStatus(true);
         // 第二步：先提取本帧全部字段原码，后面的遥测也能作为当前公式的参数。
+        long rawStart = timed ? System.nanoTime() : 0L;
         List<byte[]> rawFields = new ArrayList<>(fields.size());
         java.util.Map<String, byte[]> rawBySymbol = new java.util.LinkedHashMap<>();
         for (PdxpProtocolField item : fields) {
@@ -122,6 +125,8 @@ public class LocalDataProcessor implements DataProcessor {
             rawBySymbol.put(item.getTelemetryCode().trim(), raw);
         }
         // 第三步：按原有配置顺序计算，引用的是原码，无需等待其他公式完成。
+        long decodeStart = timed ? System.nanoTime() : 0L;
+        long conversionNanos = 0L;
         Set<String> decodedSymbols = new HashSet<String>();
         long duplicateCount = 0L;
         for (int fieldIndex = 0; fieldIndex < fields.size(); fieldIndex++) {
@@ -134,7 +139,11 @@ public class LocalDataProcessor implements DataProcessor {
                     .setTmSymbol(tmSymbol)
                     .setRawData(ByteString.copyFrom(raw));
             // 直接传入原始字节；只有未配置公式时才按小端无符号整数输出原码。
+            long conversionStart = timed ? System.nanoTime() : 0L;
             BigDecimal stateValue = fillValue(config, formulas, telemetry, item, raw, rawBySymbol);
+            if (timed) {
+                conversionNanos += System.nanoTime() - conversionStart;
+            }
             if (duplicate) {
                 // 后出现的同代号参数覆盖前值，并在最终Proto中标记发生过去重。
 //                telemetry.setIsDepValue(true);
@@ -173,7 +182,16 @@ public class LocalDataProcessor implements DataProcessor {
         statistics.recordDuplicate(config, duplicateCount);
         // 第五步：构造结果并记录本帧本地处理完成信息。
         TelemetryMessage result = message.build();
-        long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000L;
+        long finished = System.nanoTime();
+        if (timed) {
+            // 本地处理结束后统一输出，避免把日志写入算进下一阶段。
+            PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "配置校验和帧头组装", rawStart - startNanos);
+            PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "原码提取和索引", decodeStart - rawStart);
+            PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "公式或原码转换", conversionNanos);
+            PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "参数组装和状态检查",
+                    finished - decodeStart - conversionNanos);
+        }
+        long elapsedMillis = (finished - startNanos) / 1_000_000L;
         // 每次启动仅记录本接口第一帧处理完成信息，后续帧不重复打印常规日志。
         if (config.markFirstPdxpProcessingLog()) {
             LOGGER.info(

@@ -1,5 +1,6 @@
 package com.example.dataprocess.processing.dispatcher;
 
+import com.example.dataprocess.processing.PdxpTiming;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import SatDataCenter.DataExchange.TmTc.TelecommandMessages.CommandExecResultMsg;
 import com.example.common.enums.DataAlarmType;
@@ -116,9 +117,25 @@ public class TelemetryResultDispatcher {
                     () -> TelemetryRecordFactory.processed(snapshot, message, rawFrame, processTime, false));
         }
         // 第三步：两个任务独立提交，即使一方拒绝也尝试另一方。
+        boolean timed = PdxpTiming.sample(sequenceNumber);
+        long storageQueuedAt = timed ? System.nanoTime() : 0L;
         boolean storageAccepted = execute(storageExecutor, snapshot, sequenceNumber,
-                DataAlarmType.STORAGE_FAILURE, "遥测入库", () ->
-                        storageService.saveProcessedParameters(snapshot, message, rawFrame));
+                DataAlarmType.STORAGE_FAILURE, "遥测入库", () -> {
+                    // 失败时也保留执行耗时，便于与取连接超时告警对照。
+                    long storageStart = timed ? System.nanoTime() : 0L;
+                    if (timed) {
+                        PdxpTiming.log(snapshot.getInterfaceId(), sequenceNumber, "入库排队",
+                                storageStart - storageQueuedAt);
+                    }
+                    try {
+                        storageService.saveProcessedParameters(snapshot, message, rawFrame);
+                    } finally {
+                        if (timed) {
+                            PdxpTiming.log(snapshot.getInterfaceId(), sequenceNumber, "入库执行含重试",
+                                    System.nanoTime() - storageStart);
+                        }
+                    }
+                });
         boolean messageAccepted = execute(messageExecutor, snapshot, sequenceNumber,
                 DataAlarmType.MESSAGE_FAILURE, "遥测消息发送", () ->
                         // 使用当前运行接口的原子标记，配置快照仍用于异常和存储上下文。

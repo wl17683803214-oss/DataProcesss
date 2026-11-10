@@ -23,9 +23,11 @@ import java.nio.ByteOrder;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -39,11 +41,15 @@ public final class LuaFormulaEngine {
     private static final int MAX_RAW_BYTES = 65536;
     /** 每次执行最多十万条指令。 */
     private static final int MAX_INSTRUCTIONS = 100000;
+    /** 仅允许仓库提供且已确认无跨次状态的公式100复用环境。 */
+    private static final String LINEAR_SOURCE_HASH = "Q7sGT7iR3Aw9pF00mmoEjZuXU/ch9I7lGlBasfTZEZg=";
+    /** 每个线程只保留最近一次可复用公式的环境，避免刷新后累积旧版本。 */
+    private static final ThreadLocal<PreparedFormula> PREPARED = new ThreadLocal<>();
 
     /** 工具类禁止实例化。 */
     private LuaFormulaEngine() { }
 
-    /** 只编译文本脚本；调用时创建独立环境，编译结果可安全共享。 */
+    /** 编译文本脚本，并按完整源码确认是否可以复用执行环境。 */
     public static Compiled compile(String source) {
         if (source == null || source.getBytes(StandardCharsets.UTF_8).length > MAX_SOURCE_BYTES) {
             throw new IllegalArgumentException("公式源码为空或超过64KB");
@@ -59,6 +65,12 @@ public final class LuaFormulaEngine {
             compiled.name = definition.get("name").checkjstring();
             // 声明在计算调用之前读取，旧脚本未声明时仍全部使用数值参数。
             compiled.parameterTypes = parameterTypes(definition.get("parameterTypes"));
+            if ("100".equals(compiled.code)) {
+                // 统一换行格式，公式编号相同但内容不同的脚本仍保持调用隔离。
+                byte[] normalized = source.replace("\r\n", "\n").trim().getBytes(StandardCharsets.UTF_8);
+                byte[] hash = MessageDigest.getInstance("SHA-256").digest(normalized);
+                compiled.reusable = LINEAR_SOURCE_HASH.equals(Base64.getEncoder().encodeToString(hash));
+            }
             if (!compiled.code.matches("[0-9]{1,20}") || compiled.name.trim().isEmpty()
                     || compiled.name.length() > 100) {
                 throw new IllegalArgumentException("公式编号须为1到20位数字，名称须为1到100个字符");
@@ -102,9 +114,15 @@ public final class LuaFormulaEngine {
                 || raw.length != (bitWidth + 7L) / 8L) {
             throw new IllegalArgumentException("原码长度与位宽不一致，或原码超过64KB");
         }
+        boolean completed = false;
         try {
             // 原码保持取位顺序，不预先转换整数；数组下标从1开始。
-            Globals globals = environment();
+            PreparedFormula prepared = compiled.reusable ? prepare(compiled) : null;
+            Globals globals = prepared == null ? environment() : prepared.globals;
+            if (prepared != null) {
+                // 复用函数时，每次调用重新计算指令额度和截止时间。
+                ((Budget) globals.debuglib).reset();
+            }
             LuaTable input = new LuaTable();
             LuaTable bytes = new LuaTable();
             for (int index = 0; index < raw.length; index++) {
@@ -115,14 +133,46 @@ public final class LuaFormulaEngine {
             // 先将声明为遥测引用的位置替换为原码整数文本，再调用计算函数。
             input.set("params", parameters(compiled, parameters, telemetryRawData));
             // 模块初始化和计算入口共享同一次指令及时间预算。
-            LuaValue output = definition(compiled, globals).get("calculate").call(input);
-            return result(output);
+            LuaValue calculate = prepared == null ? definition(compiled, globals).get("calculate") : prepared.calculate;
+            Result value = result(calculate.call(input));
+            completed = true;
+            return value;
         } catch (LimitExceeded error) {
             throw new IllegalArgumentException(error.getMessage());
         } catch (StackOverflowError error) {
             throw new IllegalArgumentException("公式嵌套层级过深");
         } catch (RuntimeException exception) {
             throw new IllegalArgumentException("公式计算失败：" + exception.getMessage(), exception);
+        } finally {
+            // 异常可能留下 Lua 调用栈，丢弃缓存，下一次重新初始化。
+            if (compiled.reusable && !completed) {
+                PREPARED.remove();
+            }
+        }
+    }
+
+    /** 同一线程首次执行该编译版本时初始化模块和计算函数。 */
+    private static PreparedFormula prepare(Compiled compiled) {
+        PreparedFormula prepared = PREPARED.get();
+        if (prepared == null || prepared.compiled != compiled) {
+            Globals globals = environment();
+            LuaValue calculate = definition(compiled, globals).get("calculate");
+            prepared = new PreparedFormula(compiled, globals, calculate);
+            PREPARED.set(prepared);
+        }
+        return prepared;
+    }
+
+    /** 保存单个处理线程专用的公式实例。 */
+    private static final class PreparedFormula {
+        private final Compiled compiled;
+        private final Globals globals;
+        private final LuaValue calculate;
+
+        private PreparedFormula(Compiled compiled, Globals globals, LuaValue calculate) {
+            this.compiled = compiled;
+            this.globals = globals;
+            this.calculate = calculate;
         }
     }
 
@@ -382,7 +432,13 @@ public final class LuaFormulaEngine {
     /** 每个环境独享预算，不使用异步取消，死循环会在执行线程内被终止。 */
     private static final class Budget extends DebugLib {
         private int instructions;
-        private final long deadline = System.nanoTime() + 100000000L;
+        private long deadline = System.nanoTime() + 100000000L;
+
+        /** 重新开始单次计算的指令和时间预算。 */
+        private void reset() {
+            instructions = 0;
+            deadline = System.nanoTime() + 100000000L;
+        }
 
         /** 每条指令计数，周期检查一百毫秒预算。 */
         @Override
@@ -399,11 +455,12 @@ public final class LuaFormulaEngine {
         private LimitExceeded(String message) { super(message); }
     }
 
-    /** 已编译公式只保存不可变字节码和导入时元数据。 */
+    /** 已编译公式保存可跨线程共享的字节码和导入时元数据。 */
     public static final class Compiled {
         private final Prototype prototype;
         private String code;
         private String name;
+        private boolean reusable;
         /** 编译时校验后的参数类型，只在Java内使用，不暴露可变脚本定义。 */
         private FormulaParameterType[] parameterTypes;
         private Compiled(Prototype prototype) { this.prototype = prototype; }

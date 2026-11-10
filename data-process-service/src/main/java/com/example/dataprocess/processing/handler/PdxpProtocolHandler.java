@@ -1,5 +1,6 @@
 package com.example.dataprocess.processing.handler;
 
+import com.example.dataprocess.processing.PdxpTiming;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import SatDataCenter.DataExchange.TmTc.TelecommandMessages.CommandExecResultMsg;
 import com.example.common.enums.CollectionDataType;
@@ -159,7 +160,9 @@ public class PdxpProtocolHandler implements ProtocolHandler {
         statistics.recordReceivedBytes(config, packetData.length);
         ReceivedDatagram datagram = new ReceivedDatagram(config, packetData);
         try {
-            dataProcessExecutor.execute(() -> handle(datagram));
+            // 报文入队时记下起点，拆包成功后按包序号关联采样日志。
+            long queuedAt = System.nanoTime();
+            dataProcessExecutor.execute(() -> handle(datagram, queuedAt));
         } catch (RejectedExecutionException exception) {
             alarm(config, com.example.common.enums.DataAlarmType.PROCESS_QUEUE, "处理线程池已满，当前报文被拒绝");
             LOGGER.error("数据处理线程池已满，本次PDXP {}报文已拒绝，接口编号：{}",
@@ -169,6 +172,12 @@ public class PdxpProtocolHandler implements ProtocolHandler {
 
     /** 解析一个传输报文，并逐个处理其中的PDXP包。 */
     public void handle(ReceivedDatagram datagram) {
+        handle(datagram, 0L);
+    }
+
+    /** 分开测量线程池排队和协议拆包。 */
+    private void handle(ReceivedDatagram datagram, long queuedAt) {
+        long parseStart = queuedAt == 0L ? 0L : System.nanoTime();
         List<PdxpParser.PdxpPacket> packets;
         try {
             // 数据处理线程按接口模式拆帧，TCP接收端已完成定界及反转义。
@@ -190,7 +199,13 @@ public class PdxpProtocolHandler implements ProtocolHandler {
             return;
         }
 
+        long parseEnd = queuedAt == 0L ? 0L : System.nanoTime();
         for (PdxpParser.PdxpPacket packet : packets) {
+            if (queuedAt != 0L && PdxpTiming.sample(packet.getSequenceNumber())) {
+                Long interfaceId = datagram.getInterfaceConfig().getInterfaceId();
+                PdxpTiming.log(interfaceId, packet.getSequenceNumber(), "处理排队", parseStart - queuedAt);
+                PdxpTiming.log(interfaceId, packet.getSequenceNumber(), "PDXP拆包", parseEnd - parseStart);
+            }
             // 一个UDP报文可能包含多帧，必须按解析出的完整PDXP帧逐个统计。
             statistics.recordCollection(datagram.getInterfaceConfig());
             // 先按采集类型分流，指令响应直接组装并发送消息。
@@ -244,10 +259,16 @@ public class PdxpProtocolHandler implements ProtocolHandler {
         try {
             // 第一步：按接口处理模式选择长度，再拆分数据域。
             PdxpFramingProperties.Framing framing = framingProperties.select(config.getRpcEnabled());
+            boolean timed = PdxpTiming.sample(packet.getSequenceNumber());
+            long payloadStart = timed ? System.nanoTime() : 0L;
             PdxpDataPayload payload = PdxpDataPayloadParser.parse(
                     packet.getData(), framing.getCustomDataLength(),
                     framing.getTelemetryHeaderLength());
             payloadParsed = true;
+            if (timed) {
+                PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "数据域拆分",
+                        System.nanoTime() - payloadStart);
+            }
             // 第二步：业务处理器与拆帧长度均使用同一远程开关选择。
             DataProcessor processor = CollectionDataType.require(config.getRpcEnabled())
                     == CollectionDataType.SATELLITE ? rpcProcessor : localProcessor;
@@ -271,15 +292,26 @@ public class PdxpProtocolHandler implements ProtocolHandler {
             // 本地及远程结果保留参数状态，范围越限不写入或恢复告警管理记录。
             stage = com.example.common.enums.DataAlarmType.CALIBRATION_RULE;
             // 第三步：按每个遥测参数携带的校准公式执行野值检测。
+            long calibrationStart = timed ? System.nanoTime() : 0L;
             telemetryMessage = calibrationProcessingService.process(
                     config, telemetryMessage);
+            if (timed) {
+                PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "校准",
+                        System.nanoTime() - calibrationStart);
+            }
             // 第四步：校准完成后按最终保留参数统计真实野值数量。
             statistics.recordWildValue(config, telemetryMessage
                     .getTelemetriesMap().values().stream()
                     .filter(telemetry -> telemetry.getIsWildValue())
                     .count());
             // 第五步：两个结果任务独立提交，处理线程不等待外部服务响应。
-            if (!resultDispatcher.submit(config, telemetryMessage, packet)) {
+            long dispatchStart = timed ? System.nanoTime() : 0L;
+            boolean accepted = resultDispatcher.submit(config, telemetryMessage, packet);
+            if (timed) {
+                PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "结果提交",
+                        System.nanoTime() - dispatchStart);
+            }
+            if (!accepted) {
                 // 提交失败已有独立告警，部分被接受的任务继续执行，当前帧不累计成功处理量。
                 return;
             }
