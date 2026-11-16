@@ -33,7 +33,7 @@ public interface TelemetryParseRuleConfigMapper {
     /** 写回完整的参数业务字段。 */
     int updateOne(@Param("taskId") String taskId,
             @Param("rule") TelemetryParseRuleConfig rule);
-    /** 按完整遥测代号查找当前任务的有效参数及其勾选状态。 */
+    /** 按遥测代号包含内容查找当前任务的有效参数及其勾选状态。 */
     List<TelemetryFilterSearchRecord> searchByTelemetryCode(@Param("taskId") String taskId,
             @Param("telemetryCode") String telemetryCode,
             @Param("selectionType") int selectionType, @Param("targetId") Long targetId);

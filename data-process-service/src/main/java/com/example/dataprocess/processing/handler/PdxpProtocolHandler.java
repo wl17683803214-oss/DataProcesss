@@ -337,9 +337,9 @@ public class PdxpProtocolHandler implements ProtocolHandler {
     private void saveLocalAbnormalFrame(CollectInterfaceRuntimeConfig config,
             PdxpParser.PdxpPacket packet) {
         try {
-            // 这里只提交已有入库线程池，实际写入仍会校验任务、设备、通道和数据域。
+            // 先由已有线程池组装异常帧，再提交同对象的跨帧入库缓冲。
             if (resultDispatcher.submitAbnormalLocalFrame(config, packet)) {
-                LOGGER.info("本地参数解析失败，异常整帧已提交入库，接口编号：{}，包序号：{}",
+                LOGGER.info("本地参数解析失败，异常整帧已提交入库处理，接口编号：{}，包序号：{}",
                         config.getInterfaceId(), packet.getSequenceNumber());
             }
         } catch (RuntimeException exception) {

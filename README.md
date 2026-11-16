@@ -40,6 +40,10 @@ sql/business_schema.sql
 
 ## 启动
 
+Windows本机开发时，双击根目录的 `启动依赖服务.cmd`，按顺序检查并启动金仓、Redis、Nacos、GreptimeDB、RocketMQ名称服务与代理、MinIO。已运行的依赖自动复用，代理额外检查名称服务注册结果；不自动启动Java业务服务。软件路径、数据目录、端口和现有MinIO开发账号集中在 `scripts/local-services.psd1`，按本机实际安装情况修改，不会覆盖Nacos配置或重置现有数据。系统服务尚未启动且提示权限不足时，以管理员身份运行双击入口。
+
+只检查依赖状态时执行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/start-local-services.ps1 -CheckOnly`。新进程在后台运行，关闭启动入口不会主动停止服务；输出和错误日志保存在 `data/local-services/logs`，软件原有日志继续保留。脚本检查金仓与Redis系统服务和端口，Nacos、Greptime及MinIO额外检查健康接口。详细使用说明见 [本机依赖启动说明](docs/本机依赖启动说明.md)。
+
 ```text
 mvn -pl data-admin-service spring-boot:run
 mvn -pl data-process-service spring-boot:run

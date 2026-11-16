@@ -2,6 +2,7 @@ openapi: 3.0.3
 info:
   title: 数据处理软件接口
   description: |
+    接口速度MQ上报：管理服务按interface-speed-report配置每秒读取现有采集速度缓存，向配置主题发送InterfaceSpeedMqMessage原始JSON文本。包含systemId、sampleTime、total和interfaces，速度复用页面KB/s或MB/s格式；接口项仅含taskId、interfaceName、receiveRate，不含interfaceId、处理速度或采样时长。所有未删除且已归属任务的接口参与，缺失、异常或超过五秒的速度缓存按0 KB/s展示，原始速度先汇总再换算单位。该功能不新增HTTP接口。
     系统健康遥测：管理服务默认每秒采样并更新Redis，独立周期向运行中的任务分别发送TelemetryMessage原始Protobuf字节，主题topic_yc_out_sjcl，bussiness=8，bussiness_id=sjcl，channel_name=sjcl。参数为SJCL001至SJCL010，不包含消息积压数；字段见SystemHealthTelemetryMqMessage模型。没有运行任务、快照过期或采样不完整时不发送。
     遥测存储使用GreptimeDB的sjcl专用数据库。每个设备分别使用telemetry_parameter_device_设备ID和telemetry_frame_device_设备ID；每个卫星分别使用telemetry_parameter_sat_编码和telemetry_frame_sat_编码，编码为去掉两端空白后的sat_code按UTF-8字节转小写十六进制。例如SAT01对应5341543031。表内保留task_id隔离任务。启动自动初始化数据库和telemetry_table_registry分表目录，对象两张表在首次写入时创建。旧public库和旧公共表不迁移、不查询、不清理。参数继续保存Proto的value_type、value_text、state_type、state_index，状态名称为state_name，telemetry_type来自消息级tm_type。
     两张遥测表的source_identity在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的sat_code并去掉两端空白，不再拼接channel_code或编码长度，卫星代号为空时拒绝入库。旧公共表不参与查询，卫星参数按所属资料code精确路由，接口入参和出参结构保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
@@ -14,11 +15,11 @@ info:
     跨域联调：两个服务的 Nacos 配置 auth.allowed-origin-patterns 均设为 ["*"]，允许任意前端来源；同步线上 Nacos 后重启对应服务生效。
     登录预检示例：向 /auth/login 发送 OPTIONS，携带 Origin: http://192.168.112.55:5173、Access-Control-Request-Method: POST 和 Access-Control-Request-Headers: content-type。
     预期返回 HTTP 200，Access-Control-Allow-Origin 回显请求 Origin，Access-Control-Allow-Credentials 为 true；前端来源地址仅为示例，请按实际页面地址替换。
-    本地Lua公式：公式类型为已导入脚本编号，不再内置300至303分支。脚本统一接收原始字节、位宽及有序参数，返回结果类型和数值或文本。示例脚本300在原码整数为100、processParam=0.02/1、decimalPlaces=2时输出value=3、valueText=3.00；formulaDesc仅保留描述，不参与计算。
+    本地Lua公式：公式类型为已导入脚本编号，不再内置300至303分支。脚本统一接收原始字节、位宽及有序参数，返回结果类型和数值或文本。所有公式按线程复用执行环境，每线程最多缓存32个，按最近使用顺序淘汰；公式更新后替换旧环境，执行异常后清除对应环境，每次调用重新创建输入并重置执行预算。脚本必须只依赖当前输入，不保留跨次计算状态。示例脚本300在原码整数为100、processParam=0.02/1、decimalPlaces=2时输出value=3、valueText=3.00；formulaDesc仅保留描述，不参与计算。
     PDXP本地处理：rpcEnabled=0时，通过protocolConfigId取得configParams.fields，按tableIndex数字升序和bitWidth连续解码并组装遥测Protobuf消息；alarmFlag为1时命中状态范围写正常类型、stateIndex和stateName，未命中只写报警类型。
     通过fields中的参数解析配置id关联当前任务下的设备卫星信息，本地处理不填写satCode，设备名称第一个下划线前后分别写入channelName和bussinessId；Proto的frame_raw_data按data-processing.pdxp配置去掉数据域开头自定义数据和末尾遥测帧头，默认5和4字节，配置0表示没有；传输头默认2字节，也可配置为0或其他长度，PDXP标准包头固定32字节，GreptimeDB整帧表raw保留完整采集帧及各类头。字段按低位优先取位并低位对齐，Lua脚本根据公式编号选择整数或浮点等解码方式；先提取同帧全部原码，再按parameterTypes将processParam中的关联遥测代号替换为小端无符号原码整数，未声明位置仍为数值常量；processParam用斜线分隔并按顺序传递，decimalPlaces指定数值四舍五入小数位数，状态范围按计算后的结果判断。
     示例：遥测数据为CD AB，三行配置(tableIndex, telemetryCode, bitWidth)为(1, TM001, 3)、(2, TM002, 9)、(3, TM003, 4)，对应原始值为5、377、10，汇总为一帧TelemetryMessage。
-    每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；公式类型为空时输出小端无符号原码及精确文本。公式缺失或执行失败时保留raw_data，value_type为BINARY，不生成计算值，并记录参数处理失败告警，其他参数继续。BINARY和TEXT不参与数值校准，数据库数值为NULL；后续正常计算自动恢复处理告警。
+    每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；公式类型为空时输出小端无符号原码及精确文本。公式缺失或执行失败时保留raw_data，value_type为BINARY，不生成计算值，并记录参数处理失败告警，其他参数继续。BINARY和TEXT不参与数值校准，数据库数值为NULL；本地数值或文本参数后续正常处理不再自动恢复PROCESS_CONFIG告警，故障记录和人工处理功能保留。
   version: 2.8.0
 
 servers:
@@ -3542,7 +3543,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 按需展开遥测参数筛选树
-      description: 必须传taskId、selectionType和targetId以确定独立的勾选场景。仅传这三个参数返回设备；增加deviceSatelliteId返回直属参数和根系统；同时增加systemId返回该系统直属参数和子系统。传非空telemetryCode时按完整代号精确查询当前任务全部匹配的参数，直接返回可勾选节点和所属设备；此时不能传deviceSatelliteId或systemId。接口不分页，且不返回children字段。
+      description: 必须传taskId、selectionType和targetId以确定独立的勾选场景。仅传这三个参数返回设备；增加deviceSatelliteId返回直属参数和根系统；同时增加systemId返回该系统直属参数和子系统。传非空telemetryCode时去除首尾空白，按代号包含内容模糊查询当前任务的全部匹配参数，百分号和下划线作为普通字符处理，直接返回可勾选节点和所属设备；此时不能传deviceSatelliteId或systemId。接口不分页，且不返回children字段。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
         - name: selectionType
@@ -3581,7 +3582,7 @@ paths:
         - name: telemetryCode
           in: query
           required: false
-          description: 完整遥测代号，精确匹配；传入非空值时不能同时传deviceSatelliteId或systemId，返回全部匹配参数
+          description: 遥测代号包含搜索，输入TM001可匹配TM001、TM001A和XXTM001，自动去除首尾空白；百分号和下划线作为普通字符处理。传入非空值时不能同时传deviceSatelliteId或systemId，返回全部匹配参数
           schema: { type: string }
       responses:
         '200':
@@ -3657,7 +3658,7 @@ paths:
     post:
       tags: [数据处理]
       summary: 即时保存遥测参数勾选状态
-      description: "勾选或取消时立即生效，按taskId、selectionType、targetId隔离。设备卫星主键和遥测代号由parseRuleId对应的有效参数解析配置确定，无需单独提交；勾选时保存有效记录，取消勾选时物理删除当前场景和目标下该参数的勾选记录，重复取消仍返回成功。只删除勾选关系，不删除参数解析配置或历史遥测数据。筛选树与后续数据查询必须使用相同的场景和目标。"
+      description: "勾选或取消时立即生效，按taskId、selectionType、targetId隔离。设备卫星主键和遥测代号由parseRuleId对应的有效参数解析配置确定，无需单独提交；勾选时保存有效记录，取消勾选时物理删除当前场景和目标下该参数的勾选记录，重复取消仍返回成功。只删除勾选关系，不删除参数解析配置或历史遥测数据。筛选树与后续数据查询必须使用相同的场景和目标。 实时缓存使用全部页面及组件勾选并集，按任务和设备卫星隔离；管理服务每秒同步Redis，处理服务每秒刷新内存，正常情况下约两秒内生效。空勾选不写参数实时快照，正常帧和异常帧缓存继续更新。新勾选的最新值从同步后的后续报文开始生成，WebSocket仍按订阅范围筛选。"
       requestBody:
         required: true
         content:
@@ -5261,6 +5262,68 @@ components:
       bearerFormat: JWT
 
   schemas:
+    InterfaceSpeedMqMessage:
+      type: object
+      description: 每秒发送的一条全局采集速度全量快照，消息体为UTF-8 JSON文本，主题由管理服务interface-speed-report.topic配置。
+      required: [systemId, sampleTime, total, interfaces]
+      properties:
+        systemId:
+          type: string
+          description: 系统标识，由interface-speed-report.system-id配置。
+          example: sjcl
+        sampleTime:
+          type: string
+          format: date-time
+          description: 本次缓存快照读取开始时间，包含时区偏移，不替代各缓存字段原有采样时间。
+          example: '2026-11-13T10:30:01+08:00'
+        total:
+          $ref: '#/components/schemas/InterfaceSpeedMqTotal'
+        interfaces:
+          type: array
+          description: 所有未删除且已归属任务的接口，缺失或过期的速度为0 KB/s；名称和任务归属最多延迟三十秒刷新。
+          items:
+            $ref: '#/components/schemas/InterfaceSpeedMqInterface'
+      example:
+        systemId: sjcl
+        sampleTime: '2026-11-13T10:30:01+08:00'
+        total:
+          interfaceCount: 2
+          receiveRate: '5.73 MB/s'
+        interfaces:
+          - taskId: TASK001
+            interfaceName: 遥测采集接口一
+            receiveRate: '3.82 MB/s'
+          - taskId: TASK001
+            interfaceName: 遥测采集接口二
+            receiveRate: '1.91 MB/s'
+    InterfaceSpeedMqTotal:
+      type: object
+      required: [interfaceCount, receiveRate]
+      properties:
+        interfaceCount:
+          type: integer
+          description: 本条消息interfaces数组的实际长度，包含速度为零的接口。
+          example: 2
+        receiveRate:
+          type: string
+          description: 各接口有效缓存的原始KB/s数值相加后统一换算，速度字符串带KB/s或MB/s单位。
+          example: '5.73 MB/s'
+    InterfaceSpeedMqInterface:
+      type: object
+      required: [taskId, interfaceName, receiveRate]
+      properties:
+        taskId:
+          type: string
+          description: 接口所属试验任务编号。
+          example: TASK001
+        interfaceName:
+          type: string
+          description: 采集接口名称。
+          example: 遥测采集接口一
+        receiveRate:
+          type: string
+          description: 复用接口速度缓存及已有单位枚举，带KB/s或MB/s单位，最多两位小数；没有有效速度时为0 KB/s。
+          example: '3.82 MB/s'
     PdxpCommandResponseData:
       type: object
       description: >-
@@ -5774,7 +5837,7 @@ components:
           format: date-time
         recoverTime:
           type: string
-          description: 自动恢复时间，独立于人工处理状态
+          description: 自动恢复时间，独立于人工处理状态；本地参数后续正常处理不再自动更新PROCESS_CONFIG告警的恢复时间，历史值保留
           nullable: true
           format: date-time
         alarmLevel:

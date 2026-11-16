@@ -6,6 +6,8 @@ import com.example.dataadmin.entity.ProcessedTelemetryFilterSelection;
 
 /** 处理后遥测参数勾选记录访问。 */
 public interface ProcessedTelemetryFilterSelectionMapper {
+    /** 后台同步所有场景的有效勾选并集，不返回页面专用字段。 */
+    List<ProcessedTelemetryFilterSelection> findRealtimeUnion();
     /** 查询设备下已勾选的遥测代号。 */
     List<String> findSelectedCodes(@Param("taskId") String taskId,
                                    @Param("deviceSatelliteId") Long deviceSatelliteId,

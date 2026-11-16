@@ -23,13 +23,12 @@ import java.nio.ByteOrder;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,15 +40,16 @@ public final class LuaFormulaEngine {
     private static final int MAX_RAW_BYTES = 65536;
     /** 每次执行最多十万条指令。 */
     private static final int MAX_INSTRUCTIONS = 100000;
-    /** 仅允许仓库提供且已确认无跨次状态的公式100复用环境。 */
-    private static final String LINEAR_SOURCE_HASH = "Q7sGT7iR3Aw9pF00mmoEjZuXU/ch9I7lGlBasfTZEZg=";
-    /** 每个线程只保留最近一次可复用公式的环境，避免刷新后累积旧版本。 */
-    private static final ThreadLocal<PreparedFormula> PREPARED = new ThreadLocal<>();
+    /** 每个线程最多缓存三十二个公式环境，超出后淘汰最久未使用的环境。 */
+    private static final int MAX_PREPARED_FORMULAS = 32;
+    /** 业务公式只计算当前输入；环境按线程隔离，不在多个线程间共享可变状态。 */
+    private static final ThreadLocal<PreparedFormulaCache> PREPARED =
+            ThreadLocal.withInitial(PreparedFormulaCache::new);
 
     /** 工具类禁止实例化。 */
     private LuaFormulaEngine() { }
 
-    /** 编译文本脚本，并按完整源码确认是否可以复用执行环境。 */
+    /** 编译并校验文本脚本，执行环境在各处理线程首次调用时创建。 */
     public static Compiled compile(String source) {
         if (source == null || source.getBytes(StandardCharsets.UTF_8).length > MAX_SOURCE_BYTES) {
             throw new IllegalArgumentException("公式源码为空或超过64KB");
@@ -65,12 +65,6 @@ public final class LuaFormulaEngine {
             compiled.name = definition.get("name").checkjstring();
             // 声明在计算调用之前读取，旧脚本未声明时仍全部使用数值参数。
             compiled.parameterTypes = parameterTypes(definition.get("parameterTypes"));
-            if ("100".equals(compiled.code)) {
-                // 统一换行格式，公式编号相同但内容不同的脚本仍保持调用隔离。
-                byte[] normalized = source.replace("\r\n", "\n").trim().getBytes(StandardCharsets.UTF_8);
-                byte[] hash = MessageDigest.getInstance("SHA-256").digest(normalized);
-                compiled.reusable = LINEAR_SOURCE_HASH.equals(Base64.getEncoder().encodeToString(hash));
-            }
             if (!compiled.code.matches("[0-9]{1,20}") || compiled.name.trim().isEmpty()
                     || compiled.name.length() > 100) {
                 throw new IllegalArgumentException("公式编号须为1到20位数字，名称须为1到100个字符");
@@ -98,7 +92,7 @@ public final class LuaFormulaEngine {
         }
     }
 
-    /** 每次调用使用独立变量及环境，避免上一帧或其他线程修改本帧结果。 */
+    /** 复用当前线程的公式环境，每次调用重新构造输入并重置执行预算。 */
     public static Result execute(Compiled compiled, byte[] raw, int bitWidth, String parameters) {
         // 保留原有调用入口，普通脚本不需要构造关联遥测上下文。
         return execute(compiled, raw, bitWidth, parameters, Collections.emptyMap());
@@ -116,13 +110,9 @@ public final class LuaFormulaEngine {
         }
         boolean completed = false;
         try {
-            // 原码保持取位顺序，不预先转换整数；数组下标从1开始。
-            PreparedFormula prepared = compiled.reusable ? prepare(compiled) : null;
-            Globals globals = prepared == null ? environment() : prepared.globals;
-            if (prepared != null) {
-                // 复用函数时，每次调用重新计算指令额度和截止时间。
-                ((Budget) globals.debuglib).reset();
-            }
+            // 第一步：按公式编号及编译实例选择环境，并开始本次执行预算。
+            PreparedFormula prepared = prepare(compiled);
+            // 第二步：原码保持取位顺序，每次创建新的输入表，数组下标从1开始。
             LuaTable input = new LuaTable();
             LuaTable bytes = new LuaTable();
             for (int index = 0; index < raw.length; index++) {
@@ -132,9 +122,8 @@ public final class LuaFormulaEngine {
             input.set("bitWidth", LuaValue.valueOf(bitWidth));
             // 先将声明为遥测引用的位置替换为原码整数文本，再调用计算函数。
             input.set("params", parameters(compiled, parameters, telemetryRawData));
-            // 模块初始化和计算入口共享同一次指令及时间预算。
-            LuaValue calculate = prepared == null ? definition(compiled, globals).get("calculate") : prepared.calculate;
-            Result value = result(calculate.call(input));
+            // 第三步：执行缓存的计算入口；首次模块初始化与计算共享执行预算。
+            Result value = result(prepared.calculate.call(input));
             completed = true;
             return value;
         } catch (LimitExceeded error) {
@@ -144,23 +133,45 @@ public final class LuaFormulaEngine {
         } catch (RuntimeException exception) {
             throw new IllegalArgumentException("公式计算失败：" + exception.getMessage(), exception);
         } finally {
-            // 异常可能留下 Lua 调用栈，丢弃缓存，下一次重新初始化。
-            if (compiled.reusable && !completed) {
-                PREPARED.remove();
+            // 第四步：异常可能留下脚本调用栈，只丢弃本公式环境，其他公式继续复用。
+            if (!completed) {
+                PREPARED.get().remove(compiled.code);
             }
         }
     }
 
-    /** 同一线程首次执行该编译版本时初始化模块和计算函数。 */
+    /** 同一线程按最近使用顺序缓存公式，新编译实例替换同编号的旧环境。 */
     private static PreparedFormula prepare(Compiled compiled) {
-        PreparedFormula prepared = PREPARED.get();
-        if (prepared == null || prepared.compiled != compiled) {
-            Globals globals = environment();
-            LuaValue calculate = definition(compiled, globals).get("calculate");
-            prepared = new PreparedFormula(compiled, globals, calculate);
-            PREPARED.set(prepared);
+        // 第一步：编译实例一致才复用，避免配置更新后执行旧版本公式。
+        PreparedFormulaCache cache = PREPARED.get();
+        PreparedFormula prepared = cache.get(compiled.code);
+        if (prepared != null && prepared.compiled == compiled) {
+            ((Budget) prepared.globals.debuglib).reset();
+            return prepared;
         }
+        // 第二步：先释放同编号旧环境，新版本初始化失败也不回退到旧脚本。
+        cache.remove(compiled.code);
+        Globals globals = environment();
+        ((Budget) globals.debuglib).reset();
+        LuaValue calculate = definition(compiled, globals).get("calculate");
+        // 第三步：完整初始化成功后加入缓存，超过容量时自动淘汰最久未使用项。
+        prepared = new PreparedFormula(compiled, globals, calculate);
+        cache.put(compiled.code, prepared);
         return prepared;
+    }
+
+    /** 每个线程独占有界缓存，公式重新编译不会以新键累积同编号旧版本。 */
+    private static final class PreparedFormulaCache extends LinkedHashMap<String, PreparedFormula> {
+        /** 使用访问顺序维护最近调用的公式，不按导入时间淘汰。 */
+        private PreparedFormulaCache() {
+            super(MAX_PREPARED_FORMULAS, 0.75f, true);
+        }
+
+        /** 仅限制环境数量，被淘汰的公式下次调用时仍可重新创建。 */
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, PreparedFormula> eldest) {
+            return size() > MAX_PREPARED_FORMULAS;
+        }
     }
 
     /** 保存单个处理线程专用的公式实例。 */
@@ -460,7 +471,6 @@ public final class LuaFormulaEngine {
         private final Prototype prototype;
         private String code;
         private String name;
-        private boolean reusable;
         /** 编译时校验后的参数类型，只在Java内使用，不暴露可变脚本定义。 */
         private FormulaParameterType[] parameterTypes;
         private Compiled(Prototype prototype) { this.prototype = prototype; }

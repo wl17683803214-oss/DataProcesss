@@ -41,9 +41,9 @@ public interface IoTDBTelemetryStorageService {
             TelemetryMessage message) throws Exception;
 
     /**
-     * 一次批量保存遥测消息的整帧记录和全部参数记录。
+     * 组装遥测消息的整帧和全部参数记录，提交跨帧合并缓冲。
      *
-     * <p>完整采集帧写入整帧表，每个遥测参数写入参数表，二者使用相同消息时间。</p>
+     * <p>返回只表示缓冲已接收，实际写入由后台确认；每帧源时间保持不变。</p>
      *
      * @param config 当前接口配置快照，包含设备卫星主键
      * @param message 已完成业务处理的遥测消息

@@ -14,6 +14,7 @@ import com.example.dataprocess.service.TelemetryMessageService;
 import com.example.dataprocess.service.CommandResponseMessageService;
 import com.example.dataprocess.service.TelemetryRealtimeCacheWriter;
 import com.example.dataprocess.service.TelemetryRecordFactory;
+import com.example.dataprocess.service.TelemetrySelectionCache;
 import com.example.dataprocess.tool.PdxpParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,9 @@ public class TelemetryResultDispatcher {
     /** 实时分发与入库、消息发送分别排队，离线入口保留原有构造方式。 */
     private TelemetryRealtimeCacheWriter realtimeWriter;
     private PdxpFramingProperties framingProperties;
+    /** 仅实时缓存使用已勾选并集，数据库持久化继续使用完整处理结果。 */
+    @Autowired
+    private TelemetrySelectionCache selectionCache;
 
     @Autowired
     public void setRealtimeWriter(TelemetryRealtimeCacheWriter writer, PdxpFramingProperties framing) {
@@ -101,38 +105,52 @@ public class TelemetryResultDispatcher {
         this.shutdownWaitSeconds = 0;
     }
 
-    /** 两个任务均被接受后返回成功，不等待入库或发送完成。 */
+    /** 入库和消息任务均被接受后返回成功，不等待后台持久化或消息发送完成。 */
     public boolean submit(CollectInterfaceRuntimeConfig config,
             TelemetryMessage message, PdxpParser.PdxpPacket packet) {
         // 第一步：复制接口上下文，避免排队期间接口配置更新改变任务和设备身份。
         CollectInterfaceRuntimeConfig snapshot = new CollectInterfaceRuntimeConfig();
         BeanUtils.copyProperties(config, snapshot);
-        // 第二步：复制完整采集帧供入库使用，发送消息继续使用原Proto数据域。
+        // 第二步：完整采集帧供实时分发和入库使用，消息发送继续使用原处理结果。
         byte[] rawFrame = packet.getRawPacket();
-        long sequenceNumber = packet.getSequenceNumber();
         // 解析结束时只提交引用，缓存与推送组装在后台进行。
         if (realtimeWriter != null) {
             Timestamp processTime = new Timestamp(System.currentTimeMillis());
-            realtimeWriter.offer(message.getTelemetriesCount(), rawFrame.length,
-                    () -> TelemetryRecordFactory.processed(snapshot, message, rawFrame, processTime, false));
+            // 同一帧固定使用入队时的筛选版本，参数额度按本帧实际命中数量预占。
+            java.util.Set<String> selected = selectionCache == null ? java.util.Collections.emptySet()
+                    : selectionCache.selected(snapshot, message);
+            int selectedCount = 0;
+            for (String code : selected) {
+                if (message.getTelemetriesMap().containsKey(code)) {
+                    selectedCount++;
+                }
+            }
+            realtimeWriter.offer(selectedCount, rawFrame.length,
+                    () -> TelemetryRecordFactory.processed(snapshot, message, rawFrame, processTime, false, selected));
         }
-        // 第三步：两个任务独立提交，即使一方拒绝也尝试另一方。
+        // 第三步：入库和消息任务独立提交，即使一方拒绝也尝试另一方。
+        long sequenceNumber = packet.getSequenceNumber();
         boolean timed = PdxpTiming.sample(sequenceNumber);
         long storageQueuedAt = timed ? System.nanoTime() : 0L;
         boolean storageAccepted = execute(storageExecutor, snapshot, sequenceNumber,
                 DataAlarmType.STORAGE_FAILURE, "遥测入库", () -> {
-                    // 失败时也保留执行耗时，便于与取连接超时告警对照。
+                    // 这里只测量记录组装与缓冲提交，真实写入耗时由合并线程记录。
                     long storageStart = timed ? System.nanoTime() : 0L;
                     if (timed) {
-                        PdxpTiming.log(snapshot.getInterfaceId(), sequenceNumber, "入库排队",
-                                storageStart - storageQueuedAt);
+                        // 先保留排队耗时，记录组装后复用缓冲估算值，避免重复遍历参数。
+                        PdxpTiming.beginStorageSample();
                     }
                     try {
                         storageService.saveProcessedParameters(snapshot, message, rawFrame);
                     } finally {
                         if (timed) {
-                            PdxpTiming.log(snapshot.getInterfaceId(), sequenceNumber, "入库执行含重试",
-                                    System.nanoTime() - storageStart);
+                            // 先固定结束时间并清理上下文，日志输出不计入记录组装耗时。
+                            long storageFinished = System.nanoTime();
+                            Long estimatedBytes = PdxpTiming.endStorageSample();
+                            PdxpTiming.logStorageQueue(snapshot.getInterfaceId(), sequenceNumber,
+                                    storageStart - storageQueuedAt, estimatedBytes);
+                            PdxpTiming.log(snapshot.getInterfaceId(), sequenceNumber, "记录组装和缓冲提交",
+                                    storageFinished - storageStart);
                         }
                     }
                 });
@@ -157,7 +175,7 @@ public class TelemetryResultDispatcher {
                                 snapshot.getInterfaceId(), sequenceNumber));
     }
 
-    /** 本地解析失败时分别提交异常帧的实时展示与入库。 */
+    /** 本地解析失败时分别提交异常帧的实时展示与入库任务。 */
     public boolean submitAbnormalLocalFrame(CollectInterfaceRuntimeConfig config,
             PdxpParser.PdxpPacket packet) {
         // 第一步：固定本帧任务和设备身份，避免接口配置在排队期间变化。

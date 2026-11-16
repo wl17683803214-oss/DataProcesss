@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.LinkedHashMap;
 
 import com.example.common.telemetry.TelemetryRealtimeEvent;
 
@@ -55,6 +57,13 @@ public final class TelemetryRecordFactory {
     /** 从解析结果组装帧和参数，实时展示省略参数原码。 */
     public static TelemetryRealtimeEvent processed(CollectInterfaceRuntimeConfig config,
             TelemetryMessage message, byte[] rawFrame, Timestamp writeTime, boolean includeParameterRaw) {
+        return processed(config, message, rawFrame, writeTime, includeParameterRaw, null);
+    }
+
+    /** 实时链路先按勾选取出少量参数，再组装记录，空集合只生成整帧。 */
+    public static TelemetryRealtimeEvent processed(CollectInterfaceRuntimeConfig config,
+            TelemetryMessage message, byte[] rawFrame, Timestamp writeTime, boolean includeParameterRaw,
+            Set<String> selectedCodes) {
         // 第一步：写入必须有真实任务、接口和完整采集报文。
         requireConfig(config);
         if (message == null || !message.hasProtoHead() || !config.getTaskId().equals(message.getProtoHead().getTaskId())) {
@@ -76,8 +85,20 @@ public final class TelemetryRecordFactory {
                 remote ? displayName(message.getChannelName(), message.getChannelCode()) : message.getChannelName(),
                 rawFrame, status);
         // 第三步：复用协议已有枚举，保存英文枚举名，不重复创建值类型和状态枚举。
-        List<TelemetryParameterRecord> rows = new ArrayList<>(message.getTelemetriesCount());
-        for (Map.Entry<String, Telemetry> entry : message.getTelemetriesMap().entrySet()) {
+        Map<String, Telemetry> telemetries = message.getTelemetriesMap();
+        if (selectedCodes != null) {
+            // 参数按遥测代号匹配，读取原消息映射而不重新构建完整 Proto。
+            Map<String, Telemetry> selected = new LinkedHashMap<>();
+            for (String code : selectedCodes) {
+                Telemetry telemetry = telemetries.get(code);
+                if (telemetry != null) {
+                    selected.put(code, telemetry);
+                }
+            }
+            telemetries = selected;
+        }
+        List<TelemetryParameterRecord> rows = new ArrayList<>(telemetries.size());
+        for (Map.Entry<String, Telemetry> entry : telemetries.entrySet()) {
             Telemetry telemetry = entry.getValue();
             TelemetryParameterRecord row = new TelemetryParameterRecord();
             row.setSourceTime(writeTime);

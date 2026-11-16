@@ -63,12 +63,32 @@ greptime:
   connection-timeout-millis: 10000
   # 单条语句超时秒数。
   query-timeout-seconds: 30
-  # 参数分批写入数量，避免报文过大。
-  batch-size: 500
   # 包含首次写入在内的尝试次数，稳定主键避免重试新增时间点。
   write-attempts: 3
   # 启动时创建数据库和分表目录；对象两张表在首次写入时创建，不迁移旧公共表。
   auto-create-tables: true
+  bulk:
+    # 留空时使用查询连接的主机与4001端口；此处显式填写部署环境地址。
+    endpoints:
+      - 127.0.0.1:4001
+    # 同任务同对象跨帧合并，单批最多十万行，同时受字节额度限制。
+    max-batch-rows: 100000
+    # 单批内容保守估算上限为64兆字节，单条记录超限时明确报错。
+    max-batch-bytes: 67108864
+    # 单个流的堆外额度为128兆字节，至少为批次额度的两倍。
+    allocator-max-bytes: 134217728
+    # 最多复用16个表流；淘汰没有调用方持有的最久未用流。
+    max-cached-streams: 32
+    # 同时组装并等待写入确认的任务最多4个，其余受原入库队列和等待超时限制。
+    max-concurrent-writes: 8
+    # 每次确认及流内部等待的超时毫秒数；失败后关闭原流再有限重试。
+    timeout-millis: 30000
+    # 从当前对象最早待写帧开始等待，满一秒即触发刷新，新帧不会重置计时。
+    flush-interval-millis: 1000
+    # 待合并、写入中和重试中的记录共用256兆字节估算额度，超限明确拒绝并告警。
+    max-pending-bytes: 536870912
+    # 正常关闭时立即刷新剩余记录，最多等待一分钟，超时明确报告未完成量。
+    shutdown-wait-millis: 60000
 
 # 遥测实时缓存和推送，与管理服务使用相同的Redis地址、前缀及保留设置，修改后重启生效。
 telemetry-realtime:
@@ -192,9 +212,3 @@ baseline:
     api-base-url: http://10.126.100.249:16001/prod-api
     connect-timeout-millis: 5000
     read-timeout-millis: 10000
-
-# GreptimeDB业务数据过期删除配置；不填或留空不删除，只接受正整数天数。
-data-retention:
-  # 遥测参数、正常帧、异常帧和遥测曲线共用保留天数，以帧时间为准。
-  # 每小时第15分钟删除早于截止时间的数据；变更后重启处理服务生效。
-  telemetry-days: 7

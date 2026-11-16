@@ -2,7 +2,11 @@ package com.example.dataprocess.config;
 
 import com.example.common.greptime.GreptimeProperties;
 import com.example.common.greptime.GreptimeStore;
+import com.example.dataprocess.alarm.DataAlarmRecorder;
+import com.example.dataprocess.service.GreptimeBulkWriter;
+import com.example.dataprocess.service.GreptimeWriteBuffer;
 import java.io.IOException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,9 +21,30 @@ public class GreptimeConfig {
         return new GreptimeProperties();
     }
 
-    /** 启用时连接数据库并自动创建缺失表，关闭时释放连接池。 */
+    /** 批量写入额度使用独立配置，查询连接不承担参数数据传输。 */
+    @Bean
+    @ConfigurationProperties(prefix = "greptime.bulk")
+    public GreptimeBulkProperties greptimeBulkProperties() {
+        return new GreptimeBulkProperties();
+    }
+
+    /** 批量客户端只在处理服务创建，管理服务不加载写入依赖。 */
     @Bean(destroyMethod = "close")
-    public GreptimeStore greptimeStore(GreptimeProperties properties) throws IOException {
-        return new GreptimeStore(properties);
+    public GreptimeBulkWriter greptimeBulkWriter(GreptimeProperties storage, GreptimeBulkProperties bulk) {
+        return new GreptimeBulkWriter(storage, bulk);
+    }
+
+    /** 启用时创建缺失表和目录，查询与建表复用原有映射。 */
+    @Bean(destroyMethod = "close")
+    public GreptimeStore greptimeStore(GreptimeProperties properties, GreptimeBulkWriter writer) throws IOException {
+        return new GreptimeStore(properties, writer);
+    }
+
+    /** 存储启用时创建合并缓冲，销毁顺序保证缓冲先刷完再关闭数据库。 */
+    @Bean(destroyMethod = "close")
+    @ConditionalOnProperty(prefix = "greptime", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public GreptimeWriteBuffer greptimeWriteBuffer(GreptimeStore store, GreptimeBulkProperties bulk,
+            DataAlarmRecorder alarmRecorder) {
+        return new GreptimeWriteBuffer(store, bulk, alarmRecorder);
     }
 }

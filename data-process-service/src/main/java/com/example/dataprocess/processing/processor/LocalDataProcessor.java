@@ -160,11 +160,11 @@ public class LocalDataProcessor implements DataProcessor {
             if (text(item.getSystemName())) {
                 telemetry.setSystemName(item.getSystemName().trim());
             }
-            // 数值按计算后的结果判定范围，文本和转换失败的原码不参与数值报警。
+            // 数值按计算后的结果判定范围，不自动恢复历史处理配置告警。
+            // 文本和转换失败的原码不参与数值报警。
             if (stateValue != null) {
                 try {
                     state(telemetry, item, stateValue);
-                    recoverFormula(config, item);
                 } catch (RuntimeException exception) {
                     telemetry.clearStateType();
                     parameterFailure(config, item, "状态规则解析失败：" + exception.getMessage());
@@ -269,8 +269,8 @@ public class LocalDataProcessor implements DataProcessor {
             ValueType type = result.getType();
             telemetry.setValueType(type);
             if (type == ValueType.VALUE_TYPE_TEXT) {
+                // 文本结果直接保留原文，不再进入参数处理告警恢复流程。
                 telemetry.setValueText(result.getText());
-                recoverFormula(config, field);
                 return null;
             }
             BigDecimal physicalValue = result.getValue();
@@ -306,15 +306,6 @@ public class LocalDataProcessor implements DataProcessor {
                     field.getTelemetryCode(), field.getTelemetryName(), null,
                     "公式编号：" + trim(field.getFormulaType()),
                     reason + "；当前参数保留原始字节，其他参数继续处理");
-        }
-    }
-
-    /** 后续数据正常计算后恢复该参数的处理告警。 */
-    private void recoverFormula(CollectInterfaceRuntimeConfig config, PdxpProtocolField field) {
-        // 公式及状态规则处理成功后恢复配置告警，不依赖校准野值检测开关。
-        if (alarmRecorder != null) {
-            alarmRecorder.recover(config, com.example.common.enums.DataAlarmType.PROCESS_CONFIG,
-                    field.getTelemetryCode(), null);
         }
     }
 

@@ -13,6 +13,30 @@
     <artifactId>data-process-service</artifactId>
 
     <dependencies>
+        <!-- 官方写入协议复用批量列式传输，包含运行时传输实现，支持Java 8。 -->
+        <dependency>
+            <groupId>io.greptime</groupId>
+            <artifactId>ingester-protocol</artifactId>
+            <version>0.16.0</version>
+            <exclusions>
+                <!-- 旧版列缓冲依赖网络库内部字段，改用官方独立堆外分配实现。 -->
+                <exclusion>
+                    <groupId>org.apache.arrow</groupId>
+                    <artifactId>arrow-memory-netty</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.greptime</groupId>
+            <artifactId>ingester-grpc</artifactId>
+            <version>0.16.0</version>
+        </dependency>
+        <!-- 与SDK的列缓冲版本一致，避免依赖网络库的内部内存分配字段。 -->
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>arrow-memory-unsafe</artifactId>
+            <version>14.0.2</version>
+        </dependency>
         <!-- 接收限速复用令牌桶实现，此版本兼容项目使用的Java 8。 -->
         <dependency>
             <groupId>com.github.vladimir-bukhtoyarov</groupId>

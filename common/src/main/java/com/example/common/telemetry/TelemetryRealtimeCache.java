@@ -231,6 +231,15 @@ public class TelemetryRealtimeCache {
         }
     }
 
+    /** 取消勾选时清理本实例已写入的类型键及跨类型最新值。 */
+    public void removeParameter(TelemetryParameterRecord row) {
+        String suffix = ":" + encode(row.getTelemetryCode());
+        // 独立删除各键以兼容 Redis 集群中不同遥测类型所在的槽位。
+        redis.delete(parameterKey(row.getTaskId(), row.getSourceType(), row.getSourceIdentity(),
+                row.getTelemetryType()) + suffix);
+        redis.delete(parameterKey(row.getTaskId(), row.getSourceType(), row.getSourceIdentity(), null) + suffix);
+    }
+
     /** 参数快照省略原码和页面不读取的字段，避免复制大块二进制数据。 */
     private String parameterJson(TelemetryParameterRecord row) {
         ObjectNode value = mapper.createObjectNode();

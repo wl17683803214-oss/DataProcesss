@@ -2383,7 +2383,7 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
 
 303示例脚本：value保存从2000-01-01 12:00:00开始的0.1毫秒整数计数，valueType为VALUE_TYPE_TIME；计数10001对应valueText“2000-01-01 12:00:01.0001”。时间行为由脚本调用工具选择，不由Java按303编号硬编码，不按decimalPlaces舍入，不作时区偏移。
 
-找不到公式、参数无效、脚本执行失败或结果不合法时，仅将当前参数保留为BINARY原码，不生成计算值，并写参数处理失败告警；同帧其他参数继续。BINARY不参与数值校准，数据库value存NULL。导入、覆盖或修正配置后由内部同步机制更新运行快照，后续计算正常时自动恢复告警；历史失败数据不自动补算。完整规范及文件见docs/lua-formulas/README.md。
+找不到公式、参数无效、脚本执行失败或结果不合法时，仅将当前参数保留为BINARY原码，不生成计算值，并写参数处理失败告警；同帧其他参数继续。BINARY不参与数值校准，数据库value存NULL。导入、覆盖或修正配置后由内部同步机制更新运行快照，后续数值或文本参数正常处理不再自动恢复PROCESS_CONFIG告警；故障记录和人工处理功能保留，历史失败数据不自动补算。完整规范及文件见docs/lua-formulas/README.md。
 ### 遥测整帧检查结果与查询
 
 `GET /processing/realtime/telemetry?taskId=728101&interfaceId=14` 查询最近15分钟的正常整帧，按时间倒序最多100条，data直接返回数组。当前记录示例：

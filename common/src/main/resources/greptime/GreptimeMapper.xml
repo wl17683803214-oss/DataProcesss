@@ -97,25 +97,6 @@
             PRIMARY KEY (task_id, source_type, source_identity, telemetry_type, telemetry_code)
         ) WITH ('append_mode'='false', 'merge_mode'='last_row', 'ttl'='forever')
     </update>
-    <insert id="insertFrame" lang="com.example.common.greptime.GreptimeTableLanguageDriver">
-        INSERT INTO __greptime_table__ (source_time, task_id, interface_id, source_type, source_identity,
-            telemetry_type, device_satellite_name, channel_name, `raw`, check_status)
-        VALUES (#{frame.sourceTime,jdbcType=TIMESTAMP}, #{frame.taskId}, #{frame.interfaceId}, #{frame.sourceType},
-            #{frame.sourceIdentity}, #{frame.telemetryType}, #{frame.deviceSatelliteName}, #{frame.channelName},
-            #{frame.raw,jdbcType=VARBINARY}, #{frame.checkStatus})
-    </insert>
-    <insert id="insertParameters" lang="com.example.common.greptime.GreptimeTableLanguageDriver">
-        INSERT INTO __greptime_table__ (source_time, task_id, source_type, source_identity, telemetry_type,
-            telemetry_code, telemetry_name, value_type, `value`, value_text, `raw`,
-            state_name, state_type, state_index, processed_at)
-        VALUES
-        <foreach collection="rows" item="row" separator=",">
-            (#{row.sourceTime,jdbcType=TIMESTAMP}, #{row.taskId}, #{row.sourceType}, #{row.sourceIdentity},
-             #{row.telemetryType}, #{row.telemetryCode}, #{row.telemetryName}, #{row.valueType},
-             #{row.value,jdbcType=DOUBLE}, #{row.valueText}, #{row.raw,jdbcType=VARBINARY}, #{row.stateName},
-             #{row.stateType}, #{row.stateIndex,jdbcType=INTEGER}, #{row.processedAt,jdbcType=TIMESTAMP})
-        </foreach>
-    </insert>
     <!-- 时间边界必须完整，避免缺少条件时读取全部历史记录。 -->
     <sql id="timeCondition">
         <choose>

@@ -106,7 +106,7 @@ public class TelemetryFilterService {
     /** 遥测代号搜索直接返回当前任务全部匹配的可勾选参数。 */
     private List<TelemetryFilterNodeVO> search(String taskId, String telemetryCode,
             int selectionType, long targetId) {
-        // 去除输入两端空白后按完整遥测代号查询。
+        // 去除输入两端空白后按遥测代号的包含内容查询。
         String code = telemetryCode.trim();
         List<TelemetryFilterNodeVO> nodes = new ArrayList<>();
         for (TelemetryFilterSearchRecord record : ruleMapper.searchByTelemetryCode(

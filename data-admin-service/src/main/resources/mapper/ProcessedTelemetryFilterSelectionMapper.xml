@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper">
+    <!-- 所有任务及组件的有效勾选合并，同一对象和代号只同步一次。 -->
+    <select id="findRealtimeUnion" resultType="com.example.dataadmin.entity.ProcessedTelemetryFilterSelection">
+        select distinct selection.task_id, selection.device_satellite_id, selection.telemetry_code,
+               device.type as device_satellite_type, device.code as device_satellite_code
+        from processed_telemetry_filter_selection selection
+        inner join device_satellite device
+          on device.id = selection.device_satellite_id
+         and device.task_id = selection.task_id and device.is_deleted = 0
+        where selection.is_deleted = 0
+          and exists (
+              select rule.id from telemetry_parse_rule_config rule
+              where rule.task_id = selection.task_id
+                and rule.device_satellite_id = selection.device_satellite_id
+                and rule.telemetry_code = selection.telemetry_code and rule.is_deleted = 0
+          )
+        order by selection.task_id, selection.device_satellite_id, selection.telemetry_code
+    </select>
     <!-- 勾选状态按任务、设备、场景和组件隔离。 -->
     <select id="findSelectedCodes" resultType="string">
         select telemetry_code

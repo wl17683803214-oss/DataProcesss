@@ -23,10 +23,6 @@ public interface GreptimeMapper {
     List<String> existingTables(@Param("databaseName") String databaseName, @Param("names") List<String> names);
     /** 枚举当前数据库的对象分表，清理不依赖业务对象是否已删除。 */
     List<String> shardTables(@Param("databaseName") String databaseName);
-    /** 幂等写入一条整帧。 */
-    int insertFrame(@Param("tableName") String tableName, @Param("frame") TelemetryFrameRecord frame);
-    /** 分批写入遥测参数。 */
-    int insertParameters(@Param("tableName") String tableName, @Param("rows") List<TelemetryParameterRecord> rows);
     /** 查询正常或异常整帧。 */
     List<TelemetryFrameRecord> frames(Map<String, Object> query);
     /** 一次查询所选参数在时间范围内各自的最新值。 */

@@ -38,7 +38,10 @@ public class TelemetryRealtimeConfig {
     /** 有界异步队列由独立工作线程消费，关闭时立即丢弃尚未写入的快照。 */
     @Bean(destroyMethod = "close")
     public TelemetryRealtimeCacheWriter telemetryRealtimeCacheWriter(TelemetryRealtimeCache cache,
-            TelemetryRealtimeProperties properties, TelemetryRealtimePublisher publisher) {
-        return new TelemetryRealtimeCacheWriter(cache, properties, publisher);
+            TelemetryRealtimeProperties properties, TelemetryRealtimePublisher publisher,
+            com.example.dataprocess.service.TelemetrySelectionCache selectionCache) {
+        TelemetryRealtimeCacheWriter writer = new TelemetryRealtimeCacheWriter(cache, properties, publisher);
+        writer.setSelectionCache(selectionCache);
+        return writer;
     }
 }

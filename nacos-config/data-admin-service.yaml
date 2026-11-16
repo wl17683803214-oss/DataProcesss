@@ -131,6 +131,15 @@ rocketmq:
     # 填写有效的消费认证信息。
     access-key: SJCLMQ
     secret-key: SJCLMQ123
+# 接口采集速度JSON上报配置；复用管理服务已有消息生产者。
+interface-speed-report:
+  # 每秒读取已有速度缓存并上报，关闭后不查询缓存和接口元数据。
+  enabled: true
+  # 独立的速度快照主题，填写纯主题名，不拼接标签。
+  topic: topic_interface_speed_out_sjcl
+  # JSON消息中的系统标识。
+  system-id: sjcl
+
 task-lifecycle:
   # 调度系统发布任务生命周期消息的主题。
   topic: sydu-events
@@ -196,8 +205,6 @@ greptime:
   connection-timeout-millis: 10000
   # 单条语句超时秒数。
   query-timeout-seconds: 30
-  # 参数分批写入数量，避免报文过大。
-  batch-size: 500
   # 包含首次写入在内的尝试次数，稳定主键避免重试新增时间点。
   write-attempts: 3
   # 启动时创建数据库和分表目录；对象两张表在首次写入时创建，不迁移旧公共表。
@@ -239,6 +246,8 @@ data-processing:
 # 业务数据过期删除配置；不填或留空不删除，填写正整数时按天保留。
 # 每小时第15分钟分批物理删除；变更后重启管理服务生效，采集处理累计数量按剩余记录计算。
 data-retention:
+  # 遥测参数和整帧保留天数，由管理服务统一清理。
+  telemetry-days: 7
   # 采集五秒统计及采集曲线保留天数。
   collection-statistics-days: 30
   # 处理五秒统计及处理曲线保留天数。

@@ -9,7 +9,6 @@ public class GreptimeProperties {
     private int maxPoolSize = 5;
     private int connectionTimeoutMillis = 10000;
     private int queryTimeoutSeconds = 30;
-    private int batchSize = 500;
     private int writeAttempts = 3;
     private boolean enabled = true;
     private boolean autoCreateTables = true;
@@ -62,14 +61,6 @@ public class GreptimeProperties {
     public void setQueryTimeoutSeconds(int value) {
         queryTimeoutSeconds = value;
     }
-    /** 获取每批参数数量。 */
-    public int getBatchSize() {
-        return batchSize;
-    }
-    /** 设置每批参数数量。 */
-    public void setBatchSize(int value) {
-        batchSize = value;
-    }
     /** 获取写入尝试次数。 */
     public int getWriteAttempts() {
         return writeAttempts;
@@ -95,12 +86,12 @@ public class GreptimeProperties {
         autoCreateTables = value;
     }
 
-    /** 启动前拒绝无效连接和批量参数。 */
+    /** 启动前拒绝无效查询连接和重试参数。 */
     public void validate() {
         if (url == null || !url.startsWith("jdbc:mysql:") || maxPoolSize < 2
                 || connectionTimeoutMillis < 250 || queryTimeoutSeconds < 1
-                || batchSize < 1 || batchSize > 5000 || writeAttempts < 1 || writeAttempts > 5) {
-            throw new IllegalArgumentException("时序连接配置无效，连接数至少为2，批量大小为1至5000，写入次数为1至5");
+                || writeAttempts < 1 || writeAttempts > 5) {
+            throw new IllegalArgumentException("时序连接配置无效，连接数至少为2，写入次数为1至5");
         }
     }
 }

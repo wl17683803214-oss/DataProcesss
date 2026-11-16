@@ -33,6 +33,8 @@ public class GreptimeStore implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(GreptimeStore.class);
     /** 当前服务的独立连接配置。 */
     private final GreptimeProperties properties;
+    /** 管理服务仅查询，处理服务注入独立的批量写入组件。 */
+    private final GreptimeDataWriter writer;
     /** 目录和元数据查询限定的数据库。 */
     private final String databaseName;
     /** 不注册到业务库事务的数据源。 */
@@ -50,8 +52,14 @@ public class GreptimeStore implements AutoCloseable {
 
     /** 启用自动创建时，先创建目标数据库和目录，对象表延迟到首次写入。 */
     public GreptimeStore(GreptimeProperties properties) throws IOException {
+        this(properties, null);
+    }
+
+    /** 复用相同目录和建表逻辑，业务数据交给指定传输组件写入。 */
+    public GreptimeStore(GreptimeProperties properties, GreptimeDataWriter writer) throws IOException {
         properties.validate();
         this.properties = properties;
+        this.writer = writer;
         this.databaseName = databaseName(properties.getUrl());
         // 第一步：关闭时不创建连接，沿用既有仅处理不落库模式。
         if (!properties.isEnabled()) {
@@ -78,8 +86,29 @@ public class GreptimeStore implements AutoCloseable {
 
     /** 首次建表和目录登记完成后，按稳定身份和时间重试同一批数据。 */
     public void save(TelemetryFrameRecord frame, List<TelemetryParameterRecord> parameters) {
-        // 第一步：同一批只能属于同一对象和任务，避免参数被路由到其他对象表。
+        // 单帧验证和离线入口继续复用同一个跨帧写入实现。
+        saveBatch(Collections.singletonList(frame), parameters);
+    }
+
+    /** 同任务同对象的多帧共用一次写入流程，记录时间保持各帧原始值。 */
+    public void saveBatch(List<TelemetryFrameRecord> frames, List<TelemetryParameterRecord> parameters) {
+        // 只读服务和关闭存储的部署不能误调用写入入口。
+        if (!properties.isEnabled() || writer == null) {
+            throw new IllegalStateException("遥测数据库未启用或当前组件未配置写入器");
+        }
+        // 第一步：先校验全部帧和参数，避免错误路由导致跨对象或跨任务污染。
+        if (frames == null || frames.isEmpty() || parameters == null) {
+            throw new IllegalArgumentException("遥测批量写入必须包含整帧列表和参数列表");
+        }
+        TelemetryFrameRecord frame = frames.get(0);
         GreptimeTableRoute route = GreptimeTableRoute.of(frame.getSourceType(), frame.getSourceIdentity());
+        for (TelemetryFrameRecord row : frames) {
+            if (!Objects.equals(frame.getTaskId(), row.getTaskId())
+                    || !Objects.equals(frame.getSourceType(), row.getSourceType())
+                    || !Objects.equals(frame.getSourceIdentity(), row.getSourceIdentity())) {
+                throw new IllegalArgumentException("同批整帧的任务或对象身份不一致");
+            }
+        }
         for (TelemetryParameterRecord row : parameters) {
             if (!Objects.equals(frame.getTaskId(), row.getTaskId())
                     || !Objects.equals(frame.getSourceType(), row.getSourceType())
@@ -89,18 +118,27 @@ public class GreptimeStore implements AutoCloseable {
         }
         for (int attempt = 1; attempt <= properties.getWriteAttempts(); attempt++) {
             try {
-                execute(mapper -> {
-                    // 第二步：仅首次写入执行建表和目录登记，登记成功后再写业务数据。
-                    initializeObject(mapper, route);
-                    registerSource(mapper, route, frame);
-                    // 第三步：先完成参数分批写入，再保存所属整帧。
-                    for (int start = 0; start < parameters.size(); start += properties.getBatchSize()) {
-                        mapper.insertParameters(route.parameterTable(), parameters.subList(start,
-                                Math.min(start + properties.getBatchSize(), parameters.size())));
+                // 第二步：仅首次写入使用查询连接登记对象，普通写入不再申请数据库连接。
+                Map<List<Object>, TelemetryFrameRecord> missingSources = new LinkedHashMap<>();
+                for (TelemetryFrameRecord row : frames) {
+                    List<Object> sourceKey = Arrays.asList(row.getTaskId(), row.getInterfaceId(),
+                            row.getSourceType(), row.getSourceIdentity());
+                    if (!registeredSources.contains(sourceKey)) {
+                        missingSources.putIfAbsent(sourceKey, row);
                     }
-                    mapper.insertFrame(route.frameTable(), frame);
-                    return null;
-                });
+                }
+                if ((properties.isAutoCreateTables() && !initializedObjects.contains(route.parameterTable()))
+                        || !missingSources.isEmpty()) {
+                    execute(mapper -> {
+                        initializeObject(mapper, route);
+                        for (TelemetryFrameRecord row : missingSources.values()) {
+                            registerSource(mapper, route, row);
+                        }
+                        return null;
+                    });
+                }
+                // 第三步：等待批量写入器的服务端确认，保持现有入库耗时和告警口径。
+                writer.write(route, frames, parameters);
                 return;
             } catch (RuntimeException exception) {
                 // 第四步：达到重试上限后交给已有异步告警，不改变固定入库时间。

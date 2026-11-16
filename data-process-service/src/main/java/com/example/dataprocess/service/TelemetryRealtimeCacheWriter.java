@@ -4,6 +4,8 @@ import com.example.common.greptime.TelemetryFrameRecord;
 import com.example.common.greptime.TelemetryParameterRecord;
 import com.example.common.telemetry.TelemetryRealtimeCache;
 import com.example.common.telemetry.TelemetryRealtimeEvent;
+import com.example.common.telemetry.TelemetrySelectionSnapshot;
+import java.util.Iterator;
 import java.util.function.Supplier;
 import com.example.common.telemetry.TelemetryRealtimeProperties;
 import com.example.dataprocess.config.DataProcessingThreadPoolConfig;
@@ -46,6 +48,14 @@ public class TelemetryRealtimeCacheWriter implements AutoCloseable {
     private final ScheduledExecutorService executor;
     /** 后台日志按十秒汇总一次。 */
     private long nextReportNanos;
+    /** 只保留已缓存参数的删除所需身份，取消后由同一后台线程清理。 */
+    private final Map<String, TelemetryParameterRecord> writtenParameters = new LinkedHashMap<>();
+    private TelemetrySelectionCache selectionCache;
+
+    /** 复用既有构造方法，运行环境注入最新筛选快照。 */
+    public void setSelectionCache(TelemetrySelectionCache selectionCache) {
+        this.selectionCache = selectionCache;
+    }
 
     /** 创建有界缓存工作线程，不在启动时访问Redis。 */
     public TelemetryRealtimeCacheWriter(TelemetryRealtimeCache cache, TelemetryRealtimeProperties properties,
@@ -102,6 +112,17 @@ public class TelemetryRealtimeCacheWriter implements AutoCloseable {
         List<Snapshot> snapshots = new ArrayList<>();
         queue.drainTo(snapshots);
         try {
+            // 清理取消勾选的已写参数，整帧缓存继续按原有容量规则保存。
+            if (selectionCache != null) {
+                Iterator<TelemetryParameterRecord> iterator = writtenParameters.values().iterator();
+                while (iterator.hasNext()) {
+                    TelemetryParameterRecord row = iterator.next();
+                    if (!selectionCache.contains(row)) {
+                        cache.removeParameter(row);
+                        iterator.remove();
+                    }
+                }
+            }
             // 第一步：使用对象引用组成批次，公共组件合并重复参数并批量写入。
             if (!snapshots.isEmpty()) {
                 Map<TelemetryFrameRecord, List<TelemetryParameterRecord>> batches = new LinkedHashMap<>();
@@ -153,7 +174,28 @@ public class TelemetryRealtimeCacheWriter implements AutoCloseable {
     private void writeAndPublish(Map<TelemetryFrameRecord, List<TelemetryParameterRecord>> batches)
             throws java.io.IOException {
         if (!batches.isEmpty()) {
+            // 排队期间只允许缩小已组装的集合，新勾选从下一帧开始更新。
+            if (selectionCache != null) {
+                for (List<TelemetryParameterRecord> rows : batches.values()) {
+                    rows.removeIf(row -> !selectionCache.contains(row));
+                }
+            }
             cache.writeSnapshots(batches);
+            // 仅保存最小身份字段，避免额外长期持有数值、文本和原始字节。
+            for (List<TelemetryParameterRecord> rows : batches.values()) {
+                for (TelemetryParameterRecord row : rows) {
+                    String key = TelemetrySelectionSnapshot.objectKey(
+                            row.getTaskId(), row.getSourceType(), row.getSourceIdentity())
+                            + "." + row.getTelemetryType() + "." + row.getTelemetryCode();
+                    TelemetryParameterRecord identity = new TelemetryParameterRecord();
+                    identity.setTaskId(row.getTaskId());
+                    identity.setSourceType(row.getSourceType());
+                    identity.setSourceIdentity(row.getSourceIdentity());
+                    identity.setTelemetryType(row.getTelemetryType());
+                    identity.setTelemetryCode(row.getTelemetryCode());
+                    writtenParameters.put(key, identity);
+                }
+            }
             publisher.offer(batches);
         }
     }

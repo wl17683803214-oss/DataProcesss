@@ -172,7 +172,7 @@
           and device_satellite_id = #{rule.deviceSatelliteId} and is_deleted = 0
     </update>
 
-    <!-- 搜索只扫描有效参数，直接返回导入的系统路径与勾选状态。 -->
+    <!-- 遥测代号按字面内容做包含搜索，直接返回有效参数的系统路径与勾选状态。 -->
     <select id="searchByTelemetryCode" resultType="com.example.dataadmin.entity.TelemetryFilterSearchRecord">
         select rule_config.id, rule_config.device_satellite_id,
                device.name as device_satellite_name,
@@ -191,7 +191,16 @@
          and selection.target_id = #{targetId}
          and selection.is_deleted = 0
         where rule_config.task_id = #{taskId} and rule_config.is_deleted = 0
-          and rule_config.telemetry_code = #{telemetryCode}
+        <choose>
+            <when test="telemetryCode != null and telemetryCode != ''">
+                <!-- 子串匹配将百分号和下划线作为普通字符处理。 -->
+                and position(#{telemetryCode} in rule_config.telemetry_code) &gt; 0
+            </when>
+            <otherwise>
+                <!-- 搜索入口缺少代号时不扩大为全任务参数查询。 -->
+                and 1 = 0
+            </otherwise>
+        </choose>
         order by rule_config.device_satellite_id, rule_config.telemetry_code
     </select>
 
