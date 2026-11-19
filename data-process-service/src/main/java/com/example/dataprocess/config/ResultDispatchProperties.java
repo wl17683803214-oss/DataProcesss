@@ -69,6 +69,8 @@ public class ResultDispatchProperties {
     /** 消息到期只推进到自身序号，较大序号仍保留在接口队列。 */
     public static class MessageOrder {
 
+        /** 关闭时保留消息重排，到期后跳过实际发送。 */
+        private boolean sendEnabled = true;
         /** 从消息进入缓冲区开始计算的到期时间，零表示不额外等待。 */
         @Min(value = 0, message = "消息重排等待时间不能小于零")
         @Max(value = 600000, message = "消息重排等待时间不能超过十分钟")
@@ -88,6 +90,12 @@ public class ResultDispatchProperties {
         /** 每次调度最多发送的条数，让其他接口也有机会取得线程。 */
         @Min(value = 1, message = "单次消息发送条数必须大于零")
         private int maxSendsPerRun = 256;
+
+        /** 读取到期消息的发送开关。 */
+        public boolean isSendEnabled() { return sendEnabled; }
+
+        /** 绑定到期消息的发送开关。 */
+        public void setSendEnabled(boolean value) { sendEnabled = value; }
 
         /** 读取重排等待毫秒数。 */
         public long getWaitMillis() { return waitMillis; }

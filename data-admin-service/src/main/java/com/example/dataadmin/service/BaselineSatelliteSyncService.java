@@ -7,6 +7,8 @@ import com.example.dataadmin.service.support.ParameterWorkbookParser;
 import com.example.dataadmin.storage.SatelliteTableStorage;
 import com.example.dataadmin.vo.processing.BaselineSatelliteSyncVO;
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -16,9 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** 在数据库事务外查询并校验基线卫星，全部有效后统一导入。 */
+/** 在数据库事务外逐颗校验基线卫星，跳过有问题的参数表后统一导入有效数据。 */
 @Service
 public class BaselineSatelliteSyncService {
+    /** 每颗卫星的参数表失败独立记录，避免中断其他卫星同步。 */
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaselineSatelliteSyncService.class);
     /** 每页请求全部卫星，仍超出时继续翻页。 */
     private static final int PAGE_SIZE = 99999;
     /** 复用已有基线地址和超时配置。 */
@@ -85,28 +89,30 @@ public class BaselineSatelliteSyncService {
             } else if (expectedTotal != total.asLong()) {
                 throw new IllegalStateException("基线卫星总数在同步期间发生变化，请重试");
             }
-            // 第三步：按卫星编码识别身份，有表名和地址时下载并解析目标工作表。
+            // 第三步：按卫星编码识别身份，有下载地址时读取Excel首个工作表作为A表。
             for (JsonNode satellite : rows) {
                 String code = requiredText(satellite.path("satelliteCode"), "卫星编码");
                 String name = requiredText(satellite.path("satelliteName"), "卫星名称");
                 if (!seenCodes.add(code)) {
                     throw new IllegalArgumentException("基线返回重复卫星编码：" + code);
                 }
-                String tableName = optionalText(satellite.path("satelliteParameterTableName"));
                 String tableUrl = optionalText(satellite.path("satelliteParameterTableUrl"));
-                if (tableName.isEmpty() || tableUrl.isEmpty()) {
-                    // 基线未提供完整的参数表信息时保留当前任务已有配置。
+                if (tableUrl.isEmpty()) {
+                    // 无下载地址时跳过该卫星，保留当前任务已有配置。
                     skipped++;
+                    LOGGER.warn("基线卫星缺少参数表下载地址，已跳过，卫星名称：{}，卫星编码：{}", name, code);
                     continue;
                 }
                 try {
                     byte[] content = storage.downloadContent(baseUrl, tableUrl);
-                    rules.put(code, parser.parseSatelliteWorkbook(taskId, tableName, content)
+                    rules.put(code, parser.parseSatelliteWorkbook(taskId, content)
                             .values().iterator().next());
-                } catch (IllegalArgumentException exception) {
-                    throw new IllegalArgumentException("卫星【" + name + "】" + exception.getMessage(), exception);
-                } catch (IllegalStateException exception) {
-                    throw new IllegalStateException("卫星【" + name + "】" + exception.getMessage(), exception);
+                } catch (IllegalArgumentException | IllegalStateException exception) {
+                    // 下载、读取或参数校验失败只跳过当前卫星，不将其加入本次替换集合。
+                    skipped++;
+                    LOGGER.warn("基线卫星参数表处理失败，已跳过，卫星名称：{}，卫星编码：{}，原因：{}",
+                            name, code, exception.getMessage());
+                    continue;
                 }
                 names.put(code, name);
             }
@@ -121,12 +127,12 @@ public class BaselineSatelliteSyncService {
                 throw new IllegalStateException("基线卫星分页未返回完整数据，请重试");
             }
         }
-        // 第五步：所有远程数据校验完成后，通过独立写事务统一替换并返回统计。
+        // 第五步：分页完整后仅提交有效卫星，跳过项保留原配置，复用独立写事务返回统计。
         int imported = processingService.importBaselineRules(taskId, rules, names);
         return new BaselineSatelliteSyncVO(seenCodes.size(), rules.size(), skipped, imported);
     }
 
-    /** 参数表名称和下载地址只接受非空文本。 */
+    /** 下载地址只接受非空文本。 */
     private String optionalText(JsonNode value) {
         return value.isTextual() ? value.asText().trim() : "";
     }

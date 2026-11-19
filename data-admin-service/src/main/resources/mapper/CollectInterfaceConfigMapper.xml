@@ -42,7 +42,7 @@
         <result column="interface_name" property="interfaceName"/>
     </resultMap>
 
-    <!-- 查询数据处理页面使用的未删除采集接口，只返回主键和名称。 -->
+    <!-- 查询指定任务下未删除的采集接口，只返回主键和名称。 -->
     <select id="findOptions"
             resultMap="collectInterfaceOptionMap">
         select
@@ -50,6 +50,11 @@
             interface_name
         from collect_interface_config
         where is_deleted = 0
+        <!-- 缺少任务编号时不返回数据，避免直接调用映射时跨任务查询。 -->
+        <choose>
+            <when test="taskId != null and taskId != ''">and task_id = #{taskId}</when>
+            <otherwise>and 1 = 0</otherwise>
+        </choose>
         <include refid="interfaceNameCondition"/>
         order by id
     </select>

@@ -42,6 +42,8 @@ public class InterfaceMessageOrderBuffer {
 
     /** 沿用结果线程池配置，并绑定连续重排参数。 */
     private final ResultDispatchProperties properties;
+    /** 启动时固定发送开关，开关不改变消息的投递和排序。 */
+    private final boolean sendEnabled;
     /** 复用现有告警分类，不新增对外枚举。 */
     private final DataAlarmRecorder alarmRecorder;
     /** 所有接口共享调度线程，但每个接口的同一个周期任务不会重叠执行。 */
@@ -58,6 +60,7 @@ public class InterfaceMessageOrderBuffer {
     /** 创建固定数量的共享线程，接口首次收到消息时才登记周期任务。 */
     public InterfaceMessageOrderBuffer(ResultDispatchProperties properties, DataAlarmRecorder alarmRecorder) {
         this.properties = properties;
+        this.sendEnabled = properties.getMessageOrder().isSendEnabled();
         this.alarmRecorder = alarmRecorder;
         this.scheduler = new ScheduledThreadPoolExecutor(properties.getMessageThreadCount(),
                 DataProcessingThreadPoolConfig.namedThreadFactory("接口消息发送线程-"));
@@ -241,7 +244,7 @@ public class InterfaceMessageOrderBuffer {
                 drainIncoming();
                 return;
             }
-            for (int sent = 0; sent < properties.getMessageOrder().getMaxSendsPerRun(); sent++) {
+            for (int released = 0; released < properties.getMessageOrder().getMaxSendsPerRun(); released++) {
                 // 每次发送前收取新到消息，使等待期间到达的小序号能进入本次前缀。
                 drainIncoming();
                 if (bySequence.isEmpty()) {
@@ -255,15 +258,17 @@ public class InterfaceMessageOrderBuffer {
                 }
                 PendingMessage message = bySequence.firstEntry().getValue();
                 try {
-                    // 同步发送位于本接口唯一周期任务内，不再二次提交到并发发送线程池。
-                    message.sendAction.run();
+                    // 到期并取出本接口队首后才判断开关，关闭时不调用MQ客户端。
+                    if (sendEnabled) {
+                        message.sendAction.run();
+                    }
                 } catch (RuntimeException exception) {
                     retryAt = System.nanoTime()
                             + TimeUnit.MILLISECONDS.toNanos(properties.getMessageOrder().getRetryIntervalMillis());
                     report(message.config, message.sequenceNumber, "消息发送失败，保留本接口消息等待重试", exception);
                     return;
                 }
-                // 确认成功后从两个索引移除消息并归还额度，不保留已发包号。
+                // 发送成功或按开关跳过后，移除两个索引并归还额度，不保留消息补发。
                 bySequence.pollFirstEntry();
                 byTime.remove(message);
                 release(this, message);

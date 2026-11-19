@@ -20,8 +20,9 @@ public interface CollectInterfaceConfigMapper {
     /** 查询所有运行中任务下启用且未删除的采集接口主键。 */
     List<Long> findAllEnabledIds();
 
-    /** 按名称查询未删除的采集接口筛选项。 */
-    List<CollectInterfaceOptionVO> findOptions(@Param("interfaceName") String interfaceName);
+    /** 按指定任务和可选名称查询未删除的采集接口筛选项。 */
+    List<CollectInterfaceOptionVO> findOptions(@Param("taskId") String taskId,
+            @Param("interfaceName") String interfaceName);
 
     /** 按任务 ID 查询采集接口。 */
     List<CollectInterfaceConfig> findAllByTaskId(@Param("taskId") String taskId);

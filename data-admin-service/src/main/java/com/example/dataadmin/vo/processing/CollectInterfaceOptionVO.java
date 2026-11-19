@@ -1,6 +1,6 @@
 package com.example.dataadmin.vo.processing;
 
-/** 数据处理页面的已启用采集接口筛选项。 */
+/** 数据处理页面的未删除采集接口筛选项。 */
 public class CollectInterfaceOptionVO {
 
     /** 采集接口主键，作为数据查询参数。 */

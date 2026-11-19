@@ -6,7 +6,7 @@ public class BaselineSatelliteSyncVO {
     private final int queriedSatelliteCount;
     /** 成功导入参数的卫星数量。 */
     private final int syncedSatelliteCount;
-    /** 基线参数表名称或下载地址缺失而跳过的卫星数量。 */
+    /** 缺少下载地址、参数表下载失败或内容校验失败而跳过的卫星数量。 */
     private final int skippedSatelliteCount;
     /** 成功导入的参数总数。 */
     private final int importedParameterCount;

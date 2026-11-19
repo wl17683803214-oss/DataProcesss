@@ -4,6 +4,7 @@ import com.example.dataprocess.processing.PdxpTiming;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import SatDataCenter.DataExchange.TmTc.TelecommandMessages.CommandExecResultMsg;
 import com.example.common.enums.DataAlarmType;
+import com.example.common.greptime.GreptimeProperties;
 import com.example.dataprocess.alarm.DataAlarmRecorder;
 import com.example.dataprocess.config.DataProcessingThreadPoolConfig;
 import com.example.dataprocess.config.PdxpFramingProperties;
@@ -36,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class TelemetryResultDispatcher {
     /** 异步结果处理日志。 */
     private static final Logger LOGGER = LoggerFactory.getLogger(TelemetryResultDispatcher.class);
-    /** 遥测存储服务及其专用执行器。 */
+    /** 遥测存储服务及其专用执行器，禁用入库时不创建执行器。 */
     private final IoTDBTelemetryStorageService storageService;
     private final Executor storageExecutor;
     /** 消息发送服务及离线调用者提供的执行器。 */
@@ -69,25 +70,27 @@ public class TelemetryResultDispatcher {
     /** 入库线程池与消息缓冲共享的关闭等待上限。 */
     private final int shutdownWaitSeconds;
 
-    /** 运行环境创建专用线程池，默认值兼容尚未补充新配置的部署。 */
+    /** 运行环境复用时序存储开关，并独立配置消息重排。 */
     @Autowired
     public TelemetryResultDispatcher(
             IoTDBTelemetryStorageService storageService,
             TelemetryMessageService messageService,
             DataAlarmRecorder alarmRecorder,
             ResultDispatchProperties properties,
+            GreptimeProperties greptimeProperties,
             InterfaceMessageOrderBuffer messageOrderBuffer) {
         // 第一步：先校验全部配置，避免部分线程池创建后配置校验失败。
         if (properties.getStorageThreadCount() <= 0 || properties.getStorageQueueCapacity() <= 0
                 || properties.getShutdownWaitSeconds() <= 0) {
             throw new IllegalArgumentException("遥测结果线程数、队列容量和关闭等待时间必须大于零");
         }
-        // 第二步：入库复用原有有界线程池，消息改由独立的接口重排调度器发送。
+        // 第二步：启用入库时才创建有界线程池，消息始终提交给接口重排队列。
         this.storageService = storageService;
         this.messageService = messageService;
         this.alarmRecorder = alarmRecorder;
-        this.storageExecutor = createExecutor(properties.getStorageThreadCount(),
-                properties.getStorageQueueCapacity(), "遥测入库线程-");
+        this.storageExecutor = greptimeProperties.isEnabled()
+                ? createExecutor(properties.getStorageThreadCount(), properties.getStorageQueueCapacity(), "遥测入库线程-")
+                : null;
         this.messageExecutor = null;
         this.messageOrderBuffer = messageOrderBuffer;
         this.shutdownWaitSeconds = properties.getShutdownWaitSeconds();
@@ -107,7 +110,7 @@ public class TelemetryResultDispatcher {
         this.shutdownWaitSeconds = 0;
     }
 
-    /** 入库和消息任务均被接受后返回成功，不等待后台持久化或消息发送完成。 */
+    /** 所需入库任务和消息重排任务均被接受后返回成功，不等待后台完成。 */
     public boolean submit(CollectInterfaceRuntimeConfig config,
             TelemetryMessage message, PdxpParser.PdxpPacket packet) {
         // 第一步：复制接口上下文，避免排队期间接口配置更新改变任务和设备身份。
@@ -132,9 +135,25 @@ public class TelemetryResultDispatcher {
         }
         // 第三步：入库和消息任务独立提交，即使一方拒绝也尝试另一方。
         long sequenceNumber = packet.getSequenceNumber();
+        boolean storageAccepted = submitStorage(snapshot, message, rawFrame, sequenceNumber);
+        boolean messageAccepted = submitMessage(snapshot, sequenceNumber, message.getSerializedSize(),
+                "遥测消息发送", () ->
+                        // 使用当前运行接口的原子标记，配置快照仍用于异常和存储上下文。
+                        PdxpFrameLogContext.runWithInterface(config,
+                                () -> messageService.send(message.toByteArray())));
+        return storageAccepted && messageAccepted;
+    }
+
+    /** 关闭入库时不提交任务，消息仍可入队并累计帧处理量。 */
+    private boolean submitStorage(CollectInterfaceRuntimeConfig snapshot, TelemetryMessage message,
+            byte[] rawFrame, long sequenceNumber) {
+        if (storageExecutor == null) {
+            return true;
+        }
+        // 入库开启时沿用压测采样和异步执行方式。
         boolean timed = PdxpTiming.sample(sequenceNumber);
         long storageQueuedAt = timed ? System.nanoTime() : 0L;
-        boolean storageAccepted = execute(storageExecutor, snapshot, sequenceNumber,
+        return execute(storageExecutor, snapshot, sequenceNumber,
                 DataAlarmType.STORAGE_FAILURE, "遥测入库", () -> {
                     // 这里只测量记录组装与缓冲提交，真实写入耗时由合并线程记录。
                     long storageStart = timed ? System.nanoTime() : 0L;
@@ -156,12 +175,6 @@ public class TelemetryResultDispatcher {
                         }
                     }
                 });
-        boolean messageAccepted = submitMessage(snapshot, sequenceNumber, message.getSerializedSize(),
-                "遥测消息发送", () ->
-                        // 使用当前运行接口的原子标记，配置快照仍用于异常和存储上下文。
-                        PdxpFrameLogContext.runWithInterface(config,
-                                () -> messageService.send(message.toByteArray())));
-        return storageAccepted && messageAccepted;
     }
 
     /** 指令响应只提交消息任务，提交成功后由调用方按帧累计处理统计。 */
@@ -200,7 +213,11 @@ public class TelemetryResultDispatcher {
             realtimeWriter.offer(0, packet.getRawPacketLength(),
                     () -> TelemetryRecordFactory.abnormal(snapshot, packet, framingProperties, processTime));
         }
-        // 第二步：复用队列拒绝、存储异常和告警处理，不阻塞参数解析线程。
+        // 第二步：关闭入库时只保留实时展示，返回未提交以免记录已入库排队的日志。
+        if (storageExecutor == null) {
+            return false;
+        }
+        // 第三步：复用队列拒绝、存储异常和告警处理，不阻塞参数解析线程。
         return execute(storageExecutor, snapshot, packet.getSequenceNumber(),
                 DataAlarmType.STORAGE_FAILURE, "本地异常整帧入库", () ->
                         storageService.markPdxpRawFrameAbnormal(snapshot, packet));
@@ -260,11 +277,15 @@ public class TelemetryResultDispatcher {
             return;
         }
         ThreadPoolExecutor storagePool = (ThreadPoolExecutor) storageExecutor;
-        storagePool.shutdown();
+        if (storagePool != null) {
+            storagePool.shutdown();
+        }
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(shutdownWaitSeconds);
         // 第二步：消息缓冲停止接收并立即按序刷新，两个环节共用关闭期限。
         messageOrderBuffer.shutdown(deadline);
-        awaitShutdown(storagePool, deadline, "遥测入库");
+        if (storagePool != null) {
+            awaitShutdown(storagePool, deadline, "遥测入库");
+        }
     }
 
     /** 等待一个执行器结束，并保留当前线程的中断状态。 */

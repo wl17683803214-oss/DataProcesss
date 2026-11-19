@@ -21,6 +21,7 @@ info:
     示例：遥测数据为CD AB，三行配置(tableIndex, telemetryCode, bitWidth)为(1, TM001, 3)、(2, TM002, 9)、(3, TM003, 4)，对应原始值为5、377、10，汇总为一帧TelemetryMessage。
     每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；公式类型为空时输出小端无符号原码及精确文本。公式缺失或执行失败时保留raw_data，value_type为BINARY，不生成计算值，并记录参数处理失败告警，其他参数继续。BINARY和TEXT不参与数值校准，数据库数值为NULL；本地数值或文本参数后续正常处理不再自动恢复PROCESS_CONFIG告警，故障记录和人工处理功能保留。
     PDXP结果MQ发送：设备、卫星和指令响应在处理完成后进入按采集接口主键隔离的内存缓冲，原有请求字段和MQ消息体字段不变。data-processing.result.message-order.wait-millis配置等待毫秒数，默认1000；某包到期可带出本接口当前待发队列中的较小序号，较大序号继续等待，无固定秒级批次边界。每个接口串行发送并以接口主键作为RocketMQ顺序分组；消费端需要配合顺序消费。仅对待发队列内的同包号去重并告警，发送成功后不保留包号，晚到的小序号及再次到达的已发包号均正常入队；正常三十二位序号回绕按当前待发队列展开。发送失败保留消息重试，缓冲超限拒绝并告警。处理成功统计表示消息已被缓冲接受，不代表MQ最终发送成功。缓冲使用本地内存，正常关闭在等待上限内按序刷新，异常退出不保证恢复。
+    PDXP结果开关：处理服务以greptime.enabled控制正常整帧、异常整帧和参数入库，以data-processing.result.message-order.send-enabled控制遥测与指令响应的实际MQ发送。关闭MQ后仍入队、等待并排序，到期移除且不补发；实时缓存和推送独立运行。两个开关默认开启，修改后重启处理服务生效。
   version: 2.8.0
 
 servers:
@@ -3221,12 +3222,13 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询采集接口筛选项
-      description: 查询未删除的采集接口，包含已启用和已停用的接口。页面展示接口名称并使用接口主键筛选遥测数据。
+      description: 查询指定试验任务下未删除的采集接口，包含已启用和已停用的接口。页面展示接口名称并使用接口主键筛选遥测数据。
       parameters:
+        - $ref: '#/components/parameters/RequiredTaskId'
         - name: interfaceName
           in: query
           required: false
-          description: 按接口名称包含匹配，不传或为空时返回全部未删除的采集接口。
+          description: 按接口名称包含匹配，不传或为空时返回当前任务下全部未删除的采集接口。
           schema:
             type: string
           example: 实时遥测
@@ -4017,7 +4019,7 @@ paths:
     post:
       tags: [数据处理]
       summary: 同步基线全部卫星遥测参数
-      description: 不传卫星和通道筛选，使用pageSize=99999查询基线并按total继续翻页。使用satelliteParameterTableUrl下载Excel，从satelliteParameterTableName去掉Excel扩展名后拼接-A作为目标工作表。跳过首行表头，按A至S列的固定顺序解析参数，位宽、遥测名称和遥测代号均空的占位行跳过。表名或地址为空时跳过该卫星并保留已有参数。全部文件校验成功后按任务和satelliteCode匹配并在同一事务中替换参数及系统层级，卫星名称取satelliteName，已有参数勾选按遥测代号保留。运行接口快照在下次接口同步时更新。
+      description: 不传卫星和通道筛选，使用pageSize=99999查询基线并按total继续翻页。使用satelliteParameterTableUrl下载Excel，按工作簿页签顺序固定读取第一个Sheet作为A表，不依赖satelliteParameterTableName、文件名或页签名称，其余Sheet不读取。跳过首行表头，按A至S列的固定顺序解析参数，位宽、遥测名称和遥测代号均空的占位行跳过。单颗卫星缺少下载地址、下载失败、文件损坏、无工作表、首表无有效参数或参数校验失败时，跳过该卫星并保留已有参数，计入skippedSatelliteCount并继续其他卫星；参数表名称为空不影响同步。分页完整后仅将有效卫星按任务和satelliteCode匹配，并在同一事务中替换参数及系统层级，卫星名称取satelliteName，已有参数勾选按遥测代号保留。任务或基线分页结构、卫星身份有误时仍整体报错。运行接口快照在下次接口同步时更新。
       parameters:
         - name: taskId
           in: query
@@ -4048,7 +4050,7 @@ paths:
                         description: 成功导入参数的卫星数
                       skippedSatelliteCount:
                         type: integer
-                        description: 基线参数表名称或下载地址为空而跳过的卫星数
+                        description: 下载地址为空、参数表下载或内容校验失败而跳过的卫星数
                       importedParameterCount:
                         type: integer
                         description: 导入参数总数
@@ -4061,7 +4063,7 @@ paths:
                   skippedSatelliteCount: 1
                   importedParameterCount: 30201
         '400':
-          description: 任务、基线响应、卫星身份或遥测参数校验失败，不更新已有配置
+          description: 任务、基线响应或卫星身份校验失败，不更新已有配置；单颗卫星参数表错误计入跳过数量
 
   /processing/rules/import:
     "post":
@@ -4092,7 +4094,7 @@ paths:
                   "example": "1"
                 "file":
                   "type": "string"
-                  "description": "卫星Excel只读文件名去掉扩展名后拼接-A的工作表，跳过首行表头，按A至S列的固定顺序解析，位宽、遥测名称和遥测代号均空的占位行跳过。Excel使用页签名称，TXT使用文件名作为设备卫星编码和名称。"
+                  "description": "卫星Excel按工作簿页签顺序只读取第一个Sheet作为A表，不匹配文件名或页签名称，其余Sheet不读取；跳过首行表头，按A至S列的固定顺序解析，位宽、遥测名称和遥测代号均空的占位行跳过。设备Excel仍读取全部Sheet并按中文表头映射。Excel使用实际页签名称，TXT使用文件名作为设备卫星编码和名称。"
                   "format": "binary"
       "responses":
         "200":

@@ -147,11 +147,11 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         this.processedTelemetryQueryService = processedTelemetryQueryService;
     }
 
-    /** 按名称查询页面筛选框使用的未删除采集接口。 */
+    /** 查询指定任务下页面筛选框使用的未删除采集接口。 */
     @Override
-    public List<CollectInterfaceOptionVO> listCollectInterfaceOptions(String interfaceName) {
-        // 仅返回接口主键和名称，避免向页面暴露无关配置字段。
-        return collectInterfaceMapper.findOptions(interfaceName);
+    public List<CollectInterfaceOptionVO> listCollectInterfaceOptions(String taskId, String interfaceName) {
+        // 复用整帧查询的任务编号校验，并将空白名称视为未填写筛选条件。
+        return collectInterfaceMapper.findOptions(requireTelemetryTaskId(taskId), trimToNull(interfaceName));
     }
 
     /** 查询页面顶部统计卡片。 */
@@ -537,7 +537,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             byte[] content) {
         requireTaskId(taskId);
         DeviceSatelliteType.requireValid(type);
-        // 按已校验的类型为卫星Excel选择指定页和固定列顺序。
+        // 按已校验的类型读取卫星Excel首个工作表，并使用固定列顺序。
         Map<String, List<TelemetryParseRuleConfig>> sheets =
                 workbookParser.parse(taskId, fileName, content, DeviceSatelliteType.SATELLITE.getValue().equals(type));
         return persistImportedRules(taskId, type, sheets, null);

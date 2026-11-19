@@ -122,28 +122,25 @@ public class ParameterWorkbookParser {
             return parseText(taskId, safeFileName, content);
         }
         if ("xls".equals(extension) || "xlsx".equals(extension)) {
-            return satellite ? parseSatelliteWorkbook(taskId, safeFileName, content)
-                    : parseWorkbook(taskId, content, null);
+            return satellite ? parseSatelliteWorkbook(taskId, content)
+                    : parseWorkbook(taskId, content, false);
         }
         throw new IllegalArgumentException("仅支持.xls、.xlsx或.txt格式的参数文件");
     }
 
-    /** 卫星Excel按表名选定目标页，基线下载和手动上传共用此入口。 */
+    /** 卫星Excel固定读取第一个工作表作为A表，基线下载和手动上传共用此入口。 */
     public Map<String, List<TelemetryParseRuleConfig>> parseSatelliteWorkbook(
-            String taskId, String tableName, byte[] content) {
-        // 表名可以包含Excel扩展名，目标页使用不带扩展名的表名。
+            String taskId, byte[] content) {
+        // 工作表身份只由页签顺序决定，不使用文件名或页签名称匹配。
         validateContent(content);
-        String name = safeFileName(tableName);
-        String suffix = extension(name);
-        String sheetName = ("xls".equals(suffix) || "xlsx".equals(suffix) ? baseName(name) : name) + "-A";
-        return parseWorkbook(taskId, content, sheetName);
+        return parseWorkbook(taskId, content, true);
     }
 
-    /** 解析指定卫星页或按页签顺序解析设备工作簿。 */
+    /** 卫星只解析首个工作表，设备仍按页签顺序解析整个工作簿。 */
     private Map<String, List<TelemetryParseRuleConfig>> parseWorkbook(
             String taskId,
             byte[] content,
-            String satelliteSheetName) {
+            boolean satellite) {
         Map<String, List<TelemetryParseRuleConfig>> result =
                 new LinkedHashMap<String, List<TelemetryParseRuleConfig>>();
         try (Workbook workbook = WorkbookFactory.create(
@@ -151,15 +148,14 @@ public class ParameterWorkbookParser {
             // 第一步：按显示格式读取文本，包括前导零；公式单元格只读取缓存结果。
             DataFormatter formatter = new DataFormatter(Locale.ROOT);
             formatter.setUseCachedValuesForFormulaCells(true);
-            boolean positional = satelliteSheetName != null;
+            boolean positional = satellite;
             Iterable<Sheet> sheets = workbook;
             if (positional) {
-                // 卫星表只读取同名的目标工作表。
-                Sheet target = workbook.getSheet(satelliteSheetName);
-                if (target == null) {
-                    throw new IllegalArgumentException("Excel缺少工作表【" + satelliteSheetName + "】");
+                // 卫星首个工作表固定为A表，缺少工作表时在任何数据库写入前报错。
+                if (workbook.getNumberOfSheets() == 0) {
+                    throw new IllegalArgumentException("Excel没有可导入的工作表");
                 }
-                sheets = Collections.singletonList(target);
+                sheets = Collections.singletonList(workbook.getSheetAt(0));
             }
             for (Sheet sheet : sheets) {
                 String sheetName = sheet.getSheetName();
@@ -480,7 +476,7 @@ public class ParameterWorkbookParser {
         return value;
     }
 
-    /** 保存原始字符串，仅检查必填、长度和已有是否枚举。 */
+    /** 保存原始字符串，统一检查必填、长度、已有是否枚举和系统路径。 */
     public void validate(TelemetryParseRuleConfig rule) {
         // 第一步：所有来源统一检查字段长度，避免导入和手工保存规则不同。
         BeanWrapper bean = new BeanWrapperImpl(rule);
@@ -513,6 +509,16 @@ public class ParameterWorkbookParser {
                     BusinessEnums.YesNo.values(), value) == null) {
                 throw new IllegalArgumentException(
                         "是否报警和存储遥测只能填写0或1");
+            }
+        }
+        // 第三步：提前执行入库已有的空层级校验，使坏表能在单颗卫星解析阶段被跳过。
+        String systemPath = rule.getSystemName();
+        if (systemPath != null && !systemPath.trim().isEmpty()
+                && !"-".equals(systemPath.trim()) && !"—".equals(systemPath.trim())) {
+            for (String component : systemPath.split("\\\\")) {
+                if (component.trim().isEmpty()) {
+                    throw new IllegalArgumentException("所属系统路径包含空层级：" + systemPath);
+                }
             }
         }
     }

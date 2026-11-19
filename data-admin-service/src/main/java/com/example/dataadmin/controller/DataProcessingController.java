@@ -76,11 +76,13 @@ public class DataProcessingController {
         return ApiResponse.success(ControllerEnumData.processing());
     }
 
-    /** 按名称查询数据处理页面使用的采集接口筛选项。 */
+    /** 按试验任务和可选名称查询正常帧、异常帧的采集接口筛选项。 */
     @GetMapping("/collect-interfaces")
     public ApiResponse<List<CollectInterfaceOptionVO>> listCollectInterfaces(
+            @RequestParam("taskId") String taskId,
             @RequestParam(value = "interfaceName", required = false) String interfaceName) {
-        return ApiResponse.success(processingService.listCollectInterfaceOptions(interfaceName));
+        // 缺少任务编号时由请求参数校验拒绝，不执行跨任务查询。
+        return ApiResponse.success(processingService.listCollectInterfaceOptions(taskId, interfaceName));
     }
 
     /** 按试验任务查询今日处理量和历史累计去重数量。 */
