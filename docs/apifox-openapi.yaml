@@ -20,6 +20,7 @@ info:
     通过fields中的参数解析配置id关联当前任务下的设备卫星信息，本地处理不填写satCode，设备名称第一个下划线前后分别写入channelName和bussinessId；Proto的frame_raw_data按data-processing.pdxp配置去掉数据域开头自定义数据和末尾遥测帧头，默认5和4字节，配置0表示没有；传输头默认2字节，也可配置为0或其他长度，PDXP标准包头固定32字节，GreptimeDB整帧表raw保留完整采集帧及各类头。字段按低位优先取位并低位对齐，Lua脚本根据公式编号选择整数或浮点等解码方式；先提取同帧全部原码，再按parameterTypes将processParam中的关联遥测代号替换为小端无符号原码整数，未声明位置仍为数值常量；processParam用斜线分隔并按顺序传递，decimalPlaces指定数值四舍五入小数位数，状态范围按计算后的结果判断。
     示例：遥测数据为CD AB，三行配置(tableIndex, telemetryCode, bitWidth)为(1, TM001, 3)、(2, TM002, 9)、(3, TM003, 4)，对应原始值为5、377、10，汇总为一帧TelemetryMessage。
     每项Telemetry的table_index取tableIndex、tm_symbol及字典键取telemetryCode；公式类型为空时输出小端无符号原码及精确文本。公式缺失或执行失败时保留raw_data，value_type为BINARY，不生成计算值，并记录参数处理失败告警，其他参数继续。BINARY和TEXT不参与数值校准，数据库数值为NULL；本地数值或文本参数后续正常处理不再自动恢复PROCESS_CONFIG告警，故障记录和人工处理功能保留。
+    PDXP结果MQ发送：设备、卫星和指令响应在处理完成后进入按采集接口主键隔离的内存缓冲，原有请求字段和MQ消息体字段不变。data-processing.result.message-order.wait-millis配置等待毫秒数，默认1000；某包到期仅放行本接口队列中序号不大于它的消息，小序号无需单独等满时间，较大序号继续缓存，无固定秒级批次边界。每个接口串行发送并以接口主键作为RocketMQ顺序分组；消费端需要配合顺序消费。重复包及已落后于成功发送位置的超窗迟到包丢弃并告警，正常三十二位序号回绕按连续序号处理；发送失败保留消息重试，缓冲超限拒绝并告警。处理成功统计表示消息已被缓冲接受，不代表MQ最终发送成功。缓冲使用本地内存，正常关闭在等待上限内按序刷新，异常退出不保证恢复。
   version: 2.8.0
 
 servers:

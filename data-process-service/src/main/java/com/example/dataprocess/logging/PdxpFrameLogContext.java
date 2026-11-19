@@ -33,4 +33,10 @@ public final class PdxpFrameLogContext {
         CollectInterfaceRuntimeConfig config = CURRENT_INTERFACE.get();
         return config == null || config.markFirstPdxpMessageLog();
     }
+
+    /** 复用已有线程上下文取得顺序发送分组，不向下游消息增加接口字段。 */
+    public static Long currentInterfaceId() {
+        CollectInterfaceRuntimeConfig config = CURRENT_INTERFACE.get();
+        return config == null ? null : config.getInterfaceId();
+    }
 }

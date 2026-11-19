@@ -5,6 +5,7 @@ import com.example.dataprocess.service.TelemetryMessageService;
 import com.example.dataprocess.logging.PdxpFrameLogContext;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.client.producer.SendStatus;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,8 +65,15 @@ public class TelemetryMessageServiceImpl implements TelemetryMessageService {
         String destination = resultTag == null || resultTag.trim().isEmpty()
                 ? resultTopic : resultTopic + ":" + resultTag;
 
-        // 将遥测Proto原始字节同步发送到结果主题，不再添加19字节消息头。
-        SendResult sendResult = rocketMQTemplate.syncSend(destination, protobufData);
+        // 采集接口按自身主键选择固定消息队列，发送内容继续使用原始协议缓冲区字节。
+        Long interfaceId = PdxpFrameLogContext.currentInterfaceId();
+        SendResult sendResult = interfaceId == null
+                ? rocketMQTemplate.syncSend(destination, protobufData)
+                : rocketMQTemplate.syncSendOrderly(destination, protobufData, interfaceId.toString());
+        // 有序链路只有得到成功确认才推进包序号，其他状态交给接口缓冲保留并重试。
+        if (interfaceId != null && (sendResult == null || sendResult.getSendStatus() != SendStatus.SEND_OK)) {
+            throw new IllegalStateException("遥测消息发送未获得成功确认");
+        }
 
         // 每个PDXP采集接口仅打印首次成功发送的定位信息，后续消息仍正常发送。
         if (!PdxpFrameLogContext.shouldLogMessageSuccess()) {

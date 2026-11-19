@@ -29,8 +29,9 @@ public class CommandResponseMessageService {
 
     /** 在已有消息线程池内发送原始消息字节，发送异常由调度器统一告警。 */
     public void send(CommandExecResultMsg message, Long interfaceId, long sequenceNumber) {
-        // 第一步：发送五字段消息的协议缓冲区字节，主题独立于遥测结果主题。
-        SendResult sendResult = rocketMQTemplate.syncSend(properties.getTopic(), message.toByteArray());
+        // 第一步：按采集接口主键选择固定消息队列，五字段消息体和独立主题保持原约定。
+        SendResult sendResult = rocketMQTemplate.syncSendOrderly(
+                properties.getTopic(), message.toByteArray(), interfaceId.toString());
         // 第二步：代理未确认成功时抛出异常，交给现有消息失败告警处理。
         if (sendResult == null || sendResult.getSendStatus() != SendStatus.SEND_OK) {
             throw new IllegalStateException("指令响应消息发送未获得成功确认");

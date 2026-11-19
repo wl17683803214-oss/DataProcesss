@@ -7,6 +7,7 @@ import com.example.common.enums.DataAlarmType;
 import com.example.dataprocess.alarm.DataAlarmRecorder;
 import com.example.dataprocess.config.DataProcessingThreadPoolConfig;
 import com.example.dataprocess.config.PdxpFramingProperties;
+import com.example.dataprocess.config.ResultDispatchProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.logging.PdxpFrameLogContext;
 import com.example.dataprocess.service.IoTDBTelemetryStorageService;
@@ -20,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
@@ -31,7 +31,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-/** 使用独立有界线程池提交遥测存储与消息任务，故障互不阻塞。 */
+/** 遥测存储独立排队，结果消息按采集接口连续重排并串行发送。 */
 @Service
 public class TelemetryResultDispatcher {
     /** 异步结果处理日志。 */
@@ -39,9 +39,11 @@ public class TelemetryResultDispatcher {
     /** 遥测存储服务及其专用执行器。 */
     private final IoTDBTelemetryStorageService storageService;
     private final Executor storageExecutor;
-    /** 消息发送服务及其专用执行器。 */
+    /** 消息发送服务及离线调用者提供的执行器。 */
     private final TelemetryMessageService messageService;
     private final Executor messageExecutor;
+    /** 运行环境按接口连续重排，离线直接执行入口保留原有行为。 */
+    private final InterfaceMessageOrderBuffer messageOrderBuffer;
     /** 指令响应复用现有消息执行器，保留原有离线构造方法。 */
     private CommandResponseMessageService commandResponseMessageService;
     /** 实时分发与入库、消息发送分别排队，离线入口保留原有构造方式。 */
@@ -64,7 +66,7 @@ public class TelemetryResultDispatcher {
     }
     /** 复用现有异步告警记录组件。 */
     private final DataAlarmRecorder alarmRecorder;
-    /** 两个结果线程池共享的关闭等待上限。 */
+    /** 入库线程池与消息缓冲共享的关闭等待上限。 */
     private final int shutdownWaitSeconds;
 
     /** 运行环境创建专用线程池，默认值兼容尚未补充新配置的部署。 */
@@ -73,23 +75,22 @@ public class TelemetryResultDispatcher {
             IoTDBTelemetryStorageService storageService,
             TelemetryMessageService messageService,
             DataAlarmRecorder alarmRecorder,
-            @Value("${data-processing.result.storage-thread-count:4}") int storageThreads,
-            @Value("${data-processing.result.storage-queue-capacity:2048}") int storageQueue,
-            @Value("${data-processing.result.message-thread-count:4}") int messageThreads,
-            @Value("${data-processing.result.message-queue-capacity:2048}") int messageQueue,
-            @Value("${data-processing.result.shutdown-wait-seconds:30}") int shutdownWaitSeconds) {
+            ResultDispatchProperties properties,
+            InterfaceMessageOrderBuffer messageOrderBuffer) {
         // 第一步：先校验全部配置，避免部分线程池创建后配置校验失败。
-        if (storageThreads <= 0 || storageQueue <= 0 || messageThreads <= 0
-                || messageQueue <= 0 || shutdownWaitSeconds <= 0) {
+        if (properties.getStorageThreadCount() <= 0 || properties.getStorageQueueCapacity() <= 0
+                || properties.getShutdownWaitSeconds() <= 0) {
             throw new IllegalArgumentException("遥测结果线程数、队列容量和关闭等待时间必须大于零");
         }
-        // 第二步：复用中文线程工厂，两类任务分别排队并明确拒绝超量任务。
+        // 第二步：入库复用原有有界线程池，消息改由独立的接口重排调度器发送。
         this.storageService = storageService;
         this.messageService = messageService;
         this.alarmRecorder = alarmRecorder;
-        this.storageExecutor = createExecutor(storageThreads, storageQueue, "遥测入库线程-");
-        this.messageExecutor = createExecutor(messageThreads, messageQueue, "遥测消息线程-");
-        this.shutdownWaitSeconds = shutdownWaitSeconds;
+        this.storageExecutor = createExecutor(properties.getStorageThreadCount(),
+                properties.getStorageQueueCapacity(), "遥测入库线程-");
+        this.messageExecutor = null;
+        this.messageOrderBuffer = messageOrderBuffer;
+        this.shutdownWaitSeconds = properties.getShutdownWaitSeconds();
     }
 
     /** 保留离线构造能力，由调用方提供执行策略，不创建后台线程。 */
@@ -101,6 +102,7 @@ public class TelemetryResultDispatcher {
         this.messageService = messageService;
         this.storageExecutor = storageExecutor;
         this.messageExecutor = messageExecutor;
+        this.messageOrderBuffer = null;
         this.alarmRecorder = null;
         this.shutdownWaitSeconds = 0;
     }
@@ -154,8 +156,8 @@ public class TelemetryResultDispatcher {
                         }
                     }
                 });
-        boolean messageAccepted = execute(messageExecutor, snapshot, sequenceNumber,
-                DataAlarmType.MESSAGE_FAILURE, "遥测消息发送", () ->
+        boolean messageAccepted = submitMessage(snapshot, sequenceNumber, message.getSerializedSize(),
+                "遥测消息发送", () ->
                         // 使用当前运行接口的原子标记，配置快照仍用于异常和存储上下文。
                         PdxpFrameLogContext.runWithInterface(config,
                                 () -> messageService.send(message.toByteArray())));
@@ -168,11 +170,22 @@ public class TelemetryResultDispatcher {
         // 第一步：固定接口身份，确保排队期间配置切换不改变消息所属上下文。
         CollectInterfaceRuntimeConfig snapshot = new CollectInterfaceRuntimeConfig();
         BeanUtils.copyProperties(config, snapshot);
-        // 第二步：复用消息队列上限、任务拒绝策略、发送异常日志和告警处理。
-        return execute(messageExecutor, snapshot, sequenceNumber,
-                DataAlarmType.MESSAGE_FAILURE, "指令响应消息发送", () ->
+        // 第二步：指令响应复用同一接口的包序号缓冲和有序发送规则。
+        return submitMessage(snapshot, sequenceNumber, message.getSerializedSize(),
+                "指令响应消息发送", () ->
                         commandResponseMessageService.send(message,
                                 snapshot.getInterfaceId(), sequenceNumber));
+    }
+
+    /** 运行环境在此保留包序号，处理结果入队成功即返回，不等待到期或发送确认。 */
+    private boolean submitMessage(CollectInterfaceRuntimeConfig config, long sequenceNumber,
+            int serializedSize, String operation, Runnable action) {
+        if (messageOrderBuffer != null) {
+            return messageOrderBuffer.offer(config, sequenceNumber, serializedSize, action);
+        }
+        // 离线调用者自行决定执行策略，已有直接构造入口不额外创建后台线程。
+        return execute(messageExecutor, config, sequenceNumber,
+                DataAlarmType.MESSAGE_FAILURE, operation, action::run);
     }
 
     /** 本地解析失败时分别提交异常帧的实时展示与入库任务。 */
@@ -242,18 +255,16 @@ public class TelemetryResultDispatcher {
     /** 在存储与消息服务销毁前等待结果任务，超过总等待上限后取消剩余任务。 */
     @PreDestroy
     public void shutdown() {
-        // 第一步：离线执行器由调用方管理；运行环境先同时停止接受两类新任务。
+        // 第一步：离线执行器由调用方管理；运行环境停止接受新入库任务。
         if (shutdownWaitSeconds == 0) {
             return;
         }
         ThreadPoolExecutor storagePool = (ThreadPoolExecutor) storageExecutor;
-        ThreadPoolExecutor messagePool = (ThreadPoolExecutor) messageExecutor;
         storagePool.shutdown();
-        messagePool.shutdown();
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(shutdownWaitSeconds);
-        // 第二步：共享等待期限，超时或中断时记录被取消的排队任务数量。
+        // 第二步：消息缓冲停止接收并立即按序刷新，两个环节共用关闭期限。
+        messageOrderBuffer.shutdown(deadline);
         awaitShutdown(storagePool, deadline, "遥测入库");
-        awaitShutdown(messagePool, deadline, "遥测消息发送");
     }
 
     /** 等待一个执行器结束，并保留当前线程的中断状态。 */
