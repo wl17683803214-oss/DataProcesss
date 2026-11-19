@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
 import java.util.Comparator;
-import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -214,14 +213,6 @@ public class InterfaceMessageOrderBuffer {
         private volatile ScheduledFuture<?> future;
         /** 时间相同时按本任务登记顺序区分消息。 */
         private long nextIndex;
-        /** 回绕展开以当前看到的最大逻辑序号为参考。 */
-        private boolean hasReference;
-        private long referenceSequence;
-        /** 发送边界只由已到期消息向前推进，不清空较大序号。 */
-        private long releaseThrough = Long.MIN_VALUE;
-        /** 已发送序号用于拒绝超窗迟到消息，同一接口的状态不会影响其他接口。 */
-        private boolean hasSent;
-        private long lastSentSequence;
         /** 失败后留在队列中，重试间隔内仍继续收取其他消息。 */
         private long retryAt;
 
@@ -245,8 +236,9 @@ public class InterfaceMessageOrderBuffer {
 
         /** 到期包只放行不大于自身序号的前缀，较小包无需单独等满配置时间。 */
         private void sendReadyMessages() {
-            drainIncoming();
             if (retryAt != 0L && System.nanoTime() - retryAt < 0L) {
+                // 等待重试时仍将新消息纳入排序和队列内去重。
+                drainIncoming();
                 return;
             }
             for (int sent = 0; sent < properties.getMessageOrder().getMaxSendsPerRun(); sent++) {
@@ -257,16 +249,11 @@ public class InterfaceMessageOrderBuffer {
                 }
                 PendingMessage oldest = byTime.first();
                 long waitNanos = TimeUnit.MILLISECONDS.toNanos(properties.getMessageOrder().getWaitMillis());
-                if (closing.get()) {
-                    releaseThrough = Long.MAX_VALUE;
-                } else if (System.nanoTime() - oldest.queuedAt >= waitNanos) {
-                    releaseThrough = Math.max(releaseThrough, oldest.extendedSequence);
-                }
-                Map.Entry<Long, PendingMessage> first = bySequence.firstEntry();
-                if (first.getKey() > releaseThrough) {
+                // 有待发消息到期时，队首序号必定不大于它；到期包发完后重新按剩余消息判断。
+                if (!closing.get() && System.nanoTime() - oldest.queuedAt < waitNanos) {
                     return;
                 }
-                PendingMessage message = first.getValue();
+                PendingMessage message = bySequence.firstEntry().getValue();
                 try {
                     // 同步发送位于本接口唯一周期任务内，不再二次提交到并发发送线程池。
                     message.sendAction.run();
@@ -276,11 +263,9 @@ public class InterfaceMessageOrderBuffer {
                     report(message.config, message.sequenceNumber, "消息发送失败，保留本接口消息等待重试", exception);
                     return;
                 }
-                // 只有成功确认才推进已发送位置，并同时删除两个索引、归还额度。
+                // 确认成功后从两个索引移除消息并归还额度，不保留已发包号。
                 bySequence.pollFirstEntry();
                 byTime.remove(message);
-                hasSent = true;
-                lastSentSequence = message.extendedSequence;
                 release(this, message);
             }
         }
@@ -294,11 +279,7 @@ public class InterfaceMessageOrderBuffer {
                 }
                 // 将无符号序号展开为连续逻辑序号，正常回绕后零位于最大序号之后。
                 message.extendedSequence = extendSequence(message.sequenceNumber);
-                if (hasSent && message.extendedSequence <= lastSentSequence) {
-                    report(message.config, message.sequenceNumber,
-                            "消息重复或已超过重排等待窗口，丢弃以保持接口发送顺序", null);
-                    release(this, message);
-                } else if (bySequence.containsKey(message.extendedSequence)) {
+                if (bySequence.containsKey(message.extendedSequence)) {
                     report(message.config, message.sequenceNumber, "本接口缓冲区存在相同包序号，重复消息被丢弃", null);
                     release(this, message);
                 } else {
@@ -310,20 +291,18 @@ public class InterfaceMessageOrderBuffer {
             }
         }
 
-        /** 相邻有效包跨度应小于半个序号空间，发送端重置序号需重建接口排序状态。 */
+        /** 以当前队列的最大逻辑序号展开回绕；当前待发包的跨度应小于半个序号空间。 */
         private long extendSequence(long sequenceNumber) {
-            if (!hasReference) {
-                hasReference = true;
-                referenceSequence = sequenceNumber;
+            // 队列为空时直接以新包序号开始，不沿用已经发送的序号。
+            if (bySequence.isEmpty()) {
                 return sequenceNumber;
             }
+            long referenceSequence = bySequence.lastKey();
             long distance = (sequenceNumber - (referenceSequence & SEQUENCE_MASK)) & SEQUENCE_MASK;
             if (distance >= SEQUENCE_HALF) {
                 distance -= SEQUENCE_RANGE;
             }
-            long extended = referenceSequence + distance;
-            referenceSequence = Math.max(referenceSequence, extended);
-            return extended;
+            return referenceSequence + distance;
         }
     }
 
