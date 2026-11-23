@@ -2,7 +2,7 @@ package com.example.dataprocess.logging;
 
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 
-/** 仅在当前消息发送任务内传递接口首帧日志状态，不改变消息服务入参。 */
+/** 仅在当前消息发送任务内传递接口上下文，不改变消息服务入参。 */
 public final class PdxpFrameLogContext {
 
     /** 结果线程可能复用，任务结束必须恢复原来的线程上下文。 */
@@ -19,19 +19,13 @@ public final class PdxpFrameLogContext {
         try {
             action.run();
         } finally {
-            // 防止线程池下一条消息误用其他接口的首帧标记。
+            // 防止线程池下一条消息误用其他采集接口的上下文。
             if (previous == null) {
                 CURRENT_INTERFACE.remove();
             } else {
                 CURRENT_INTERFACE.set(previous);
             }
         }
-    }
-
-    /** PDXP消息只记录本接口首次成功，其他直接发送入口沿用原来的日志行为。 */
-    public static boolean shouldLogMessageSuccess() {
-        CollectInterfaceRuntimeConfig config = CURRENT_INTERFACE.get();
-        return config == null || config.markFirstPdxpMessageLog();
     }
 
     /** 复用已有线程上下文取得顺序发送分组，不向下游消息增加接口字段。 */

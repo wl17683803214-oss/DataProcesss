@@ -2,6 +2,7 @@ openapi: 3.0.3
 info:
   title: 数据处理软件接口
   description: |
+    遥测MQ成功日志：本地与RPC处理结果共用发送链路，每个处理服务实例内全局每五秒最多采样一条成功日志，首条成功立即输出，无成功发送时不输出。日志包含接口编号、本次发送耗时、主题、消息标识、代理、队列位点和发送字节数；耗时包含客户端准备及等待发送结果，不包含排序缓冲等待和日志输出。采样不改变消息发送频率，也不是五秒累计发送统计，失败和缓冲拒绝日志保持原规则；HTTP接口字段与MQ消息体不变。
     接口速度MQ上报：管理服务按interface-speed-report配置每秒读取现有采集速度缓存，向配置主题发送InterfaceSpeedMqMessage原始JSON文本。包含systemId、sampleTime、total和interfaces，速度复用页面KB/s或MB/s格式；接口项仅含taskId、interfaceName、receiveRate，不含interfaceId、处理速度或采样时长。所有未删除且已归属任务的接口参与，缺失、异常或超过五秒的速度缓存按0 KB/s展示，原始速度先汇总再换算单位。该功能不新增HTTP接口。
     系统健康遥测：管理服务默认每秒采样并更新Redis，独立周期向运行中的任务分别发送TelemetryMessage原始Protobuf字节，主题topic_yc_out_sjcl，bussiness=8，bussiness_id=sjcl，channel_name=sjcl。参数为SJCL001至SJCL010，不包含消息积压数；字段见SystemHealthTelemetryMqMessage模型。没有运行任务、快照过期或采样不完整时不发送。
     遥测存储使用GreptimeDB的sjcl专用数据库。每个设备分别使用telemetry_parameter_device_设备ID和telemetry_frame_device_设备ID；每个卫星分别使用telemetry_parameter_sat_编码和telemetry_frame_sat_编码，编码为去掉两端空白后的sat_code按UTF-8字节转小写十六进制。例如SAT01对应5341543031。表内保留task_id隔离任务。启动自动初始化数据库和telemetry_table_registry分表目录，对象两张表在首次写入时创建。旧public库和旧公共表不迁移、不查询、不清理。参数继续保存Proto的value_type、value_text、state_type、state_index，状态名称为state_name，telemetry_type来自消息级tm_type。
