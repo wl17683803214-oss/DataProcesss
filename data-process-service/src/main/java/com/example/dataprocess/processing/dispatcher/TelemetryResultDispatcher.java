@@ -136,11 +136,12 @@ public class TelemetryResultDispatcher {
         // 第三步：入库和消息任务独立提交，即使一方拒绝也尝试另一方。
         long sequenceNumber = packet.getSequenceNumber();
         boolean storageAccepted = submitStorage(snapshot, message, rawFrame, sequenceNumber);
-        boolean messageAccepted = submitMessage(snapshot, sequenceNumber, message.getSerializedSize(),
-                "遥测消息发送", () ->
-                        // 使用当前运行接口的原子标记，配置快照仍用于异常和存储上下文。
-                        PdxpFrameLogContext.runWithInterface(config,
-                                () -> messageService.send(message.toByteArray())));
+        // 单条模式沿用发送上下文，批量模式由接口队列直接使用遥测消息引用。
+        Runnable sendAction = () -> PdxpFrameLogContext.runWithInterface(config,
+                () -> messageService.send(message.toByteArray()));
+        boolean messageAccepted = messageOrderBuffer == null
+                ? submitMessage(snapshot, sequenceNumber, message.getSerializedSize(), "遥测消息发送", sendAction)
+                : messageOrderBuffer.offerTelemetry(snapshot, sequenceNumber, message, sendAction);
         return storageAccepted && messageAccepted;
     }
 

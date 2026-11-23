@@ -90,6 +90,18 @@ public class ResultDispatchProperties {
         /** 每次调度最多发送的条数，让其他接口也有机会取得线程。 */
         @Min(value = 1, message = "单次消息发送条数必须大于零")
         private int maxSendsPerRun = 256;
+        /** 启用后按接口对已到期的遥测消息进行批量发送。 */
+        private boolean batchEnabled;
+        /** 同一接口两轮遥测批量发送的最小间隔。 */
+        @Min(value = 1, message = "遥测消息组批间隔必须大于零")
+        @Max(value = 600000, message = "遥测消息组批间隔不能超过十分钟")
+        private long batchIntervalMillis = 500;
+        /** 每次请求合并的遥测条数，超限后继续分批。 */
+        @Min(value = 2, message = "遥测消息单批条数上限至少为两条")
+        private int batchMaxMessages = 2;
+        /** 单个原生批次的编码字节数上限，还受生产者限制。 */
+        @Min(value = 1, message = "遥测消息单批字节上限必须大于零")
+        private int batchMaxBytes = 2097152;
 
         /** 读取到期消息的发送开关。 */
         public boolean isSendEnabled() { return sendEnabled; }
@@ -132,5 +144,29 @@ public class ResultDispatchProperties {
 
         /** 绑定单次调度发送上限。 */
         public void setMaxSendsPerRun(int value) { maxSendsPerRun = value; }
+
+        /** 读取遥测批量发送开关。 */
+        public boolean isBatchEnabled() { return batchEnabled; }
+
+        /** 绑定遥测批量发送开关。 */
+        public void setBatchEnabled(boolean value) { batchEnabled = value; }
+
+        /** 读取两轮组批之间的最小间隔。 */
+        public long getBatchIntervalMillis() { return batchIntervalMillis; }
+
+        /** 绑定组批间隔。 */
+        public void setBatchIntervalMillis(long value) { batchIntervalMillis = value; }
+
+        /** 读取单批消息条数上限。 */
+        public int getBatchMaxMessages() { return batchMaxMessages; }
+
+        /** 绑定单批消息条数上限。 */
+        public void setBatchMaxMessages(int value) { batchMaxMessages = value; }
+
+        /** 读取批次编码字节数上限。 */
+        public int getBatchMaxBytes() { return batchMaxBytes; }
+
+        /** 绑定批次编码字节数上限。 */
+        public void setBatchMaxBytes(int value) { batchMaxBytes = value; }
     }
 }

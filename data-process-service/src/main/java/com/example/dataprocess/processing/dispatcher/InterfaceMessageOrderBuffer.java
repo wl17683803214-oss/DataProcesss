@@ -1,19 +1,25 @@
 package com.example.dataprocess.processing.dispatcher;
 
+import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import com.example.common.enums.DataAlarmType;
 import com.example.dataprocess.alarm.DataAlarmRecorder;
 import com.example.dataprocess.config.DataProcessingThreadPoolConfig;
 import com.example.dataprocess.config.ResultDispatchProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
+import com.example.dataprocess.service.TelemetryMessageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -44,6 +50,9 @@ public class InterfaceMessageOrderBuffer {
     private final ResultDispatchProperties properties;
     /** 启动时固定发送开关，开关不改变消息的投递和排序。 */
     private final boolean sendEnabled;
+    /** 批量模式在服务启动时确定，复用原有接口队列和消息发送组件。 */
+    private final boolean batchEnabled;
+    private final TelemetryMessageService messageService;
     /** 复用现有告警分类，不新增对外枚举。 */
     private final DataAlarmRecorder alarmRecorder;
     /** 所有接口共享调度线程，但每个接口的同一个周期任务不会重叠执行。 */
@@ -58,10 +67,13 @@ public class InterfaceMessageOrderBuffer {
     private final AtomicBoolean closing = new AtomicBoolean();
 
     /** 创建固定数量的共享线程，接口首次收到消息时才登记周期任务。 */
-    public InterfaceMessageOrderBuffer(ResultDispatchProperties properties, DataAlarmRecorder alarmRecorder) {
+    public InterfaceMessageOrderBuffer(ResultDispatchProperties properties, DataAlarmRecorder alarmRecorder,
+            TelemetryMessageService messageService) {
         this.properties = properties;
         this.sendEnabled = properties.getMessageOrder().isSendEnabled();
+        this.batchEnabled = properties.getMessageOrder().isBatchEnabled();
         this.alarmRecorder = alarmRecorder;
+        this.messageService = messageService;
         this.scheduler = new ScheduledThreadPoolExecutor(properties.getMessageThreadCount(),
                 DataProcessingThreadPoolConfig.namedThreadFactory("接口消息发送线程-"));
         // 已取消的任务立即移出调度队列，关闭后不继续执行周期任务。
@@ -73,6 +85,19 @@ public class InterfaceMessageOrderBuffer {
     /** 仅发布消息和预占额度，业务处理线程不操作排序索引，也不等待消息发送。 */
     public boolean offer(CollectInterfaceRuntimeConfig config, long sequenceNumber,
             int serializedSize, Runnable sendAction) {
+        return offer(config, sequenceNumber, serializedSize, sendAction, null);
+    }
+
+    /** 遥测同时保存组批所需的消息引用，序列化仍由后台发送线程完成。 */
+    public boolean offerTelemetry(CollectInterfaceRuntimeConfig config, long sequenceNumber,
+            TelemetryMessage telemetry, Runnable sendAction) {
+        return offer(config, sequenceNumber, telemetry.getSerializedSize(), sendAction,
+                batchEnabled ? telemetry : null);
+    }
+
+    /** 单条和批量发送共用入队及容量检查。 */
+    private boolean offer(CollectInterfaceRuntimeConfig config, long sequenceNumber,
+            int serializedSize, Runnable sendAction, TelemetryMessage telemetry) {
         activeOffers.incrementAndGet();
         try {
             // 第一步：关闭后拒绝新消息，非法接口和序号不能建立排序队列。
@@ -100,7 +125,7 @@ public class InterfaceMessageOrderBuffer {
                 return false;
             }
             // 第三步：计时起点固定在入队前，后续消息及定时扫描都不会重置它。
-            queue.incoming.offer(new PendingMessage(config, sequenceNumber, bytes, sendAction));
+            queue.incoming.offer(new PendingMessage(config, sequenceNumber, bytes, sendAction, telemetry));
             return true;
         } finally {
             activeOffers.decrementAndGet();
@@ -218,6 +243,11 @@ public class InterfaceMessageOrderBuffer {
         private long nextIndex;
         /** 失败后留在队列中，重试间隔内仍继续收取其他消息。 */
         private long retryAt;
+        /** 记录当前组批轮次的最大可发序号，以及下轮最早开始时间。 */
+        private Long roundLastSequence;
+        private long nextRoundAt = System.nanoTime();
+        /** 原批一直保留在排序索引中，失败重试也使用同一批成员。 */
+        private PendingBatch pendingBatch;
 
         private InterfaceQueue(Long interfaceId) {
             this.interfaceId = interfaceId;
@@ -227,7 +257,11 @@ public class InterfaceMessageOrderBuffer {
         @Override
         public void run() {
             try {
-                sendReadyMessages();
+                if (batchEnabled && sendEnabled) {
+                    sendBatchRound();
+                } else {
+                    sendReadyMessages();
+                }
             } catch (RuntimeException exception) {
                 LOGGER.error("接口消息重排任务执行失败，接口编号：{}，后续周期继续重试", interfaceId, exception);
             }
@@ -256,23 +290,161 @@ public class InterfaceMessageOrderBuffer {
                 if (!closing.get() && System.nanoTime() - oldest.queuedAt < waitNanos) {
                     return;
                 }
-                PendingMessage message = bySequence.firstEntry().getValue();
-                try {
-                    // 到期并取出本接口队首后才判断开关，关闭时不调用MQ客户端。
-                    if (sendEnabled) {
-                        message.sendAction.run();
-                    }
-                } catch (RuntimeException exception) {
-                    retryAt = System.nanoTime()
-                            + TimeUnit.MILLISECONDS.toNanos(properties.getMessageOrder().getRetryIntervalMillis());
-                    report(message.config, message.sequenceNumber, "消息发送失败，保留本接口消息等待重试", exception);
+                if (!sendSingle(bySequence.firstEntry().getValue())) {
                     return;
                 }
-                // 发送成功或按开关跳过后，移除两个索引并归还额度，不保留消息补发。
-                bySequence.pollFirstEntry();
-                byTime.remove(message);
-                release(this, message);
             }
+        }
+
+        /** 等确认期间继续收取新消息，确认慢时从当前积压中选取下一轮。 */
+        private void sendBatchRound() {
+            drainIncoming();
+            // 第一步：由当前接口的周期任务处理回调结果，确保排序索引始终由一个任务修改。
+            if (pendingBatch != null && pendingBatch.confirmation != null && !consumeConfirmation()) {
+                return;
+            }
+            long now = System.nanoTime();
+            if (retryAt != 0L && now - retryAt < 0L) {
+                return;
+            }
+            if (pendingBatch != null) {
+                submitBatch();
+                return;
+            }
+
+            // 第二步：本轮拆出的批次不再等待组批间隔，排完才按实际时间决定能否开下一轮。
+            if (bySequence.isEmpty()) {
+                roundLastSequence = null;
+                return;
+            }
+            long first = bySequence.firstKey();
+            if (roundLastSequence == null || first > roundLastSequence) {
+                roundLastSequence = null;
+                Long readyThrough = readyThrough(now);
+                if (readyThrough == null || first > readyThrough) {
+                    return;
+                }
+                PendingMessage head = bySequence.firstEntry().getValue();
+                if (head.telemetry == null) {
+                    sendSingle(head);
+                    return;
+                }
+                if (!closing.get() && now - nextRoundAt < 0L) {
+                    return;
+                }
+                roundLastSequence = readyThrough;
+                nextRoundAt = now + TimeUnit.MILLISECONDS.toNanos(properties.getMessageOrder().getBatchIntervalMillis());
+            }
+
+            // 第三步：只合并排序前缀中的连续遥测记录，指令响应仍占用自己的顺序位置。
+            PendingMessage head = bySequence.firstEntry().getValue();
+            if (head.telemetry == null) {
+                sendSingle(head);
+                return;
+            }
+            pendingBatch = selectBatch();
+            submitBatch();
+        }
+
+        /** 所有已到期消息中的最大序号确定本轮可发送的前缀。 */
+        private Long readyThrough(long now) {
+            if (closing.get()) {
+                return bySequence.lastKey();
+            }
+            Long last = null;
+            long wait = TimeUnit.MILLISECONDS.toNanos(properties.getMessageOrder().getWaitMillis());
+            for (PendingMessage message : byTime) {
+                if (now - message.queuedAt < wait) {
+                    break;
+                }
+                if (last == null || message.extendedSequence > last) {
+                    last = message.extendedSequence;
+                }
+            }
+            return last;
+        }
+
+        /** 按原生编码大小及条数拆分，首条超出组批额度时按单条发送。 */
+        private PendingBatch selectBatch() {
+            ResultDispatchProperties.MessageOrder order = properties.getMessageOrder();
+            int maxBytes = Math.min(order.getBatchMaxBytes(), messageService.producerMaxMessageBytes());
+            List<PendingMessage> entries = new ArrayList<>();
+            List<TelemetryMessage> messages = new ArrayList<>();
+            long bytes = 0L;
+            for (PendingMessage message : bySequence.headMap(roundLastSequence, true).values()) {
+                if (message.telemetry == null || entries.size() >= order.getBatchMaxMessages()) {
+                    break;
+                }
+                long size = messageService.encodedBatchEntrySize(message.telemetry.getSerializedSize());
+                if (!entries.isEmpty() && size > maxBytes - bytes) {
+                    break;
+                }
+                entries.add(message);
+                messages.add(message.telemetry);
+                bytes += size;
+            }
+            return new PendingBatch(entries, messages);
+        }
+
+        /** 本接口只持有一份待确认结果，提交异常按原批重试。 */
+        private void submitBatch() {
+            try {
+                pendingBatch.confirmation = messageService.sendOrderedAsync(interfaceId, pendingBatch.messages);
+            } catch (RuntimeException exception) {
+                scheduleRetry(pendingBatch.entries.get(0), exception);
+            }
+        }
+
+        /** 回调成功后释放本批；失败时保留本批所有成员及发送边界。 */
+        private boolean consumeConfirmation() {
+            if (!pendingBatch.confirmation.isDone()) {
+                return false;
+            }
+            try {
+                pendingBatch.confirmation.join();
+            } catch (CompletionException exception) {
+                Throwable cause = exception.getCause();
+                RuntimeException failure = cause instanceof RuntimeException
+                        ? (RuntimeException) cause : new IllegalStateException("遥测批次发送失败", cause);
+                pendingBatch.confirmation = null;
+                scheduleRetry(pendingBatch.entries.get(0), failure);
+                return false;
+            }
+            for (PendingMessage entry : pendingBatch.entries) {
+                removeSent(entry);
+            }
+            pendingBatch = null;
+            retryAt = 0L;
+            return true;
+        }
+
+        /** 单条发送复用已有动作和失败告警。 */
+        private boolean sendSingle(PendingMessage message) {
+            try {
+                if (sendEnabled) {
+                    message.sendAction.run();
+                }
+            } catch (RuntimeException exception) {
+                scheduleRetry(message, exception);
+                return false;
+            }
+            removeSent(message);
+            retryAt = 0L;
+            return true;
+        }
+
+        /** 失败后保留队首并延迟重试。 */
+        private void scheduleRetry(PendingMessage head, RuntimeException exception) {
+            retryAt = System.nanoTime()
+                    + TimeUnit.MILLISECONDS.toNanos(properties.getMessageOrder().getRetryIntervalMillis());
+            report(head.config, head.sequenceNumber, "消息发送失败，保留本接口消息等待重试", exception);
+        }
+
+        /** 入口可能新增更小序号，因此必须按本次确认的记录删除索引。 */
+        private void removeSent(PendingMessage message) {
+            bySequence.remove(message.extendedSequence);
+            byTime.remove(message);
+            release(this, message);
         }
 
         /** 有界收取入口消息，持续高负载时也给到期判断和发送留出执行机会。 */
@@ -311,6 +483,18 @@ public class InterfaceMessageOrderBuffer {
         }
     }
 
+    /** 保留原批排序和成员，回调只更新确认结果。 */
+    private static final class PendingBatch {
+        private final List<PendingMessage> entries;
+        private final List<TelemetryMessage> messages;
+        private CompletableFuture<Void> confirmation;
+
+        private PendingBatch(List<PendingMessage> entries, List<TelemetryMessage> messages) {
+            this.entries = entries;
+            this.messages = messages;
+        }
+    }
+
     /** 队列保存处理结果及原始包序号，不改变发送给下游的消息字段。 */
     private static final class PendingMessage {
 
@@ -320,6 +504,8 @@ public class InterfaceMessageOrderBuffer {
         private final long sequenceNumber;
         private final long bytes;
         private final Runnable sendAction;
+        /** 可组批的遥测消息，指令响应用原来的单条发送动作。 */
+        private final TelemetryMessage telemetry;
         /** 单调时钟避免系统时间调整改变等待时长。 */
         private final long queuedAt = System.nanoTime();
         /** 以下字段由所属接口的周期任务首次登记时填写。 */
@@ -327,11 +513,12 @@ public class InterfaceMessageOrderBuffer {
         private long index;
 
         private PendingMessage(CollectInterfaceRuntimeConfig config, long sequenceNumber,
-                long bytes, Runnable sendAction) {
+                long bytes, Runnable sendAction, TelemetryMessage telemetry) {
             this.config = config;
             this.sequenceNumber = sequenceNumber;
             this.bytes = bytes;
             this.sendAction = sendAction;
+            this.telemetry = telemetry;
         }
     }
 }
