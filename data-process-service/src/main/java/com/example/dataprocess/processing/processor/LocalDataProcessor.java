@@ -16,6 +16,7 @@ import com.example.common.formula.LuaFormulaEngine;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType;
 import com.example.dataprocess.mapper.TelemetryCodeMappingMapper;
 import com.example.dataprocess.protocol.rpc.PdxpDataPayload;
+import com.example.dataprocess.protocol.rpc.PdxpDecodePlan;
 import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 import com.example.dataprocess.protocol.rpc.ProtocolConfigParser;
 import com.example.dataprocess.tool.LittleEndianBitReader;
@@ -33,7 +34,6 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -89,13 +89,12 @@ public class LocalDataProcessor implements DataProcessor {
         // 开启日志时记录起点，供首帧总耗时和阶段采样复用。
         boolean logTiming = timingLog.isEnabled();
         long startNanos = logTiming ? System.nanoTime() : 0L;
-        // 第一步：解析并校验协议配置字段。
+        // 第一步：固定本帧使用的字段布局和公式版本，只校验实际数据长度。
         boolean timed = logTiming && timingLog.shouldSample(packet.getSequenceNumber());
-        List<PdxpProtocolField> fields = fields(config.getPdxpFields());
-        // 同帧所有参数使用同一公式版本快照，配置同步不会切换到一半。
-        java.util.Map<String, LuaFormulaEngine.Compiled> formulas = config.getFormulaScripts();
+        PdxpDecodePlan decodePlan = config.getPdxpDecodePlan();
         byte[] data = payload.getData();
         LittleEndianBitReader reader = new LittleEndianBitReader(data);
+        List<PdxpDecodePlan.Field> fields = decodePlan.fieldsForPayload(data.length);
         Instant time = packet.getSendDate().atStartOfDay()
                 .plus(packet.getTimeSinceMidnight()).toInstant(ZoneOffset.ofHours(8));
         FrameIdentity identity = frameIdentity(config);
@@ -123,11 +122,11 @@ public class LocalDataProcessor implements DataProcessor {
         long rawStart = timed ? System.nanoTime() : 0L;
         List<byte[]> rawFields = new ArrayList<>(fields.size());
         java.util.Map<String, byte[]> rawBySymbol = new java.util.LinkedHashMap<>();
-        for (PdxpProtocolField item : fields) {
-            byte[] raw = reader.read(item.getBitWidth());
+        for (PdxpDecodePlan.Field item : fields) {
+            byte[] raw = reader.readAt(item.getOffset(), item.getWidth());
             rawFields.add(raw);
             // 与最终消息去重规则一致，同代号原码采用序号靠后的字段。
-            rawBySymbol.put(item.getTelemetryCode().trim(), raw);
+            rawBySymbol.put(item.getTelemetryCode(), raw);
         }
         // 第三步：按原有配置顺序计算，引用的是原码，无需等待其他公式完成。
         long decodeStart = timed ? System.nanoTime() : 0L;
@@ -135,9 +134,10 @@ public class LocalDataProcessor implements DataProcessor {
         Set<String> decodedSymbols = new HashSet<String>();
         long duplicateCount = 0L;
         for (int fieldIndex = 0; fieldIndex < fields.size(); fieldIndex++) {
-            PdxpProtocolField item = fields.get(fieldIndex);
+            PdxpDecodePlan.Field prepared = fields.get(fieldIndex);
+            PdxpProtocolField item = prepared.getConfig();
             byte[] raw = rawFields.get(fieldIndex);
-            String tmSymbol = item.getTelemetryCode().trim();
+            String tmSymbol = prepared.getTelemetryCode();
             boolean duplicate = !decodedSymbols.add(tmSymbol);
             Telemetry.Builder telemetry = Telemetry.newBuilder()
                     .setTableIndex(item.getTableIndex())
@@ -145,7 +145,7 @@ public class LocalDataProcessor implements DataProcessor {
                     .setRawData(ByteString.copyFrom(raw));
             // 直接传入原始字节；只有未配置公式时才按小端无符号整数输出原码。
             long conversionStart = timed ? System.nanoTime() : 0L;
-            BigDecimal stateValue = fillValue(config, formulas, telemetry, item, raw, rawBySymbol);
+            BigDecimal stateValue = fillValue(config, telemetry, prepared, raw, rawBySymbol);
             if (timed) {
                 conversionNanos += System.nanoTime() - conversionStart;
             }
@@ -250,13 +250,13 @@ public class LocalDataProcessor implements DataProcessor {
     /** 按公式编号执行脚本，失败只保留二进制原码，不生成虚假的计算值。 */
     private BigDecimal fillValue(
             CollectInterfaceRuntimeConfig config,
-            java.util.Map<String, LuaFormulaEngine.Compiled> formulas,
             Telemetry.Builder telemetry,
-            PdxpProtocolField field,
+            PdxpDecodePlan.Field prepared,
             byte[] raw,
             java.util.Map<String, byte[]> rawBySymbol) {
+        PdxpProtocolField field = prepared.getConfig();
         try {
-            if (!text(field.getFormulaType())) {
+            if (prepared.getFormulaCode().isEmpty()) {
                 // 空公式是合法的原码输出场景，展示文本保留完整整数精度。
                 BigInteger decodedValue = unsigned(raw);
                 telemetry.setValueType(ValueType.VALUE_TYPE_RAW);
@@ -264,13 +264,12 @@ public class LocalDataProcessor implements DataProcessor {
                         .setValueText(decodedValue.toString());
                 return new BigDecimal(decodedValue);
             }
-            String code = field.getFormulaType().trim();
-            LuaFormulaEngine.Compiled formula = formulas.get(code);
-            if (formula == null) {
-                throw new IllegalArgumentException("未找到公式" + code + "对应的脚本");
+            // 执行预先解析的公式参数，当帧引用仍读取本帧提取的完整原码。
+            if (prepared.getParameters() == null) {
+                throw new IllegalArgumentException("未找到公式" + prepared.getFormulaCode() + "对应的脚本");
             }
-            LuaFormulaEngine.Result result = LuaFormulaEngine.execute(
-                    formula, raw, field.getBitWidth(), field.getProcessParam(), rawBySymbol);
+            LuaFormulaEngine.Result result = LuaFormulaEngine.executePrepared(
+                    prepared.getParameters(), raw, prepared.getWidth(), rawBySymbol);
             ValueType type = result.getType();
             telemetry.setValueType(type);
             if (type == ValueType.VALUE_TYPE_TEXT) {
@@ -312,30 +311,6 @@ public class LocalDataProcessor implements DataProcessor {
                     "公式编号：" + trim(field.getFormulaType()),
                     reason + "；当前参数保留原始字节，其他参数继续处理");
         }
-    }
-
-    /** 转换、校验并排序配置字段。 */
-    private List<PdxpProtocolField> fields(List<PdxpProtocolField> parsedFields) {
-        if (parsedFields.isEmpty()) {
-            throw new IllegalArgumentException("当前接口未加载有效的参数解析配置");
-        }
-        // 创建可排序副本，缓存中的协议字段列表保持只读和原始顺序。
-        List<PdxpProtocolField> result = new ArrayList<PdxpProtocolField>(
-                parsedFields);
-        Set<Integer> indexes = new HashSet<Integer>();
-        // 每项必须具有唯一序号、正位宽和遥测代号。
-        for (PdxpProtocolField item : result) {
-            Integer index = item.getTableIndex();
-            Integer width = item.getBitWidth();
-            if (item.getId() == null || index == null || index < 0
-                    || !indexes.add(index) || width == null || width <= 0
-                    || !text(item.getTelemetryCode())) {
-                throw new IllegalArgumentException("协议字段配置无效，序号：" + item.getTableIndex());
-            }
-        }
-        result.sort(Comparator.comparingInt(
-                PdxpProtocolField::getTableIndex));
-        return result;
     }
 
     /** 设置报警状态；报警时完全不写状态索引。 */

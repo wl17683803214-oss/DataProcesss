@@ -9,6 +9,7 @@ import com.example.dataprocess.entity.CalibrationChannelRuntimeConfig;
 import com.example.dataprocess.entity.PdxpFrameSource;
 import com.example.dataprocess.mapper.TelemetryCodeMappingMapper;
 import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
+import com.example.dataprocess.protocol.rpc.PdxpDecodePlan;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.example.dataprocess.mapper.CollectInterfaceRuntimeMapper;
@@ -209,7 +210,7 @@ public class CollectInterfaceManager implements DisposableBean {
                     != CollectionDataType.DEVICE) {
                 config.setDeviceSatelliteId(null);
                 config.setDeviceSatelliteName(null);
-                config.setPdxpFields(java.util.Collections.emptyList());
+                config.setPdxpDecodePlan(PdxpDecodePlan.EMPTY);
                 continue;
             }
             Long deviceId = protocolDeviceId(config.getProtocolConfigParams());
@@ -229,12 +230,12 @@ public class CollectInterfaceManager implements DisposableBean {
             if (fields.isEmpty()) {
                 throw new IllegalArgumentException("PDXP协议关联的设备没有有效参数：" + deviceId);
             }
-            config.setPdxpFields(fields);
             if (formulas == null) {
                 formulas = formulaRuntimeLoader == null ? java.util.Collections.emptyMap()
                         : formulaRuntimeLoader.load();
             }
-            config.setFormulaScripts(formulas);
+            // 字段排序、位偏移及公式参数随同一次接口加载准备完成。
+            config.setPdxpDecodePlan(PdxpDecodePlan.prepare(fields, formulas));
         }
     }
 
@@ -294,8 +295,8 @@ public class CollectInterfaceManager implements DisposableBean {
             // 已有接口复用启动时的基线目录，其他接口启停不触发重复远程查询。
             current.getConfig().setDeviceSatelliteId(config.getDeviceSatelliteId());
             current.getConfig().setDeviceSatelliteName(config.getDeviceSatelliteName());
-            current.getConfig().setPdxpFields(config.getPdxpFields());
-            current.getConfig().setFormulaScripts(config.getFormulaScripts());
+            // 单次发布完整解码快照，已经开始处理的帧继续使用读到的版本。
+            current.getConfig().setPdxpDecodePlan(config.getPdxpDecodePlan());
             return;
         }
         // 只有新启动或运行配置变化的接口才查询基线，查询失败仍沿用容错规则。

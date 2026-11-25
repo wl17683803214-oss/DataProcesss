@@ -1,26 +1,33 @@
 package com.example.dataprocess.entity;
 
+import com.example.common.formula.LuaFormulaEngine;
+import com.example.dataprocess.protocol.rpc.PdxpDecodePlan;
+import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import com.example.dataprocess.protocol.rpc.PdxpProtocolField;
 
 /** 数据处理服务运行采集接口所需的配置快照。 */
 public class CollectInterfaceRuntimeConfig {
-    /** 公式源码在同步时编译，每帧处理只读取当前版本快照。 */
-    private volatile Map<String, com.example.common.formula.LuaFormulaEngine.Compiled>
-            formulaScripts = Collections.emptyMap();
+    /** 同一次接口同步整体发布字段布局和公式，处理线程每帧只读取一次。 */
+    private volatile PdxpDecodePlan pdxpDecodePlan = PdxpDecodePlan.EMPTY;
 
-    /** 获取当前公式快照。 */
-    public Map<String, com.example.common.formula.LuaFormulaEngine.Compiled> getFormulaScripts() {
-        return formulaScripts;
+    public PdxpDecodePlan getPdxpDecodePlan() { return pdxpDecodePlan; }
+
+    public void setPdxpDecodePlan(PdxpDecodePlan plan) {
+        this.pdxpDecodePlan = plan;
     }
 
-    /** 原子替换只读公式快照。 */
-    public void setFormulaScripts(Map<String, com.example.common.formula.LuaFormulaEngine.Compiled> scripts) {
-        formulaScripts = scripts == null ? Collections.emptyMap() : scripts;
+    /** 获取当前公式快照。 */
+    public Map<String, LuaFormulaEngine.Compiled> getFormulaScripts() {
+        return pdxpDecodePlan.getFormulas();
+    }
+
+    /** 保留独立构造调用入口，新脚本与原字段重新准备后整体发布。 */
+    public void setFormulaScripts(Map<String, LuaFormulaEngine.Compiled> scripts) {
+        pdxpDecodePlan = PdxpDecodePlan.prepare(pdxpDecodePlan.getSourceFields(), scripts);
     }
     /** 接收速率上限，空值表示不限速。 */
     private java.math.BigDecimal receiveRateLimit;
@@ -74,17 +81,15 @@ public class CollectInterfaceRuntimeConfig {
     private volatile Long deviceSatelliteId;
     /** 导入工作表对应的设备卫星名称。 */
     private volatile String deviceSatelliteName;
-    /** 接口启动时加载的参数解析配置快照。 */
-    private volatile List<PdxpProtocolField> pdxpFields = Collections.emptyList();
-
     public Long getDeviceSatelliteId() { return deviceSatelliteId; }
     public void setDeviceSatelliteId(Long deviceSatelliteId) { this.deviceSatelliteId = deviceSatelliteId; }
     public String getDeviceSatelliteName() { return deviceSatelliteName; }
     public void setDeviceSatelliteName(String name) { this.deviceSatelliteName = name; }
-    public List<PdxpProtocolField> getPdxpFields() { return pdxpFields; }
+    public List<PdxpProtocolField> getPdxpFields() { return pdxpDecodePlan.getSourceFields(); }
+
+    /** 离线构造字段时复用正常的解码准备规则。 */
     public void setPdxpFields(List<PdxpProtocolField> fields) {
-        this.pdxpFields = fields == null ? Collections.emptyList()
-                : Collections.unmodifiableList(new java.util.ArrayList<>(fields));
+        pdxpDecodePlan = PdxpDecodePlan.prepare(fields, pdxpDecodePlan.getFormulas());
     }
     /** 提交采集任务前加载的卫星名称快照，按卫星编码索引。 */
     private volatile Map<String, BaselineSatelliteInfo> baselineSatellites = Collections.emptyMap();

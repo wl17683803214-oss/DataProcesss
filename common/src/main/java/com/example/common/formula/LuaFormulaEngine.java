@@ -101,6 +101,17 @@ public final class LuaFormulaEngine {
     /** 关联上下文只来自调用方的当前帧，不查询数据库、不使用上帧值。 */
     public static Result execute(Compiled compiled, byte[] raw, int bitWidth, String parameters,
             Map<String, byte[]> telemetryRawData) {
+        return execute(compiled, raw, bitWidth, parameters, null, telemetryRawData);
+    }
+
+    /** 复用接口加载时已解析的参数，每次仍按当前帧提供关联原码。 */
+    public static Result executePrepared(PreparedParameters parameters, byte[] raw, int bitWidth,
+            Map<String, byte[]> telemetryRawData) {
+        return execute(parameters.compiled, raw, bitWidth, null, parameters, telemetryRawData);
+    }
+
+    private static Result execute(Compiled compiled, byte[] raw, int bitWidth, String text,
+            PreparedParameters parameters, Map<String, byte[]> telemetryRawData) {
         if (compiled == null) {
             throw new IllegalArgumentException("未找到对应的公式脚本");
         }
@@ -120,8 +131,9 @@ public final class LuaFormulaEngine {
             }
             input.set("rawBytes", bytes);
             input.set("bitWidth", LuaValue.valueOf(bitWidth));
-            // 先将声明为遥测引用的位置替换为原码整数文本，再调用计算函数。
-            input.set("params", parameters(compiled, parameters, telemetryRawData));
+            // 离线调用仍接受原字符串，实时处理直接复用准备好的常量和引用位置。
+            PreparedParameters arguments = parameters == null ? prepareParameters(compiled, text) : parameters;
+            input.set("params", parameterTable(arguments, telemetryRawData));
             // 第三步：执行缓存的计算入口；首次模块初始化与计算共享执行预算。
             Result value = result(prepared.calculate.call(input));
             completed = true;
@@ -214,46 +226,83 @@ public final class LuaFormulaEngine {
         return types;
     }
 
-    /** 数值和关联原码均以十进制文本传递，避免64位整数提前损失精度。 */
-    private static LuaTable parameters(Compiled compiled, String text, Map<String, byte[]> telemetryRawData) {
-        LuaTable result = new LuaTable();
+    /** 预先拆分处理参数，保留位置及格式，错误留给单参数的现有失败处理。 */
+    public static PreparedParameters prepareParameters(Compiled compiled, String text) {
         String configuration = text == null ? "" : text.trim();
-        if (configuration.length() > 8192) { throw new IllegalArgumentException("处理参数超过8192个字符"); }
+        if (configuration.length() > 8192) {
+            return new PreparedParameters(compiled, null, "处理参数超过8192个字符");
+        }
         String[] values = configuration.isEmpty() ? new String[0] : configuration.split("/", -1);
-        if (values.length > 256) { throw new IllegalArgumentException("处理参数不能超过256个"); }
-        int length = Math.max(values.length, compiled.parameterTypes.length);
-        for (int index = 0; index < length; index++) {
+        if (values.length > 256) {
+            return new PreparedParameters(compiled, null, "处理参数不能超过256个");
+        }
+        PreparedParameter[] arguments = new PreparedParameter[Math.max(values.length, compiled.parameterTypes.length)];
+        for (int index = 0; index < arguments.length; index++) {
             FormulaParameterType type = index < compiled.parameterTypes.length
                     ? compiled.parameterTypes[index] : FormulaParameterType.NUMBER;
             String value = index < values.length ? values[index].trim() : null;
             if (type == FormulaParameterType.TELEMETRY_RAW) {
-                // 引用位置必须显式提供代号，缺失不能用零值、当前原码或历史值替代。
-                if (value == null || value.isEmpty()) {
-                    throw new IllegalArgumentException("第" + (index + 1) + "个处理参数必须填写关联遥测代号");
+                // 引用只固定代号，取值和原码有效性随帧判断。
+                arguments[index] = value == null || value.isEmpty()
+                        ? new PreparedParameter(null, null, "第" + (index + 1) + "个处理参数必须填写关联遥测代号")
+                        : new PreparedParameter(null, value, null);
+            } else if (value != null) {
+                // 数字文本保持原样，Lua仍能使用原字符串和原有默认值。
+                try {
+                    decimal(value);
+                    arguments[index] = new PreparedParameter(LuaValue.valueOf(value), null, null);
+                } catch (RuntimeException exception) {
+                    arguments[index] = new PreparedParameter(null, null, invalidNumericParameter(index, type));
                 }
-                byte[] raw = telemetryRawData == null ? null : telemetryRawData.get(value);
-                if (raw == null || raw.length == 0) {
-                    throw new IllegalArgumentException("第" + (index + 1)
-                            + "个参数引用的遥测在当前帧没有原码：" + value);
-                }
-                if (raw.length > MAX_RAW_BYTES) {
-                    throw new IllegalArgumentException("关联遥测原码超过64KB：" + value);
-                }
-                value = unsigned(raw, ByteOrder.LITTLE_ENDIAN);
-            } else if (value == null) {
-                // 未传入的数值参数仍由脚本决定默认值，不强制补齐或改变数组长度。
+            }
+        }
+        return new PreparedParameters(compiled, arguments, null);
+    }
+
+    /** 按原顺序校验当帧引用并填充新表，脚本对表的修改不会传到下一次。 */
+    private static LuaTable parameterTable(PreparedParameters parameters, Map<String, byte[]> telemetryRawData) {
+        if (parameters.failure != null) {
+            throw new IllegalArgumentException(parameters.failure);
+        }
+        LuaTable result = new LuaTable();
+        for (int index = 0; index < parameters.arguments.length; index++) {
+            PreparedParameter argument = parameters.arguments[index];
+            if (argument == null) {
                 continue;
             }
-            // 空项不允许悄悄占用参数位置，默认值只在未传参数时生效。
-            try {
-                decimal(value);
-            } catch (RuntimeException exception) {
-                throw new IllegalArgumentException("第" + (index + 1) + "个处理参数的"
-                        + type.getLabel() + "必须为有效且精度允许的数值");
+            if (argument.failure != null) {
+                throw new IllegalArgumentException(argument.failure);
             }
-            result.set(index + 1, LuaValue.valueOf(value));
+            LuaValue value = argument.constant;
+            if (argument.telemetryCode != null) {
+                value = referencedParameter(index, argument.telemetryCode, telemetryRawData);
+            }
+            result.set(index + 1, value);
         }
         return result;
+    }
+
+    /** 关联原码只读当前帧，校验规则与原来的数字参数一致。 */
+    private static LuaValue referencedParameter(int index, String code, Map<String, byte[]> telemetryRawData) {
+        byte[] raw = telemetryRawData == null ? null : telemetryRawData.get(code);
+        if (raw == null || raw.length == 0) {
+            throw new IllegalArgumentException("第" + (index + 1) + "个参数引用的遥测在当前帧没有原码：" + code);
+        }
+        if (raw.length > MAX_RAW_BYTES) {
+            throw new IllegalArgumentException("关联遥测原码超过64KB：" + code);
+        }
+        String value = unsigned(raw, ByteOrder.LITTLE_ENDIAN);
+        try {
+            decimal(value);
+        } catch (RuntimeException exception) {
+            throw new IllegalArgumentException(invalidNumericParameter(index, FormulaParameterType.TELEMETRY_RAW));
+        }
+        return LuaValue.valueOf(value);
+    }
+
+    /** 保留处理参数无效时的原有位置和类型提示。 */
+    private static String invalidNumericParameter(int index, FormulaParameterType type) {
+        return "第" + (index + 1) + "个处理参数的" + type.getLabel() + "必须为有效且精度允许的数值";
     }
 
     /** 校验统一入口，导入时不要求所有公式能接受同一份测试原码。 */
@@ -478,6 +527,32 @@ public final class LuaFormulaEngine {
         public String getCode() { return code; }
         /** 读取公式名称。 */
         public String getName() { return name; }
+    }
+
+    /** 可跨帧共享的公式入参配置，既不保存当前帧数据也不保存可变Lua表。 */
+    public static final class PreparedParameters {
+        private final Compiled compiled;
+        private final PreparedParameter[] arguments;
+        private final String failure;
+
+        private PreparedParameters(Compiled compiled, PreparedParameter[] arguments, String failure) {
+            this.compiled = compiled;
+            this.arguments = arguments;
+            this.failure = failure;
+        }
+    }
+
+    /** 单个入参可以是十进制常量、当前帧引用或待报告的配置错误。 */
+    private static final class PreparedParameter {
+        private final LuaValue constant;
+        private final String telemetryCode;
+        private final String failure;
+
+        private PreparedParameter(LuaValue constant, String telemetryCode, String failure) {
+            this.constant = constant;
+            this.telemetryCode = telemetryCode;
+            this.failure = failure;
+        }
     }
 
     /** Java使用的已校验结果，不包含脚本环境。 */

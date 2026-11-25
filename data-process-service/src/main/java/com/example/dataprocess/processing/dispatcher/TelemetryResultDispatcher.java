@@ -118,8 +118,7 @@ public class TelemetryResultDispatcher {
     public boolean submit(CollectInterfaceRuntimeConfig config,
             TelemetryMessage message, PdxpParser.PdxpPacket packet) {
         // 第一步：复制接口上下文，避免排队期间接口配置更新改变任务和设备身份。
-        CollectInterfaceRuntimeConfig snapshot = new CollectInterfaceRuntimeConfig();
-        BeanUtils.copyProperties(config, snapshot);
+        CollectInterfaceRuntimeConfig snapshot = snapshot(config);
         // 第二步：完整采集帧供实时分发和入库使用，消息发送继续使用原处理结果。
         byte[] rawFrame = packet.getRawPacket();
         // 解析结束时只提交引用，缓存与推送组装在后台进行。
@@ -189,8 +188,7 @@ public class TelemetryResultDispatcher {
     public boolean submitCommandResponse(CollectInterfaceRuntimeConfig config,
             CommandExecResultMsg message, long sequenceNumber) {
         // 第一步：固定接口身份，确保排队期间配置切换不改变消息所属上下文。
-        CollectInterfaceRuntimeConfig snapshot = new CollectInterfaceRuntimeConfig();
-        BeanUtils.copyProperties(config, snapshot);
+        CollectInterfaceRuntimeConfig snapshot = snapshot(config);
         // 第二步：指令响应复用同一接口的包序号缓冲和有序发送规则。
         return submitMessage(snapshot, sequenceNumber, message.getSerializedSize(),
                 "指令响应消息发送", () ->
@@ -213,8 +211,7 @@ public class TelemetryResultDispatcher {
     public boolean submitAbnormalLocalFrame(CollectInterfaceRuntimeConfig config,
             PdxpParser.PdxpPacket packet) {
         // 第一步：固定本帧任务和设备身份，避免接口配置在排队期间变化。
-        CollectInterfaceRuntimeConfig snapshot = new CollectInterfaceRuntimeConfig();
-        BeanUtils.copyProperties(config, snapshot);
+        CollectInterfaceRuntimeConfig snapshot = snapshot(config);
         // 本地异常回退复用入库校验，组装失败时只影响对应实时记录。
         if (realtimeWriter != null) {
             Timestamp processTime = new Timestamp(System.currentTimeMillis());
@@ -229,6 +226,13 @@ public class TelemetryResultDispatcher {
         return execute(storageExecutor, snapshot, packet.getSequenceNumber(),
                 DataAlarmType.STORAGE_FAILURE, "本地异常整帧入库", () ->
                         storageService.markPdxpRawFrameAbnormal(snapshot, packet));
+    }
+
+    /** 复制接口上下文时共享准备好的解码快照，跳过会重新构建它的兼容入口。 */
+    private CollectInterfaceRuntimeConfig snapshot(CollectInterfaceRuntimeConfig config) {
+        CollectInterfaceRuntimeConfig snapshot = new CollectInterfaceRuntimeConfig();
+        BeanUtils.copyProperties(config, snapshot, "pdxpFields", "formulaScripts");
+        return snapshot;
     }
 
     /** 将执行失败与提交失败分别记录，拒绝策略不会回退到处理线程。 */
