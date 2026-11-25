@@ -10,6 +10,7 @@ import SatDataCenter.DataExchange.TmTc.Version.ExchangeTopicType;
 import SatDataCenter.DataExchange.TmTc.Version.ProtoHeadInfo;
 import SatDataCenter.DataExchange.TmTc.Version.SubTopicName;
 import com.example.dataprocess.collection.CollectInterfaceStatistics;
+import com.example.dataprocess.config.TimingLogProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.common.formula.LuaFormulaEngine;
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.ValueType;
@@ -46,6 +47,9 @@ public class LocalDataProcessor implements DataProcessor {
     /** 告警组件采用独立注入，复用已有离线构造入口。 */
     @org.springframework.beans.factory.annotation.Autowired
     private com.example.dataprocess.alarm.DataAlarmRecorder alarmRecorder;
+    /** 运行时共用日志配置，离线构造沿用默认采样规则。 */
+    @Autowired
+    private TimingLogProperties timingLog = new TimingLogProperties();
 
     /** 提交异常上下文，采集线程不直接写数据库。 */
     private void alarm(com.example.dataprocess.entity.CollectInterfaceRuntimeConfig config,
@@ -82,10 +86,11 @@ public class LocalDataProcessor implements DataProcessor {
             CollectInterfaceRuntimeConfig config,
             PdxpParser.PdxpPacket packet,
             PdxpDataPayload payload) {
-        // 记录本帧处理起点，用于输出完整处理耗时。
-        long startNanos = System.nanoTime();
+        // 开启日志时记录起点，供首帧总耗时和阶段采样复用。
+        boolean logTiming = timingLog.isEnabled();
+        long startNanos = logTiming ? System.nanoTime() : 0L;
         // 第一步：解析并校验协议配置字段。
-        boolean timed = PdxpTiming.sample(packet.getSequenceNumber());
+        boolean timed = logTiming && timingLog.shouldSample(packet.getSequenceNumber());
         List<PdxpProtocolField> fields = fields(config.getPdxpFields());
         // 同帧所有参数使用同一公式版本快照，配置同步不会切换到一半。
         java.util.Map<String, LuaFormulaEngine.Compiled> formulas = config.getFormulaScripts();
@@ -182,8 +187,8 @@ public class LocalDataProcessor implements DataProcessor {
         statistics.recordDuplicate(config, duplicateCount);
         // 第五步：构造结果并记录本帧本地处理完成信息。
         TelemetryMessage result = message.build();
-        long finished = System.nanoTime();
-        if (timed) {
+        long finished = logTiming ? System.nanoTime() : 0L;
+        if (timed && timingLog.isEnabled()) {
             // 本地处理结束后统一输出，避免把日志写入算进下一阶段。
             PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "配置校验和帧头组装", rawStart - startNanos);
             PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "原码提取和索引", decodeStart - rawStart);
@@ -191,9 +196,9 @@ public class LocalDataProcessor implements DataProcessor {
             PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "参数组装和状态检查",
                     finished - decodeStart - conversionNanos);
         }
-        long elapsedMillis = (finished - startNanos) / 1_000_000L;
         // 每次启动仅记录本接口第一帧处理完成信息，后续帧不重复打印常规日志。
-        if (config.markFirstPdxpProcessingLog()) {
+        if (logTiming && timingLog.isEnabled() && config.markFirstPdxpProcessingLog()) {
+            long elapsedMillis = (finished - startNanos) / 1_000_000L;
             LOGGER.info(
                     "本地处理完成，接口编号：{}，包序号：{}，参数数量：{}，"
                             + "原始数据长度：{}，处理耗时：{}毫秒",

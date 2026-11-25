@@ -24,3 +24,5 @@ auth:
   # 管理服务提交采集配置后通过该内部地址同步运行接口。
   exclude-paths:
     - /internal/collection/interfaces/**
+    # 管理服务通过此内部地址读取处理进程的 CPU 采样值。
+    - /internal/monitor/cpu

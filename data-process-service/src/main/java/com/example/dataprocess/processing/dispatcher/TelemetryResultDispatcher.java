@@ -9,6 +9,7 @@ import com.example.dataprocess.alarm.DataAlarmRecorder;
 import com.example.dataprocess.config.DataProcessingThreadPoolConfig;
 import com.example.dataprocess.config.PdxpFramingProperties;
 import com.example.dataprocess.config.ResultDispatchProperties;
+import com.example.dataprocess.config.TimingLogProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.logging.PdxpFrameLogContext;
 import com.example.dataprocess.service.IoTDBTelemetryStorageService;
@@ -50,6 +51,9 @@ public class TelemetryResultDispatcher {
     /** 实时分发与入库、消息发送分别排队，离线入口保留原有构造方式。 */
     private TelemetryRealtimeCacheWriter realtimeWriter;
     private PdxpFramingProperties framingProperties;
+    /** 运行时共用日志配置，离线构造保留默认采样规则。 */
+    @Autowired
+    private TimingLogProperties timingLog = new TimingLogProperties();
     /** 仅实时缓存使用已勾选并集，数据库持久化继续使用完整处理结果。 */
     @Autowired
     private TelemetrySelectionCache selectionCache;
@@ -151,28 +155,31 @@ public class TelemetryResultDispatcher {
         if (storageExecutor == null) {
             return true;
         }
-        // 入库开启时沿用压测采样和异步执行方式。
-        boolean timed = PdxpTiming.sample(sequenceNumber);
+        // 只为命中包序号采样的任务记录组装排队时间。
+        boolean timed = timingLog.shouldSample(sequenceNumber);
         long storageQueuedAt = timed ? System.nanoTime() : 0L;
         return execute(storageExecutor, snapshot, sequenceNumber,
                 DataAlarmType.STORAGE_FAILURE, "遥测入库", () -> {
-                    // 这里只测量记录组装与缓冲提交，真实写入耗时由合并线程记录。
-                    long storageStart = timed ? System.nanoTime() : 0L;
-                    if (timed) {
+                    // 开始执行时再检查开关，避免为等待期间已关闭的采样准备上下文。
+                    boolean collectTiming = timed && timingLog.isEnabled();
+                    long storageStart = collectTiming ? System.nanoTime() : 0L;
+                    if (collectTiming) {
                         // 先保留排队耗时，记录组装后复用缓冲估算值，避免重复遍历参数。
                         PdxpTiming.beginStorageSample();
                     }
                     try {
                         storageService.saveProcessedParameters(snapshot, message, rawFrame);
                     } finally {
-                        if (timed) {
+                        if (collectTiming) {
                             // 先固定结束时间并清理上下文，日志输出不计入记录组装耗时。
                             long storageFinished = System.nanoTime();
                             Long estimatedBytes = PdxpTiming.endStorageSample();
-                            PdxpTiming.logStorageQueue(snapshot.getInterfaceId(), sequenceNumber,
-                                    storageStart - storageQueuedAt, estimatedBytes);
-                            PdxpTiming.log(snapshot.getInterfaceId(), sequenceNumber, "记录组装和缓冲提交",
-                                    storageFinished - storageStart);
+                            if (timingLog.isEnabled()) {
+                                PdxpTiming.logStorageQueue(snapshot.getInterfaceId(), sequenceNumber,
+                                        storageStart - storageQueuedAt, estimatedBytes);
+                                PdxpTiming.log(snapshot.getInterfaceId(), sequenceNumber, "记录组装和缓冲提交",
+                                        storageFinished - storageStart);
+                            }
                         }
                     }
                 });

@@ -2151,6 +2151,37 @@ paths:
                 - 11
                 - 12
 
+  /internal/monitor/cpu:
+    get:
+      tags: [数据处理-系统监控]
+      summary: 查询处理服务进程的 CPU 使用率
+      description: 供管理服务内部调用。按进程累计 CPU 时间增量除以实际采样时长和 JVM 识别的核数，再转换为百分比。可超过 100%，暂无有效采样时省略 data。
+      security: []
+      servers:
+      - url: http://localhost:8083
+        description: 数据处理服务
+      responses:
+        '200':
+          description: 返回最近一次有效 CPU 采样
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    description: 业务状态码
+                  message:
+                    type: string
+                    description: 中文结果说明
+                  data:
+                    type: number
+                    description: 处理进程的 CPU 使用率百分比
+              example:
+                code: 200
+                message: 操作成功
+                data: 125.0
+
   /internal/collection/test/pdxp/start:
     post:
       tags: [数据处理-PDXP测试]
@@ -3212,7 +3243,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询实时处理监控
-      description: 查询当前任务下所有接口的PDXP帧处理速率之和，各接口按业务处理完成且GreptimeDB与MQ异步任务均提交成功的帧数除以实际采样秒数计算，不代表异步入库或消息发送成功；CPU和物理内存复用系统告警的管理服务所在机器采集逻辑。三个字段均直接包含展示单位，处理速率最多保留两位小数。
+      description: 查询当前任务下所有接口的PDXP帧处理速率之和，各接口按业务处理完成且GreptimeDB与MQ异步任务均提交成功的帧数除以实际采样秒数计算，不代表异步入库或消息发送成功。CPU 与当前系统健康查询共用读数，配置内网地址时读取处理服务进程 CPU，地址留空时读取本机 CPU。内存为管理服务所在环境的物理内存使用率。有效数值均直接包含展示单位，处理速率最多保留两位小数。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
       responses:
@@ -4661,6 +4692,7 @@ paths:
     get:
       tags: [告警管理]
       summary: 查询当前系统健康状态
+      description: 配置处理服务 CPU 内网地址时，cpuUsagePercent 返回处理服务的 JVM 进程 CPU 使用率，可超过 100%，采样不可用时返回空值。地址留空时返回管理服务所在环境的 CPU 使用率。
       responses:
         '200':
           $ref: '#/components/responses/Success080'
@@ -5988,8 +6020,8 @@ components:
           format: date-time
         cpuUsagePercent:
           type: number
-          description: 管理服务所在机器CPU使用率，百分比
-          nullable: false
+          description: CPU 使用率百分比。当前健康查询可按配置返回处理服务进程的读数，采样不可用时为空。健康历史仍为管理服务所在环境的读数。
+          nullable: true
         memoryUsagePercent:
           type: number
           description: 管理服务所在机器内存使用率，百分比
@@ -9142,7 +9174,8 @@ components:
                     description: "当前任务所有接口的PDXP帧处理速率之和，按业务处理完成且两个异步结果任务均提交成功的帧数除以实际采样秒数计算，不代表外部写入成功，最多保留两位小数，值中包含条/秒单位"
                   cpuUsage:
                     type: string
-                    description: "管理服务所在机器整体CPU使用率，与系统告警同口径，值中包含百分号"
+                    nullable: true
+                    description: "与当前系统健康查询同口径的 CPU 使用率，保留两位小数并包含百分号，可超过 100%。采样不可用时为 null。"
                   memoryUsage:
                     type: string
                     description: "管理服务所在机器物理内存使用率，与系统告警同口径，保留两位小数，值中包含百分号；无有效指标时为0.00%"
@@ -9151,7 +9184,7 @@ components:
             message: "操作成功"
             data:
               processRate: "2400 条/秒"
-              cpuUsage: "36.50%"
+              cpuUsage: "125.00%"
               memoryUsage: "23.50%"
 
     CollectInterfaceOptions:
@@ -10007,7 +10040,7 @@ components:
               heartbeatStatus: WAITING
               heartbeatStatusName: 等待心跳
               lastHeartbeatTime: null
-              cpuUsagePercent: 36.5
+              cpuUsagePercent: 125.0
               memoryUsagePercent: 58.2
               diskUsagePercent: 42.1
               healthScore: 42

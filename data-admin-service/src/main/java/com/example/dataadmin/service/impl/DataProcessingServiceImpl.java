@@ -108,7 +108,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     private final ParameterWorkbookParser workbookParser;
     /** Redis字符串访问组件。 */
     private final StringRedisTemplate redisTemplate;
-    /** 与系统告警共用的机器CPU和物理内存采集组件。 */
+    /** 与当前健康查询共用的 CPU 和物理内存指标读取组件。 */
     @Autowired
     private SystemResourceMetrics systemResourceMetrics;
     /** 实时指标JSON读取组件。 */
@@ -177,7 +177,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         } catch (RuntimeException ignored) {
             // Redis暂时不可用或缓存内容异常时返回带单位的零值，保证页面可用。
         }
-        // 第二步：机器资源独立采集，Redis异常也不影响CPU和内存的展示。
+        // 第二步：独立读取 CPU 和内存，Redis 异常时也返回这两项指标。
         applyRuntimeMetric(result);
         return result;
     }
@@ -199,11 +199,11 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         return total;
     }
 
-    /** 将与系统告警同口径的机器资源指标格式化为页面字段。 */
+    /** 将处理服务 CPU 和本机内存指标格式化为页面字段。 */
     private void applyRuntimeMetric(DataProcessingRealtimeVO result) {
-        // 第一步：读取机器整体CPU使用率，保留两位小数并追加百分号。
-        result.setCpuUsage(String.format(
-                Locale.ROOT, "%.2f%%", systemResourceMetrics.readCpuUsage()));
+        // 第一步：复用当前健康查询的 CPU 口径，采样有效时附上百分号。
+        Double cpuUsage = systemResourceMetrics.readCurrentCpuUsage(systemResourceMetrics::readCpuUsage);
+        result.setCpuUsage(cpuUsage == null ? null : String.format(Locale.ROOT, "%.2f%%", cpuUsage));
         // 第二步：读取机器物理内存使用率，保持与系统告警一致的计算口径。
         result.setMemoryUsage(String.format(
                 Locale.ROOT, "%.2f%%", systemResourceMetrics.readMemoryUsage()));

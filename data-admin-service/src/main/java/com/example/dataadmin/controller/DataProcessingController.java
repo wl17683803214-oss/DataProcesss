@@ -93,7 +93,7 @@ public class DataProcessingController {
         return ApiResponse.success(processingService.getOverview(taskId));
     }
 
-    /** 按试验任务查询所有接口处理速率之和及与系统告警同口径的机器资源指标。 */
+    /** 按试验任务查询所有接口处理速率之和，以及当前 CPU 和物理内存指标。 */
     @GetMapping("/realtime")
     public ApiResponse<DataProcessingRealtimeVO> getRealtime(
             @RequestParam String taskId) {

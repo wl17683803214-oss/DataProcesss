@@ -10,6 +10,7 @@ import com.example.common.telemetry.TelemetryRealtimeEvent;
 import com.example.dataprocess.alarm.DataAlarmRecorder;
 import com.example.dataprocess.config.DataProcessingThreadPoolConfig;
 import com.example.dataprocess.config.GreptimeBulkProperties;
+import com.example.dataprocess.config.TimingLogProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.processing.PdxpTiming;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public class GreptimeWriteBuffer implements AutoCloseable {
     private final GreptimeStore store;
     private final GreptimeBulkProperties properties;
     private final DataAlarmRecorder alarmRecorder;
+    private final TimingLogProperties timingLog;
     private final ThreadPoolExecutor workers;
     /** 唤醒和额度维护只持有内存锁，组装大列表及网络写入均在锁外。 */
     private final ReentrantLock lock = new ReentrantLock();
@@ -47,11 +49,12 @@ public class GreptimeWriteBuffer implements AutoCloseable {
 
     /** 只提交固定数量的常驻消费任务，不创建额外的待写执行队列。 */
     public GreptimeWriteBuffer(GreptimeStore store, GreptimeBulkProperties properties,
-            DataAlarmRecorder alarmRecorder) {
+            DataAlarmRecorder alarmRecorder, TimingLogProperties timingLog) {
         properties.validate();
         this.store = store;
         this.properties = properties;
         this.alarmRecorder = alarmRecorder;
+        this.timingLog = timingLog;
         int count = properties.getMaxConcurrentWrites();
         workers = new ThreadPoolExecutor(count, count, 0L, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<Runnable>(count),
@@ -70,7 +73,9 @@ public class GreptimeWriteBuffer implements AutoCloseable {
         List<String> key = Arrays.asList(frame.getTaskId(), frame.getSourceType(), frame.getSourceIdentity());
         long bytes = GreptimeRecordSizer.event(event);
         // 采样日志复用同一帧的估算，缓冲满而拒绝时仍能看到本帧大小。
-        PdxpTiming.recordStorageEstimate(bytes);
+        if (timingLog.isEnabled()) {
+            PdxpTiming.recordStorageEstimate(bytes);
+        }
         lock.lock();
         try {
             // 第二步：满额或关闭时立即拒绝，由原提交线程记录接口级失败告警。
@@ -109,7 +114,9 @@ public class GreptimeWriteBuffer implements AutoCloseable {
                 Thread.currentThread().interrupt();
                 return;
             }
-            long started = System.nanoTime();
+            // 只有开启日志时才读取本批写入计时起点。
+            boolean timed = timingLog.isEnabled() && LOGGER.isInfoEnabled();
+            long started = timed ? System.nanoTime() : 0L;
             try {
                 // 参数只复制列表引用，各帧记录和时间不重建，也不按代号去重。
                 List<TelemetryFrameRecord> frames = new ArrayList<>(group.frames.size());
@@ -119,7 +126,9 @@ public class GreptimeWriteBuffer implements AutoCloseable {
                     parameters.addAll(item.event.getParameters());
                 }
                 store.saveBatch(frames, parameters);
-                report(group, started);
+                if (timed && timingLog.isEnabled()) {
+                    report(group, started);
+                }
             } catch (RuntimeException exception) {
                 // 公共存储已完成有限重试，最终失败在此保留真实对象和接口告警。
                 failure(group, "遥测跨帧批量入库失败", exception);

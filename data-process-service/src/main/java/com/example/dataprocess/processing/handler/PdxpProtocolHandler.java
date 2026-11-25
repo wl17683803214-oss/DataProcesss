@@ -8,6 +8,7 @@ import com.example.dataprocess.collection.CollectInterfaceStatistics;
 import com.example.dataprocess.collection.ReceivedDatagram;
 import com.example.dataprocess.config.PdxpFramingProperties;
 import com.example.dataprocess.config.CommandResponseProperties;
+import com.example.dataprocess.config.TimingLogProperties;
 import com.example.dataprocess.protocol.command.CommandResponseParser;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.processing.processor.DataProcessor;
@@ -42,6 +43,9 @@ public class PdxpProtocolHandler implements ProtocolHandler {
     private PdxpFramingProperties framingProperties = new PdxpFramingProperties();
     /** 指令响应保留独立传输头长度，避免套用设备和卫星的遥测拆帧参数。 */
     private CommandResponseProperties commandResponseProperties = new CommandResponseProperties();
+    /** 运行时共用日志配置，离线构造沿用默认采样规则。 */
+    @org.springframework.beans.factory.annotation.Autowired
+    private TimingLogProperties timingLog = new TimingLogProperties();
 
     /** 运行时绑定指令响应拆帧参数，离线调用沿用无附加头默认值。 */
     @org.springframework.beans.factory.annotation.Autowired
@@ -160,8 +164,8 @@ public class PdxpProtocolHandler implements ProtocolHandler {
         statistics.recordReceivedBytes(config, packetData.length);
         ReceivedDatagram datagram = new ReceivedDatagram(config, packetData);
         try {
-            // 报文入队时记下起点，拆包成功后按包序号关联采样日志。
-            long queuedAt = System.nanoTime();
+            // 开启计时后才记录入队起点，拆包成功后按包序号判断是否输出。
+            long queuedAt = timingLog.isEnabled() ? System.nanoTime() : 0L;
             dataProcessExecutor.execute(() -> handle(datagram, queuedAt));
         } catch (RejectedExecutionException exception) {
             alarm(config, com.example.common.enums.DataAlarmType.PROCESS_QUEUE, "处理线程池已满，当前报文被拒绝");
@@ -201,7 +205,7 @@ public class PdxpProtocolHandler implements ProtocolHandler {
 
         long parseEnd = queuedAt == 0L ? 0L : System.nanoTime();
         for (PdxpParser.PdxpPacket packet : packets) {
-            if (queuedAt != 0L && PdxpTiming.sample(packet.getSequenceNumber())) {
+            if (queuedAt != 0L && timingLog.shouldSample(packet.getSequenceNumber())) {
                 Long interfaceId = datagram.getInterfaceConfig().getInterfaceId();
                 PdxpTiming.log(interfaceId, packet.getSequenceNumber(), "处理排队", parseStart - queuedAt);
                 PdxpTiming.log(interfaceId, packet.getSequenceNumber(), "PDXP拆包", parseEnd - parseStart);
@@ -259,13 +263,13 @@ public class PdxpProtocolHandler implements ProtocolHandler {
         try {
             // 第一步：按接口处理模式选择长度，再拆分数据域。
             PdxpFramingProperties.Framing framing = framingProperties.select(config.getRpcEnabled());
-            boolean timed = PdxpTiming.sample(packet.getSequenceNumber());
+            boolean timed = timingLog.shouldSample(packet.getSequenceNumber());
             long payloadStart = timed ? System.nanoTime() : 0L;
             PdxpDataPayload payload = PdxpDataPayloadParser.parse(
                     packet.getData(), framing.getCustomDataLength(),
                     framing.getTelemetryHeaderLength());
             payloadParsed = true;
-            if (timed) {
+            if (timed && timingLog.isEnabled()) {
                 PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "数据域拆分",
                         System.nanoTime() - payloadStart);
             }
@@ -295,7 +299,7 @@ public class PdxpProtocolHandler implements ProtocolHandler {
             long calibrationStart = timed ? System.nanoTime() : 0L;
             telemetryMessage = calibrationProcessingService.process(
                     config, telemetryMessage);
-            if (timed) {
+            if (timed && timingLog.isEnabled()) {
                 PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "校准",
                         System.nanoTime() - calibrationStart);
             }
@@ -307,7 +311,7 @@ public class PdxpProtocolHandler implements ProtocolHandler {
             // 第五步：两个结果任务独立提交，处理线程不等待外部服务响应。
             long dispatchStart = timed ? System.nanoTime() : 0L;
             boolean accepted = resultDispatcher.submit(config, telemetryMessage, packet);
-            if (timed) {
+            if (timed && timingLog.isEnabled()) {
                 PdxpTiming.log(config.getInterfaceId(), packet.getSequenceNumber(), "结果提交",
                         System.nanoTime() - dispatchStart);
             }

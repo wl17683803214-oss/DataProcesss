@@ -172,7 +172,10 @@ public class SystemMonitorServiceImpl implements SystemMonitorService {
     @Override
     public SysMonitorSnapshot getSystemMonitorCurrent() {
         // 页面主动查询时即时采集，避免缓存掩盖接口开关和服务状态变化。
-        return buildSnapshot();
+        SysMonitorSnapshot snapshot = buildSnapshot();
+        // 当前查询复用处理服务的 CPU 读数，本机模式直接使用本次已采集的值。
+        snapshot.setCpuUsagePercent(systemResourceMetrics.readCurrentCpuUsage(snapshot::getCpuUsagePercent));
+        return snapshot;
     }
 
     @Override

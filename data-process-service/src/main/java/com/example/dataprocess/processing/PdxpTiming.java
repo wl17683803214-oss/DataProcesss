@@ -8,16 +8,10 @@ import java.util.Locale;
 /** 按包序号采样各阶段，使用同一标识关联处理和入库日志。 */
 public final class PdxpTiming {
     private static final Logger LOGGER = LoggerFactory.getLogger(PdxpTiming.class);
-    private static final int SAMPLE_INTERVAL = 20;
     /** 仅采样任务传递本帧估算值，线程池任务结束后必须清理，避免串帧。 */
     private static final ThreadLocal<Long> STORAGE_ESTIMATED_BYTES = new ThreadLocal<>();
 
     private PdxpTiming() {
-    }
-
-    /** 临时压测期间每二十个包序号采样一次。 */
-    public static boolean sample(long sequence) {
-        return sequence % SAMPLE_INTERVAL == 0;
     }
 
     /** 开始当前采样帧的入库记录估算，负值表示记录尚未组装完成。 */

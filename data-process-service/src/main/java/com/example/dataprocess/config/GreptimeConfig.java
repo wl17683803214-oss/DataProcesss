@@ -44,7 +44,8 @@ public class GreptimeConfig {
     @Bean(destroyMethod = "close")
     @ConditionalOnProperty(prefix = "greptime", name = "enabled", havingValue = "true", matchIfMissing = true)
     public GreptimeWriteBuffer greptimeWriteBuffer(GreptimeStore store, GreptimeBulkProperties bulk,
-            DataAlarmRecorder alarmRecorder) {
-        return new GreptimeWriteBuffer(store, bulk, alarmRecorder);
+            DataAlarmRecorder alarmRecorder, TimingLogProperties timingLog) {
+        // 合并线程和帧处理使用同一份日志配置。
+        return new GreptimeWriteBuffer(store, bulk, alarmRecorder, timingLog);
     }
 }

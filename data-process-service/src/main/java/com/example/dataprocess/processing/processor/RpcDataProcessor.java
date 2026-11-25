@@ -4,6 +4,7 @@ import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import SatDataCenter.DataExchange.TmTc.Version.ExchangeTopicType;
 import SatDataCenter.DataExchange.TmTc.Version.ProtoHeadInfo;
 import SatDataCenter.DataExchange.TmTc.Version.SubTopicName;
+import com.example.dataprocess.config.TimingLogProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.entity.BaselineSatelliteInfo;
 import com.example.dataprocess.protocol.rpc.ProtocolConfigParser;
@@ -16,6 +17,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tm.processing.v1.Tm;
 
@@ -37,6 +39,9 @@ public class RpcDataProcessor implements DataProcessor {
     private final TelemetryRpcClient rpcClient;
     /** RPC协议配置解析器。 */
     private final ProtocolConfigParser protocolConfigParser;
+    /** 首帧耗时使用处理服务共用的日志开关。 */
+    @Autowired
+    private TimingLogProperties timingLog = new TimingLogProperties();
 
     public RpcDataProcessor(
             TelemetryRpcClient rpcClient,
@@ -51,8 +56,9 @@ public class RpcDataProcessor implements DataProcessor {
             CollectInterfaceRuntimeConfig config,
             PdxpParser.PdxpPacket packet,
             PdxpDataPayload payload) {
-        // 记录本帧处理起点，用于统计远程调用和结果解析总耗时。
-        long startNanos = System.nanoTime();
+        // 开启日志时记录远程调用和结果解析的起点。
+        boolean logTiming = timingLog.isEnabled();
+        long startNanos = logTiming ? System.nanoTime() : 0L;
         // 第一步：将PDXP发送时间转换成RPC请求使用的协议缓冲区时间戳。
         Instant sendTime = pdxpSendTime(packet);
         Timestamp requestTime = Timestamp.newBuilder()
@@ -128,10 +134,9 @@ public class RpcDataProcessor implements DataProcessor {
                     .build();
             // 按返回消息的编码匹配采集启动前加载的卫星和通道名称。
             result = fillNames(config, result);
-            long elapsedMillis =
-                    (System.nanoTime() - startNanos) / 1_000_000L;
             // 运行配置对象保存并发安全的首帧标记，其他接口启停不会重置。
-            if (config.markFirstPdxpProcessingLog()) {
+            if (logTiming && timingLog.isEnabled() && config.markFirstPdxpProcessingLog()) {
+                long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000L;
                 LOGGER.info(
                         "远程处理完成，接口编号：{}，包序号：{}，参数数量：{}，"
                                 + "返回数据长度：{}，处理耗时：{}毫秒",

@@ -1,6 +1,7 @@
 package com.example.dataprocess.service.impl;
 
 import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
+import com.example.dataprocess.config.TimingLogProperties;
 import com.example.dataprocess.service.TelemetryMessageService;
 import com.example.dataprocess.logging.PdxpFrameLogContext;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -21,6 +22,7 @@ import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +39,9 @@ public class TelemetryMessageServiceImpl implements TelemetryMessageService {
     private static final long SUCCESS_LOG_INTERVAL_NANOS = TimeUnit.SECONDS.toNanos(5);
     /** 当前服务实例的所有接口共用采样窗口，首条成功消息可以立即输出。 */
     private final AtomicLong nextSuccessLogNanos = new AtomicLong(System.nanoTime());
+    /** 单条和批量发送共用处理服务的日志开关。 */
+    @Autowired
+    private TimingLogProperties timingLog = new TimingLogProperties();
 
     /** RocketMQ消息发送模板。 */
     private final RocketMQTemplate rocketMQTemplate;
@@ -84,8 +89,9 @@ public class TelemetryMessageServiceImpl implements TelemetryMessageService {
             throw new IllegalArgumentException("待发送的遥测Proto消息体不能为空");
         }
 
-        // 第一步：固定发送计时起点，组合主题和可选标签。
-        long started = System.nanoTime();
+        // 第一步：仅在启用日志时记录起点，再组合主题和可选标签。
+        boolean timed = timingLog.isEnabled() && LOGGER.isInfoEnabled();
+        long started = timed ? System.nanoTime() : 0L;
         String destination = resultTag == null || resultTag.trim().isEmpty()
                 ? resultTopic : resultTopic + ":" + resultTag;
 
@@ -99,7 +105,9 @@ public class TelemetryMessageServiceImpl implements TelemetryMessageService {
             throw new IllegalStateException("遥测消息发送未获得成功确认");
         }
         // 单条与批量成功共用采样窗口。
-        logSuccess(interfaceId, started, System.nanoTime(), sendResult, 1, protobufData.length);
+        if (timed) {
+            logSuccess(interfaceId, started, System.nanoTime(), sendResult, 1, protobufData.length);
+        }
     }
 
     /** 按编码后的记录计算批次长度，保留原始消息体的所有字节。 */
@@ -118,7 +126,9 @@ public class TelemetryMessageServiceImpl implements TelemetryMessageService {
     @Override
     public CompletableFuture<Void> sendOrderedAsync(Long interfaceId, List<TelemetryMessage> messages) {
         CompletableFuture<Void> confirmation = new CompletableFuture<>();
-        long started = System.nanoTime();
+        // 批次在开始序列化前记录起点，日志关闭时跳过计时。
+        boolean timed = timingLog.isEnabled() && LOGGER.isInfoEnabled();
+        long started = timed ? System.nanoTime() : 0L;
         try {
             // 第一步：只在发送线程将本批消息序列化，各条消息继续保留独立的消息体和标签。
             List<Message> parts = new ArrayList<>(messages.size());
@@ -142,10 +152,10 @@ public class TelemetryMessageServiceImpl implements TelemetryMessageService {
                         @Override
                         public void onSuccess(SendResult result) {
                             // 第三步：只有确认成功才允许接口队列推进，其他状态进入原批重试。
-                            long finished = System.nanoTime();
+                            long finished = timed ? System.nanoTime() : 0L;
                             if (result == null || result.getSendStatus() != SendStatus.SEND_OK) {
                                 confirmation.completeExceptionally(new IllegalStateException("遥测消息批次未获得成功确认"));
-                            } else if (confirmation.complete(null)) {
+                            } else if (confirmation.complete(null) && timed) {
                                 logSuccess(interfaceId, started, finished, result, parts.size(), sentBytes);
                             }
                         }
@@ -168,7 +178,8 @@ public class TelemetryMessageServiceImpl implements TelemetryMessageService {
     /** 每五秒最多采样一次确认耗时，批次额外带上本次确认消息数。 */
     private void logSuccess(Long interfaceId, long started, long finished, SendResult sendResult,
             int count, int sentBytes) {
-        if (sendResult == null) {
+        // 后台确认返回后复查开关，再尝试占用成功日志的采样窗口。
+        if (sendResult == null || !timingLog.isEnabled()) {
             return;
         }
         long next = nextSuccessLogNanos.get();

@@ -20,6 +20,8 @@ public class SystemMonitorProperties {
     /** 连续超限达到该时长才触发告警，单位毫秒。 */
     @Min(1)
     private long alarmDurationMillis = 15000;
+    /** 当前健康和处理实时查询共用的处理服务 CPU 地址，留空时采集本机 CPU。 */
+    private String processCpuUrl = "";
     /** 独立的消息上报设置。 */
     @Valid
     private final MqReport mqReport = new MqReport();
@@ -36,6 +38,10 @@ public class SystemMonitorProperties {
     public long getAlarmDurationMillis() { return alarmDurationMillis; }
     /** 保存持续超限时长。 */
     public void setAlarmDurationMillis(long value) { alarmDurationMillis = value; }
+    /** 返回处理服务 CPU 接口地址。 */
+    public String getProcessCpuUrl() { return processCpuUrl; }
+    /** 保存处理服务 CPU 接口地址。 */
+    public void setProcessCpuUrl(String value) { processCpuUrl = value; }
     /** 返回消息上报设置。 */
     public MqReport getMqReport() { return mqReport; }
 
