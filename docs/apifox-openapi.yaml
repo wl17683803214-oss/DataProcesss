@@ -939,7 +939,10 @@ paths:
     post:
       tags: [登录认证]
       summary: 使用基线平台Token登录
-      description: 校验基线平台Token，按用户roleIds匹配并同步本地角色，不检查systemPermissions，然后签发本系统JWT。普通用户首次登录时自动创建同名本地用户和八位随机密码；平台admin固定映射本地admin和超级管理员角色。
+      description: >-
+        校验基线平台Token后，后台使用本次提交的tokenId为基线用户查询和角色查询设置 Authorization: Bearer <tokenId>。
+        按用户roleIds匹配并同步本地角色，不检查systemPermissions，然后签发本系统JWT。
+        普通用户首次登录时自动创建同名本地用户和八位随机密码；平台admin固定映射本地admin和超级管理员角色。
       security: []
       requestBody:
         required: true

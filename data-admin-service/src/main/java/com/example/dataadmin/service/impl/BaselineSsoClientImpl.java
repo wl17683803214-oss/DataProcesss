@@ -8,6 +8,9 @@ import com.example.dataadmin.service.BaselineSsoClient;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -47,16 +50,18 @@ public class BaselineSsoClientImpl implements BaselineSsoClient {
     public BaselineIdentity authenticate(SsoLoginRequest request) {
         validateConfiguration();
         validateRequestClient(request);
-        validateToken(request);
+        // 校验和后续查询都使用前端本次提交的同一个基线令牌。
+        String tokenId = request.getTokenId().trim();
+        validateToken(tokenId, request.getRemoteIp());
 
         // 令牌通过平台校验后才读取身份字段，解码结果本身不作为可信校验依据。
-        TokenClaims claims = decodeClaims(request.getTokenId());
+        TokenClaims claims = decodeClaims(tokenId);
         if (hasText(claims.clientId)
                 && !properties.getClientId().equals(claims.clientId)) {
             throw new IllegalArgumentException("基线平台令牌不属于当前子系统");
         }
 
-        BaselineUserItem platformUser = findPlatformUser(claims);
+        BaselineUserItem platformUser = findPlatformUser(claims, tokenId);
         BaselineIdentity identity = new BaselineIdentity();
         identity.setUserId(normalizeId(platformUser.userId));
         identity.setUsername(platformUser.userName.trim());
@@ -68,7 +73,7 @@ public class BaselineSsoClientImpl implements BaselineSsoClient {
         }
 
         List<BaselineIdentity.BaselineRole> roles = findPlatformRoles(
-                platformUser.roleIds);
+                platformUser.roleIds, tokenId);
         if (roles.isEmpty()) {
             throw new IllegalArgumentException("基线平台用户没有有效角色");
         }
@@ -98,11 +103,11 @@ public class BaselineSsoClientImpl implements BaselineSsoClient {
     }
 
     /** 调用平台接口确认令牌有效并刷新平台会话活跃时间。 */
-    private void validateToken(SsoLoginRequest request) {
+    private void validateToken(String tokenId, String remoteIp) {
         TokenValidateRequest body = new TokenValidateRequest();
         body.clientId = properties.getClientId();
-        body.tokenId = request.getTokenId().trim();
-        body.remoteIp = trimToNull(request.getRemoteIp());
+        body.tokenId = tokenId;
+        body.remoteIp = trimToNull(remoteIp);
         TokenValidateResponse response = httpRequestTool.postJson(
                 endpoint(TOKEN_VALIDATE_PATH), body, TokenValidateResponse.class);
         if (response == null
@@ -139,14 +144,14 @@ public class BaselineSsoClientImpl implements BaselineSsoClient {
     }
 
     /** 使用令牌中的用户编号和用户名精确定位平台用户。 */
-    private BaselineUserItem findPlatformUser(TokenClaims claims) {
+    private BaselineUserItem findPlatformUser(TokenClaims claims, String tokenId) {
         UserPageRequest body = new UserPageRequest();
         body.pageNum = 1;
         body.pageSize = 100;
         body.userName = claims.userName;
         body.status = "0";
-        UserPageResponse response = httpRequestTool.postJson(
-                endpoint(USER_PAGE_PATH), body, UserPageResponse.class);
+        UserPageResponse response = postWithBaselineToken(
+                USER_PAGE_PATH, tokenId, body, UserPageResponse.class);
         if (response == null
                 || !Integer.valueOf(200).equals(response.code)
                 || response.data == null
@@ -168,7 +173,7 @@ public class BaselineSsoClientImpl implements BaselineSsoClient {
 
     /** 查询角色目录并保留用户当前关联的正常角色。 */
     private List<BaselineIdentity.BaselineRole> findPlatformRoles(
-            List<Object> userRoleIds) {
+            List<Object> userRoleIds, String tokenId) {
         if (userRoleIds == null || userRoleIds.isEmpty()) {
             return Collections.emptyList();
         }
@@ -176,8 +181,8 @@ public class BaselineSsoClientImpl implements BaselineSsoClient {
         body.pageNum = 1;
         body.pageSize = 1000;
         body.status = "0";
-        RolePageResponse response = httpRequestTool.postJson(
-                endpoint(ROLE_PAGE_PATH), body, RolePageResponse.class);
+        RolePageResponse response = postWithBaselineToken(
+                ROLE_PAGE_PATH, tokenId, body, RolePageResponse.class);
         if (response == null
                 || !Integer.valueOf(200).equals(response.code)
                 || response.data == null
@@ -205,6 +210,16 @@ public class BaselineSsoClientImpl implements BaselineSsoClient {
             result.add(role);
         }
         return result;
+    }
+
+    /** 用户和角色查询复用同一种鉴权头，令牌随当前请求传递。 */
+    private <T> T postWithBaselineToken(String path, String tokenId, Object body, Class<T> responseType) {
+        // 保留原请求的 JSON 格式，并把已通过基线校验的令牌放进请求头。
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth(tokenId);
+        return httpRequestTool.request(endpoint(path), HttpMethod.POST, headers, body, responseType).getBody();
     }
 
     /** 拼接平台接口地址并统一处理结尾斜线。 */
