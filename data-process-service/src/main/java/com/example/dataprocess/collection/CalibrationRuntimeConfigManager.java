@@ -23,9 +23,6 @@ public class CalibrationRuntimeConfigManager {
 
     /** 按任务加载全部有效通道，并以校准公式构造只读Map。 */
     public Map<String, CalibrationChannelRuntimeConfig> load(String taskId) {
-        if (taskId == null || taskId.trim().isEmpty()) {
-            return Collections.emptyMap();
-        }
         List<CalibrationChannelRuntimeConfig> configs =
                 mapper.findEnabledChannels(taskId);
         Map<String, CalibrationChannelRuntimeConfig> result =

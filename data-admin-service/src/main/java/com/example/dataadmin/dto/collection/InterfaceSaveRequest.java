@@ -28,10 +28,6 @@ public class InterfaceSaveRequest {
     /** 采集接口主键 ID；编辑时必填。 */
     private Long id;
 
-    /** 所属试验任务 ID。 */
-    @NotBlank(message = "试验任务编号不能为空")
-    @Size(max = 100, message = "试验任务编号不能超过100个字符")
-    private String taskId;
 
     @NotBlank(message = "接口名称不能为空")
     @Size(max = 100, message = "接口名称不能超过100个字符")
@@ -106,13 +102,13 @@ public class InterfaceSaveRequest {
         this.id = id;
     }
 
-    public String getTaskId() {
-        return taskId;
-    }
+    /** 兼容既有内部调用，配置及全局记录不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
 
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
+    /** 兼容旧调用参数，不接收或保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
 
     public String getInterfaceName() {
         return interfaceName;

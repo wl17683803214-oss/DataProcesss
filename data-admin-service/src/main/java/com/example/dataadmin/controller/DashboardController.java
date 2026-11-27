@@ -36,20 +36,30 @@ public class DashboardController {
     /** 查询数据采集总览，供前端按固定周期轮询。 */
     @GetMapping("/collection")
     public ApiResponse<CollectionDashboardVO> collection(
-            @RequestParam(required = false) String taskId,
             @RequestParam(defaultValue = "3h") DashboardRange range) {
         // 三种时间范围统一查询五秒统计表，不再返回控制器内置示例。
         return ApiResponse.success(
-                service.getCollectionDashboard(taskId, range));
+                service.getCollectionDashboard(null, range));
+    }
+
+    /** 兼容既有内部调用，任务参数不再影响实际查询范围，不注册为HTTP接口。 */
+    @Deprecated
+    public ApiResponse<CollectionDashboardVO> collection(String ignoredTaskId, DashboardRange range) {
+        return ApiResponse.success(service.getCollectionDashboard(ignoredTaskId, range));
     }
 
     /** 查询数据处理总览，供前端按固定周期轮询。 */
     @GetMapping("/processing")
     public ApiResponse<ProcessingDashboardVO> processing(
-            @RequestParam(required = false) String taskId,
             @RequestParam(defaultValue = "3h") DashboardRange range) {
         // 处理量、去重量和异常量全部来自真实五秒统计记录。
         return ApiResponse.success(
-                service.getProcessingDashboard(taskId, range));
+                service.getProcessingDashboard(null, range));
+    }
+
+    /** 兼容既有内部调用，统计始终按全局范围查询。 */
+    @Deprecated
+    public ApiResponse<ProcessingDashboardVO> processing(String ignoredTaskId, DashboardRange range) {
+        return ApiResponse.success(service.getProcessingDashboard(ignoredTaskId, range));
     }
 }

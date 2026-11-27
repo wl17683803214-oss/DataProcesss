@@ -54,9 +54,9 @@ public class DataVisualizationController {
 
     /** 下载当前用户指定任务的整页可视化配置文件。 */
     @GetMapping(value = "/config/export", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<byte[]> exportConfig(@RequestParam String taskId) {
+    public ResponseEntity<byte[]> exportConfig() {
         // 第一步：用户范围从登录上下文取得，客户端不能指定其他用户。
-        byte[] bytes = configService.exportConfig(taskId, LoginUserContext.getRequired().getUserId());
+        byte[] bytes = configService.exportConfig(null, LoginUserContext.getRequired().getUserId());
         // 第二步：以附件形式返回标准配置文件，下载内容不包裹统一响应对象。
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
@@ -67,19 +67,19 @@ public class DataVisualizationController {
 
     /** 只读检查配置文件及其在目标任务中的参数、接口、协议匹配情况。 */
     @PostMapping(value = "/config/import/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<VisualizationConfigPreviewVO> previewConfig(@RequestParam String taskId,
+    public ApiResponse<VisualizationConfigPreviewVO> previewConfig(
             @RequestParam("file") MultipartFile file) {
         // 文件检查只返回中文问题和数量，不修改原组件或勾选记录。
-        return ApiResponse.success(configService.preview(taskId, LoginUserContext.getRequired().getUserId(),
+        return ApiResponse.success(configService.preview(null, LoginUserContext.getRequired().getUserId(),
                 file.getOriginalFilename(), readConfigFile(file)));
     }
 
     /** 上传同一文件，重新检查并事务替换当前用户目标任务的整页配置。 */
     @PostMapping(value = "/config/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<VisualizationConfigPreviewVO> importConfig(@RequestParam String taskId,
+    public ApiResponse<VisualizationConfigPreviewVO> importConfig(
             @RequestParam("file") MultipartFile file) {
         // 不接受客户端提供用户或主键映射，实际关联由业务服务重新匹配。
-        return ApiResponse.success(configService.importConfig(taskId, LoginUserContext.getRequired().getUserId(),
+        return ApiResponse.success(configService.importConfig(null, LoginUserContext.getRequired().getUserId(),
                 file.getOriginalFilename(), readConfigFile(file)));
     }
 
@@ -103,11 +103,10 @@ public class DataVisualizationController {
 
     /** 查询当前用户的可视化组件。 */
     @GetMapping("/widgets")
-    public ApiResponse<List<MonitorDashboardWidget>> listWidgets(
-            @RequestParam String taskId) {
+    public ApiResponse<List<MonitorDashboardWidget>> listWidgets() {
         Long userId = LoginUserContext.getRequired().getUserId();
         return ApiResponse.success(
-                visualizationService.listWidgets(taskId, userId));
+                visualizationService.listWidgets(null, userId));
     }
 
     /** 查询可视化组件详情。 */
@@ -164,11 +163,10 @@ public class DataVisualizationController {
     @GetMapping("/widgets/{widgetId}/files")
     public ApiResponse<PageResult<FepFileListItemVO>> pageFiles(
             @PathVariable Long widgetId,
-            @RequestParam String taskId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         // 服务层同时校验任务、当前用户和组件类型。
-        return ApiResponse.success(visualizationService.pageFiles(taskId, widgetId,
+        return ApiResponse.success(visualizationService.pageFiles(null, widgetId,
                 LoginUserContext.getRequired().getUserId(), pageNum, pageSize));
     }
 

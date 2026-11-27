@@ -66,31 +66,19 @@ public class CalibrationPersistenceWriterImpl implements CalibrationPersistenceW
 
     /** 按任务及通道合并本批数量，避免对同一汇总记录重复执行更新。 */
     private void incrementCalibrationCounts(List<CalibrationCountCache> calibrationCounts) {
-        // 第一步：校验内部数量增量，禁止空任务、空通道或非正数量参与累加。
-        Map<String, Map<Long, Long>> taskCounts =
-                new LinkedHashMap<String, Map<Long, Long>>();
+        // 第一步：按全局唯一通道编号合并数量，不再使用任务分组。
+        Map<Long, Long> channelCounts = new LinkedHashMap<>();
         for (CalibrationCountCache count : calibrationCounts) {
-            if (count.getTaskId() == null || count.getTaskId().trim().isEmpty()
-                    || count.getChannelId() == null || count.getCalibrationCount() == null
+            if (count.getChannelId() == null || count.getCalibrationCount() == null
                     || count.getCalibrationCount() <= 0L) {
-                throw new IllegalArgumentException("校准数量缺少任务、通道或有效数量");
+                throw new IllegalArgumentException("校准数量缺少通道或有效数量");
             }
-            // 第二步：不同接口的增量按任务和通道累加，保证各任务相互隔离。
-            Map<Long, Long> channelCounts = taskCounts.computeIfAbsent(
-                    count.getTaskId(), taskId -> new LinkedHashMap<Long, Long>());
-            channelCounts.put(count.getChannelId(),
-                    channelCounts.getOrDefault(count.getChannelId(), 0L)
-                            + count.getCalibrationCount());
+            channelCounts.merge(count.getChannelId(), count.getCalibrationCount(), Long::sum);
         }
-        // 第三步：通过数据库原子加法更新汇总，避免并发批次覆盖已累计数量。
-        for (Map.Entry<String, Map<Long, Long>> taskEntry : taskCounts.entrySet()) {
-            for (Map.Entry<Long, Long> channelEntry : taskEntry.getValue().entrySet()) {
-                int updated = mapper.incrementRecordCalibrationCount(
-                        taskEntry.getKey(), channelEntry.getKey(), channelEntry.getValue());
-                if (updated <= 0) {
-                    throw new IllegalStateException(
-                            "当前试验任务下没有可用的校准记录：" + channelEntry.getKey());
-                }
+        // 第二步：原子累加通道汇总，任意失败仍由原有事务整体回滚。
+        for (Map.Entry<Long, Long> entry : channelCounts.entrySet()) {
+            if (mapper.incrementRecordCalibrationCount(null, entry.getKey(), entry.getValue()) <= 0) {
+                throw new IllegalStateException("校准通道没有可用的校准记录：" + entry.getKey());
             }
         }
     }

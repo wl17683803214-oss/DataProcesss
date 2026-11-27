@@ -122,10 +122,7 @@ public class TelemetryWebSocketHandler extends TextWebSocketHandler implements A
     }
 
     private Subscription subscribe(JsonNode request) {
-        String taskId = request.path("taskId").asText().trim();
-        if (taskId.isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
+        // 订阅跨任务读取数据，前端无需传入任务编号。
         TelemetrySocketStream stream = TelemetrySocketStream.require(request.path("stream").asText());
         // 整帧连接只能订阅一个采集接口，正常与异常分别隔离。
         if (stream == TelemetrySocketStream.NORMAL || stream == TelemetrySocketStream.ABNORMAL) {
@@ -133,7 +130,7 @@ public class TelemetryWebSocketHandler extends TextWebSocketHandler implements A
             if (interfaceId <= 0) {
                 throw new IllegalArgumentException("采集接口主键不能为空且必须大于零");
             }
-            return new Subscription(taskId, stream, interfaceId, null);
+            return new Subscription(stream, interfaceId, null);
         }
         // 参数连接按固定页面或组件读取已保存的勾选范围。
         boolean curve = stream == TelemetrySocketStream.CURVE;
@@ -142,7 +139,7 @@ public class TelemetryWebSocketHandler extends TextWebSocketHandler implements A
             throw new IllegalArgumentException("参数勾选场景不正确");
         }
         long targetId = integer(request, "targetId", 0);
-        return new Subscription(taskId, stream, null, query.prepareLive(taskId, (int) selectionType, targetId,
+        return new Subscription(stream, null, query.prepareLive((int) selectionType, targetId,
                 request.path("telemetryType").asText(null), curve));
     }
 
@@ -251,16 +248,14 @@ public class TelemetryWebSocketHandler extends TextWebSocketHandler implements A
         closers.shutdown();
     }
 
-    /** 一次订阅只处理匹配任务的参数或匹配接口和状态的帧。 */
+    /** 一次订阅按参数身份或接口与状态处理数据，不筛选任务。 */
     private static final class Subscription {
-        private final String taskId;
         private final TelemetrySocketStream stream;
         private final Long interfaceId;
         private final ProcessedTelemetryQueryService.LiveSelection selection;
 
-        private Subscription(String taskId, TelemetrySocketStream stream, Long interfaceId,
+        private Subscription(TelemetrySocketStream stream, Long interfaceId,
                 ProcessedTelemetryQueryService.LiveSelection selection) {
-            this.taskId = taskId;
             this.stream = stream;
             this.interfaceId = interfaceId;
             this.selection = selection;
@@ -271,13 +266,13 @@ public class TelemetryWebSocketHandler extends TextWebSocketHandler implements A
         }
 
         private boolean matches(TelemetryFrameRecord frame) {
-            return taskId.equals(frame.getTaskId()) && interfaceId.equals(frame.getInterfaceId())
+            return interfaceId.equals(frame.getInterfaceId())
                     && status().getValue().equals(frame.getCheckStatus());
         }
 
         private boolean matches(TelemetryRealtimeBatch batch) {
             if (selection != null) {
-                return batch.getParameters().stream().anyMatch(row -> taskId.equals(row.getTaskId()));
+                return !batch.getParameters().isEmpty();
             }
             return batch.getFrames().stream().anyMatch(this::matches);
         }
@@ -375,7 +370,7 @@ public class TelemetryWebSocketHandler extends TextWebSocketHandler implements A
         private void sendSnapshot(Subscription value) throws IOException {
             List<?> rows;
             if (value.selection == null) {
-                List<TelemetryFrameRecord> snapshot = cache.frames(value.taskId, value.interfaceId, value.status());
+                List<TelemetryFrameRecord> snapshot = cache.frames(value.interfaceId, value.status());
                 rows = frameRows(value, snapshot);
                 // 快照之前的旧增量即使已被淘汰，也不能在初始化后重新进入列表。
                 for (TelemetryFrameRecord frame : snapshot) {

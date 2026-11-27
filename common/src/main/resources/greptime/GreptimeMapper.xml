@@ -27,10 +27,7 @@
     <select id="registeredFrameTables" resultType="string">
         SELECT DISTINCT frame_table FROM telemetry_table_registry
         <where>
-            <choose>
-                <when test="taskId != null and taskId != ''">task_id = #{taskId}</when>
-                <otherwise>1 = 0</otherwise>
-            </choose>
+
             <if test="interfaceId != null">AND interface_id = #{interfaceId}</if>
         </where>
         ORDER BY frame_table
@@ -107,11 +104,8 @@
             <otherwise>AND 1 = 0</otherwise>
         </choose>
     </sql>
+    <!-- 查询跨任务读取，仅按调用方明确的时间范围筛选。 -->
     <sql id="taskCondition">
-        <choose>
-            <when test="taskId != null and taskId != ''">task_id = #{taskId}</when>
-            <otherwise>1 = 0</otherwise>
-        </choose>
         <include refid="timeCondition"/>
     </sql>
     <sql id="frameColumns">

@@ -45,7 +45,7 @@ public class CollectInterfaceRuntimeConfig {
 
 
     /** 同一次接口启动只记录第一条处理完成日志，并发处理时原子判断。 */
-    private final AtomicBoolean pdxpProcessingLogged = new AtomicBoolean();
+    private AtomicBoolean pdxpProcessingLogged = new AtomicBoolean();
 
     /** 已运行接口复用当前对象，重新启动创建新对象并重新允许首帧日志。 */
     public boolean markFirstPdxpProcessingLog() {
@@ -56,7 +56,7 @@ public class CollectInterfaceRuntimeConfig {
     private Long interfaceId;
     /** 采集接口名称。 */
     private String interfaceName;
-    /** 采集接口所属试验任务主键。 */
+    /** 当前帧或文件固定的任务编号，不属于采集接口配置。 */
     private String taskId;
     /** 采集接口本机监听地址。 */
     private String host;
@@ -216,12 +216,39 @@ public class CollectInterfaceRuntimeConfig {
                 ? Collections.emptyMap() : calibrationConfigMap;
     }
 
+    /** 采集时固定任务和配置快照，异步处理全程沿用该归属。 */
+    public CollectInterfaceRuntimeConfig snapshotForTask(String currentTaskId) {
+        // 第一步：复制轻量字段，共享只读解析、校准及卫星目录快照。
+        CollectInterfaceRuntimeConfig copy = new CollectInterfaceRuntimeConfig();
+        copy.interfaceId = interfaceId;
+        copy.interfaceName = interfaceName;
+        copy.taskId = currentTaskId;
+        copy.host = host;
+        copy.port = port;
+        copy.multicastIp = multicastIp;
+        copy.transferType = transferType;
+        copy.transferProtocol = transferProtocol;
+        copy.rpcEnabled = rpcEnabled;
+        copy.protocolConfigId = protocolConfigId;
+        copy.protocolConfigParams = protocolConfigParams;
+        copy.receiveRateLimit = receiveRateLimit;
+        copy.receiveRateLimitUnit = receiveRateLimitUnit;
+        copy.parameterRangeCheckEnabled = parameterRangeCheckEnabled;
+        copy.deviceSatelliteId = deviceSatelliteId;
+        copy.deviceSatelliteName = deviceSatelliteName;
+        copy.pdxpDecodePlan = pdxpDecodePlan;
+        copy.baselineSatellites = baselineSatellites;
+        copy.calibrationConfigMap = calibrationConfigMap;
+        // 第二步：首帧日志仍按接口启动周期去重，不随每帧复制而重新输出。
+        copy.pdxpProcessingLogged = pdxpProcessingLogged;
+        return copy;
+    }
+
     /** 判断影响监听或处理分支的配置是否相同。 */
     public boolean hasSameRuntimeSettings(CollectInterfaceRuntimeConfig other) {
         // 逐项比较运行关键字段，任一变化都需要重启对应接口。
         return other != null
                 && same(host, other.host)
-                && same(taskId, other.taskId)
                 && same(port, other.port)
                 && same(multicastIp, other.multicastIp)
                 && same(transferType, other.transferType)

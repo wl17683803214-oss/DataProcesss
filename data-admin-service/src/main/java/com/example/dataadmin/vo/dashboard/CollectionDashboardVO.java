@@ -6,8 +6,6 @@ import java.util.List;
 
 /** 数据采集总览：实时汇总、折线图和表格。 */
 public class CollectionDashboardVO {
-  /** 试验任务ID。 */
-  private String taskId;
 
   /** 查询时间范围。 */
   private String range;
@@ -24,8 +22,11 @@ public class CollectionDashboardVO {
   /** 按发送方聚合的采集明细。 */
   private List<TableRow> table = new ArrayList<>();
 
-  public String getTaskId() { return taskId; }
-  public void setTaskId(String v) { taskId = v; }
+  /** 总览不再具有任务归属。 */
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  public String getTaskId() { return null; }
+  /** 兼容旧调用，不保存任务编号。 */
+  public void setTaskId(String ignored) { }
   public String getRange() { return range; }
   public void setRange(String v) { range = v; }
   public String getSampleTime() { return sampleTime; }

@@ -1,5 +1,7 @@
 # 数据处理软件
 
+2026-11-27：配置、参数勾选、实时与历史查询均取消任务参数和任务筛选；只有遥测和FEP文件在写入时记录最新运行中任务，无运行中任务不保存。完整接口变更、WebSocket及数据库升级见[全局配置与任务归属](docs/前端对接-全局配置与任务归属.md)，导入文件使用 `docs/apifox-openapi.yaml` 2.9.0。
+
 基于 JDK 8、Spring Boot 2.6、Spring Cloud Alibaba、MyBatis 和人大金仓构建。
 项目不再使用 Spring Cloud Gateway，两个业务服务直接对外提供接口并独立鉴权。
 

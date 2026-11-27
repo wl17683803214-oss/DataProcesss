@@ -86,7 +86,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     /** 采集接口筛选项数据访问组件。 */
     private final CollectInterfaceConfigMapper collectInterfaceMapper;
 
-
     /** 遥测解析规则数据访问组件。 */
     private final TelemetryParseRuleConfigMapper parseRuleMapper;
     private final ProcessingRuleConfigMapper processingRuleConfigMapper;
@@ -150,17 +149,16 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         this.processedTelemetryQueryService = processedTelemetryQueryService;
     }
 
-    /** 查询指定任务下页面筛选框使用的未删除采集接口。 */
+    /** 查询全局配置中页面筛选框使用的未删除采集接口。 */
     @Override
     public List<CollectInterfaceOptionVO> listCollectInterfaceOptions(String taskId, String interfaceName) {
-        // 复用整帧查询的任务编号校验，并将空白名称视为未填写筛选条件。
-        return collectInterfaceMapper.findOptions(requireTelemetryTaskId(taskId), trimToNull(interfaceName));
+        // 采集接口统一管理，空白名称视为未填写筛选条件。
+        return collectInterfaceMapper.findOptions(null, trimToNull(interfaceName));
     }
 
     /** 查询页面顶部统计卡片。 */
     @Override
     public DataProcessingOverviewVO getOverview(String taskId) {
-        requireTaskId(taskId);
         // 直接从五秒统计表汇总，空结果由SQL统一转换为零。
         return dashboardMapper.findProcessingOverview(taskId);
     }
@@ -168,7 +166,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     /** 查询实时处理指标。 */
     @Override
     public DataProcessingRealtimeVO getRealtime(String taskId) {
-        requireTaskId(taskId);
         DataProcessingRealtimeVO result = new DataProcessingRealtimeVO();
         try {
             // 第一步：读取处理服务生成的任务级PDXP帧滚动速率。
@@ -187,14 +184,14 @@ public class DataProcessingServiceImpl implements DataProcessingService {
 
     /** 优先读取任务级滚动速率，兼容尚未升级的处理服务。 */
     private double processingRate(String taskId) {
-        String windowRate = redisTemplate.opsForValue().get(PROCESSING_WINDOW_RATE_PREFIX + taskId);
+        String windowRate = redisTemplate.opsForValue().get(PROCESSING_WINDOW_RATE_PREFIX + "global");
         if (windowRate != null) {
             return Double.parseDouble(windowRate);
         }
 
         // 旧处理服务还没有滚动快照时，按原口径汇总各接口的最新速率。
         Map<Object, Object> metrics = redisTemplate.opsForHash().entries(
-                PROCESSING_CURRENT_PREFIX + taskId);
+                PROCESSING_CURRENT_PREFIX + "global");
         double total = 0D;
         for (Object value : metrics.values()) {
             try {
@@ -235,7 +232,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             Integer selectionType, Long targetId, String telemetryType, LocalDateTime startTime, LocalDateTime endTime) {
         // 将可选协议类型和时间范围传递给单条语句的批量最新值查询。
         return processedTelemetryQueryService.latest(
-                requireTelemetryTaskId(taskId), selectionType, targetId, telemetryType, startTime, endTime);
+                null, selectionType, targetId, telemetryType, startTime, endTime);
     }
 
     /** 使用一条语句读取勾选参数在时间范围内的全部有效曲线点。 */
@@ -245,7 +242,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             Integer selectionType, Long targetId, String telemetryType, LocalDateTime startTime, LocalDateTime endTime) {
         // 查询组件按参数归属组装时间和数值，保持原有曲线结构。
         return processedTelemetryQueryService.curves(
-                requireTelemetryTaskId(taskId), selectionType, targetId, telemetryType, startTime, endTime);
+                null, selectionType, targetId, telemetryType, startTime, endTime);
     }
     /** 异常帧保留记录字段，按时间范围返回最新的一百条。 */
     @Override
@@ -268,21 +265,11 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             throw new IllegalArgumentException("采集接口主键不能为空且必须大于零");
         }
         Map<String, Object> query = new HashMap<>();
-        query.put("taskId", requireTelemetryTaskId(taskId));
         query.put("interfaceId", interfaceId);
         query.put("checkStatus", status.getValue());
         // 第二步：使用已校验边界绑定时间参数，条数限制由映射固定。
         range.applyTo(query);
         return query;
-    }
-
-    /** 校验并规范化GreptimeDB查询使用的外部任务编号。 */
-    private String requireTelemetryTaskId(String taskId) {
-        String normalizedTaskId = trimToNull(taskId);
-        if (normalizedTaskId == null) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
-        return normalizedTaskId;
     }
 
     private static String trimToNull(String value) {
@@ -296,9 +283,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     @Override
     @Transactional
     public ProcessingRuleConfig getProcessingRuleConfig(String taskId) {
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
         ProcessingRuleConfig config = processingRuleConfigMapper.findByTaskId(taskId);
         if (config != null) {
             return config;
@@ -313,8 +297,8 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     @Override
     @Transactional
     public ProcessingRuleConfig saveProcessingRuleConfig(ProcessingRuleConfig config) {
-        if (config == null || config.getTaskId() == null || config.getTaskId().trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
+        if (config == null) {
+            throw new IllegalArgumentException("处理规则配置不能为空");
         }
         if (processingRuleConfigMapper.findByTaskId(config.getTaskId()) == null) {
             processingRuleConfigMapper.insert(config);
@@ -329,7 +313,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     /** 查询当前任务指定类型的设备卫星筛选项。 */
     @Override
     public List<DeviceSatelliteOptionVO> listDeviceSatellites(String taskId, String type) {
-        requireTaskId(taskId);
         // 类型先去除首尾空白，未传或空字符串时不参与查询筛选。
         String normalizedType = type == null ? null : type.trim();
         if (normalizedType != null && !normalizedType.isEmpty()) {
@@ -374,7 +357,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             throw new IllegalArgumentException("批量修改请求不能为空");
         }
         String taskId = request.getTaskId();
-        requireTaskId(taskId);
         List<TelemetryParseRuleBatchUpdateRequest.Item> items = request.getItems();
         if (items == null || items.isEmpty() || items.size() > 200) {
             throw new IllegalArgumentException("单次必须修改1到200条遥测参数");
@@ -395,7 +377,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             originalById.put(original.getId(), original);
         }
         if (originalById.size() != items.size()) {
-            throw new IllegalArgumentException("批次中存在不属于当前任务的有效参数");
+            throw new IllegalArgumentException("批次中存在无效或已删除的参数");
         }
 
         // 第二步：复用导入校验，并从当前设备系统树生成完整所属系统路径。
@@ -494,13 +476,15 @@ public class DataProcessingServiceImpl implements DataProcessingService {
                 List<ProcessedTelemetryFilterSelection>> rename : selectedRenames.entrySet()) {
             TelemetryParseRuleConfig update = rename.getKey();
             for (ProcessedTelemetryFilterSelection selected : rename.getValue()) {
-                selectionMapper.save(taskId, update.getDeviceSatelliteId(),
+                selectionMapper.save(selected.getTaskId(), update.getDeviceSatelliteId(),
                         update.getTelemetryCode(), selected.getSelectionType(),
                         selected.getTargetId());
             }
         }
-        // 第六步：只刷新本批可视化筛选项；运行中的采集快照保持不变。
+        // 第六步：刷新本批可视化筛选项，并在提交后同步运行快照。
         parameterSyncService.synchronizeChangedParameters(taskId, ids);
+        // 参数修改提交后刷新已启用接口的解析快照，无需重启监听。
+        runtimeSyncService.syncAfterCommit();
         return items.size();
     }
 
@@ -544,7 +528,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             String type,
             String fileName,
             byte[] content) {
-        requireTaskId(taskId);
         DeviceSatelliteType.requireValid(type);
         // 按已校验的类型读取卫星Excel首个工作表，并使用固定列顺序。
         Map<String, List<TelemetryParseRuleConfig>> sheets =
@@ -558,7 +541,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     public int importBaselineRules(String taskId,
             Map<String, List<TelemetryParseRuleConfig>> rules, Map<String, String> names) {
         // 复用现有任务校验、替换锁、系统层级和页面同步逻辑。
-        requireTaskId(taskId);
         return persistImportedRules(taskId, DeviceSatelliteType.SATELLITE.getValue(), rules, names);
     }
 
@@ -568,7 +550,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     public int importBaselineDeviceRules(String taskId,
             Map<String, List<TelemetryParseRuleConfig>> rules) {
         // 远程查询与全部参数校验结束后才加锁，整批设备统一提交。
-        requireTaskId(taskId);
         return persistImportedRules(taskId, DeviceSatelliteType.DEVICE.getValue(), rules, null);
     }
 
@@ -649,9 +630,11 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             }
             count += rules.size();
         }
-        // 第四步：同步页面参数，运行接口快照保持不变直到下一次接口同步。
+        // 第四步：同步页面参数，并在提交后刷新运行接口快照。
         parameterSyncService.synchronizeTaskParameters(taskId);
         selectionMapper.removeMissing(taskId, type);
+        // 导入事务提交后刷新解析与校准快照，既有接口保持监听。
+        runtimeSyncService.syncAfterCommit();
         return count;
     }
 
@@ -683,6 +666,8 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         deviceSatelliteMapper.deleteByDevice(taskId, deviceSatelliteId);
         parameterSyncService.removeObsoleteParameters(taskId);
         selectionMapper.removeMissing(taskId, device.getType());
+        // 删除成功后刷新运行快照，不保留已删除参数的旧解析配置。
+        runtimeSyncService.syncAfterCommit();
     }
 
     /** 删除前检查有效本地PDXP协议的设备引用。 */
@@ -742,24 +727,17 @@ public class DataProcessingServiceImpl implements DataProcessingService {
 
     /** 设备卫星必须属于当前任务且未删除。 */
     private void requireDevice(String taskId, Long deviceSatelliteId) {
-        requireTaskId(taskId);
         if (deviceSatelliteId == null || deviceSatelliteId <= 0
                 || deviceSatelliteMapper.findActive(taskId, deviceSatelliteId) == null) {
-            throw new IllegalArgumentException("当前任务下不存在有效的设备卫星");
+            throw new IllegalArgumentException("不存在有效的设备卫星");
         }
     }
 
-    /** 通过已有任务行串行化当前任务的写入，不锁定其他任务。 */
+    /** 通过全局处理配置行串行化导入、编辑与勾选维护。 */
     private void lockTask(String taskId) {
         if (deviceSatelliteMapper.lockForReplacement(taskId) == null) {
-            throw new IllegalArgumentException("试验任务不存在");
+            throw new IllegalArgumentException("全局处理配置不存在，请先完成数据库升级");
         }
     }
 
-    /** 所有参数操作必须明确任务范围。 */
-    private void requireTaskId(String taskId) {
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
-    }
 }

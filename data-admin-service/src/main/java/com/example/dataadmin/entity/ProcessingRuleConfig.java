@@ -7,11 +7,14 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"parameterRangeCheckEnabled"})
 public class ProcessingRuleConfig {
-    private String taskId;
     private Integer parameterRangeCheckEnabled;
 
-    public String getTaskId() { return taskId; }
-    public void setTaskId(String taskId) { this.taskId = taskId; }
+    /** 兼容既有内部调用，配置及全局记录不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
+    /** 兼容旧调用参数，不接收或保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
     public Integer getParameterRangeCheckEnabled() { return parameterRangeCheckEnabled; }
     public void setParameterRangeCheckEnabled(Integer value) { this.parameterRangeCheckEnabled = value; }
 }

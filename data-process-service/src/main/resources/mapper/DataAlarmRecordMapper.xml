@@ -15,12 +15,12 @@
     <!-- 只写入能从运行上下文确定的身份字段，其他字段保留为空。 -->
     <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into dm_alarm_event
-        (task_id, alarm_time, source_name, alarm_msg, alarm_level, alarm_status,
+        (alarm_time, source_name, alarm_msg, alarm_level, alarm_status,
          event_type, interface_id, process_task_id, calib_channel_id, tm_symbol,
          parameter_name, alarm_detail, trigger_rule, trigger_count,
          last_trigger_time, recover_time, dedup_key)
         values
-        (#{taskId}, #{alarmTime}, #{sourceCode}, #{alarmMsg}, #{alarmLevel}, 0,
+        (#{alarmTime}, #{sourceCode}, #{alarmMsg}, #{alarmLevel}, 0,
          #{eventType}, #{interfaceId}, #{processTaskId}, #{calibChannelId}, #{tmSymbol},
          #{parameterName}, #{alarmDetail}, #{triggerRule}, #{triggerCount},
          #{lastTriggerTime}, #{recoverTime}, #{dedupKey})
@@ -40,7 +40,7 @@
           and last_trigger_time &lt;= #{recoverTime}
     </update>
     <select id="findInterface" resultType="com.example.dataprocess.entity.CollectInterfaceRuntimeConfig">
-        select id as interface_id, task_id, interface_name, host, port,
+        select id as interface_id, interface_name, host, port,
                transfer_type, transfer_protocol, protocol_config_id
         from collect_interface_config where id = #{id}
     </select>

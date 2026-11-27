@@ -30,7 +30,7 @@ public final class CalibrationRedisKeys {
             String taskId,
             String calibrationFormula,
             String telemetryCode) {
-        return "calibration:sample:" + type + ":" + taskId + ":"
+        return "calibration:sample:" + type + ":" + "global" + ":"
                 + encode(calibrationFormula) + ":" + encode(telemetryCode);
     }
 

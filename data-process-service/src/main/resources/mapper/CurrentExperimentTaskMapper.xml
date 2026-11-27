@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataprocess.mapper.CurrentExperimentTaskMapper">
+    <!-- 运行中记录的事件时间为开始事件时间，评估修改时间不参与最新任务排序。 -->
+    <select id="findLatestRunningTaskId" resultType="string">
+        select task_id
+        from experiment_task
+        <where>
+            <if test="status != null">task_status = #{status}</if>
+            <if test="status == null">1 = 0</if>
+        </where>
+        order by event_time desc nulls last, task_id desc
+        limit 1
+    </select>
+</mapper>

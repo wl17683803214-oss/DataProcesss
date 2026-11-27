@@ -21,18 +21,16 @@
             ) as today_processed_count,
             coalesce(sum(duplicate_count), 0) as deduplicated_count
         from data_processing_statistics
-        where task_id = #{taskId}
+        where 1 = 1
     </select>
 
-    <!-- 按任务统计当前未处理告警数量。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="countUnhandledAlarms" resultType="long">
         select count(1)
         from dm_alarm_event
         where alarm_status = 0
           and is_deleted = 0
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     </select>
 
     <!-- 查询指定时间范围内未删除的采集五秒统计。 -->
@@ -40,7 +38,6 @@
             resultType="com.example.dataadmin.entity.CollectInterfaceStatistics">
         select
             id,
-            task_id,
             interface_id,
             statistics_time,
             collection_count,
@@ -48,9 +45,7 @@
         from collect_interface_statistics
         where statistics_time &gt;= #{startTime}
           and is_deleted = 0
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
         order by interface_id, statistics_time, id
     </select>
 
@@ -59,7 +54,6 @@
             resultType="com.example.dataadmin.entity.DataProcessingStatistics">
         select
             id,
-            task_id,
             interface_id,
             statistics_time,
             processing_count,
@@ -68,9 +62,7 @@
         from data_processing_statistics
         where statistics_time &gt;= #{startTime}
           and is_deleted = 0
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
         order by interface_id, statistics_time, id
     </select>
 
@@ -79,7 +71,6 @@
             resultType="com.example.dataadmin.entity.CollectInterfaceConfig">
         select
             id,
-            task_id,
             interface_name,
             send_from,
             transfer_type,
@@ -87,9 +78,7 @@
             enabled
         from collect_interface_config
         where is_deleted = 0
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
         order by id
     </select>
 

@@ -18,7 +18,7 @@
     <select id="count" resultType="long">
         select count(record.id)
         from fep_file_transfer_record record
-        where record.task_id = #{taskId} and record.process_status in (2, 3)
+        where record.process_status in (2, 3)
         <include refid="categoryFilter"/>
     </select>
     <!-- 图片与普通文件都读取评价状态；历史采集接口删除后仍保留文件，临时地址即时生成。 -->
@@ -28,8 +28,8 @@
                record.evaluation_status, record.object_name, record.completed_time
         from fep_file_transfer_record record
         left join collect_interface_config collect
-          on collect.id = record.interface_id and collect.task_id = record.task_id
-        where record.task_id = #{taskId} and record.process_status in (2, 3)
+          on collect.id = record.interface_id
+        where record.process_status in (2, 3)
         <include refid="categoryFilter"/>
         order by record.completed_time desc, record.id desc
         limit #{limit} offset #{offset}

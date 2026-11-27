@@ -135,7 +135,7 @@ where u.username = 'admin'
 -- 数据校准：每个校准通道只对应一条校准及野值数量汇总记录。
 CREATE TABLE IF NOT EXISTS calib_record (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
     channel_id BIGINT NOT NULL,
     channel_name VARCHAR(100) NOT NULL,
     calibration_count BIGINT NOT NULL DEFAULT 0,
@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS calib_record (
 
 COMMENT ON TABLE calib_record IS '校准记录汇总表';
 COMMENT ON COLUMN calib_record.id IS '自增主键ID';
-COMMENT ON COLUMN calib_record.task_id IS '试验任务ID';
+COMMENT ON COLUMN calib_record.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN calib_record.channel_id IS '校准通道ID';
 COMMENT ON COLUMN calib_record.channel_name IS '校准通道名称';
 COMMENT ON COLUMN calib_record.calibration_count IS '累计参与校准的遥测参数数量，包含正常值和野值';
@@ -164,7 +164,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_calib_record_channel
 -- 一条校准记录通过校准通道ID对应多条野值详情。
 CREATE TABLE IF NOT EXISTS calib_record_detail (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
     channel_id BIGINT NOT NULL,
     interface_id BIGINT NOT NULL,
     channel_name VARCHAR(100),
@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS calib_record_detail (
 
 COMMENT ON TABLE calib_record_detail IS '校准记录野值详情表';
 COMMENT ON COLUMN calib_record_detail.id IS '详情主键ID';
-COMMENT ON COLUMN calib_record_detail.task_id IS '试验任务ID';
+COMMENT ON COLUMN calib_record_detail.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN calib_record_detail.channel_id IS '校准通道ID';
 COMMENT ON COLUMN calib_record_detail.interface_id IS '采集接口ID';
 COMMENT ON COLUMN calib_record_detail.channel_name IS '遥测帧通道名称';
@@ -191,7 +191,7 @@ COMMENT ON COLUMN calib_record_detail.create_time IS '野值发生时间';
 
 -- 详情列表按任务、校准通道和发生时间分页查询。
 CREATE INDEX IF NOT EXISTS idx_calib_record_detail_task_channel_time
-    ON calib_record_detail (task_id, channel_id, create_time DESC);
+    ON calib_record_detail (channel_id, create_time DESC);
 
 insert into dp_menu(id,parent_id,label,icon,path,hidden,sort_order,deleted)
 values (10,0,'总览','i-lucide-layout-dashboard','/dashboard',0,1,0);

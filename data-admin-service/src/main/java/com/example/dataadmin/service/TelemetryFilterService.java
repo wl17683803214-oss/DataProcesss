@@ -61,7 +61,6 @@ public class TelemetryFilterService {
     /** 按当前展开位置返回直属节点，设备级参数排在系统节点前面。 */
     public List<TelemetryFilterNodeVO> list(String taskId, Long deviceId, Long systemId,
             String telemetryCode, Integer selectionType, Long targetId) {
-        requireTask(taskId);
         long scopeId = scopeService.require(taskId, selectionType, targetId);
         if (telemetryCode != null && !telemetryCode.trim().isEmpty()) {
             if (deviceId != null || systemId != null) {
@@ -81,7 +80,7 @@ public class TelemetryFilterService {
             return nodes;
         }
         if (deviceMapper.findActive(taskId, deviceId) == null) {
-            throw new IllegalArgumentException("当前任务下不存在有效的设备卫星");
+            throw new IllegalArgumentException("不存在有效的设备卫星");
         }
         if (systemId != null && systemMapper.findActive(taskId, deviceId, systemId) == null) {
             throw new IllegalArgumentException("当前设备下不存在有效的所属系统");
@@ -126,9 +125,8 @@ public class TelemetryFilterService {
 
     /** 参数管理页面查询设备下全部系统层级，供前端组织树形显示。 */
     public List<TelemetrySystemNodeVO> systems(String taskId, Long deviceId) {
-        requireTask(taskId);
         if (deviceId == null || deviceMapper.findActive(taskId, deviceId) == null) {
-            throw new IllegalArgumentException("当前任务下不存在有效的设备卫星");
+            throw new IllegalArgumentException("全局配置中不存在有效的设备卫星");
         }
         List<TelemetrySystemConfig> systems = systemMapper.findByDevice(taskId, deviceId);
         Map<Long, TelemetrySystemNodeVO> nodesById = new HashMap<>();
@@ -157,17 +155,16 @@ public class TelemetryFilterService {
     /** 即时保存单个参数勾选，主键和代号由有效解析配置确定。 */
     @Transactional(rollbackFor = Exception.class)
     public void update(TelemetryFilterSelectionRequest request) {
-        requireTask(request.getTaskId());
         // 参数勾选与整页可视化导入、参数表替换共同串行，锁内重新检查组件归属。
         if (deviceMapper.lockForReplacement(request.getTaskId()) == null) {
-            throw new IllegalArgumentException("目标试验任务不存在");
+            throw new IllegalArgumentException("目标全局处理配置不存在");
         }
         long scopeId = scopeService.require(request.getTaskId(),
                 request.getSelectionType(), request.getTargetId());
         TelemetryParseRuleConfig rule = ruleMapper.findActiveById(
                 request.getTaskId(), request.getParseRuleId());
         if (rule == null) {
-            throw new IllegalArgumentException("当前任务下不存在有效的遥测参数");
+            throw new IllegalArgumentException("全局配置中不存在有效的遥测参数");
         }
         boolean before = selectionMapper.findSelectedCodes(request.getTaskId(), rule.getDeviceSatelliteId(),
                 request.getSelectionType(), scopeId).contains(rule.getTelemetryCode());
@@ -211,7 +208,6 @@ public class TelemetryFilterService {
     public void clear(TelemetryFilterClearRequest request) {
         // 第一步：校验任务并复用任务锁，与单项勾选和配置导入保持串行。
         String taskId = request.getTaskId();
-        requireTask(taskId);
         if (deviceMapper.lockForReplacement(taskId) == null) {
             throw new IllegalArgumentException("目标试验任务不存在");
         }
@@ -241,9 +237,4 @@ public class TelemetryFilterService {
                 scope + "遥测参数筛选已清除", detail);
     }
 
-    private void requireTask(String taskId) {
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
-    }
 }

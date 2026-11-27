@@ -39,6 +39,9 @@ import java.util.function.BooleanSupplier;
 /** PDXP统一接收入口，按采集数据类型分流设备、卫星和指令响应。 */
 @Component
 public class PdxpProtocolHandler implements ProtocolHandler {
+    /** 全部采集接口共用当前任务缓存，收包时固定归属。 */
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.example.dataprocess.collection.CurrentExperimentTaskCache currentTaskCache;
     /** 运行环境注入同一份拆帧配置，离线构造时保持既有默认长度。 */
     private PdxpFramingProperties framingProperties = new PdxpFramingProperties();
     /** 指令响应保留独立传输头长度，避免套用设备和卫星的遥测拆帧参数。 */
@@ -162,7 +165,9 @@ public class PdxpProtocolHandler implements ProtocolHandler {
             String transferName) {
         // 传输层字节用于秒级速率，采集量要等解析出完整PDXP帧后再累计。
         statistics.recordReceivedBytes(config, packetData.length);
-        ReceivedDatagram datagram = new ReceivedDatagram(config, packetData);
+        // 入队之前读取一次任务，队列积压和后续切换不改变本报文归属。
+        String taskId = currentTaskCache == null ? config.getTaskId() : currentTaskCache.currentTaskId();
+        ReceivedDatagram datagram = new ReceivedDatagram(config.snapshotForTask(taskId), packetData);
         try {
             // 开启计时后才记录入队起点，拆包成功后按包序号判断是否输出。
             long queuedAt = timingLog.isEnabled() ? System.nanoTime() : 0L;

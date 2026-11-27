@@ -124,7 +124,7 @@ public class RpcDataProcessor implements DataProcessor {
                     .setMsgTime(Timestamp.newBuilder()
                             .setSeconds(messageTime.getEpochSecond())
                             .setNanos(messageTime.getNano()))
-                    .setTaskId(config.getTaskId())
+                    .setTaskId(config.getTaskId() == null ? "" : config.getTaskId())
                     .setMsgSource("数据处理")
                     .build();
             // 返回Proto原码统一使用拆出的中间遥测数据，不依赖RPC返回格式。

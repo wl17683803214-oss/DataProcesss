@@ -48,9 +48,6 @@ public class BaselineDeviceSyncService {
     /** 分页查询全部参数表，将每个工作表作为一个设备导入。 */
     public BaselineDeviceSyncVO synchronize(String taskId) {
         // 第一步：校验任务和配置，禁止缺少接口路径时向根地址发起写请求。
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
         String baseUrl = properties.getApiBaseUrl();
         String path = properties.getTrialParamTableListPath();
         if (baseUrl == null || baseUrl.trim().isEmpty() || path == null

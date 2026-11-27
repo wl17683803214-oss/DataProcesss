@@ -3,13 +3,13 @@
 <mapper namespace="com.example.dataadmin.mapper.DmAlarmEventMapper">
 
     <!-- 公共查询字段。 -->
-    <sql id="columns">id, task_id, alarm_time, source_name as source_code, alarm_msg, alarm_level, alarm_status, task_name, channel_code, trigger_rule, is_deleted, create_time, update_time, event_type, interface_id, process_task_id, calib_channel_id, tm_symbol, parameter_name, alarm_detail, trigger_count, last_trigger_time, recover_time</sql>
+    <sql id="columns">id, alarm_time, source_name as source_code, alarm_msg, alarm_level, alarm_status, task_name, channel_code, trigger_rule, is_deleted, create_time, update_time, event_type, interface_id, process_task_id, calib_channel_id, tm_symbol, parameter_name, alarm_detail, trigger_count, last_trigger_time, recover_time</sql>
 
     <!-- 按页面来源、关键字、级别、状态和时间范围组合查询列表。 -->
     <select id="findAll" resultType="com.example.dataadmin.entity.DmAlarmEvent">
         select <include refid="columns"/> from dm_alarm_event
         <where>
-            <if test="taskId != null and taskId != ''">task_id = #{taskId}</if>
+            <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
             <if test="sourceCode != null and sourceCode != ''">
                 and source_name = #{sourceCode}
             </if>
@@ -64,7 +64,7 @@
         insert into dm_alarm_event
         <trim prefix="(" suffix=")" suffixOverrides=",">
             id,
-            <if test="taskId != null and taskId != ''">task_id,</if>
+            <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
             <if test="alarmTime != null">alarm_time,</if>
             <if test="sourceCode != null">source_name,</if>
             <if test="alarmMsg != null">alarm_msg,</if>
@@ -89,7 +89,7 @@
         values
         <trim prefix="(" suffix=")" suffixOverrides=",">
             #{id},
-            <if test="taskId != null and taskId != ''">#{taskId},</if>
+            <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
             <if test="alarmTime != null">#{alarmTime},</if>
             <if test="sourceCode != null">#{sourceCode},</if>
             <if test="alarmMsg != null">#{alarmMsg},</if>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.dataadmin.mapper.GlobalResourceMigrationMapper">
+    <!-- 结构升级与业务并发写入互斥，锁在当前事务结束时释放。 -->
+    <update id="lockTables">
+        lock table collect_interface_config, collect_protocol_config, device_satellite,
+            telemetry_system_config, telemetry_parse_rule_config, processing_rule_config,
+            calib_channel_config, calib_record, calib_record_detail,
+            collect_interface_statistics, data_processing_statistics, dm_alarm_event,
+            processed_telemetry_filter_selection, monitor_dashboard_widget in access exclusive mode
+    </update>
+    <!-- 补列也在升级事务内，冲突时随同回滚，不产生半完成结构。 -->
+    <update id="prepareScope">
+        alter table processing_rule_config add column if not exists scope_key varchar(32)
+    </update>
+    <!-- 在升级事务内取得表锁，停止旧实例后再执行升级可避免长时间等待。 -->
+    <select id="findConflicts" resultType="string">
+        WITH configuration_conflicts AS (
+            select '设备卫星重复：' || type || '/' || code as detail from device_satellite
+            where is_deleted = 0 group by type, code having count(1) &gt; 1
+            union all
+            select '校准公式重复：' || calibration_formula as detail from calib_channel_config
+            where is_deleted = 0 group by calibration_formula having count(1) &gt; 1
+            union all
+            select '组件键重复：用户' || user_id || '/' || widget_key as detail from monitor_dashboard_widget
+            where 1 = 1 group by user_id, widget_key having count(1) &gt; 1
+            union all
+            select '参数勾选重复：设备' || device_satellite_id || '/' || telemetry_code as detail from processed_telemetry_filter_selection
+            where 1 = 1 group by selection_type, target_id, device_satellite_id, telemetry_code having count(1) &gt; 1
+            union all
+            select '采集统计窗口重复：接口' || interface_id as detail from collect_interface_statistics
+            where 1 = 1 group by interface_id, statistics_time having count(1) &gt; 1
+            union all
+            select '处理统计窗口重复：接口' || interface_id as detail from data_processing_statistics
+            where 1 = 1 group by interface_id, statistics_time having count(1) &gt; 1
+            union all
+            select '不同任务的参数范围检查开关不一致，请先统一配置' as detail
+            from processing_rule_config
+            having count(distinct parameter_range_check_enabled) &gt; 1
+               and sum(case when scope_key = 'global' then 1 else 0 end) = 0
+        )
+        select detail from configuration_conflicts order by detail limit 100
+    </select>
+    <!-- 历史任务列保留用于兼容及追溯，新代码不再读写这些列。 -->
+    <update id="migrate">
+        alter table collect_interface_config alter column task_id drop not null;
+        alter table collect_protocol_config alter column task_id drop not null;
+        alter table device_satellite alter column task_id drop not null;
+        alter table telemetry_system_config alter column task_id drop not null;
+        alter table telemetry_parse_rule_config alter column task_id drop not null;
+        alter table processing_rule_config alter column task_id drop not null;
+        alter table calib_channel_config alter column task_id drop not null;
+        alter table calib_record alter column task_id drop not null;
+        alter table calib_record_detail alter column task_id drop not null;
+        alter table collect_interface_statistics alter column task_id drop not null;
+        alter table data_processing_statistics alter column task_id drop not null;
+        alter table dm_alarm_event alter column task_id drop not null;
+        alter table processed_telemetry_filter_selection alter column task_id drop not null;
+        alter table monitor_dashboard_widget alter column task_id drop not null;
+        <!-- 全局开关使用独立范围键，旧任务开关保留为历史记录。 -->
+        alter table processing_rule_config add column if not exists scope_key varchar(32);
+        create unique index if not exists uk_processing_rule_scope on processing_rule_config (scope_key);
+        insert into processing_rule_config (scope_key, parameter_range_check_enabled)
+        select 'global', coalesce(max(parameter_range_check_enabled), 0) from processing_rule_config
+        on conflict (scope_key) do nothing;
+        <!-- 新的唯一约束覆盖所有有效配置，不再按任务分区。 -->
+        drop index if exists uk_collect_interface_statistics_window;
+        create unique index uk_collect_interface_statistics_window on collect_interface_statistics (interface_id, statistics_time);
+        drop index if exists uk_data_processing_statistics_window;
+        create unique index uk_data_processing_statistics_window on data_processing_statistics (interface_id, statistics_time);
+        drop index if exists uk_device_satellite_task_type_code;
+        create unique index uk_device_satellite_task_type_code on device_satellite (type, code) WHERE is_deleted = 0;
+        drop index if exists uk_telemetry_system_active_path;
+        create unique index uk_telemetry_system_active_path on telemetry_system_config (device_satellite_id, parent_id, system_name) WHERE is_deleted = 0;
+        drop index if exists uk_parse_rule_task_device_index;
+        create unique index uk_parse_rule_task_device_index on telemetry_parse_rule_config (device_satellite_id, table_index) WHERE is_deleted = 0;
+        drop index if exists uk_calib_channel_task_formula;
+        create unique index uk_calib_channel_task_formula on calib_channel_config (calibration_formula) WHERE is_deleted = 0;
+        drop index if exists uk_telemetry_selection_scope;
+        create unique index uk_telemetry_selection_scope on processed_telemetry_filter_selection (selection_type, target_id, device_satellite_id, telemetry_code);
+        drop index if exists uk_monitor_widget_task_user_key;
+        create unique index uk_monitor_widget_task_user_key on monitor_dashboard_widget (user_id, widget_key);
+    </update>
+</mapper>

@@ -1,21 +1,21 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.dataadmin.mapper.ProcessingRuleConfigMapper">
+    <!-- 参数范围检查为全局配置，唯一范围同时用作导入并发锁。 -->
     <select id="findByTaskId" resultType="com.example.dataadmin.entity.ProcessingRuleConfig">
         select parameter_range_check_enabled
-        from processing_rule_config where task_id = #{taskId}
+        from processing_rule_config where scope_key = 'global'
     </select>
-
+    <!-- 并发首次初始化保持幂等，不覆盖已有全局开关。 -->
     <insert id="insert">
-        insert into processing_rule_config
-        (task_id, parameter_range_check_enabled)
-        values (#{taskId}, #{parameterRangeCheckEnabled})
+        insert into processing_rule_config (scope_key, parameter_range_check_enabled)
+        values ('global', #{parameterRangeCheckEnabled})
+        on conflict (scope_key) do nothing
     </insert>
-
+    <!-- 范围固定，业务请求无法更新其他配置。 -->
     <update id="update">
         update processing_rule_config
-        set parameter_range_check_enabled = #{parameterRangeCheckEnabled},
-            update_time = current_timestamp
-        where task_id = #{taskId}
+        set parameter_range_check_enabled = #{parameterRangeCheckEnabled}, update_time = current_timestamp
+        where scope_key = 'global'
     </update>
 </mapper>

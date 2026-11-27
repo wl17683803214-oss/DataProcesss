@@ -6,18 +6,25 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-/** 实时缓存使用所有页面及组件勾选的并集，按任务和来源对象隔离。 */
+/** 实时缓存使用所有页面及组件勾选的并集，按来源对象合并，不再使用任务维度。 */
 public class TelemetrySelectionSnapshot {
     private Map<String, Set<String>> objects = Collections.emptyMap();
 
     /** 生成共享缓存身份，各部分独立编码避免分隔符冲突。 */
-    public static String objectKey(String taskId, String sourceType, String identity) {
-        return encode(taskId) + "." + encode(sourceType) + "." + encode(identity);
+    @Deprecated
+    public static String objectKey(String ignoredTaskId, String sourceType, String identity) {
+        // 保留旧调用入口，任务不再参与筛选快照的身份。
+        return objectKey(sourceType, identity);
+    }
+
+    /** 参数勾选仅按来源和对象身份合并。 */
+    public static String objectKey(String sourceType, String identity) {
+        return encode(sourceType) + "." + encode(identity);
     }
 
     /** 统一构造筛选快照的 Redis 键。 */
     public static String redisKey(TelemetryRealtimeProperties properties) {
-        return properties.getKeyPrefix() + "selection:union";
+        return properties.getKeyPrefix() + "selection:union:v2";
     }
 
     /** 对业务身份使用无填充编码。 */

@@ -31,9 +31,6 @@ public class VisualizationParameterSyncServiceImpl
     @Override
     @Transactional
     public void synchronizeTaskParameters(String taskId) {
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
 
         // 步骤1：按规则ID或遥测编码重新绑定，并同步参数编码和名称。
         itemMapper.bindActiveParseRuleItems(taskId);
@@ -56,8 +53,7 @@ public class VisualizationParameterSyncServiceImpl
     @Override
     @Transactional
     public void synchronizeChangedParameters(String taskId, List<Long> parseRuleIds) {
-        if (taskId == null || taskId.trim().isEmpty()
-                || parseRuleIds == null || parseRuleIds.isEmpty()) {
+        if (parseRuleIds == null || parseRuleIds.isEmpty()) {
             throw new IllegalArgumentException("试验任务和待同步参数不能为空");
         }
         itemMapper.updateChangedParseRuleItems(taskId, parseRuleIds);

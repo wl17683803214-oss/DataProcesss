@@ -5,12 +5,12 @@
     <!-- 按当前接口所属任务加载全部启用校准通道。 -->
     <select id="findEnabledChannels"
             resultType="com.example.dataprocess.entity.CalibrationChannelRuntimeConfig">
-        select id, task_id, calibration_formula, channel_name, normal_range,
+        select id, calibration_formula, channel_name, normal_range,
                detect_method, sigma_value, fluctuation_rate, chauvenet_coef,
                min_sample_count, iterate_count, sample_window,
                dynamic_update, auto_clean
         from calib_channel_config
-        where task_id = #{taskId}
+        where 1 = 1
           and enabled = 1
           and is_deleted = 0
         order by id
@@ -19,11 +19,11 @@
     <!-- 一个批次统一写入野值详情。 -->
     <insert id="insertRecordDetails">
         insert into calib_record_detail
-            (task_id, channel_id, interface_id, channel_name, parameter_name,
+            (channel_id, interface_id, channel_name, parameter_name,
              tm_symbol, telemetry_value, detail, is_deleted, create_time)
         values
         <foreach collection="details" item="detail" separator=",">
-            (#{detail.taskId}, #{detail.channelId}, #{detail.interfaceId},
+            (#{detail.channelId}, #{detail.interfaceId},
              #{detail.channelName}, #{detail.parameterName}, #{detail.tmSymbol},
              #{detail.telemetryValue}, #{detail.detail}, 0, #{detail.createTime})
         </foreach>
@@ -44,13 +44,11 @@
         set calibration_count = calibration_count + #{calibrationCount},
             update_time = current_timestamp
         where is_deleted = 0
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
+        <!-- 此处不再使用任务条件。 -->
         <if test="channelId != null">
             and channel_id = #{channelId}
         </if>
-        <if test="taskId == null or taskId == '' or channelId == null">
+        <if test="channelId == null">
             <!-- 缺少任务或通道主键时禁止更新其他记录。 -->
             and 1 = 0
         </if>

@@ -91,15 +91,25 @@ public final class FepFileReceiver {
     public synchronized RequestAcceptance acceptRequest(
             byte[] requestPacket,
             boolean externallyCompleted) throws IOException {
+        // 既有工具调用保留不分范围的目录行为。
+        return acceptRequest(requestPacket, externallyCompleted, null);
+    }
+
+    /** 同一接口按任务隔离完整文件和续传文件，避免同名文件串任务。 */
+    public synchronized RequestAcceptance acceptRequest(
+            byte[] requestPacket, boolean externallyCompleted, String taskId) throws IOException {
         // 第一步：解析发送请求中的文件名和文件长度。
         FepProtocolTool.SendRequest request =
                 FepProtocolTool.parseSendRequest(requestPacket);
         validateSafeFileName(request.getFileName());
 
         // 第二步：创建并校验接收目录，确保目标路径没有逃出保存目录。
-        Files.createDirectories(saveDirectory);
-        Path targetFile = resolveTargetFile(request.getFileName());
-        Path temporaryFile = resolveTemporaryFile(request.getFileName());
+        Path directory = taskId == null ? saveDirectory : saveDirectory.resolve("task-"
+                + java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(
+                        taskId.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        Files.createDirectories(directory);
+        Path targetFile = resolveTargetFile(directory, request.getFileName());
+        Path temporaryFile = resolveTemporaryFile(directory, request.getFileName());
 
         // 第三步：为本次FEP文件连接分配唯一的两字节文件标识。
         int fileId = allocateFileId();
@@ -303,7 +313,7 @@ public final class FepFileReceiver {
                 ? Math.min(Files.size(temporaryFile), (long) expectedFileLength)
                 : 0L;
         long requiredLength = expectedFileLength - receivedLength;
-        FileStore fileStore = Files.getFileStore(saveDirectory);
+        FileStore fileStore = Files.getFileStore(temporaryFile.getParent());
         return fileStore.getUsableSpace() >= requiredLength;
     }
 
@@ -417,22 +427,22 @@ public final class FepFileReceiver {
     }
 
     /** 解析并校验正式文件路径。 */
-    private Path resolveTargetFile(String fileName) {
+    private Path resolveTargetFile(Path directory, String fileName) {
         // 规范化后再次检查路径仍处于接收目录内。
-        Path targetFile = saveDirectory.resolve(fileName).normalize();
-        if (!targetFile.getParent().equals(saveDirectory)) {
+        Path targetFile = directory.resolve(fileName).normalize();
+        if (!targetFile.getParent().equals(directory)) {
             throw new IllegalArgumentException("FEP文件保存路径超出接收目录");
         }
         return targetFile;
     }
 
     /** 解析并校验临时文件路径。 */
-    private Path resolveTemporaryFile(String fileName) {
+    private Path resolveTemporaryFile(Path directory, String fileName) {
         // 临时文件与正式文件位于同一目录，完成移动时无需跨文件系统。
-        Path temporaryFile = saveDirectory
+        Path temporaryFile = directory
                 .resolve(fileName + TEMP_FILE_SUFFIX)
                 .normalize();
-        if (!temporaryFile.getParent().equals(saveDirectory)) {
+        if (!temporaryFile.getParent().equals(directory)) {
             throw new IllegalArgumentException("FEP临时文件路径超出接收目录");
         }
         return temporaryFile;

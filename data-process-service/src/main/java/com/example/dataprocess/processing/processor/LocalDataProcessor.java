@@ -106,7 +106,7 @@ public class LocalDataProcessor implements DataProcessor {
                 .setMsgTime(Timestamp.newBuilder()
                         .setSeconds(messageTime.getEpochSecond())
                         .setNanos(messageTime.getNano()))
-                .setTaskId(config.getTaskId())
+                .setTaskId(config.getTaskId() == null ? "" : config.getTaskId())
                 .setMsgSource("数据处理")
                 .build();
         // 本地处理不填写卫星编码，帧标识只保留通道名称和业务标识。

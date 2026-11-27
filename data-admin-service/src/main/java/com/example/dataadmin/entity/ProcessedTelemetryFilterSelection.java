@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /** 当前任务及场景下已勾选的遥测参数。 */
 public class ProcessedTelemetryFilterSelection {
-    /** 当前试验任务编号。 */
-    private String taskId;
     /** 设备卫星主键。 */
     private Long deviceSatelliteId;
     /** 内部查询使用的设备卫星类型，复用所属设备资料，不作为接口出参。 */
@@ -23,8 +21,12 @@ public class ProcessedTelemetryFilterSelection {
     /** 当前有效解析配置中的遥测名称。 */
     private String telemetryName;
 
-    public String getTaskId() { return taskId; }
-    public void setTaskId(String value) { this.taskId = value; }
+    /** 兼容内部调用，勾选和布局不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
+    /** 兼容旧参数，不保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
     public Long getDeviceSatelliteId() { return deviceSatelliteId; }
     public void setDeviceSatelliteId(Long value) { this.deviceSatelliteId = value; }
     public String getDeviceSatelliteType() { return deviceSatelliteType; }

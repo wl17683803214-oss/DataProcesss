@@ -10,8 +10,6 @@ import java.time.LocalDateTime;
 public class CalibRecord {
     /** 自增主键ID。 */
     private Long id;
-    /** 试验任务ID。 */
-    private String taskId;
     /** 校准通道ID。 */
     private Long channelId;
     /** 通道名称。 */
@@ -33,13 +31,13 @@ public class CalibRecord {
         this.id = id;
     }
 
-    public String getTaskId() {
-        return taskId;
-    }
+    /** 兼容既有内部调用，配置及全局记录不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
 
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
+    /** 兼容旧调用参数，不接收或保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
 
     public Long getChannelId() {
         return channelId;

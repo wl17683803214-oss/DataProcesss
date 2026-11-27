@@ -59,7 +59,6 @@ public class AlarmManagementController {
     /** 按来源编码查询数据监测告警，中文来源名称由返回结果提供。 */
     @GetMapping("/data")
     public ApiResponse<PageResult<DmAlarmEvent>> listDataAlarms(
-            @RequestParam(required = false) String taskId,
             @RequestParam(required = false) String sourceCode,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer alarmLevel,
@@ -74,7 +73,7 @@ public class AlarmManagementController {
             @RequestParam(defaultValue = "20") Integer pageSize) {
         return ApiResponse.success(
                 alarmService.pageDataAlarms(
-                        taskId,
+                        null,
                         sourceCode,
                         keyword,
                         alarmLevel,

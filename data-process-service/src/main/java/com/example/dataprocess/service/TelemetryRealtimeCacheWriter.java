@@ -185,7 +185,7 @@ public class TelemetryRealtimeCacheWriter implements AutoCloseable {
             for (List<TelemetryParameterRecord> rows : batches.values()) {
                 for (TelemetryParameterRecord row : rows) {
                     String key = TelemetrySelectionSnapshot.objectKey(
-                            row.getTaskId(), row.getSourceType(), row.getSourceIdentity())
+                            row.getSourceType(), row.getSourceIdentity())
                             + "." + row.getTelemetryType() + "." + row.getTelemetryCode();
                     TelemetryParameterRecord identity = new TelemetryParameterRecord();
                     identity.setTaskId(row.getTaskId());

@@ -1,5 +1,7 @@
 # 数据处理软件接口文档
 
+2026-11-27：配置、参数勾选、实时与历史查询均取消任务参数和任务筛选；只有遥测和FEP文件在写入时记录最新运行中任务，无运行中任务不保存。完整接口变更、WebSocket及数据库升级见[全局配置与任务归属](前端对接-全局配置与任务归属.md)，导入文件使用 `docs/apifox-openapi.yaml` 2.9.0。
+
 本文档依据当前 `data-admin-service` 和 `data-process-service` 源码整理。后台管理服务默认地址为 `http://localhost:8082`，数据处理服务默认地址为 `http://localhost:8083`。
 
 每个接口可直接使用的入参与出参示例见同目录的 `API-EXAMPLES.md`。HTTP采集配置、普通大文本框JSON输入、数据源字段删除及协议选择的前端改动见[最新前端对接文档](前端对接-HTTP采集与协议配置变更.md)。协议分页与RPC业务结构见[协议配置说明](前端对接-协议配置与采集处理方式.md)。
@@ -159,7 +161,7 @@ Authorization: Bearer <token>
 
 | 方法 | 地址 | 说明 | 参数 |
 | --- | --- | --- | --- |
-| GET | `/collection/overview` | 采集总览 | 查询：`taskId`（必填） |
+| GET | `/collection/overview` | 采集总览 |  |
 | GET | `/collection/interfaces` | 分页查询采集接口 | 查询：`taskId?`、`interfaceType?`、`transferType?`、`status?`、`enabled?`、`pageNum=1`、`pageSize=10` |
 | GET | `/collection/interfaces/{id}` | 采集接口详情 | 路径：`id`；返回 `protocolConfigName` 用于展示，未关联或协议已删除时为 `null`，禁用协议仍返回名称 |
 | POST | `/collection/interfaces/create` | 新增采集接口 | `InterfaceSaveRequest` |
@@ -175,17 +177,17 @@ Authorization: Bearer <token>
 
 采集事件列表中的 `logLevel` 返回稳定枚举编码，`logLevelName` 返回对应中文名称（调试、信息、警告、错误）。
 
-`InterfaceSaveRequest`：`id`、`taskId`、`interfaceName`、`interfaceType`、`sendFrom`、`messageContent`、`transferType`、`transferProtocol`、`protocolConfigId`、`host`、`port`、`receivePath`、`enabled`、`rpcEnabled`、`remark`。其中 `transferProtocol` 为整数枚举：1 JSON、2 PDXP、3 FEP；`port` 范围为 1～65535；`rpcEnabled` 为采集数据类型，0设备、1卫星、2指令响应，默认0；`GET /collection/findData` 返回同名枚举，列表和详情的 `rpcEnabledName` 返回中文类型名称。FEP（`transferProtocol=3`）无需传 `rpcEnabled` 和 `protocolConfigId`，后端固定保存为 `0` 和 `null`，切换到FEP或提交旧值时也会清理。HTTP（`transferType=3`）固定JSON传输协议，必须传当前任务下已启用JSON配置的 `protocolConfigId` 和接收路径 `receivePath`；处理开关固定为0，组播地址保存为空，路径在所有未删除HTTP配置中唯一。列表和详情计算返回 `receiveUrl`，访问协议读取 `data-processing.http.scheme`，默认http。HTTP统一入口 `POST /collection/receive/**` 收到合法JSON后，按路径为已启用且未删除的HTTP采集接口累计一次。指令响应（`rpcEnabled=2`）使用UDP（`transferType=1`）和PDXP（`transferProtocol=2`），无需协议配置，保存时清空 `protocolConfigId`；接口启停、监听地址、组播和限速均由采集接口管理。收到完整响应后组装 `CommandExecResultMsg` 的五个字段，经现有有界消息线程池发送到 `data-processing.command-response.topic`；发送任务提交成功后按帧累计处理量，实际发送异常记录消息告警，采集速率和统计沿用现有链路。设备（`rpcEnabled=0`）必须选PDXP协议配置（`protocolType=2`），卫星（`rpcEnabled=1`）必须选RPC协议配置（`protocolType=4`），类型不匹配时拒绝保存。采集接口不再接收或返回 `sheetName`。
+`InterfaceSaveRequest`：`id`、`interfaceName`、`interfaceType`、`sendFrom`、`messageContent`、`transferType`、`transferProtocol`、`protocolConfigId`、`host`、`port`、`receivePath`、`enabled`、`rpcEnabled`、`remark`。其中 `transferProtocol` 为整数枚举：1 JSON、2 PDXP、3 FEP；`port` 范围为 1～65535；`rpcEnabled` 为采集数据类型，0设备、1卫星、2指令响应，默认0；`GET /collection/findData` 返回同名枚举，列表和详情的 `rpcEnabledName` 返回中文类型名称。FEP（`transferProtocol=3`）无需传 `rpcEnabled` 和 `protocolConfigId`，后端固定保存为 `0` 和 `null`，切换到FEP或提交旧值时也会清理。HTTP（`transferType=3`）固定JSON传输协议，必须传当前任务下已启用JSON配置的 `protocolConfigId` 和接收路径 `receivePath`；处理开关固定为0，组播地址保存为空，路径在所有未删除HTTP配置中唯一。列表和详情计算返回 `receiveUrl`，访问协议读取 `data-processing.http.scheme`，默认http。HTTP统一入口 `POST /collection/receive/**` 收到合法JSON后，按路径为已启用且未删除的HTTP采集接口累计一次。指令响应（`rpcEnabled=2`）使用UDP（`transferType=1`）和PDXP（`transferProtocol=2`），无需协议配置，保存时清空 `protocolConfigId`；接口启停、监听地址、组播和限速均由采集接口管理。收到完整响应后组装 `CommandExecResultMsg` 的五个字段，经现有有界消息线程池发送到 `data-processing.command-response.topic`；发送任务提交成功后按帧累计处理量，实际发送异常记录消息告警，采集速率和统计沿用现有链路。设备（`rpcEnabled=0`）必须选PDXP协议配置（`protocolType=2`），卫星（`rpcEnabled=1`）必须选RPC协议配置（`protocolType=4`），类型不匹配时拒绝保存。采集接口不再接收或返回 `sheetName`。
 
 UDP单播的 `host` 支持 `0.0.0.0`，表示监听服务所在运行环境的全部IPv4网卡，不依赖容器当前IP；组播仍填写实际网卡地址。已启用的UDP单播接口跨任务检查冲突：端口相同且地址相同或任意一方为 `0.0.0.0` 时禁止重复启用，不同具体地址或不同端口允许；TCP和组播规则保持原样。禁用配置允许重复保存。已启用的采集接口禁止修改，必须先通过启用状态接口禁用；修改请求同时传 `enabled=0` 也不能绕过。禁用后编辑保存时仍可按 `enabled` 决定是否重新启用。Docker桥接部署仍需映射实际使用的UDP端口。
 
 采集接口新增、修改不再接收 `status`，前端只提交 `enabled`；未传 `enabled` 时沿用默认启用。列表和详情返回的 `status`、`statusName` 完全由启用开关决定：`enabled=1` 返回 `status=1`、`statusName=在线`，禁用返回 `status=0`、`statusName=离线`，不提供异常状态。列表的可选 `status` 筛选仅接受 `0`、`1`，实际按 `enabled` 查询，`0` 不会被忽略。`/collection/findData`、`/dashboard/findData` 的状态枚举同步为离线、在线。首页采集总览的在线接口数量按启用接口统计，发送方聚合行有任一启用接口即显示在线、全部禁用显示离线；Redis中的历史状态不影响这些结果。数据库 `status` 列保留兼容，旧记录无需迁移。
 
-`ProtocolSaveRequest`：`id`、`taskId`、`configName`、`protocolType`（1 JSON/2 PDXP/3 Protobuf/4 RPC）、`configDesc`、`configParams`、`parserClass`、`enabled`。数据源分类已删除，不提交或返回 `dataSourceType`、`dataSourceTypeName`；`configParams` 为对象，前端普通多行文本框填写标准JSON，解析后提交对象，编辑时格式化回填。
+`ProtocolSaveRequest`：`id`、`configName`、`protocolType`（1 JSON/2 PDXP/3 Protobuf/4 RPC）、`configDesc`、`configParams`、`parserClass`、`enabled`。数据源分类已删除，不提交或返回 `dataSourceType`、`dataSourceTypeName`；`configParams` 为对象，前端普通多行文本框填写标准JSON，解析后提交对象，编辑时格式化回填。
 
-协议配置列表返回 `data.pageNum`、`data.pageSize`、`data.total`、`data.records`，不再直接返回数组；名称按包含关系模糊匹配，任务、类型、名称、启用状态条件可组合使用，未填或空白的文本条件不参与筛选，按主键倒序返回。页码必须大于等于1，每页条数为1～100；超出末页返回空记录并保留总数。
+协议配置列表返回 `data.pageNum`、`data.pageSize`、`data.total`、`data.records`，不再直接返回数组；名称按包含关系模糊匹配，类型、名称、启用状态条件可组合使用，未填或空白的文本条件不参与筛选，按主键倒序返回。页码必须大于等于1，每页条数为1～100；超出末页返回空记录并保留总数。
 
-`protocolType=2` 时，PDXP配置提交当前任务下的 `configParams.deviceSatelliteId`，可保留 `pdxphead`；不提交 `fields`，参数解析配置由后端按设备加载。
+`protocolType=2` 时，PDXP配置提交全局有效的 `configParams.deviceSatelliteId`，可保留 `pdxphead`；不提交 `fields`，参数解析配置由后端按设备加载。
 
 ```json
 {
@@ -259,10 +261,10 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 | 方法 | 地址 | 说明 | 参数 |
 | --- | --- | --- | --- |
-| GET | `/visualization/config/export` | 下载当前用户整页JSON配置文件 | 查询：`taskId`（必填） |
-| POST | `/visualization/config/import/preview` | 只读检查配置及目标任务关联 | 查询：`taskId`（必填）；表单：`file` |
-| POST | `/visualization/config/import` | 重新检查并事务替换当前用户整页配置 | 查询：`taskId`（必填）；表单：`file` |
-| GET | `/visualization/widgets` | 当前用户组件列表 | 查询：`taskId`（必填） |
+| GET | `/visualization/config/export` | 下载当前用户整页JSON配置文件 |  |
+| POST | `/visualization/config/import/preview` | 只读检查配置及目标任务关联 | 表单：`file` |
+| POST | `/visualization/config/import` | 重新检查并事务替换当前用户整页配置 | 表单：`file` |
+| GET | `/visualization/widgets` | 当前用户组件列表 |  |
 | GET | `/visualization/widgets/{id}` | 组件详情 | 路径：`id` |
 | POST | `/visualization/widgets/create` | 新增组件 | `WidgetSaveRequest` |
 | POST | `/visualization/widgets/update` | 修改组件 | `WidgetSaveRequest`，`id` 必填 |
@@ -274,7 +276,7 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 | POST | `/visualization/items/delete` | 删除数据项 | JSON：`id` |
 | POST | `/visualization/items/selected` | 修改勾选状态 | JSON：`id`、`status`（0/1） |
 
-`WidgetSaveRequest`：`id`、`taskId`、`widgetKey`、`widgetType`（1 实时曲线/2 实时数据/3 实时告警/4 载荷图像/5 文件表格）、`widgetTitle`、`gridX`、`gridY`、`gridWidth`、`gridHeight`、`enabled`。
+`WidgetSaveRequest`：`id`、`widgetKey`、`widgetType`（1 实时曲线/2 实时数据/3 实时告警/4 载荷图像/5 文件表格）、`widgetTitle`、`gridX`、`gridY`、`gridWidth`、`gridHeight`、`enabled`。
 
 `WidgetItemSaveRequest`：`id`、`widgetId`、`parseRuleId`、`interfaceId`、`protocolConfigId`、`itemCode`、`itemName`、`isSelected`。`parseRuleId` 对应参数解析配置主键；自动同步产生的筛选项不绑定单一采集接口或协议，`interfaceId`、`protocolConfigId` 可以为空。
 
@@ -313,15 +315,15 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 | 方法 | 地址 | 说明 | 参数 |
 | --- | --- | --- | --- |
-| GET | `/processing/overview` | 今日处理量和累计去重总览 | 查询：`taskId`（必填） |
-| GET | `/processing/realtime` | 当前任务所有接口PDXP帧处理速率之和、与系统告警同口径的机器CPU及物理内存使用率 | 查询：`taskId`（必填） |
-| GET | `/processing/rule-config` | 查询处理规则开关 | 查询：`taskId`（必填） |
+| GET | `/processing/overview` | 今日处理量和累计去重总览 |  |
+| GET | `/processing/realtime` | 当前任务所有接口PDXP帧处理速率之和、与系统告警同口径的机器CPU及物理内存使用率 |  |
+| GET | `/processing/rule-config` | 查询处理规则开关 |  |
 | POST | `/processing/rule-config/update` | 保存处理规则开关 | `ProcessingRuleConfigRequest` |
-| GET | `/processing/device-satellites` | 设备卫星筛选列表 | `taskId` 必填，`type` 可选；类型为空时查询全部；返回 `id`、`code`、`name`、`type` |
-| GET | `/processing/rules` | 分页查询遥测解析规则 | 必填：`taskId`、`deviceSatelliteId`；可选：`systemId`、`pageNum`、`pageSize`；传入系统主键时只查询该系统直属参数，不传时查询当前设备全部参数 |
-| POST | `/processing/rules/import` | Excel或TXT按类型同名替换导入 | `multipart/form-data`：`taskId`、`type`、`file` |
-| POST | `/processing/rules/sync-baseline` | 同步基线全部卫星遥测参数 | 查询参数：`taskId` |
-| POST | `/processing/rules/sync-baseline-devices` | 按现有Sheet规则同步基线全部设备遥测参数 | 查询参数：`taskId` |
+| GET | `/processing/device-satellites` | 设备卫星筛选列表 |  必填，`type` 可选；类型为空时查询全部；返回 `id`、`code`、`name`、`type` |
+| GET | `/processing/rules` | 分页查询遥测解析规则 | 必填：`deviceSatelliteId`；可选：`systemId`、`pageNum`、`pageSize`；传入系统主键时只查询该系统直属参数，不传时查询当前设备全部参数 |
+| POST | `/processing/rules/import` | Excel或TXT按类型同名替换导入 | `multipart/form-data`：`type`、`file` |
+| POST | `/processing/rules/sync-baseline` | 同步基线全部卫星遥测参数 | 查询参数： |
+| POST | `/processing/rules/sync-baseline-devices` | 按现有Sheet规则同步基线全部设备遥测参数 | 查询参数： |
 
 处理日志中的 `logLevel` 返回稳定枚举编码（1 信息、2 警告、3 错误），`logLevelName` 返回对应中文名称。
 
@@ -343,15 +345,15 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 | 方法 | 地址 | 说明 | 参数 |
 | --- | --- | --- | --- |
-| GET | `/calibration/overview` | 查询累计校准、清洗及野值数量 | 查询：`taskId`（必填） |
-| GET | `/calibration/channels` | 校准通道列表 | 查询：`taskId` |
+| GET | `/calibration/overview` | 查询累计校准、清洗及野值数量 |  |
+| GET | `/calibration/channels` | 校准通道列表 | 查询： |
 | GET | `/calibration/channels/{id}` | 校准通道详情 | 路径：`id` |
 | POST | `/calibration/channels/create` | 新增校准通道 | `ChannelSaveRequest` |
 | POST | `/calibration/channels/update` | 修改校准通道 | `ChannelSaveRequest`，`id` 必填 |
-| POST | `/calibration/channels/enabled` | 切换校准通道启用状态 | JSON：`taskId`、`id`、`enabled`（均必填，0禁用、1启用） |
+| POST | `/calibration/channels/enabled` | 切换校准通道启用状态 | JSON：`id`、`enabled`（均必填，0禁用、1启用） |
 | POST | `/calibration/channels/delete` | 删除校准通道 | JSON：`id` |
-| GET | `/calibration/records` | 分页查询校准记录及累计校准数量 | 查询：`taskId`、`pageNum=1`、`pageSize=20` |
-| GET | `/calibration/records/{id}` | 查询记录汇总和分页野值详情 | 路径：`id`；查询：`taskId`、`pageNum=1`、`pageSize=20` |
+| GET | `/calibration/records` | 分页查询校准记录及累计校准数量 | 查询：`pageNum=1`、`pageSize=20` |
+| GET | `/calibration/records/{id}` | 查询记录汇总和分页野值详情 | 路径：`id`；查询：`pageNum=1`、`pageSize=20` |
 
 `ChannelSaveRequest`：`id`、`taskId`、`channelName`、`calibrationFormula`（校准公式，与每个遥测参数的 calibration_formula 对应）、`normalRange`（仅阈值法必填，其他算法可不填；填写时校验格式）、`detectMethod`（1 莱特准则/2 阈值法/3 肖维涅法）、`sigmaValue`（莱特准则σ倍数，1至5）、`fluctuationRate`（阈值百分比，大于0且不超过100）、`chauvenetCoef`（肖维涅判别常数，固定0.5）、`minSampleCount`（肖维涅法参与计算的最近样本数，不小于3）、`iterateCount`（肖维涅法迭代次数，1至3）、`sampleWindow`（莱特准则最近样本窗口，不小于3）、`dynamicUpdate`、`autoClean`（是否自动排除异常值）、`enabled`。只校验当前检测方法对应的专用参数。修改时不传正常范围保留原值；非阈值法传空字符串可清空正常范围。
 

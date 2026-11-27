@@ -1,6 +1,7 @@
 package com.example.dataadmin.enums;
 
 import com.example.common.enums.CollectionDataType;
+import com.example.common.enums.ExperimentTaskStatus;
 import com.example.dataadmin.vo.EnumOptionVO;
 
 import java.util.ArrayList;
@@ -22,7 +23,12 @@ public final class ControllerEnumData {
     /** 返回试验任务模块枚举。 */
     public static Map<String, List<EnumOptionVO>> experimentTask() {
         Map<String, List<EnumOptionVO>> data = EnumData.create();
-        EnumData.add(data, "taskStatus", ExperimentTaskStatus.values());
+        // 管理端展示和处理端缓存共用同一状态枚举，避免跨服务重复维护编码。
+        List<EnumOptionVO> taskStatuses = new ArrayList<>();
+        for (ExperimentTaskStatus status : ExperimentTaskStatus.values()) {
+            taskStatuses.add(new EnumOptionVO(status.getValue(), status.getLabel()));
+        }
+        data.put("taskStatus", taskStatuses);
         EnumData.add(data, "endReason", TaskEndReason.values());
         return data;
     }

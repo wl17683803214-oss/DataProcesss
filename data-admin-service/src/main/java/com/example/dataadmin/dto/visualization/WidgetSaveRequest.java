@@ -7,8 +7,6 @@ public class WidgetSaveRequest {
 
     /** 可视化组件主键 ID；编辑时必填。 */
     private Long id;
-    /** 试验任务 ID。 */
-    private String taskId;
     /** 组件唯一标识。 */
     private String widgetKey;
     /** 组件类型：1 实时曲线，2 实时数据，3 实时告警，4 载荷图像，5 文件表格。 */
@@ -34,13 +32,13 @@ public class WidgetSaveRequest {
         this.id = id;
     }
 
-    public String getTaskId() {
-        return taskId;
-    }
+    /** 兼容内部调用，勾选和布局不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
 
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
+    /** 兼容旧参数，不保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
 
     public String getWidgetKey() {
         return widgetKey;

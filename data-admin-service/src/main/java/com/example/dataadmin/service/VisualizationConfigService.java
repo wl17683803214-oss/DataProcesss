@@ -160,7 +160,7 @@ public class VisualizationConfigService {
         // 第一步：锁定目标任务，与参数配置替换及本页配置写入串行执行。
         String scope = requireScope(taskId, userId);
         if (deviceMapper.lockForReplacement(scope) == null) {
-            throw new IllegalArgumentException("目标试验任务不存在");
+            throw new IllegalArgumentException("全局处理配置不存在");
         }
         // 第二步：重新校验同一文件和最新参数关联，全部成功后才允许清理原页面。
         Prepared prepared = prepare(scope, userId, filename, bytes, true);
@@ -476,13 +476,10 @@ public class VisualizationConfigService {
 
     /** 所有公开操作强制限制到有效登录用户及非空任务编号。 */
     private String requireScope(String taskId, Long userId) {
-        if (taskId == null || taskId.trim().isEmpty() || taskId.length() > 100) {
-            throw new IllegalArgumentException("试验任务编号不能为空，且不能超过一百个字符");
-        }
         if (userId == null || userId <= 0) {
             throw new IllegalArgumentException("当前登录用户无效");
         }
-        return taskId.trim();
+        return null;
     }
 
     /** 导出和检查只读确认任务存在，真正导入使用同一任务的行锁。 */

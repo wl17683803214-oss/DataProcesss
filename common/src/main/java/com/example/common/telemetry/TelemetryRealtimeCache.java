@@ -62,16 +62,16 @@ public class TelemetryRealtimeCache {
         long expiresAt = System.currentTimeMillis() + retentionMillis();
         for (Map.Entry<TelemetryFrameRecord, List<TelemetryParameterRecord>> batch : batches.entrySet()) {
             TelemetryFrameRecord frame = batch.getKey();
-            String typedKey = parameterKey(frame.getTaskId(), frame.getSourceType(),
+            String typedKey = parameterKey(frame.getSourceType(),
                     frame.getSourceIdentity(), frame.getTelemetryType());
-            String allTypesKey = parameterKey(frame.getTaskId(), frame.getSourceType(), frame.getSourceIdentity(), null);
+            String allTypesKey = parameterKey(frame.getSourceType(), frame.getSourceIdentity(), null);
             for (TelemetryParameterRecord row : batch.getValue()) {
                 merge(parameters, typedKey, row);
                 merge(parameters, allTypesKey, row);
             }
-            // 第二步：每条帧只写入所属任务、接口与状态，设置独立的到期时间。
+            // 第二步：每条帧按接口与状态缓存，记录正文保留接收任务，设置独立的到期时间。
             frame.setExpiresAt(expiresAt);
-            frames.computeIfAbsent(frameKey(frame.getTaskId(), frame.getCheckStatus(), frame.getInterfaceId()),
+            frames.computeIfAbsent(frameKey(frame.getCheckStatus(), frame.getInterfaceId()),
                     ignored -> new ArrayList<>()).add(frame);
         }
         // 第三步：预先生成有界命令，序列化失败时不打开流水线连接。
@@ -156,7 +156,15 @@ public class TelemetryRealtimeCache {
     }
 
     /** 按勾选参数批量读取最新值，不扫描整个对象的参数。 */
-    public List<TelemetryParameterRecord> latest(String taskId, List<Map<String, Object>> filters,
+    @Deprecated
+    public List<TelemetryParameterRecord> latest(String ignoredTaskId, List<Map<String, Object>> filters,
+            String telemetryType) throws IOException {
+        // 兼容已有Java调用，旧任务参数不参与缓存定位。
+        return latest(filters, telemetryType);
+    }
+
+    /** 按来源对象、遥测类型和代号读取最新值，不包含任务范围。 */
+    public List<TelemetryParameterRecord> latest(List<Map<String, Object>> filters,
             String telemetryType) throws IOException {
         if (!properties.isEnabled() || filters.isEmpty()) {
             return Collections.emptyList();
@@ -164,7 +172,7 @@ public class TelemetryRealtimeCache {
         // 按勾选列表生成精确的参数键，每个键的过期时间相互独立。
         List<byte[]> keys = new ArrayList<>(filters.size());
         for (Map<String, Object> filter : filters) {
-            String key = parameterKey(taskId, (String) filter.get("sourceType"),
+            String key = parameterKey((String) filter.get("sourceType"),
                     (String) filter.get("sourceIdentity"), telemetryType);
             keys.add(bytes(key + ":" + encode((String) filter.get("telemetryCode"))));
         }
@@ -190,19 +198,23 @@ public class TelemetryRealtimeCache {
     }
 
     /** 只读指定接口的最新帧，清理到期帧但不延长缓存寿命。 */
-    public List<TelemetryFrameRecord> frames(String taskId, Long interfaceId, TelemetryFrameStatus status)
+    @Deprecated
+    public List<TelemetryFrameRecord> frames(String ignoredTaskId, Long interfaceId, TelemetryFrameStatus status)
             throws IOException {
-        // 缺少任务或接口时拒绝查询，不访问任务级汇总键。
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
+        // 兼容已有Java调用，实际查询始终按接口及状态定位。
+        return frames(interfaceId, status);
+    }
+
+    /** 跨任务读取指定接口的最新帧，不改变数据正文中的接收归属。 */
+    public List<TelemetryFrameRecord> frames(Long interfaceId, TelemetryFrameStatus status) throws IOException {
+        // 接口主键必须有效，查询不使用任务条件。
         if (interfaceId == null || interfaceId <= 0) {
             throw new IllegalArgumentException("采集接口主键不能为空且必须大于零");
         }
         if (!properties.isEnabled()) {
             return Collections.emptyList();
         }
-        List<byte[]> arguments = frameArguments(frameKey(taskId.trim(), status.getValue(), interfaceId), FRAME_LIMIT);
+        List<byte[]> arguments = frameArguments(frameKey(status.getValue(), interfaceId), FRAME_LIMIT);
         List<byte[]> values = redis.execute((RedisCallback<List<byte[]>>) connection ->
                 connection.eval(frameScript, ReturnType.MULTI, 2, arguments.toArray(new byte[0][])));
         List<TelemetryFrameRecord> result = new ArrayList<>();
@@ -235,9 +247,9 @@ public class TelemetryRealtimeCache {
     public void removeParameter(TelemetryParameterRecord row) {
         String suffix = ":" + encode(row.getTelemetryCode());
         // 独立删除各键以兼容 Redis 集群中不同遥测类型所在的槽位。
-        redis.delete(parameterKey(row.getTaskId(), row.getSourceType(), row.getSourceIdentity(),
+        redis.delete(parameterKey(row.getSourceType(), row.getSourceIdentity(),
                 row.getTelemetryType()) + suffix);
-        redis.delete(parameterKey(row.getTaskId(), row.getSourceType(), row.getSourceIdentity(), null) + suffix);
+        redis.delete(parameterKey(row.getSourceType(), row.getSourceIdentity(), null) + suffix);
     }
 
     /** 参数快照省略原码和页面不读取的字段，避免复制大块二进制数据。 */
@@ -261,14 +273,14 @@ public class TelemetryRealtimeCache {
     }
 
     /** 各组成部分分别编码，避免任务、对象或遥测类型包含分隔符时串键。 */
-    private String parameterKey(String taskId, String sourceType, String identity, String type) {
-        return properties.getKeyPrefix() + "parameter:{" + encode(taskId) + "." + encode(sourceType)
+    private String parameterKey(String sourceType, String identity, String type) {
+        return properties.getKeyPrefix() + "parameter:v2:{" + encode(sourceType)
                 + "." + encode(identity) + "." + (type == null ? "all" : encode(type)) + "}";
     }
 
-    /** 任务、接口与状态组成唯一缓存键，容量计数键与列表使用同一槽位。 */
-    private String frameKey(String taskId, String status, Long interfaceId) {
-        return properties.getKeyPrefix() + "frame:{" + encode(taskId) + "." + status + "." + interfaceId + "}";
+    /** 接口与状态组成唯一缓存键，容量计数键与列表使用同一槽位。 */
+    private String frameKey(String status, Long interfaceId) {
+        return properties.getKeyPrefix() + "frame:v2:{" + status + "." + interfaceId + "}";
     }
 
     /** 参数键依次传入脚本，随后是公共过期时间和每个键的记录。 */

@@ -7,8 +7,6 @@ import javax.validation.constraints.NotNull;
 /** 协议配置分页查询参数，复用采集接口列表的分页约定。 */
 public class ProtocolQueryRequest {
 
-    /** 试验任务编号，不传时查询全部任务。 */
-    private String taskId;
     /** 协议类型：1 JSON，2 PDXP，3 Protobuf，4 RPC；不传时不限类型。 */
     @Min(value = 1, message = "协议类型只能为1到4")
     @Max(value = 4, message = "协议类型只能为1到4")
@@ -35,14 +33,14 @@ public class ProtocolQueryRequest {
     }
 
     /** 获取试验任务编号。 */
-    public String getTaskId() {
-        return taskId;
-    }
+    /** 兼容既有内部调用，配置及全局记录不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
 
     /** 清理任务编号两端空白，空字符串由查询条件统一忽略。 */
-    public void setTaskId(String taskId) {
-        this.taskId = taskId == null ? null : taskId.trim();
-    }
+    /** 兼容旧调用参数，不接收或保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
 
     /** 获取协议类型编码。 */
     public Integer getProtocolType() {

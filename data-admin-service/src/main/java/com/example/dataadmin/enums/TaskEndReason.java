@@ -1,5 +1,7 @@
 package com.example.dataadmin.enums;
 
+import com.example.common.enums.ExperimentTaskStatus;
+
 /** 试验任务结束原因。 */
 public enum TaskEndReason implements LabeledEnum {
 

@@ -9,7 +9,7 @@
         select id
         from collect_interface_config
         where id = #{interfaceId}
-          and task_id = #{taskId}
+
         for update
     </select>
 
@@ -17,7 +17,7 @@
     <select id="findStoredCollectionCount" resultType="long">
         select collection_count
         from collect_interface_statistics
-        where task_id = #{taskId}
+        where 1 = 1
           and interface_id = #{interfaceId}
           and statistics_time = #{statisticsTime}
     </select>
@@ -25,7 +25,6 @@
     <!-- 批量写入已结束的采集五秒窗口，重试时保留较大的窗口计数。 -->
     <insert id="saveCollectionStatistics">
         insert into collect_interface_statistics (
-            task_id,
             interface_id,
             statistics_time,
             collection_count,
@@ -34,7 +33,6 @@
         ) values
         <foreach collection="records" item="record" separator=",">
             (
-                #{record.taskId},
                 #{record.interfaceId},
                 #{record.statisticsTime},
                 #{record.collectionCount},
@@ -42,7 +40,7 @@
                 0
             )
         </foreach>
-        on conflict (task_id, interface_id, statistics_time)
+        on conflict (interface_id, statistics_time)
         do update set
             <!-- 重复窗口只接受更大的完整帧数，避免较旧重试把累计值回退。 -->
             collection_count = greatest(collect_interface_statistics.collection_count,
@@ -56,7 +54,7 @@
         update collect_interface_config
         set data_packet_count = coalesce(data_packet_count, 0) + #{increment}
         where id = #{interfaceId}
-          and task_id = #{taskId}
+
     </update>
 
     <!-- HTTP传输方式编码为3，与接收路径的唯一索引条件一致。 -->
@@ -79,7 +77,6 @@
     <!-- 批量写入已结束的处理五秒窗口，重试时覆盖同一窗口避免重复累计。 -->
     <insert id="saveProcessingStatistics">
         insert into data_processing_statistics (
-            task_id,
             interface_id,
             statistics_time,
             processing_count,
@@ -89,7 +86,6 @@
         ) values
         <foreach collection="records" item="record" separator=",">
             (
-                #{record.taskId},
                 #{record.interfaceId},
                 #{record.statisticsTime},
                 #{record.processingCount},
@@ -98,7 +94,7 @@
                 0
             )
         </foreach>
-        on conflict (task_id, interface_id, statistics_time)
+        on conflict (interface_id, statistics_time)
         do update set
             processing_count = excluded.processing_count,
             duplicate_count = excluded.duplicate_count,

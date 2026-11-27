@@ -35,6 +35,14 @@ import java.util.function.BooleanSupplier;
 /** FEP协议处理器，负责UDP和TCP下的文件接收协议。 */
 @Component
 public class FepProtocolHandler implements ProtocolHandler {
+    /** 请求报文到达时读取共享任务缓存，文件后续分片沿用首个请求归属。 */
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.example.dataprocess.collection.CurrentExperimentTaskCache currentTaskCache;
+
+    /** 离线入口沿用传入快照，运行环境始终读取共享任务缓存。 */
+    private String currentTaskId(CollectInterfaceRuntimeConfig config) {
+        return currentTaskCache == null ? config.getTaskId() : currentTaskCache.currentTaskId();
+    }
     /** 文件交换的正常与异常日志复用现有开关，直接构造时沿用默认开启行为。 */
     @org.springframework.beans.factory.annotation.Autowired
     private TimingLogProperties timingLog = new TimingLogProperties();
@@ -125,6 +133,8 @@ public class FepProtocolHandler implements ProtocolHandler {
         private final CollectInterfaceRuntimeConfig config;
         private final UdpTool.DatagramEndpoint endpoint;
         private final FepFileReceiver fileReceiver;
+        /** 同一文件固定的任务及接口快照。 */
+        private final Map<Integer, CollectInterfaceRuntimeConfig> fileConfigs = new ConcurrentHashMap<>();
         private final Object submitLock = new Object();
         private CompletableFuture<Void> processingTail =
                 CompletableFuture.completedFuture(null);
@@ -142,12 +152,13 @@ public class FepProtocolHandler implements ProtocolHandler {
         public void handle(UdpTool.ReceivedPacket packet) {
             // FEP速率按实际协议流量统计，采集量只在完整文件形成时增加。
             statistics.recordReceivedBytes(config, packet.getDataLength());
+            String receivedTaskId = currentTaskId(config);
             synchronized (submitLock) {
                 try {
                     processingTail = processingTail
                             .handle((ignored, exception) -> null)
                             .thenRunAsync(
-                                    () -> process(packet),
+                                    () -> process(packet, receivedTaskId),
                                     dataProcessExecutor).whenComplete((ignored, failure) -> {
                                         if (failure != null) {
                                             alarm(config, com.example.common.enums.DataAlarmType.PROCESS_QUEUE,
@@ -166,7 +177,7 @@ public class FepProtocolHandler implements ProtocolHandler {
         }
 
         /** 处理一条完整FEP UDP报文。 */
-        private void process(UdpTool.ReceivedPacket packet) {
+        private void process(UdpTool.ReceivedPacket packet, String receivedTaskId) {
             String fileContext = "报文长度：" + packet.getDataLength();
             try {
                 FepPacketType packetType =
@@ -185,19 +196,32 @@ public class FepProtocolHandler implements ProtocolHandler {
                                     request.getFileName(),
                                     request.getFileLength());
                         }
+                        // 无任务时按协议返回不可用，不创建临时文件、记录或对象存储文件。
+                        if (receivedTaskId == null || receivedTaskId.trim().isEmpty()) {
+                            byte[] unavailable = FepProtocolTool.buildRequestResponse(
+                                    request.getFileName(), FepProtocolTool.RECEIVER_UNAVAILABLE, 1);
+                            endpoint.send(packet.getSourceAddress(), packet.getSourcePort(), unavailable);
+                            break;
+                        }
+                        // 文件的整个接收和异步保存周期固定使用请求到达时的任务。
+                        CollectInterfaceRuntimeConfig fileConfig = config.snapshotForTask(receivedTaskId);
                         // 第一步：数据库记录优先决定文件是否已经可靠接收。
                         boolean recorded = fileResultService
                                 .isReceivedAndTriggerRetry(
-                                        config,
+                                        fileConfig,
                                         request.getFileName(),
                                         request.getFileLength());
                         FepFileReceiver.RequestAcceptance acceptance =
                                 fileReceiver.acceptRequest(
-                                        packet.getData(), recorded);
+                                        packet.getData(), recorded, receivedTaskId);
 
+                        // 仅接受传输的文件需要保存上下文，续传和任务切换均不能覆盖已有文件归属。
+                        if (acceptance.getResumeUnitNumber() >= 0) {
+                            fileConfigs.put(acceptance.getFileId(), fileConfig);
+                        }
                         // 第二步：兼容升级前遗留的本地完整文件，补登记后续处理记录。
                         registerLegacyCompletedFile(
-                                config, acceptance, recorded);
+                                fileConfig, acceptance, recorded);
                         endpoint.send(
                                 packet.getSourceAddress(),
                                 packet.getSourcePort(),
@@ -228,11 +252,16 @@ public class FepProtocolHandler implements ProtocolHandler {
                         if (result.isCompleted()) {
                             // 第一步：先登记可靠处理记录，确保确认后仍可自动恢复。
                             LocalDateTime completedTime = LocalDateTime.now();
+                            CollectInterfaceRuntimeConfig completedConfig = fileConfigs.get(result.getFileId());
+                            if (completedConfig == null) {
+                                throw new IllegalStateException("FEP文件缺少接收开始时的任务快照");
+                            }
                             fileResultService.recordAndSubmit(
-                                    config,
+                                    completedConfig,
                                     result.getFilePath(),
                                     completedTime);
-                            statistics.recordCollection(config);
+                            fileConfigs.remove(result.getFileId());
+                            statistics.recordCollection(completedConfig);
 
                             // 第二步：登记成功后立即确认，不等待MinIO和消息发送。
                             endpoint.send(
@@ -273,6 +302,8 @@ public class FepProtocolHandler implements ProtocolHandler {
 
         private final CollectInterfaceRuntimeConfig config;
         private final FepFileReceiver fileReceiver;
+        /** 同一文件固定的任务及接口快照。 */
+        private final Map<Integer, CollectInterfaceRuntimeConfig> fileConfigs = new ConcurrentHashMap<>();
         private final int dataUnitLength;
         private final Map<Integer, Integer> fileLengths =
                 new ConcurrentHashMap<Integer, Integer>();
@@ -348,12 +379,14 @@ public class FepProtocolHandler implements ProtocolHandler {
                 TcpTool.TcpConnection connection,
                 byte[] packetData) {
             byte[] packetCopy = Arrays.copyOf(packetData, packetData.length);
+            // 入队时固定请求任务，避免线程池等待期间新任务覆盖文件归属。
+            String receivedTaskId = currentTaskId(config);
             synchronized (submitLock) {
                 try {
                     processingTail = processingTail
                             .handle((ignored, exception) -> null)
                             .thenRunAsync(
-                                    () -> process(connection, packetCopy),
+                                    () -> process(connection, packetCopy, receivedTaskId),
                                     dataProcessExecutor).whenComplete((ignored, failure) -> {
                                         if (failure != null) {
                                             alarm(config, com.example.common.enums.DataAlarmType.PROCESS_QUEUE,
@@ -374,7 +407,7 @@ public class FepProtocolHandler implements ProtocolHandler {
         /** 处理一条完整FEP TCP协议包。 */
         private void process(
                 TcpTool.TcpConnection connection,
-                byte[] packetData) {
+                byte[] packetData, String receivedTaskId) {
             String fileContext = "报文长度：" + packetData.length;
             try {
                 FepPacketType packetType =
@@ -392,16 +425,28 @@ public class FepProtocolHandler implements ProtocolHandler {
                                     request.getFileName(),
                                     request.getFileLength());
                         }
+                        // 无任务时拒绝新文件，不创建临时文件或持久记录。
+                        if (receivedTaskId == null || receivedTaskId.trim().isEmpty()) {
+                            connection.send(FepProtocolTool.buildRequestResponse(
+                                    request.getFileName(), FepProtocolTool.RECEIVER_UNAVAILABLE, 1));
+                            break;
+                        }
+                        // 请求开始时固定任务，后续数据分片沿用文件上下文。
+                        CollectInterfaceRuntimeConfig fileConfig = config.snapshotForTask(receivedTaskId);
                         // 第一步：数据库记录优先决定文件是否已经可靠接收。
                         boolean recorded = fileResultService
                                 .isReceivedAndTriggerRetry(
-                                        config,
+                                        fileConfig,
                                         request.getFileName(),
                                         request.getFileLength());
                         FepFileReceiver.RequestAcceptance acceptance =
                                 fileReceiver.acceptRequest(
-                                        packetData, recorded);
+                                        packetData, recorded, receivedTaskId);
 
+                        // 仅接受传输的文件需要保存上下文，续传和任务切换均不能覆盖已有文件归属。
+                        if (acceptance.getResumeUnitNumber() >= 0) {
+                            fileConfigs.put(acceptance.getFileId(), fileConfig);
+                        }
                         // 第二步：兼容升级前遗留的本地完整文件，补登记后续处理记录。
                         registerLegacyCompletedFile(
                                 config, acceptance, recorded);
@@ -437,12 +482,17 @@ public class FepProtocolHandler implements ProtocolHandler {
                         if (result.isCompleted()) {
                             // 第一步：先登记可靠处理记录，确保确认后仍可自动恢复。
                             LocalDateTime completedTime = LocalDateTime.now();
+                            CollectInterfaceRuntimeConfig completedConfig = fileConfigs.get(result.getFileId());
+                            if (completedConfig == null) {
+                                throw new IllegalStateException("FEP文件缺少接收开始时的任务快照");
+                            }
                             fileLengths.remove(result.getFileId());
                             fileResultService.recordAndSubmit(
-                                    config,
+                                    completedConfig,
                                     result.getFilePath(),
                                     completedTime);
-                            statistics.recordCollection(config);
+                            fileConfigs.remove(result.getFileId());
+                            statistics.recordCollection(completedConfig);
 
                             // 第二步：登记成功后立即确认，不等待MinIO和消息发送。
                             connection.send(result.getConfirmationPacket());

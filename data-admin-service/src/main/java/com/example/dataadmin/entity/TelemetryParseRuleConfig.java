@@ -4,8 +4,6 @@ package com.example.dataadmin.entity;
 public class TelemetryParseRuleConfig {
     /** 主键。 */
     private Long id;
-    /** 试验任务ID。 */
-    private String taskId;
     /** 设备卫星ID。 */
     private Long deviceSatelliteId;
     /** 所属系统主键，为空时参数直属设备卫星。 */
@@ -66,14 +64,14 @@ public class TelemetryParseRuleConfig {
     }
 
     /** 获取试验任务ID。 */
-    public String getTaskId() {
-        return taskId;
-    }
+    /** 兼容既有内部调用，配置及全局记录不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
 
     /** 设置试验任务ID。 */
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
+    /** 兼容旧调用参数，不接收或保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
 
     /** 获取设备卫星ID。 */
     public Long getDeviceSatelliteId() {

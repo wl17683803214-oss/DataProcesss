@@ -114,9 +114,8 @@ public class DashboardServiceImpl implements DashboardService {
   /** 从Redis读取任务下所有采集接口的实时指标。 */
   private Map<Long, RealtimeCollectionMetric> collectionRealtime(String taskId) {
     Map<Long, RealtimeCollectionMetric> result = new LinkedHashMap<>();
-    if (taskId == null) { return result; }
     try {
-      Map<Object, Object> entries = redisTemplate.opsForHash().entries(COLLECTION_KEY_PREFIX + taskId);
+      Map<Object, Object> entries = redisTemplate.opsForHash().entries(COLLECTION_KEY_PREFIX + "global");
       for (Map.Entry<Object, Object> entry : entries.entrySet()) {
         Long interfaceId = collectionInterfaceId(String.valueOf(entry.getKey()));
         RealtimeCollectionMetric metric = readMetric(entry.getValue(), RealtimeCollectionMetric.class);
@@ -131,9 +130,8 @@ public class DashboardServiceImpl implements DashboardService {
   /** 从Redis读取任务下各采集接口的实时处理指标。 */
   private ProcessingRealtime processingRealtime(String taskId) {
     ProcessingRealtime result = new ProcessingRealtime();
-    if (taskId == null) { return result; }
     try {
-      Map<Object, Object> entries = redisTemplate.opsForHash().entries(PROCESSING_KEY_PREFIX + taskId);
+      Map<Object, Object> entries = redisTemplate.opsForHash().entries(PROCESSING_KEY_PREFIX + "global");
       for (Map.Entry<Object, Object> entry : entries.entrySet()) {
         String field = String.valueOf(entry.getKey());
         if (UNHANDLED_ALARM_FIELD.equals(field)) {

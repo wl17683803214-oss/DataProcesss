@@ -131,7 +131,7 @@ public class CollectInterfaceManager implements DisposableBean {
             // 第一步：从数据库读取全部启用且未删除的接口运行配置。
             enabledConfigs =
                     runtimeMapper.findAllEnabledInterfaces();
-            // 第二步：接口启动前按各自任务加载有效校准通道配置。
+            // 第二步：接口启动前按全局配置加载有效校准通道配置。
             attachCalibrationConfigs(enabledConfigs);
             // 第三步：逐个提交接收任务，单个接口失败不会阻断其他接口启动。
             synchronizeRunningInterfaces(enabledConfigs);
@@ -159,7 +159,7 @@ public class CollectInterfaceManager implements DisposableBean {
         List<CollectInterfaceRuntimeConfig> configs = normalizedIds.isEmpty()
                 ? new ArrayList<CollectInterfaceRuntimeConfig>()
                 : runtimeMapper.findEnabledInterfacesByIds(normalizedIds);
-        // 第三步：接口同步前按各自任务刷新有效校准通道配置。
+        // 第三步：接口同步前按全局配置刷新有效校准通道配置。
         attachCalibrationConfigs(configs);
         // 第四步：按数据库实际配置启动、更新和停止接口。
         synchronizeRunningInterfaces(configs);
@@ -173,34 +173,26 @@ public class CollectInterfaceManager implements DisposableBean {
         return runningIds;
     }
 
-    /** 按任务加载有效校准通道，同一任务的接口共用配置快照。 */
+    /** 加载全局有效校准通道，全部接口共用配置快照。 */
     private void attachCalibrationConfigs(
             List<CollectInterfaceRuntimeConfig> configs) {
         if (configs == null || configs.isEmpty()) {
             return;
         }
-        // 第一步：同一批接口允许分属不同试验任务，每个任务只查询一次校准配置。
-        Map<String, Map<String, CalibrationChannelRuntimeConfig>> configsByTask =
-                new HashMap<>();
+        // 第一步：所有接口复用全局有效校准配置，不再校验任务编号。
+        Map<String, CalibrationChannelRuntimeConfig> calibrationConfigs = calibrationConfigManager.load(null);
         for (CollectInterfaceRuntimeConfig config : configs) {
-            String taskId = config.getTaskId();
-            if (taskId == null || taskId.trim().isEmpty()) {
-                throw new IllegalArgumentException("启用采集接口未配置试验任务编号");
-            }
-            // 指令响应只依赖固定协议，启动前校验承载方式并跳过遥测校准配置。
-            if (CollectionDataType.require(config.getRpcEnabled())
-                    == CollectionDataType.COMMAND_RESPONSE) {
+            // 第二步：指令响应沿用独立承载校验，遥测接口共享校准快照。
+            if (CollectionDataType.require(config.getRpcEnabled()) == CollectionDataType.COMMAND_RESPONSE) {
                 if (!Integer.valueOf(TRANSFER_TYPE_UDP).equals(config.getTransferType())
                         || !Integer.valueOf(2).equals(config.getTransferProtocol())) {
                     throw new IllegalArgumentException("指令响应采集必须使用UDP和PDXP");
                 }
                 continue;
             }
-            Map<String, CalibrationChannelRuntimeConfig> calibrationConfigs =
-                    configsByTask.computeIfAbsent(taskId, calibrationConfigManager::load);
             config.setCalibrationConfigMap(calibrationConfigs);
         }
-        // 第二步：各接口按自身任务和设备加载解析配置，处理线程不再逐帧查询参数表。
+        // 第三步：按设备加载解析配置，处理线程不逐帧查询参数表。
         attachPdxpFields(configs);
     }
 

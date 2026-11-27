@@ -1,6 +1,6 @@
 package com.example.dataadmin.entity;
 
-import com.example.dataadmin.enums.ExperimentTaskStatus;
+import com.example.common.enums.ExperimentTaskStatus;
 import com.example.dataadmin.enums.TaskEndReason;
 
 import java.time.LocalDateTime;

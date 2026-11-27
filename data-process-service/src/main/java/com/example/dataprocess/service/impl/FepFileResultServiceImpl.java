@@ -152,7 +152,11 @@ public class FepFileResultServiceImpl implements FepFileResultService {
             CollectInterfaceRuntimeConfig config,
             Path completedFile,
             LocalDateTime completedTime) throws Exception {
-        // 第一步：文件必须真实存在，数据库才能记录为已接收。
+        // 第一步：没有固定任务不得登记文件，防止其他调用入口绕过接收阶段校验。
+        if (config.getTaskId() == null || config.getTaskId().trim().isEmpty()) {
+            throw new IllegalArgumentException("无运行中试验任务，不能保存FEP文件");
+        }
+        // 第二步：文件必须真实存在，数据库才能记录为已接收。
         validateCompletedFile(completedFile);
         Path normalizedFile = completedFile.toAbsolutePath().normalize();
         long fileLength = Files.size(normalizedFile);
@@ -544,10 +548,12 @@ public class FepFileResultServiceImpl implements FepFileResultService {
         }
     }
 
-    /** 将没有任务编号的测试接口统一保存为固定测试任务编号。 */
+    /** 文件归属必须在开始接收时确定，不为缺失任务生成虚假编号。 */
     private String normalizeTaskId(String taskId) {
-        // 测试接口与正式接口使用同一字符串唯一键规则。
-        return taskId == null || taskId.trim().isEmpty()
-                ? "TEST" : taskId.trim();
+        // 所有接收及重试入口统一执行同一编号校验。
+        if (taskId == null || taskId.trim().isEmpty()) {
+            throw new IllegalArgumentException("文件缺少接收开始时的试验任务编号");
+        }
+        return taskId.trim();
     }
 }

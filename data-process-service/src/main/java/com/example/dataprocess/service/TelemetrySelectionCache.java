@@ -75,13 +75,13 @@ public class TelemetrySelectionCache {
         String source = remote ? TelemetrySourceType.RPC.getValue() : TelemetrySourceType.LOCAL.getValue();
         String identity = remote ? TelemetryIdentity.rpc(message.getSatCode())
                 : TelemetryIdentity.local(config.getDeviceSatelliteId());
-        return objects.getOrDefault(TelemetrySelectionSnapshot.objectKey(config.getTaskId(), source, identity),
+        return objects.getOrDefault(TelemetrySelectionSnapshot.objectKey(source, identity),
                 Collections.emptySet());
     }
 
     /** 排队期间取消的参数在写缓存前再次校验，避免旧任务恢复已取消的数据。 */
     public boolean contains(com.example.common.greptime.TelemetryParameterRecord row) {
-        return objects.getOrDefault(TelemetrySelectionSnapshot.objectKey(row.getTaskId(), row.getSourceType(),
+        return objects.getOrDefault(TelemetrySelectionSnapshot.objectKey(row.getSourceType(),
                 row.getSourceIdentity()), Collections.emptySet()).contains(row.getTelemetryCode());
     }
 }

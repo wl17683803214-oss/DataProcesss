@@ -93,26 +93,19 @@ public class InterfaceSpeedReportScheduler {
             }
             String systemId = environment.getProperty("interface-speed-report.system-id", "sjcl").trim();
             if (systemId.isEmpty()) { throw new IllegalArgumentException("接口速度上报系统标识不能为空"); }
-            // 第二步：复用已有映射查询未删除接口，名称及任务归属在内存中定期刷新。
+            // 第二步：复用已有映射查询全局接口，速率一次读取全局Hash。
             List<CollectInterfaceConfig> configured = interfaceSnapshot();
-            Map<String, Map<Object, Object>> taskMetrics = new LinkedHashMap<>();
+            Map<Object, Object> metrics = redis.opsForHash().entries(CACHE_PREFIX + "global");
             List<Map<String, Object>> rows = new ArrayList<>();
             double totalRateKbps = 0D;
             for (CollectInterfaceConfig config : configured) {
-                if (config.getId() == null || config.getTaskId() == null || config.getTaskId().trim().isEmpty()) {
+                if (config.getId() == null) {
                     continue;
                 }
-                // 第三步：同一任务只读一次Hash，不逐个接口往返Redis，不修改原有缓存。
-                String taskId = config.getTaskId();
-                Map<Object, Object> metrics = taskMetrics.get(taskId);
-                if (metrics == null) {
-                    metrics = redis.opsForHash().entries(CACHE_PREFIX + taskId);
-                    taskMetrics.put(taskId, metrics);
-                }
+                // 第三步：按接口主键读取速率，任务变化不影响接口上报。
                 // 读取结束后再判断时效，避免把本轮开始后刚更新的缓存误判为未来数据。
                 double rateKbps = cachedRate(metrics.get("interface:" + config.getId()), LocalDateTime.now());
                 Map<String, Object> row = new LinkedHashMap<>();
-                row.put("taskId", taskId);
                 row.put("interfaceName", config.getInterfaceName());
                 row.put("receiveRate", formatRate(rateKbps));
                 rows.add(row);

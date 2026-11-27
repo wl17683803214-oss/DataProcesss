@@ -62,23 +62,20 @@ public class DataCalibrationServiceImpl implements DataCalibrationService {
         this.runtimeSyncService = runtimeSyncService;
     }
 
-    /** 查询当前试验任务累计校准、清洗及野值数量。 */
+    /** 查询全局累计校准、清洗及野值数量。 */
     @Override
     public CalibrationOverviewVO getOverview(String taskId) {
-        // 第一步：校验必填任务编号，保证累计统计按试验任务隔离。
-        requireTaskId(taskId);
-        // 第二步：一次汇总全部未删除记录，没有记录时由查询统一返回零。
+        // 第一步：一次汇总全部未删除记录，没有记录时由查询统一返回零。
         CalibrationOverviewVO result = recordMapper.findOverview(taskId);
-        // 第三步：清洗数量直接复用野值数量，保证两个返回字段完全一致。
+        // 第二步：清洗数量直接复用野值数量，保证两个返回字段完全一致。
         result.setCleanedCount(result.getOutlierCount());
         return result;
     }
 
-    /** 查询指定试验任务的校准通道列表。 */
+    /** 查询全部有效校准通道。 */
     @Override
     public List<CalibChannelConfig> listChannelConfigs(String taskId) {
-        // 校准通道属于具体试验任务，列表查询必须进行任务隔离。
-        requireTaskId(taskId);
+        // 校准通道统一管理，列表不按任务隔离。
         return channelMapper.findAllByTaskId(taskId);
     }
 
@@ -134,16 +131,12 @@ public class DataCalibrationServiceImpl implements DataCalibrationService {
     @Override
     @Transactional
     public boolean updateChannelEnabled(String taskId, Long id, Integer enabled) {
-        // 第一步：校验必填任务编号及已有启用枚举，避免无效开关入库。
-        requireTaskId(taskId);
+        // 第一步：复用已有启用枚举，避免无效开关入库。
         if (EnumData.labelOf(BusinessEnums.Enabled.values(), enabled) == null) {
             throw new IllegalArgumentException("启用状态只能为0或1");
         }
         // 第二步：确认通道有效且属于当前任务，禁止跨任务切换。
         CalibChannelConfig current = requireChannelConfig(id);
-        if (!taskId.equals(current.getTaskId())) {
-            throw new IllegalArgumentException("当前试验任务下的校准通道不存在");
-        }
         // 第三步：通过任务和通道主键更新开关，并在事务提交后通知处理模块。
         if (channelMapper.updateEnabled(taskId, id, enabled) <= 0) {
             throw new IllegalArgumentException("校准通道启用状态修改失败");
@@ -176,7 +169,6 @@ public class DataCalibrationServiceImpl implements DataCalibrationService {
             Integer pageNum,
             Integer pageSize) {
         // 第一步：校验当前任务及分页参数，保证记录列表按任务隔离。
-        requireTaskId(taskId);
         int safePageNum = pageNum == null ? 1 : Math.max(1, pageNum);
         int safePageSize = safePageSize(pageSize);
 
@@ -200,7 +192,6 @@ public class DataCalibrationServiceImpl implements DataCalibrationService {
             String taskId,
             Integer pageNum,
             Integer pageSize) {
-        requireTaskId(taskId);
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("校准记录ID必须大于0");
         }
@@ -238,13 +229,6 @@ public class DataCalibrationServiceImpl implements DataCalibrationService {
             throw new IllegalArgumentException("校准通道不存在");
         }
         return config;
-    }
-
-    /** 校验管理端查询必须携带有效试验任务ID。 */
-    private void requireTaskId(String taskId) {
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
     }
 
     /** 限制分页大小，避免单次加载过多野值详情。 */
@@ -337,9 +321,6 @@ public class DataCalibrationServiceImpl implements DataCalibrationService {
 
     /** 校验校准通道公共参数和所选检测方法的专用参数。 */
     private void validateChannelConfig(CalibChannelConfig config) {
-        if (config.getTaskId() == null || config.getTaskId().trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
         if (config.getChannelName() == null || config.getChannelName().isEmpty()) {
             throw new IllegalArgumentException("通道名称不能为空");
         }
@@ -445,12 +426,12 @@ public class DataCalibrationServiceImpl implements DataCalibrationService {
         }
     }
 
-    /** 校验同一试验任务内的校准公式唯一。 */
+    /** 校验全部有效通道中的校准公式唯一。 */
     private void validateUniqueCalibrationFormula(CalibChannelConfig config) {
         int count = channelMapper.countByTaskIdAndCalibrationFormula(
                 config.getTaskId(), config.getCalibrationFormula(), config.getId());
         if (count > 0) {
-            throw new IllegalArgumentException("当前任务已存在相同的校准公式");
+            throw new IllegalArgumentException("已存在相同的校准公式");
         }
     }
 

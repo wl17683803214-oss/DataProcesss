@@ -50,10 +50,9 @@ public class DataCollectionController {
 
     /** 查询数据采集页面顶部统计数据。 */
     @GetMapping("/overview")
-    public ApiResponse<CollectionOverviewVO> getOverview(
-            @RequestParam String taskId) {
-        // 采集总览必须限定试验任务，避免跨任务汇总接口和采集量。
-        return ApiResponse.success(dataCollectionService.getOverview(taskId));
+    public ApiResponse<CollectionOverviewVO> getOverview() {
+        // 采集总览汇总全部接口及采集量，不接收任务筛选。
+        return ApiResponse.success(dataCollectionService.getOverview(null));
     }
 
     /** 分页查询采集接口。 */

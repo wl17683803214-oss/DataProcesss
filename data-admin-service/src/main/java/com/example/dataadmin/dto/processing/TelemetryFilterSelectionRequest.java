@@ -5,9 +5,6 @@ import javax.validation.constraints.NotNull;
 
 /** 单个遥测参数勾选状态更新请求。 */
 public class TelemetryFilterSelectionRequest {
-    /** 当前试验任务编号。 */
-    @NotBlank
-    private String taskId;
     /** 当前参数解析配置主键。 */
     @NotNull
     private Long parseRuleId;
@@ -21,8 +18,12 @@ public class TelemetryFilterSelectionRequest {
     @NotNull
     private Long targetId;
 
-    public String getTaskId() { return taskId; }
-    public void setTaskId(String taskId) { this.taskId = taskId; }
+    /** 兼容内部调用，勾选和布局不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
+    /** 兼容旧参数，不保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
     public Long getParseRuleId() { return parseRuleId; }
     public void setParseRuleId(Long parseRuleId) { this.parseRuleId = parseRuleId; }
     public Boolean getChecked() { return checked; }

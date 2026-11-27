@@ -47,7 +47,7 @@ DROP TABLE IF EXISTS dashboard_processing_curve_point;
 -- 采集接口五秒统计表，PDXP按完整帧、FEP按完整文件统计采集量。
 CREATE TABLE IF NOT EXISTS collect_interface_statistics (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
     interface_id BIGINT NOT NULL,
     statistics_time TIMESTAMP NOT NULL,
     collection_count BIGINT NOT NULL DEFAULT 0,
@@ -57,21 +57,21 @@ CREATE TABLE IF NOT EXISTS collect_interface_statistics (
 
 COMMENT ON TABLE collect_interface_statistics IS '采集接口五秒统计表';
 COMMENT ON COLUMN collect_interface_statistics.id IS '统计记录主键ID';
-COMMENT ON COLUMN collect_interface_statistics.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN collect_interface_statistics.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN collect_interface_statistics.interface_id IS '采集接口ID';
 COMMENT ON COLUMN collect_interface_statistics.statistics_time IS '五秒统计窗口开始时间';
 COMMENT ON COLUMN collect_interface_statistics.collection_count IS '窗口内采集量，PDXP为帧数，FEP为文件数';
 COMMENT ON COLUMN collect_interface_statistics.interface_rate IS '窗口内平均接口速率，单位B/s';
 COMMENT ON COLUMN collect_interface_statistics.is_deleted IS '是否删除：0否，1是';
 CREATE UNIQUE INDEX IF NOT EXISTS uk_collect_interface_statistics_window
-    ON collect_interface_statistics (task_id, interface_id, statistics_time);
+    ON collect_interface_statistics (interface_id, statistics_time);
 CREATE INDEX IF NOT EXISTS idx_collect_interface_statistics_task_time
-    ON collect_interface_statistics (task_id, statistics_time DESC);
+    ON collect_interface_statistics (statistics_time DESC);
 
 -- 数据处理五秒统计表，去重数和野值数均按遥测参数数量统计。
 CREATE TABLE IF NOT EXISTS data_processing_statistics (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
     interface_id BIGINT NOT NULL,
     statistics_time TIMESTAMP NOT NULL,
     processing_count BIGINT NOT NULL DEFAULT 0,
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS data_processing_statistics (
 
 COMMENT ON TABLE data_processing_statistics IS '数据处理五秒统计表';
 COMMENT ON COLUMN data_processing_statistics.id IS '统计记录主键ID';
-COMMENT ON COLUMN data_processing_statistics.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN data_processing_statistics.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN data_processing_statistics.interface_id IS '采集接口ID';
 COMMENT ON COLUMN data_processing_statistics.statistics_time IS '五秒统计窗口开始时间';
 COMMENT ON COLUMN data_processing_statistics.processing_count IS '窗口内成功处理的帧或文件数量';
@@ -90,9 +90,9 @@ COMMENT ON COLUMN data_processing_statistics.duplicate_count IS '窗口内被后
 COMMENT ON COLUMN data_processing_statistics.wild_value_count IS '窗口内判定为野值的遥测参数数量';
 COMMENT ON COLUMN data_processing_statistics.is_deleted IS '是否删除：0否，1是';
 CREATE UNIQUE INDEX IF NOT EXISTS uk_data_processing_statistics_window
-    ON data_processing_statistics (task_id, interface_id, statistics_time);
+    ON data_processing_statistics (interface_id, statistics_time);
 CREATE INDEX IF NOT EXISTS idx_data_processing_statistics_task_time
-    ON data_processing_statistics (task_id, statistics_time DESC);
+    ON data_processing_statistics (statistics_time DESC);
 
 -- 数据处理任务表
 CREATE TABLE IF NOT EXISTS data_process_task (
@@ -123,7 +123,8 @@ CREATE INDEX IF NOT EXISTS idx_data_process_task_task_id ON data_process_task (t
 -- 数据处理页面右侧“处理规则配置”，每个试验任务保存一组开关。
 CREATE TABLE IF NOT EXISTS processing_rule_config (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL UNIQUE,
+    task_id VARCHAR(100),
+    scope_key VARCHAR(32) UNIQUE,
     dedup_enabled SMALLINT NOT NULL DEFAULT 1,
     abnormal_frame_filter_enabled SMALLINT NOT NULL DEFAULT 1,
     delayed_data_compensation_enabled SMALLINT NOT NULL DEFAULT 0,
@@ -135,7 +136,7 @@ CREATE TABLE IF NOT EXISTS processing_rule_config (
 
 COMMENT ON TABLE processing_rule_config IS '任务级数据处理规则开关配置';
 COMMENT ON COLUMN processing_rule_config.id IS '规则配置主键ID';
-COMMENT ON COLUMN processing_rule_config.task_id IS '外部试验任务编号，每个任务一条配置';
+COMMENT ON COLUMN processing_rule_config.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN processing_rule_config.dedup_enabled IS '数据去重规则：0关闭 1开启';
 COMMENT ON COLUMN processing_rule_config.abnormal_frame_filter_enabled IS '异常帧过滤：0关闭 1开启';
 COMMENT ON COLUMN processing_rule_config.delayed_data_compensation_enabled IS '延时数据补偿：0关闭 1开启';
@@ -145,6 +146,10 @@ COMMENT ON COLUMN processing_rule_config.create_time IS '创建时间';
 COMMENT ON COLUMN processing_rule_config.update_time IS '更新时间';
 
 -- 数据监测告警事件表
+-- 全局处理配置同时用于导入与勾选维护的并发锁。
+INSERT INTO processing_rule_config (scope_key, parameter_range_check_enabled)
+VALUES ('global', 0) ON CONFLICT (scope_key) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS dm_alarm_event (
     id BIGSERIAL PRIMARY KEY,
     task_id VARCHAR(100),
@@ -174,7 +179,7 @@ CREATE TABLE IF NOT EXISTS dm_alarm_event (
 
 COMMENT ON TABLE dm_alarm_event IS '数据监测告警事件表';
 COMMENT ON COLUMN dm_alarm_event.id IS '主键ID';
-COMMENT ON COLUMN dm_alarm_event.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN dm_alarm_event.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN dm_alarm_event.alarm_time IS '告警时间';
 COMMENT ON COLUMN dm_alarm_event.source_name IS '告警来源英文编码：COLLECTION数据采集、PROCESSING数据处理、CALIBRATION数据校准';
 COMMENT ON COLUMN dm_alarm_event.alarm_msg IS '告警信息';
@@ -306,7 +311,7 @@ CREATE TABLE IF NOT EXISTS calib_channel_config (
 
 COMMENT ON TABLE calib_channel_config IS '校准通道配置表';
 COMMENT ON COLUMN calib_channel_config.id IS '自增主键ID';
-COMMENT ON COLUMN calib_channel_config.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN calib_channel_config.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN calib_channel_config.channel_name IS '通道名称';
 COMMENT ON COLUMN calib_channel_config.calibration_formula IS '校准公式';
 COMMENT ON COLUMN calib_channel_config.normal_range IS '正常范围，如0~36V，仅阈值法必填';
@@ -326,7 +331,7 @@ COMMENT ON COLUMN calib_channel_config.update_time IS '更新时间';
 
 CREATE INDEX IF NOT EXISTS idx_calib_channel_config_task_id ON calib_channel_config (task_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_calib_channel_task_formula
-    ON calib_channel_config (task_id, calibration_formula) WHERE is_deleted = 0;
+    ON calib_channel_config (calibration_formula) WHERE is_deleted = 0;
 
 -- 卫星档案独立于任务设备卫星表，名称及代号均允许重复。
 CREATE TABLE IF NOT EXISTS satellite_config (
@@ -354,7 +359,7 @@ CREATE INDEX IF NOT EXISTS idx_satellite_config_code ON satellite_config (code);
 -- 设备卫星表：编码和名称来自Excel页签，类型由前端选择。
 CREATE TABLE IF NOT EXISTS device_satellite (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
     code VARCHAR(100) NOT NULL,
     name VARCHAR(100) NOT NULL,
     type VARCHAR(1) NOT NULL,
@@ -364,7 +369,7 @@ CREATE TABLE IF NOT EXISTS device_satellite (
 );
 COMMENT ON TABLE device_satellite IS '设备卫星配置';
 COMMENT ON COLUMN device_satellite.id IS '主键';
-COMMENT ON COLUMN device_satellite.task_id IS '外部试验任务编号，所有操作的数据隔离范围';
+COMMENT ON COLUMN device_satellite.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN device_satellite.code IS '编码，导入时为Excel页签名称';
 COMMENT ON COLUMN device_satellite.name IS '名称，导入时为Excel页签名称';
 COMMENT ON COLUMN device_satellite.type IS '类型：1卫星，2设备';
@@ -373,12 +378,12 @@ COMMENT ON COLUMN device_satellite.create_time IS '创建时间';
 COMMENT ON COLUMN device_satellite.update_time IS '更新时间';
 -- 编码仅在当前任务、当前类型的有效记录中唯一。
 CREATE UNIQUE INDEX IF NOT EXISTS uk_device_satellite_task_type_code
-    ON device_satellite (task_id, type, code) WHERE is_deleted = 0;
+    ON device_satellite (type, code) WHERE is_deleted = 0;
 
 -- 所属系统按设备卫星分层存储，同名系统可位于不同父节点。
 CREATE TABLE IF NOT EXISTS telemetry_system_config (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
     device_satellite_id BIGINT NOT NULL,
     system_name VARCHAR(100) NOT NULL,
     parent_id BIGINT NOT NULL DEFAULT 0,
@@ -389,7 +394,7 @@ CREATE TABLE IF NOT EXISTS telemetry_system_config (
 );
 COMMENT ON TABLE telemetry_system_config IS '遥测参数所属系统层级配置';
 COMMENT ON COLUMN telemetry_system_config.id IS '主键';
-COMMENT ON COLUMN telemetry_system_config.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN telemetry_system_config.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN telemetry_system_config.device_satellite_id IS '设备卫星主键';
 COMMENT ON COLUMN telemetry_system_config.system_name IS '当前层级系统名称';
 COMMENT ON COLUMN telemetry_system_config.parent_id IS '父系统主键，0表示设备直属系统';
@@ -398,16 +403,16 @@ COMMENT ON COLUMN telemetry_system_config.is_deleted IS '是否删除：0否，1
 COMMENT ON COLUMN telemetry_system_config.create_time IS '创建时间';
 COMMENT ON COLUMN telemetry_system_config.update_time IS '更新时间';
 CREATE UNIQUE INDEX IF NOT EXISTS uk_telemetry_system_active_path
-    ON telemetry_system_config (task_id, device_satellite_id, parent_id, system_name)
+    ON telemetry_system_config (device_satellite_id, parent_id, system_name)
     WHERE is_deleted = 0;
 CREATE INDEX IF NOT EXISTS idx_telemetry_system_children
-    ON telemetry_system_config (task_id, device_satellite_id, parent_id, sort_order)
+    ON telemetry_system_config (device_satellite_id, parent_id, sort_order)
     WHERE is_deleted = 0;
 
 -- 遥测参数解析配置表：全部业务列按字符串存储。
 CREATE TABLE IF NOT EXISTS telemetry_parse_rule_config (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
     device_satellite_id BIGINT NOT NULL,
     system_id BIGINT,
     table_index VARCHAR(100) NOT NULL,
@@ -435,7 +440,7 @@ CREATE TABLE IF NOT EXISTS telemetry_parse_rule_config (
 );
 COMMENT ON TABLE telemetry_parse_rule_config IS '参数解析配置';
 COMMENT ON COLUMN telemetry_parse_rule_config.id IS '主键';
-COMMENT ON COLUMN telemetry_parse_rule_config.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN telemetry_parse_rule_config.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN telemetry_parse_rule_config.device_satellite_id IS '设备卫星表ID，由代码校验关联';
 COMMENT ON COLUMN telemetry_parse_rule_config.system_id IS '所属系统主键，为空表示直属设备卫星';
 COMMENT ON COLUMN telemetry_parse_rule_config.table_index IS '序号';
@@ -462,25 +467,25 @@ COMMENT ON COLUMN telemetry_parse_rule_config.create_time IS '创建时间';
 COMMENT ON COLUMN telemetry_parse_rule_config.update_time IS '更新时间';
 -- 任务与设备卫星共同限定有效参数的唯一范围。
 CREATE UNIQUE INDEX IF NOT EXISTS uk_parse_rule_task_device_index
-    ON telemetry_parse_rule_config (task_id, device_satellite_id, table_index) WHERE is_deleted = 0;
+    ON telemetry_parse_rule_config (device_satellite_id, table_index) WHERE is_deleted = 0;
 -- 遥测代号允许重复，处理时按序号保留最后一项；此处仅建立普通查询索引。
 DROP INDEX IF EXISTS uk_parse_rule_task_device_code;
 CREATE INDEX IF NOT EXISTS idx_parse_rule_task_device_code
-    ON telemetry_parse_rule_config (task_id, device_satellite_id, telemetry_code) WHERE is_deleted = 0;
+    ON telemetry_parse_rule_config (device_satellite_id, telemetry_code) WHERE is_deleted = 0;
 -- 任务范围内按遥测代号搜索筛选框参数。
 CREATE INDEX IF NOT EXISTS idx_parse_rule_task_code
-    ON telemetry_parse_rule_config (task_id, telemetry_code) WHERE is_deleted = 0;
+    ON telemetry_parse_rule_config (telemetry_code) WHERE is_deleted = 0;
 CREATE INDEX IF NOT EXISTS idx_parse_rule_system
-    ON telemetry_parse_rule_config (task_id, device_satellite_id, system_id, id)
+    ON telemetry_parse_rule_config (device_satellite_id, system_id, id)
     WHERE is_deleted = 0;
 CREATE INDEX IF NOT EXISTS idx_parse_rule_device_page
-    ON telemetry_parse_rule_config (task_id, device_satellite_id, id)
+    ON telemetry_parse_rule_config (device_satellite_id, id)
     WHERE is_deleted = 0;
 
 -- 固定页面勾选按任务共享；可视化组件勾选按组件主键隔离。
 CREATE TABLE IF NOT EXISTS processed_telemetry_filter_selection (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
     device_satellite_id BIGINT NOT NULL,
     telemetry_code VARCHAR(100) NOT NULL,
     selection_type SMALLINT NOT NULL DEFAULT 1,
@@ -512,17 +517,17 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_telemetry_selection_scope
     ON processed_telemetry_filter_selection
        (task_id, selection_type, target_id, device_satellite_id, telemetry_code);
 CREATE INDEX IF NOT EXISTS idx_telemetry_selection_task_device
-    ON processed_telemetry_filter_selection (task_id, device_satellite_id, telemetry_code);
+    ON processed_telemetry_filter_selection (device_satellite_id, telemetry_code);
 INSERT INTO processed_telemetry_filter_selection
     (task_id, device_satellite_id, telemetry_code, selection_type, target_id, is_deleted)
 SELECT task_id, device_satellite_id, telemetry_code, 2, 0, is_deleted
 FROM processed_telemetry_filter_selection
 WHERE selection_type = 1 AND target_id = 0
-ON CONFLICT (task_id, selection_type, target_id, device_satellite_id, telemetry_code)
+ON CONFLICT (selection_type, target_id, device_satellite_id, telemetry_code)
 DO NOTHING;
 COMMENT ON TABLE processed_telemetry_filter_selection IS '处理后数据及可视化组件遥测参数勾选记录';
 COMMENT ON COLUMN processed_telemetry_filter_selection.id IS '主键';
-COMMENT ON COLUMN processed_telemetry_filter_selection.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN processed_telemetry_filter_selection.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN processed_telemetry_filter_selection.device_satellite_id IS '设备卫星主键';
 COMMENT ON COLUMN processed_telemetry_filter_selection.telemetry_code IS '遥测代号';
 COMMENT ON COLUMN processed_telemetry_filter_selection.selection_type IS '勾选场景：1处理后数据表格 2处理后数据曲线 3数据可视化表格 4数据可视化曲线';
@@ -560,7 +565,7 @@ CREATE TABLE IF NOT EXISTS collect_interface_config (
 
 COMMENT ON TABLE collect_interface_config IS '采集接口管理表';
 COMMENT ON COLUMN collect_interface_config.id IS '自增主键';
-COMMENT ON COLUMN collect_interface_config.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN collect_interface_config.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN collect_interface_config.interface_name IS '接口名称';
 COMMENT ON COLUMN collect_interface_config.interface_type IS '接口类型：1外部接口 2内部接口';
 COMMENT ON COLUMN collect_interface_config.send_from IS '发送方标识';
@@ -633,7 +638,7 @@ ALTER TABLE collect_protocol_config DROP COLUMN IF EXISTS data_source_type;
 
 COMMENT ON TABLE collect_protocol_config IS '协议配置表';
 COMMENT ON COLUMN collect_protocol_config.id IS '自增主键';
-COMMENT ON COLUMN collect_protocol_config.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN collect_protocol_config.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN collect_protocol_config.config_name IS '配置名称';
 COMMENT ON COLUMN collect_protocol_config.protocol_type IS '协议类型：1JSON 2PDXP 3Protobuf 4RPC';
 COMMENT ON COLUMN collect_protocol_config.config_desc IS '描述';
@@ -745,7 +750,7 @@ CREATE INDEX IF NOT EXISTS idx_sys_runtime_log_task_time
 -- 一条记录代表一个可以移动、缩放的页面组件。
 CREATE TABLE IF NOT EXISTS monitor_dashboard_widget (
     id BIGSERIAL PRIMARY KEY,
-    task_id VARCHAR(100) NOT NULL,
+    task_id VARCHAR(100),
     user_id BIGINT NOT NULL,
     widget_key VARCHAR(64) NOT NULL,
     widget_type SMALLINT NOT NULL,
@@ -761,7 +766,7 @@ CREATE TABLE IF NOT EXISTS monitor_dashboard_widget (
 
 COMMENT ON TABLE monitor_dashboard_widget IS '用户试验任务监测页面组件表';
 COMMENT ON COLUMN monitor_dashboard_widget.id IS '组件主键ID';
-COMMENT ON COLUMN monitor_dashboard_widget.task_id IS '外部试验任务编号';
+COMMENT ON COLUMN monitor_dashboard_widget.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN monitor_dashboard_widget.user_id IS '用户ID，对应系统用户ID';
 COMMENT ON COLUMN monitor_dashboard_widget.widget_key IS '组件唯一标识，同一用户同一试验任务内唯一';
 COMMENT ON COLUMN monitor_dashboard_widget.widget_type IS '组件类型：1实时曲线 2实时数据 3实时告警 4载荷图像 5文件表格';
@@ -775,12 +780,12 @@ COMMENT ON COLUMN monitor_dashboard_widget.create_time IS '创建时间';
 COMMENT ON COLUMN monitor_dashboard_widget.update_time IS '更新时间';
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_monitor_widget_task_user_key
-    ON monitor_dashboard_widget (task_id, user_id, widget_key);
+    ON monitor_dashboard_widget (user_id, widget_key);
 
 COMMENT ON INDEX uk_monitor_widget_task_user_key IS '保证同一用户同一试验任务内的组件标识唯一';
 
 CREATE INDEX IF NOT EXISTS idx_monitor_widget_task_user
-    ON monitor_dashboard_widget (task_id, user_id);
+    ON monitor_dashboard_widget (user_id);
 
 COMMENT ON INDEX idx_monitor_widget_task_user IS '用于按试验任务和用户加载全部页面组件';
 
@@ -831,7 +836,7 @@ JOIN telemetry_parse_rule_config rule_config
   ON rule_config.id = item.parse_rule_id AND rule_config.task_id = widget.task_id
 WHERE widget.widget_type IN (1, 2) AND item.is_selected = 1
   AND rule_config.is_deleted = 0
-ON CONFLICT (task_id, selection_type, target_id, device_satellite_id, telemetry_code)
+ON CONFLICT (selection_type, target_id, device_satellite_id, telemetry_code)
 DO NOTHING;
 
 -- 按时间分批清理使用全局索引，包含已逻辑删除的历史记录。

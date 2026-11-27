@@ -1,93 +1,87 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.dataadmin.mapper.ProcessedTelemetryFilterSelectionMapper">
-    <!-- 所有任务及组件的有效勾选合并，同一对象和代号只同步一次。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findRealtimeUnion" resultType="com.example.dataadmin.entity.ProcessedTelemetryFilterSelection">
-        select distinct selection.task_id, selection.device_satellite_id, selection.telemetry_code,
+        select distinct selection.device_satellite_id, selection.telemetry_code,
                device.type as device_satellite_type, device.code as device_satellite_code
         from processed_telemetry_filter_selection selection
         inner join device_satellite device
           on device.id = selection.device_satellite_id
-         and device.task_id = selection.task_id and device.is_deleted = 0
+          and device.is_deleted = 0
         where selection.is_deleted = 0
           and exists (
               select rule.id from telemetry_parse_rule_config rule
-              where rule.task_id = selection.task_id
-                and rule.device_satellite_id = selection.device_satellite_id
+              where rule.device_satellite_id = selection.device_satellite_id
                 and rule.telemetry_code = selection.telemetry_code and rule.is_deleted = 0
           )
-        order by selection.task_id, selection.device_satellite_id, selection.telemetry_code
+        order by selection.device_satellite_id, selection.telemetry_code
     </select>
-    <!-- 勾选状态按任务、设备、场景和组件隔离。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findSelectedCodes" resultType="string">
         select telemetry_code
         from processed_telemetry_filter_selection
-        where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+        where device_satellite_id = #{deviceSatelliteId}
           and selection_type = #{selectionType} and target_id = #{targetId}
           and is_deleted = 0
     </select>
-    <!-- 只返回当前任务仍有效的设备和参数，避免重新导入后查询失效路径。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findSelected" resultType="com.example.dataadmin.entity.ProcessedTelemetryFilterSelection">
-        select selection.task_id, selection.device_satellite_id, selection.telemetry_code,
+        select selection.device_satellite_id, selection.telemetry_code,
                selection.selection_type, selection.target_id,
                rule_config.telemetry_name, device.type as device_satellite_type,
                device.code as device_satellite_code
         from processed_telemetry_filter_selection selection
         inner join device_satellite device
           on device.id = selection.device_satellite_id
-         and device.task_id = selection.task_id and device.is_deleted = 0
+          and device.is_deleted = 0
         <!-- 重复代号共用一个筛选项，名称沿用序号靠后的最终保留参数。 -->
         inner join (
-            select ranked.task_id, ranked.device_satellite_id, ranked.telemetry_code, ranked.telemetry_name
+            select ranked.device_satellite_id, ranked.telemetry_code, ranked.telemetry_name
             from (
-                select r.task_id, r.device_satellite_id, r.telemetry_code, r.telemetry_name,
+                select r.device_satellite_id, r.telemetry_code, r.telemetry_name,
                        row_number() over (
-                           partition by r.task_id, r.device_satellite_id, r.telemetry_code
+                           partition by r.device_satellite_id, r.telemetry_code
                            order by case when r.table_index ~ '^[0-9]+$' then r.table_index::numeric end desc nulls last,
                                     r.id desc
                        ) as code_order
                 from telemetry_parse_rule_config r
                 where r.is_deleted = 0
-                <choose>
-                    <when test="taskId != null and taskId != ''">and r.task_id = #{taskId}</when>
-                    <otherwise>and 1 = 0</otherwise>
-                </choose>
             ) ranked
             where ranked.code_order = 1
         ) rule_config
-          on rule_config.task_id = selection.task_id
-         and rule_config.device_satellite_id = selection.device_satellite_id
+          on rule_config.device_satellite_id = selection.device_satellite_id
          and rule_config.telemetry_code = selection.telemetry_code
-        where selection.task_id = #{taskId} and selection.is_deleted = 0
+        where selection.is_deleted = 0
           and selection.selection_type = #{selectionType} and selection.target_id = #{targetId}
         order by selection.device_satellite_id, selection.telemetry_code
     </select>
     <!-- 保留同一参数在多个组件中的独立勾选，用于批量修改遥测代号。 -->
     <select id="findSelectedByDevice" resultType="com.example.dataadmin.entity.ProcessedTelemetryFilterSelection">
-        select task_id, device_satellite_id, telemetry_code, selection_type, target_id
+        select device_satellite_id, telemetry_code, selection_type, target_id
         from processed_telemetry_filter_selection
-        where task_id = #{taskId} and device_satellite_id = #{deviceSatelliteId}
+        where  device_satellite_id = #{deviceSatelliteId}
           and is_deleted = 0
     </select>
     <!-- 只保存已勾选记录；兼容历史逻辑删除记录时恢复为有效状态。 -->
     <insert id="save">
         insert into processed_telemetry_filter_selection
-            (task_id, device_satellite_id, telemetry_code, selection_type, target_id, is_deleted)
-        values (#{taskId}, #{deviceSatelliteId}, #{telemetryCode},
+            (device_satellite_id, telemetry_code, selection_type, target_id, is_deleted)
+        values (#{deviceSatelliteId}, #{telemetryCode},
                 #{selectionType}, #{targetId}, 0)
-        on conflict (task_id, selection_type, target_id, device_satellite_id, telemetry_code)
+        on conflict (selection_type, target_id, device_satellite_id, telemetry_code)
         do update set is_deleted = excluded.is_deleted, update_time = current_timestamp
     </insert>
     <!-- 单项取消按完整身份物理删除，缺少任何条件时均不扩大范围。 -->
     <delete id="deleteSelected">
         delete from processed_telemetry_filter_selection
         <where>
-            <if test="taskId != null and taskId != ''">and task_id = #{taskId}</if>
+
             <if test="deviceSatelliteId != null">and device_satellite_id = #{deviceSatelliteId}</if>
             <if test="telemetryCode != null and telemetryCode != ''">and telemetry_code = #{telemetryCode}</if>
             <if test="selectionType != null">and selection_type = #{selectionType}</if>
             <if test="targetId != null">and target_id = #{targetId}</if>
-            <if test="taskId == null or taskId == '' or deviceSatelliteId == null
+            <if test="deviceSatelliteId == null
                     or telemetryCode == null or telemetryCode == '' or selectionType == null or targetId == null">
                 and 1 = 0
             </if>
@@ -97,9 +91,7 @@
     <delete id="clearByScope">
         delete from processed_telemetry_filter_selection
         <where>
-            <if test="taskId != null and taskId != ''">
-                and task_id = #{taskId}
-            </if>
+
             <if test="selectionType != null">
                 and selection_type = #{selectionType}
             </if>
@@ -107,7 +99,7 @@
                 and target_id = #{targetId}
             </if>
             <!-- 防止空参数使清除范围扩大，目标主键为零仍是有效条件。 -->
-            <if test="taskId == null or taskId == '' or selectionType == null or targetId == null">
+            <if test="selectionType == null or targetId == null">
                 and 1 = 0
             </if>
         </where>
@@ -115,17 +107,17 @@
     <!-- 删除组件时只清理该组件的两种遥测参数勾选。 -->
     <delete id="deleteByTarget">
         delete from processed_telemetry_filter_selection
-        where task_id = #{taskId} and target_id = #{targetId}
+        where target_id = #{targetId}
           and selection_type in (3, 4)
     </delete>
     <!-- 批量修改代号时先物理删除原勾选，再按新代号恢复勾选。 -->
     <delete id="deleteByParameter">
         delete from processed_telemetry_filter_selection
         <where>
-            <if test="taskId != null and taskId != ''">and task_id = #{taskId}</if>
+
             <if test="deviceSatelliteId != null">and device_satellite_id = #{deviceSatelliteId}</if>
             <if test="telemetryCode != null and telemetryCode != ''">and telemetry_code = #{telemetryCode}</if>
-            <if test="taskId == null or taskId == '' or deviceSatelliteId == null
+            <if test="deviceSatelliteId == null
                     or telemetryCode == null or telemetryCode == ''">and 1 = 0</if>
         </where>
     </delete>
@@ -134,19 +126,18 @@
         delete from processed_telemetry_filter_selection selection
         <where>
             <choose>
-                <when test="taskId != null and taskId != '' and type != null and type != ''">
-                    selection.task_id = #{taskId}
+                <when test="type != null and type != ''">
+                    1 = 1
                 </when>
                 <otherwise>1 = 0</otherwise>
             </choose>
             and selection.device_satellite_id in (
                 select id from device_satellite
-                where task_id = #{taskId} and type = #{type}
+                where type = #{type}
             )
             and not exists (
                 select 1 from telemetry_parse_rule_config rule_config
-                where rule_config.task_id = selection.task_id
-                  and rule_config.device_satellite_id = selection.device_satellite_id
+                where rule_config.device_satellite_id = selection.device_satellite_id
                   and rule_config.telemetry_code = selection.telemetry_code
                   and rule_config.is_deleted = 0
             )

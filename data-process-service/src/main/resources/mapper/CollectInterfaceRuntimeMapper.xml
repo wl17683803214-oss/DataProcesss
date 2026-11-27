@@ -9,7 +9,6 @@
         select
             interface_config.id as interface_id,
             interface_config.interface_name,
-            interface_config.task_id,
             interface_config.host,
             interface_config.port,
             interface_config.multicast_ip,
@@ -28,21 +27,14 @@
             and protocol_config.is_deleted = 0
             and protocol_config.enabled = 1
         left join processing_rule_config rule_config
-            on rule_config.task_id = interface_config.task_id
+            on rule_config.scope_key = 'global'
         where interface_config.is_deleted = 0
           and interface_config.enabled = 1
           <!-- HTTP由统一Web入口接收，不交给UDP或TCP接收器创建监听任务。 -->
           and interface_config.transfer_type in (1, 2)
-          <!-- 只加载所属试验任务仍在运行的接口，不受其他任务状态影响。 -->
-          and exists (
-              select 1
-              from experiment_task task_config
-              where task_config.task_id = interface_config.task_id
-                and task_config.task_status = 1
-          )
     </sql>
 
-    <!-- 查询服务启动时所有运行中任务下应该自动运行的采集接口。 -->
+    <!-- 查询服务启动时全部应该自动运行的采集接口。 -->
     <select id="findAllEnabledInterfaces"
             resultType="com.example.dataprocess.entity.CollectInterfaceRuntimeConfig">
         <include refid="enabledInterfaceQuery"/>

@@ -48,8 +48,15 @@ public class ProcessedTelemetryQueryService {
     }
 
     /** 订阅时校验场景与组件归属，后续推送按本次勾选快照匹配。 */
-    public LiveSelection prepareLive(String taskId, Integer selectionType, Long targetId,
+    @Deprecated
+    public LiveSelection prepareLive(String ignoredTaskId, Integer selectionType, Long targetId,
             String telemetryType, boolean curve) {
+        // 兼容内部旧入口，实时订阅从全局勾选范围取得参数。
+        return prepareLive(selectionType, targetId, telemetryType, curve);
+    }
+
+    /** 准备不含任务范围的参数订阅，用户与组件校验继续生效。 */
+    public LiveSelection prepareLive(Integer selectionType, Long targetId, String telemetryType, boolean curve) {
         BusinessEnums.SelectionType scene = BusinessEnums.SelectionType.fromCode(selectionType);
         boolean curveScene = scene == BusinessEnums.SelectionType.PROCESSED_CURVE
                 || scene == BusinessEnums.SelectionType.VISUALIZATION_CURVE;
@@ -57,22 +64,20 @@ public class ProcessedTelemetryQueryService {
             throw new IllegalArgumentException("订阅类别与参数勾选场景不匹配");
         }
         String normalizedType = TelemetryTypeOptions.normalize(telemetryType);
-        List<ProcessedTelemetryFilterSelection> selections = selected(taskId, selectionType, targetId);
-        return new LiveSelection(taskId.trim(), normalizedType, curve, selections);
+        List<ProcessedTelemetryFilterSelection> selections = selected(null, selectionType, targetId);
+        return new LiveSelection(normalizedType, curve, selections);
     }
 
     /** 一次订阅的勾选范围和表格已发送时间，由该连接的发送任务顺序访问。 */
     public final class LiveSelection {
-        private final String taskId;
         private final String telemetryType;
         private final boolean curve;
         private final List<ProcessedTelemetryFilterSelection> selections;
         private final Map<ParameterIdentity, ProcessedTelemetryFilterSelection> selectedByIdentity = new LinkedHashMap<>();
         private final Map<ParameterIdentity, Long> lastSentTimes = new HashMap<>();
 
-        private LiveSelection(String taskId, String telemetryType, boolean curve,
+        private LiveSelection(String telemetryType, boolean curve,
                 List<ProcessedTelemetryFilterSelection> selections) {
-            this.taskId = taskId;
             this.telemetryType = telemetryType;
             this.curve = curve;
             this.selections = selections;
@@ -87,7 +92,7 @@ public class ProcessedTelemetryQueryService {
                 return java.util.Collections.emptyList();
             }
             Map<ParameterIdentity, TelemetryParameterRecord> cached = new HashMap<>();
-            for (TelemetryParameterRecord row : realtimeCache.latest(taskId, parameterFilters(selections), telemetryType)) {
+            for (TelemetryParameterRecord row : realtimeCache.latest(parameterFilters(selections), telemetryType)) {
                 ParameterIdentity key = identity(row);
                 cached.put(key, row);
                 lastSentTimes.put(key, row.getSourceTime().getTime());
@@ -104,9 +109,8 @@ public class ProcessedTelemetryQueryService {
             List<ProcessedTelemetryVO> result = new ArrayList<>();
             Map<ParameterIdentity, TelemetryParameterRecord> latest = new LinkedHashMap<>();
             for (TelemetryParameterRecord row : rows) {
-                // 以任务、遥测类型及参数身份同时约束推送。
-                if (!taskId.equals(row.getTaskId())
-                        || (telemetryType != null && !telemetryType.equals(row.getTelemetryType()))) {
+                // 按遥测类型及参数身份匹配推送，不按任务隔离。
+                if (telemetryType != null && !telemetryType.equals(row.getTelemetryType())) {
                     continue;
                 }
                 ParameterIdentity key = identity(row);
@@ -235,7 +239,6 @@ public class ProcessedTelemetryQueryService {
             String telemetryType, TelemetryQueryTimeRange range) {
         // 第一步：复用来源枚举，把同一任务的公共筛选条件交给映射处理。
         Map<String, Object> query = new HashMap<>();
-        query.put("taskId", taskId.trim());
         query.put("telemetryType", telemetryType);
         range.applyTo(query);
         query.put("filters", parameterFilters(selections));
@@ -281,14 +284,11 @@ public class ProcessedTelemetryQueryService {
         return new ParameterIdentity(row.getSourceType(), row.getSourceIdentity(), row.getTelemetryCode());
     }
 
-    /** 查询任务下仍有效的勾选参数，任务编号不允许为空。 */
+    /** 查询任务下仍有效的勾选参数，不需要任务编号。 */
     private List<ProcessedTelemetryFilterSelection> selected(String taskId, Integer selectionType, Long targetId) {
         // 先校验任务和组件归属，再读取一次业务库勾选列表。
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
-        long scopeId = scopeService.require(taskId.trim(), selectionType, targetId);
-        return selectionMapper.findSelected(taskId.trim(), selectionType, scopeId);
+        long scopeId = scopeService.require(taskId, selectionType, targetId);
+        return selectionMapper.findSelected(taskId, selectionType, scopeId);
     }
 
     /** 参数的查询身份，按字段比较，避免拼接字符串造成分隔符冲突。 */

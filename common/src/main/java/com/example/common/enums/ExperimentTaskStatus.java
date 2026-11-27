@@ -1,7 +1,7 @@
-package com.example.dataadmin.enums;
+package com.example.common.enums;
 
 /** 调度系统试验任务生命周期状态。 */
-public enum ExperimentTaskStatus implements LabeledEnum {
+public enum ExperimentTaskStatus {
 
     /** 任务正在运行。 */
     RUNNING(1, "运行中"),
@@ -19,9 +19,7 @@ public enum ExperimentTaskStatus implements LabeledEnum {
     }
 
     public int getCode() { return code; }
-    @Override
     public Object getValue() { return code; }
-    @Override
     public String getLabel() { return label; }
 
     /** 根据状态编码返回中文名称。 */

@@ -24,5 +24,7 @@ auth:
   # 管理服务提交采集配置后通过该内部地址同步运行接口。
   exclude-paths:
     - /internal/collection/interfaces/**
+    # 任务生命周期消息提交后通过此内部地址刷新共享任务缓存。
+    - /internal/collection/tasks/refresh
     # 管理服务通过此内部地址读取处理进程的 CPU 采样值。
     - /internal/monitor/cpu

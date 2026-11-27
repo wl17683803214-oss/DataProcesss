@@ -3,11 +3,11 @@ package com.example.dataadmin.service.impl;
 import com.example.dataadmin.entity.ExperimentTask;
 import com.example.dataadmin.dto.task.TaskLifecycleEvent;
 import com.example.dataadmin.dto.task.TaskEvaluationRequest;
-import com.example.dataadmin.enums.ExperimentTaskStatus;
+import com.example.common.enums.ExperimentTaskStatus;
 import com.example.dataadmin.enums.TaskEndReason;
 import com.example.dataadmin.enums.TaskLifecycleEventType;
 import com.example.dataadmin.mapper.ExperimentTaskMapper;
-import com.example.dataadmin.service.CollectInterfaceRuntimeSyncService;
+import com.example.dataadmin.service.CurrentExperimentTaskSyncService;
 import com.example.dataadmin.service.ExperimentTaskService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,14 +24,14 @@ import java.util.List;
 public class ExperimentTaskServiceImpl implements ExperimentTaskService {
 
     private final ExperimentTaskMapper experimentTaskMapper;
-    /** 任务状态变化后同步当前应该运行的采集接口。 */
-    private final CollectInterfaceRuntimeSyncService interfaceRuntimeSyncService;
+    /** 任务事件只刷新数据归属，不控制采集接口启停。 */
+    private final CurrentExperimentTaskSyncService currentTaskSyncService;
 
     public ExperimentTaskServiceImpl(
             ExperimentTaskMapper experimentTaskMapper,
-            CollectInterfaceRuntimeSyncService interfaceRuntimeSyncService) {
+            CurrentExperimentTaskSyncService currentTaskSyncService) {
         this.experimentTaskMapper = experimentTaskMapper;
-        this.interfaceRuntimeSyncService = interfaceRuntimeSyncService;
+        this.currentTaskSyncService = currentTaskSyncService;
     }
 
     @Override
@@ -70,8 +70,8 @@ public class ExperimentTaskServiceImpl implements ExperimentTaskService {
             task.setTaskStatus(ExperimentTaskStatus.RUNNING.getCode());
             task.setEndReason(null);
             experimentTaskMapper.upsertStarted(task);
-            // 事务提交后启动当前运行任务中已启用的采集接口。
-            interfaceRuntimeSyncService.syncAfterCommit();
+            // 事务提交后重查最新运行任务，通知失败触发已有消息消费重试。
+            currentTaskSyncService.refreshAfterCommit();
             return;
         }
 
@@ -80,8 +80,8 @@ public class ExperimentTaskServiceImpl implements ExperimentTaskService {
         task.setTaskStatus(endReason.getTaskStatus().getCode());
         task.setEndReason(endReason.name());
         experimentTaskMapper.upsertEnded(task);
-        // 事务提交后发送完整列表，结束当前任务时处理服务会停止缺失接口。
-        interfaceRuntimeSyncService.syncAfterCommit();
+        // 任务结束只更新后续数据归属，接口继续按启用开关运行。
+        currentTaskSyncService.refreshAfterCommit();
     }
 
     /** 将消息字段转换为任务表快照。 */

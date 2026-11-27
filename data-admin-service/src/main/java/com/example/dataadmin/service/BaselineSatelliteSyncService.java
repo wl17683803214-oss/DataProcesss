@@ -51,9 +51,6 @@ public class BaselineSatelliteSyncService {
     /** 查询全部卫星并将有效遥测参数同步至指定任务。 */
     public BaselineSatelliteSyncVO synchronize(String taskId) {
         // 第一步：校验调用上下文，禁止无任务或无地址发起同步。
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
         String baseUrl = properties.getApiBaseUrl();
         if (baseUrl == null || baseUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("基线服务地址未配置");

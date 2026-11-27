@@ -65,7 +65,6 @@ public class DataCollectionServiceImpl implements DataCollectionService {
     /** 校验PDXP协议引用的设备卫星。 */
     private final DeviceSatelliteMapper deviceSatelliteMapper;
 
-
     /** 用于协议动态参数与 JSON 字符串之间的转换。 */
     private final ObjectMapper objectMapper;
 
@@ -161,7 +160,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
     /** 同一任务的接口速率一次读取，缓存过期或Redis不可用时保留零值。 */
     private void fillCollectionRates(String taskId, List<CollectInterfaceConfig> records) {
         // 第一步：无任务的配置和既有离线构造入口不读取实时缓存。
-        if (taskId == null || taskId.trim().isEmpty() || redisTemplate == null) {
+        if (redisTemplate == null) {
             return;
         }
         List<Object> fields = new ArrayList<>();
@@ -172,7 +171,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         // 第二步：按当前页字段读取任务Hash，连接失败不影响接口列表和长期累计量。
         List<Object> values;
         try {
-            values = redisTemplate.opsForHash().multiGet(COLLECTION_CURRENT_PREFIX + taskId, fields);
+            values = redisTemplate.opsForHash().multiGet(COLLECTION_CURRENT_PREFIX + "global", fields);
         } catch (RuntimeException ignored) {
             return;
         }
@@ -264,14 +263,11 @@ public class DataCollectionServiceImpl implements DataCollectionService {
             throw new IllegalArgumentException("请先禁用采集接口，再执行修改");
         }
         validateInterfaceRequest(request);
-        // 第一步：接口累计量按原任务长期保存，编辑时不允许更换任务编号。
-        if (!Objects.equals(current.getTaskId(), request.getTaskId())) {
-            throw new IllegalArgumentException("采集接口所属试验任务不能修改");
-        }
+        // 第一步：接口累计量独立保存，编辑不再涉及任务归属。
         CollectInterfaceConfig config = buildInterfaceConfig(id, request);
         // 第二步：修改后的最终启用状态决定是否需要校验监听地址。
         validateEnabledEndpointAvailable(config);
-        // 第三步：数据库再次核对任务归属，并发修改失败时由事务回滚。
+        // 第三步：数据库再次核对主键和禁用状态，并发修改失败时由事务回滚。
         try {
             if (interfaceMapper.update(config) == 0) {
                 throw new IllegalArgumentException("采集接口修改失败");
@@ -552,7 +548,7 @@ public class DataCollectionServiceImpl implements DataCollectionService {
             }
             if (deviceId == null || deviceSatelliteMapper.findActive(
                     request.getTaskId(), deviceId) == null) {
-                throw new IllegalArgumentException("协议必须选择当前任务下有效的设备卫星");
+                throw new IllegalArgumentException("协议必须选择有效的设备卫星");
             }
             // PDXP本地配置只保留包头和设备主键，RPC使用独立字段配置。
             storedParams = new LinkedHashMap<>();
@@ -784,12 +780,9 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         }
         // 持有协议行锁直到接口事务结束，防止绑定校验后配置被并发改为无效状态。
         CollectProtocolConfig protocol = getProtocolEntityForUpdate(protocolConfigId);
-        // 第二步：只允许当前任务的已启用JSON配置，避免跨任务或禁用配置被引用。
+        // 第二步：只允许引用已启用的全局JSON配置。
         if (!BusinessEnums.ProtocolType.JSON.getValue().equals(protocol.getProtocolType())) {
             throw new IllegalArgumentException("HTTP采集接口只能选择JSON类型的协议配置");
-        }
-        if (taskId == null || !Objects.equals(taskId, protocol.getTaskId())) {
-            throw new IllegalArgumentException("HTTP协议配置必须属于当前试验任务");
         }
         if (!Integer.valueOf(1).equals(protocol.getEnabled())) {
             throw new IllegalArgumentException("HTTP采集接口不能选择已禁用的协议配置");
@@ -802,11 +795,10 @@ public class DataCollectionServiceImpl implements DataCollectionService {
         List<CollectInterfaceConfig> bindings =
                 interfaceMapper.findHttpBindingsByProtocolConfigId(protocol.getId());
         for (CollectInterfaceConfig binding : bindings) {
-            // 第二步：禁用接口也保留绑定，配置类型和任务不能被改变为不匹配值。
-            if (!BusinessEnums.ProtocolType.JSON.getValue().equals(protocol.getProtocolType())
-                    || !Objects.equals(binding.getTaskId(), protocol.getTaskId())) {
+            // 第二步：禁用接口也保留绑定，配置类型不能被改为不匹配值。
+            if (!BusinessEnums.ProtocolType.JSON.getValue().equals(protocol.getProtocolType())) {
                 throw new IllegalArgumentException("协议配置已被HTTP采集接口【"
-                        + binding.getInterfaceName() + "】绑定，不能修改为非JSON类型或其他任务");
+                        + binding.getInterfaceName() + "】绑定，不能修改为非JSON类型");
             }
             // 第三步：启用HTTP接口仍依赖该配置，需先禁用接口再禁用配置。
             if (Integer.valueOf(1).equals(binding.getEnabled())

@@ -9,17 +9,18 @@ import java.util.List;
 
 /** 一次提交当前任务下多条遥测参数的完整修改内容。 */
 public class TelemetryParseRuleBatchUpdateRequest {
-    /** 所有待修改参数所属的试验任务。 */
-    @NotBlank(message = "试验任务编号不能为空")
-    private String taskId;
     /** 每条参数可以有不同的修改值，单次最多处理二百条。 */
     @Valid
     @NotEmpty(message = "请选择要修改的遥测参数")
     @Size(max = 200, message = "单次最多修改200条遥测参数")
     private List<Item> items;
 
-    public String getTaskId() { return taskId; }
-    public void setTaskId(String value) { this.taskId = value; }
+    /** 兼容既有内部调用，配置及全局记录不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
+    /** 兼容旧调用参数，不接收或保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
     public List<Item> getItems() { return items; }
     public void setItems(List<Item> value) { this.items = value; }
 

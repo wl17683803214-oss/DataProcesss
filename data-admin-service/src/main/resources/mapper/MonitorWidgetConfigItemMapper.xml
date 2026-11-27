@@ -17,9 +17,9 @@
     <sql id="selectionJoins">
         inner join monitor_dashboard_widget widget on widget.id = item.widget_id
         left join telemetry_parse_rule_config rule_config
-          on rule_config.id = item.parse_rule_id and rule_config.task_id = widget.task_id
+          on rule_config.id = item.parse_rule_id
         left join processed_telemetry_filter_selection selection
-          on selection.task_id = widget.task_id and selection.target_id = widget.id
+          on selection.target_id = widget.id
          and selection.selection_type = case when widget.widget_type = 1 then 4 else 3 end
          and selection.device_satellite_id = rule_config.device_satellite_id
          and selection.telemetry_code = rule_config.telemetry_code
@@ -112,14 +112,13 @@
               select 1
               from monitor_dashboard_widget widget
               where widget.id = item.widget_id
-                and widget.task_id = #{taskId}
+
                 and widget.widget_type in (1, 2)
           )
           and not exists (
               select 1
               from telemetry_parse_rule_config rule_config
-              where rule_config.task_id = #{taskId}
-                and rule_config.is_deleted = 0
+              where rule_config.is_deleted = 0
                 and rule_config.id = item.parse_rule_id
           )
     </delete>
@@ -129,29 +128,31 @@
         只更新关联和显示字段，不修改用户原有勾选状态。
     -->
     <update id="bindActiveParseRuleItems">
+        <!-- 同代号可能属于不同设备，只能在原设备内重新定位有效参数。 -->
+        with latest_rule as (
+            select id, device_satellite_id, telemetry_code, telemetry_name,
+                   row_number() over (
+                       partition by device_satellite_id, telemetry_code
+                       order by case when table_index ~ '^[0-9]+$' then table_index::numeric end desc nulls last,
+                                id desc
+                   ) as code_order
+            from telemetry_parse_rule_config
+            where is_deleted = 0
+        )
         update monitor_widget_config_item item
         set parse_rule_id = rule_config.id,
             item_code = rule_config.telemetry_code,
             item_name = rule_config.telemetry_name,
             update_time = current_timestamp
         from monitor_dashboard_widget widget,
-             (
-                 select current_rule.id,
-                        current_rule.telemetry_code,
-                        current_rule.telemetry_name
-                 from telemetry_parse_rule_config current_rule
-                 inner join (
-                     select telemetry_code, max(id) as id
-                     from telemetry_parse_rule_config
-                     where task_id = #{taskId} and is_deleted = 0
-                     group by telemetry_code
-                 ) latest_rule on latest_rule.id = current_rule.id
-             ) rule_config
+             telemetry_parse_rule_config previous_rule,
+             latest_rule rule_config
         where widget.id = item.widget_id
-          and widget.task_id = #{taskId}
           and widget.widget_type in (1, 2)
-          and (item.parse_rule_id = rule_config.id
-               or item.item_code = rule_config.telemetry_code)
+          and previous_rule.id = item.parse_rule_id
+          and rule_config.device_satellite_id = previous_rule.device_satellite_id
+          and rule_config.telemetry_code = item.item_code
+          and rule_config.code_order = 1
     </update>
 
     <!-- 批量编辑只更新关联指定参数主键的组件项，不扫描全部解析配置。 -->
@@ -162,10 +163,10 @@
             update_time = current_timestamp
         from telemetry_parse_rule_config rule_config,
              monitor_dashboard_widget widget
-        where widget.id = item.widget_id and widget.task_id = #{taskId}
+        where widget.id = item.widget_id
           and widget.widget_type in (1, 2)
           and item.parse_rule_id = rule_config.id
-          and rule_config.task_id = #{taskId} and rule_config.is_deleted = 0
+           and rule_config.is_deleted = 0
           and rule_config.id in
           <foreach collection="parseRuleIds" item="id" open="(" separator="," close=")">#{id}</foreach>
     </update>

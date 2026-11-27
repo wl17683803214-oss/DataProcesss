@@ -75,7 +75,7 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Override
     @Transactional
     public Long createWidget(MonitorDashboardWidget widget) {
-        // 组件类型必须来自统一枚举，任务编号不能为空。
+        // 组件类型必须来自统一枚举，不再校验任务编号。
         requireWidgetConfig(widget);
         // 锁定同一任务后再新增，与整页替换保持串行。
         lockTask(widget.getTaskId());
@@ -232,9 +232,6 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
 
     /** 新增组件时校验任务和已有枚举类型。 */
     private void requireWidgetConfig(MonitorDashboardWidget widget) {
-        if (widget.getTaskId() == null || widget.getTaskId().trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
         for (BusinessEnums.WidgetType type : BusinessEnums.WidgetType.values()) {
             if (type.getValue().equals(widget.getWidgetType())) { return; }
         }
@@ -243,7 +240,7 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
 
     /** 页面写入复用任务行锁，与参数配置维护及配置整页替换保持一致。 */
     private void lockTask(String taskId) {
-        if (taskId == null || taskId.trim().isEmpty() || deviceMapper.lockForReplacement(taskId) == null) {
+        if (deviceMapper.lockForReplacement(null) == null) {
             throw new IllegalArgumentException("组件所属试验任务不存在");
         }
     }
@@ -265,15 +262,12 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Override
     public PageResult<FepFileListItemVO> pageFiles(String taskId, Long widgetId,
             Long userId, Integer pageNum, Integer pageSize) {
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
         MonitorDashboardWidget widget = widgetMapper.findById(widgetId);
-        if (widget == null || !taskId.trim().equals(widget.getTaskId())
+        if (widget == null
                 || !userId.equals(widget.getUserId())
                 || widget.getWidgetType() == null
                 || (widget.getWidgetType() != 4 && widget.getWidgetType() != 5)) {
-            throw new IllegalArgumentException("当前任务下不存在图片或文件组件");
+            throw new IllegalArgumentException("当前用户下不存在图片或文件组件");
         }
         if (pageNum == null || pageNum < 1 || pageSize == null
                 || pageSize < 1 || pageSize > 200) {
@@ -284,10 +278,10 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
             throw new IllegalArgumentException("分页范围过大");
         }
         boolean image = widget.getWidgetType() == 4;
-        long total = fileListMapper.count(taskId.trim(), image);
+        long total = fileListMapper.count(null, image);
         List<FepFileListItemVO> records = total == 0
                 ? java.util.Collections.emptyList()
-                : fileListMapper.findPage(taskId.trim(), image, (int) offset, pageSize);
+                : fileListMapper.findPage(null, image, (int) offset, pageSize);
         // 使用保存的对象名称重新签名，兼容历史记录中保存的本机地址且不修改数据库。
         for (FepFileListItemVO record : records) {
             record.setFileUrl(fileUrlSigner.createUrl(record.getObjectName()));

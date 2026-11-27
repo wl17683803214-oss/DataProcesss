@@ -58,7 +58,7 @@ public class DataAlarmRecorder {
                 pending.put(key + "|" + java.util.UUID.randomUUID(), record);
             }
             record = new DataAlarmRecord();
-            record.setTaskId(config.getTaskId());
+
             record.setInterfaceId(config.getInterfaceId());
             record.setSourceCode(type.getSource().getValue());
             record.setEventType(type.name());
@@ -73,7 +73,7 @@ public class DataAlarmRecorder {
             record.setDedupKey(key);
             pending.put(key, record);
         }
-        String detail = "事件：" + type.getLabel() + "；试验任务：" + value(config.getTaskId())
+        String detail = "事件：" + type.getLabel()
                 + "；采集接口：" + value(config.getInterfaceName()) + "（ID：" + config.getInterfaceId() + "）"
                 + "；监听地址：" + value(config.getHost()) + ":" + config.getPort()
                 + "；传输方式：" + transport(config.getTransferType())
@@ -157,7 +157,7 @@ public class DataAlarmRecorder {
     }
     /** 不同任务、类型、接口、参数和校准通道使用不同合并键。 */
     private String key(CollectInterfaceRuntimeConfig config, DataAlarmType type, String symbol, Long channelId) {
-        return com.example.common.alarm.DataAlarmKey.of(config.getTaskId(), type, config.getInterfaceId(), symbol, channelId);
+        return com.example.common.alarm.DataAlarmKey.of(null, type, config.getInterfaceId(), symbol, channelId);
     }
     private String value(String value) { return value == null ? "未提供" : value; }
     private String limit(String value, int length) {

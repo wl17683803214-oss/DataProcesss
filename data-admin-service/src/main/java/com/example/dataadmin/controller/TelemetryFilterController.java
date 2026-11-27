@@ -28,21 +28,19 @@ public class TelemetryFilterController {
 
     /** 查询当前设备的有效所属系统节点。 */
     @GetMapping("/systems")
-    public ApiResponse<List<TelemetrySystemNodeVO>> systems(
-            @RequestParam String taskId, @RequestParam Long deviceSatelliteId) {
-        return ApiResponse.success(service.systems(taskId, deviceSatelliteId));
+    public ApiResponse<List<TelemetrySystemNodeVO>> systems( @RequestParam Long deviceSatelliteId) {
+        return ApiResponse.success(service.systems(null, deviceSatelliteId));
     }
 
     /** 常规模式返回当前展开层级，传遥测代号时返回全部匹配参数。 */
     @GetMapping("/telemetry-filter-tree")
     public ApiResponse<List<TelemetryFilterNodeVO>> tree(
-            @RequestParam String taskId,
             @RequestParam(required = false) Long deviceSatelliteId,
             @RequestParam(required = false) Long systemId,
             @RequestParam(required = false) String telemetryCode,
             @RequestParam Integer selectionType,
             @RequestParam Long targetId) {
-        return ApiResponse.success(service.list(taskId, deviceSatelliteId, systemId,
+        return ApiResponse.success(service.list(null, deviceSatelliteId, systemId,
                 telemetryCode, selectionType, targetId));
     }
 

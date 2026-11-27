@@ -5,9 +5,6 @@ import javax.validation.constraints.NotNull;
 
 /** 清除单个页面或组件的全部遥测参数勾选。 */
 public class TelemetryFilterClearRequest {
-    /** 当前试验任务编号。 */
-    @NotBlank(message = "试验任务编号不能为空")
-    private String taskId;
     /** 复用已有勾选场景，表格和曲线分别清除。 */
     @NotNull(message = "参数勾选类型不能为空")
     private Integer selectionType;
@@ -16,14 +13,14 @@ public class TelemetryFilterClearRequest {
     private Long targetId;
 
     /** 获取当前试验任务编号。 */
-    public String getTaskId() {
-        return taskId;
-    }
+    /** 兼容内部调用，勾选和布局不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
 
     /** 设置当前试验任务编号。 */
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
+    /** 兼容旧参数，不保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
 
     /** 获取参数勾选场景编码。 */
     public Integer getSelectionType() {

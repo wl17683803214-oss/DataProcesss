@@ -53,17 +53,16 @@ public class DataProcessingController {
 
     /** 将基线设备参数表按现有工作表导入规则同步到当前任务。 */
     @PostMapping("/rules/sync-baseline-devices")
-    public ApiResponse<BaselineDeviceSyncVO> syncBaselineDevices(@RequestParam String taskId) {
+    public ApiResponse<BaselineDeviceSyncVO> syncBaselineDevices() {
         // 先查询并校验全部参数表，再进入独立写事务。
-        return ApiResponse.success(baselineDeviceSyncService.synchronize(taskId));
+        return ApiResponse.success(baselineDeviceSyncService.synchronize(null));
     }
 
     /** 将基线全部卫星遥测参数同步到当前任务。 */
     @PostMapping("/rules/sync-baseline")
-    public ApiResponse<BaselineSatelliteSyncVO> syncBaselineRules(
-            @RequestParam String taskId) {
+    public ApiResponse<BaselineSatelliteSyncVO> syncBaselineRules() {
         // 远程查询和完整校验成功后才进入参数替换事务。
-        return ApiResponse.success(baselineSatelliteSyncService.synchronize(taskId));
+        return ApiResponse.success(baselineSatelliteSyncService.synchronize(null));
     }
 
     public DataProcessingController(DataProcessingService processingService) {
@@ -79,31 +78,27 @@ public class DataProcessingController {
     /** 按试验任务和可选名称查询正常帧、异常帧的采集接口筛选项。 */
     @GetMapping("/collect-interfaces")
     public ApiResponse<List<CollectInterfaceOptionVO>> listCollectInterfaces(
-            @RequestParam("taskId") String taskId,
             @RequestParam(value = "interfaceName", required = false) String interfaceName) {
         // 缺少任务编号时由请求参数校验拒绝，不执行跨任务查询。
-        return ApiResponse.success(processingService.listCollectInterfaceOptions(taskId, interfaceName));
+        return ApiResponse.success(processingService.listCollectInterfaceOptions(null, interfaceName));
     }
 
-    /** 按试验任务查询今日处理量和历史累计去重数量。 */
+    /** 按时间范围查询今日处理量和历史累计去重数量。 */
     @GetMapping("/overview")
-    public ApiResponse<DataProcessingOverviewVO> getOverview(
-            @RequestParam String taskId) {
-        // 处理总览必须限定试验任务，避免跨任务累计处理指标。
-        return ApiResponse.success(processingService.getOverview(taskId));
+    public ApiResponse<DataProcessingOverviewVO> getOverview() {
+        // 处理总览汇总全部接口指标，不接收任务筛选。
+        return ApiResponse.success(processingService.getOverview(null));
     }
 
-    /** 按试验任务查询滚动处理速率，以及当前CPU和物理内存指标。 */
+    /** 按时间范围查询滚动处理速率，以及当前CPU和物理内存指标。 */
     @GetMapping("/realtime")
-    public ApiResponse<DataProcessingRealtimeVO> getRealtime(
-            @RequestParam String taskId) {
-        return ApiResponse.success(processingService.getRealtime(taskId));
+    public ApiResponse<DataProcessingRealtimeVO> getRealtime() {
+        return ApiResponse.success(processingService.getRealtime(null));
     }
 
-    /** 按任务、接口和时间范围查询最新的一百条正常帧。 */
+    /** 按接口和时间范围查询最新的一百条正常帧。 */
     @GetMapping("/realtime/telemetry")
     public ApiResponse<List<RealtimeTelemetryFrameVO>> listRealtimeTelemetry(
-            @RequestParam String taskId,
             @RequestParam Long interfaceId,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
@@ -113,13 +108,12 @@ public class DataProcessingController {
             LocalDateTime endTime) {
         // 时间默认值和范围校验统一交给业务层，响应直接返回数组。
         return ApiResponse.success(
-                processingService.listRealtimeTelemetryFrames(taskId, interfaceId, startTime, endTime));
+                processingService.listRealtimeTelemetryFrames(null, interfaceId, startTime, endTime));
     }
 
-    /** 查询当前任务全部已勾选参数的最新处理结果。 */
+    /** 查询全部已勾选参数的最新处理结果。 */
     @GetMapping("/processed")
     public ApiResponse<List<ProcessedTelemetryVO>> listProcessedTelemetry(
-            @RequestParam String taskId,
             @RequestParam(defaultValue = "1") Integer selectionType,
             @RequestParam(defaultValue = "0") Long targetId,
             @RequestParam(required = false) String telemetryType,
@@ -131,13 +125,12 @@ public class DataProcessingController {
             LocalDateTime endTime) {
         // 按表格场景取得已勾选参数；可视化表格传自己的组件主键。
         return ApiResponse.success(processingService.listProcessedTelemetry(
-                taskId, selectionType, targetId, telemetryType, startTime, endTime));
+                null, selectionType, targetId, telemetryType, startTime, endTime));
     }
 
-    /** 查询当前任务全部已勾选参数的最近曲线点。 */
+    /** 查询全部已勾选参数的最近曲线点。 */
     @GetMapping("/processed/curve")
     public ApiResponse<List<ProcessedTelemetryCurveVO>> listProcessedTelemetryCurves(
-            @RequestParam String taskId,
             @RequestParam(defaultValue = "2") Integer selectionType,
             @RequestParam(defaultValue = "0") Long targetId,
             @RequestParam(required = false) String telemetryType,
@@ -149,13 +142,12 @@ public class DataProcessingController {
             LocalDateTime endTime) {
         // 每条曲线按自己的组件勾选查询，并保留实际采样时间轴。
         return ApiResponse.success(processingService.listProcessedTelemetryCurves(
-                taskId, selectionType, targetId, telemetryType, startTime, endTime));
+                null, selectionType, targetId, telemetryType, startTime, endTime));
     }
 
     /** 按任务、接口和时间范围查询最新的一百条异常帧。 */
     @GetMapping("/realtime/invalid")
     public ApiResponse<List<InvalidTelemetryFrame>> listInvalidTelemetry(
-            @RequestParam String taskId,
             @RequestParam Long interfaceId,
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
@@ -165,18 +157,17 @@ public class DataProcessingController {
             LocalDateTime endTime) {
         // 正常和异常帧共用时间范围规则，各自最多返回一百条。
         return ApiResponse.success(
-                processingService.listInvalidTelemetryFrames(taskId, interfaceId, startTime, endTime));
+                processingService.listInvalidTelemetryFrames(null, interfaceId, startTime, endTime));
     }
 
-    /** 查询任务级参数值范围检查开关。 */
+    /** 查询全局参数值范围检查开关。 */
     @GetMapping("/rule-config")
-    public ApiResponse<ProcessingRuleConfig> getRuleConfig(
-            @RequestParam String taskId) {
+    public ApiResponse<ProcessingRuleConfig> getRuleConfig() {
         return ApiResponse.success(
-                processingService.getProcessingRuleConfig(taskId));
+                processingService.getProcessingRuleConfig(null));
     }
 
-    /** 保存任务级参数值范围检查开关。 */
+    /** 保存全局参数值范围检查开关。 */
     @PostMapping("/rule-config/update")
     public ApiResponse<ProcessingRuleConfig> updateRuleConfig(
             @Valid @RequestBody ProcessingRuleConfigRequest request) {
@@ -189,24 +180,22 @@ public class DataProcessingController {
     /** 查询参数筛选用设备卫星，仅返回编码字段。 */
     @GetMapping("/device-satellites")
     public ApiResponse<List<com.example.dataadmin.vo.processing.DeviceSatelliteOptionVO>> listDeviceSatellites(
-            @RequestParam String taskId,
             @RequestParam(required = false) String type) {
-        return ApiResponse.success(processingService.listDeviceSatellites(taskId, type));
+        return ApiResponse.success(processingService.listDeviceSatellites(null, type));
     }
 
     /** 查询遥测解析规则。 */
     @GetMapping("/rules")
     public ApiResponse<PageResult<TelemetryParseRuleConfig>> listRules(
-            @RequestParam String taskId,
             @RequestParam Long deviceSatelliteId,
             @RequestParam(required = false) Long systemId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         return ApiResponse.success(processingService.pageParseRules(
-                taskId, deviceSatelliteId, systemId, pageNum, pageSize));
+                null, deviceSatelliteId, systemId, pageNum, pageSize));
     }
 
-    /** 在当前任务下原子修改多条遥测参数解析配置。 */
+    /** 在全局配置中原子修改多条遥测参数解析配置。 */
     @PostMapping("/rules/batch-update")
     public ApiResponse<Integer> batchUpdateRules(
             @Valid @RequestBody TelemetryParseRuleBatchUpdateRequest request) {
@@ -224,19 +213,15 @@ public class DataProcessingController {
     /** 从Excel页签或制表符TXT导入设备卫星及参数，仅替换同名配置。 */
     @PostMapping(value = "/rules/import", consumes = "multipart/form-data")
     public ApiResponse<Integer> importRules(
-            @RequestParam String taskId,
             @RequestParam String type,
             @RequestParam("file") MultipartFile file) {
-        if (taskId == null || taskId.trim().isEmpty()) {
-            throw new IllegalArgumentException("试验任务编号不能为空");
-        }
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("请选择要导入的Excel或TXT文件");
         }
         try {
             return ApiResponse.success(
                     processingService.importParseRules(
-                            taskId,
+                            null,
                             type,
                             file.getOriginalFilename(),
                             file.getBytes()));

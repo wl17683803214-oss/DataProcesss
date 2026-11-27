@@ -4,7 +4,7 @@
 
     <!-- 公共查询字段。 -->
     <sql id="columns">
-        id, task_id, channel_id, channel_name, outlier_count,
+        id, channel_id, channel_name, outlier_count,
         is_deleted, create_time, update_time
     </sql>
 
@@ -15,13 +15,8 @@
                coalesce(sum(outlier_count), 0) as outlier_count
         from calib_record
         where is_deleted = 0
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
-        <if test="taskId == null or taskId == ''">
-            <!-- 缺少任务编号时禁止跨任务汇总。 -->
-            and 1 = 0
-        </if>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     </select>
 
     <!-- 列表复用原有汇总字段，额外读取每个通道的累计校准数量。 -->
@@ -30,8 +25,8 @@
         select <include refid="columns"/>, calibration_count
         from calib_record
         <where>
-            <if test="taskId != null and taskId != ''">task_id = #{taskId}</if>
-            <if test="taskId != null and taskId != ''">and</if>
+            <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
+            <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
             is_deleted = 0
         </where>
         order by id desc
@@ -42,7 +37,7 @@
         select <include refid="columns"/>
         from calib_record
         where id = #{id}
-          and task_id = #{taskId}
+
           and is_deleted = 0
     </select>
 
@@ -54,7 +49,7 @@
         insert into calib_record
         <trim prefix="(" suffix=")" suffixOverrides=",">
             id,
-            <if test="taskId != null and taskId != ''">task_id,</if>
+            <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
             <if test="channelId != null">channel_id,</if>
             <if test="channelName != null">channel_name,</if>
             <if test="outlierCount != null">outlier_count,</if>
@@ -63,7 +58,7 @@
         values
         <trim prefix="(" suffix=")" suffixOverrides=",">
             #{id},
-            <if test="taskId != null and taskId != ''">#{taskId},</if>
+            <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
             <if test="channelId != null">#{channelId},</if>
             <if test="channelName != null">#{channelName},</if>
             <if test="outlierCount != null">#{outlierCount},</if>
@@ -74,8 +69,7 @@
     <!-- 校准通道改名时同步更新唯一汇总记录。 -->
     <update id="updateSummaryByChannelId">
         update calib_record
-        set task_id = #{taskId},
-            channel_name = #{channelName},
+        set channel_name = #{channelName},
             update_time = current_timestamp
         where channel_id = #{channelId}
           and is_deleted = 0

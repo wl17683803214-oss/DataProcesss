@@ -47,18 +47,16 @@ public class DataCalibrationController {
 
     /** 查询当前试验任务累计校准、清洗及野值数量。 */
     @GetMapping("/overview")
-    public ApiResponse<CalibrationOverviewVO> getOverview(
-            @RequestParam String taskId) {
-        // 校准总览必须限定试验任务，避免跨任务累计校准、清洗及野值数量。
-        return ApiResponse.success(calibrationService.getOverview(taskId));
+    public ApiResponse<CalibrationOverviewVO> getOverview() {
+        // 校准总览按全局通道汇总校准、清洗及野值数量。
+        return ApiResponse.success(calibrationService.getOverview(null));
     }
 
     /** 查询校准通道配置。 */
     @GetMapping("/channels")
-    public ApiResponse<List<CalibChannelConfig>> listChannels(
-            @RequestParam String taskId) {
+    public ApiResponse<List<CalibChannelConfig>> listChannels() {
         return ApiResponse.success(
-                calibrationService.listChannelConfigs(taskId));
+                calibrationService.listChannelConfigs(null));
     }
 
     /** 查询校准通道详情。 */
@@ -88,11 +86,11 @@ public class DataCalibrationController {
         return ApiResponse.success();
     }
 
-    /** 切换当前任务下校准通道的启用状态。 */
+    /** 切换全局配置中校准通道的启用状态。 */
     @PostMapping("/channels/enabled")
     public ApiResponse<Void> updateChannelEnabled(
             @Valid @RequestBody CalibrationChannelEnabledRequest request) {
-        // 仅修改指定任务下的通道开关，提交后刷新处理模块运行配置。
+        // 仅修改全局配置中的通道开关，提交后刷新处理模块运行配置。
         requireSuccess(calibrationService.updateChannelEnabled(
                 request.getTaskId(), request.getId(), request.getEnabled()),
                 "校准通道启用状态修改失败");
@@ -112,23 +110,21 @@ public class DataCalibrationController {
     /** 分页查询校准记录及每条记录的累计校准数量。 */
     @GetMapping("/records")
     public ApiResponse<PageResult<CalibRecordListVO>> listRecords(
-            @RequestParam String taskId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         // 返回列表专用对象，复用现有分页并补充通道累计校准数量。
         return ApiResponse.success(
-                calibrationService.pageCalibRecords(taskId, pageNum, pageSize));
+                calibrationService.pageCalibRecords(null, pageNum, pageSize));
     }
 
     /** 查询校准记录详情。 */
     @GetMapping("/records/{id}")
     public ApiResponse<CalibRecordDetailVO> getRecord(
             @PathVariable Long id,
-            @RequestParam String taskId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         return ApiResponse.success(calibrationService.getCalibRecordDetail(
-                id, taskId, pageNum, pageSize));
+                id, null, pageNum, pageSize));
     }
 
     /** 将校准通道请求 DTO 转换为数据库实体。 */

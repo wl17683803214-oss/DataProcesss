@@ -7,13 +7,15 @@ import javax.validation.constraints.NotNull;
 
 /** 保存任务级处理规则开关的请求参数。 */
 public class ProcessingRuleConfigRequest {
-    @NotBlank(message = "试验任务编号不能为空")
-    private String taskId;
     @NotNull @Min(0) @Max(1)
     private Integer parameterRangeCheckEnabled;
 
-    public String getTaskId() { return taskId; }
-    public void setTaskId(String value) { this.taskId = value; }
+    /** 兼容既有内部调用，配置及全局记录不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
+    /** 兼容旧调用参数，不接收或保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
     public Integer getParameterRangeCheckEnabled() { return parameterRangeCheckEnabled; }
     public void setParameterRangeCheckEnabled(Integer value) { this.parameterRangeCheckEnabled = value; }
 }

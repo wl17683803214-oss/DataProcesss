@@ -13,8 +13,6 @@ import java.time.LocalDateTime;
 public class MonitorDashboardWidget {
     /** 组件主键ID。 */
     private Long id;
-    /** 试验任务ID。 */
-    private String taskId;
     /** 用户ID，对应系统用户ID。 */
     private Long userId;
     /** 组件唯一标识，同一用户同一试验任务内唯一。 */
@@ -46,13 +44,13 @@ public class MonitorDashboardWidget {
         this.id = id;
     }
 
-    public String getTaskId() {
-        return taskId;
-    }
+    /** 兼容内部调用，勾选和布局不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
 
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
+    /** 兼容旧参数，不保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
 
     public Long getUserId() {
         return userId;

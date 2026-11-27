@@ -117,6 +117,10 @@ public class TelemetryResultDispatcher {
     /** 所需入库任务和消息重排任务均被接受后返回成功，不等待后台完成。 */
     public boolean submit(CollectInterfaceRuntimeConfig config,
             TelemetryMessage message, PdxpParser.PdxpPacket packet) {
+        // 无运行中任务仍完成解析、校准及全局统计，但不存储、推送或发送无归属遥测。
+        if (config.getTaskId() == null || config.getTaskId().trim().isEmpty()) {
+            return true;
+        }
         // 第一步：复制接口上下文，避免排队期间接口配置更新改变任务和设备身份。
         CollectInterfaceRuntimeConfig snapshot = snapshot(config);
         // 第二步：完整采集帧供实时分发和入库使用，消息发送继续使用原处理结果。
@@ -210,6 +214,10 @@ public class TelemetryResultDispatcher {
     /** 本地解析失败时分别提交异常帧的实时展示与入库任务。 */
     public boolean submitAbnormalLocalFrame(CollectInterfaceRuntimeConfig config,
             PdxpParser.PdxpPacket packet) {
+        // 无运行中任务不保存异常遥测帧，告警仍由独立链路记录。
+        if (config.getTaskId() == null || config.getTaskId().trim().isEmpty()) {
+            return false;
+        }
         // 第一步：固定本帧任务和设备身份，避免接口配置在排队期间变化。
         CollectInterfaceRuntimeConfig snapshot = snapshot(config);
         // 本地异常回退复用入库校验，组装失败时只影响对应实时记录。
@@ -230,9 +238,7 @@ public class TelemetryResultDispatcher {
 
     /** 复制接口上下文时共享准备好的解码快照，跳过会重新构建它的兼容入口。 */
     private CollectInterfaceRuntimeConfig snapshot(CollectInterfaceRuntimeConfig config) {
-        CollectInterfaceRuntimeConfig snapshot = new CollectInterfaceRuntimeConfig();
-        BeanUtils.copyProperties(config, snapshot, "pdxpFields", "formulaScripts");
-        return snapshot;
+        return config.snapshotForTask(config.getTaskId());
     }
 
     /** 将执行失败与提交失败分别记录，拒绝策略不会回退到处理线程。 */

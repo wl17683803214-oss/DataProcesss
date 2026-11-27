@@ -4,21 +4,14 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.dataadmin.mapper.CollectInterfaceConfigMapper">
 
-    <!-- 查询所有运行中试验任务下应该运行的完整采集接口主键列表。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findAllEnabledIds" resultType="long">
         select id
         from collect_interface_config
         where enabled = 1
           and is_deleted = 0
-          <!-- 套接字任务只包含UDP和TCP，HTTP由统一Web入口接收。 -->
+          <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
           and transfer_type in (1, 2)
-          <!-- 只校验接口所属任务状态，避免其他任务的新事件排除当前接口。 -->
-          and exists (
-              select 1
-              from experiment_task task_config
-              where task_config.task_id = collect_interface_config.task_id
-                and task_config.task_status = 1
-          )
         order by id
     </select>
 
@@ -42,7 +35,7 @@
         <result column="interface_name" property="interfaceName"/>
     </resultMap>
 
-    <!-- 查询指定任务下未删除的采集接口，只返回主键和名称。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findOptions"
             resultMap="collectInterfaceOptionMap">
         select
@@ -50,11 +43,8 @@
             interface_name
         from collect_interface_config
         where is_deleted = 0
-        <!-- 缺少任务编号时不返回数据，避免直接调用映射时跨任务查询。 -->
-        <choose>
-            <when test="taskId != null and taskId != ''">and task_id = #{taskId}</when>
-            <otherwise>and 1 = 0</otherwise>
-        </choose>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
         <include refid="interfaceNameCondition"/>
         order by id
     </select>
@@ -62,7 +52,6 @@
     <!-- 采集接口公共查询字段。 -->
     <sql id="columns">
         id,
-        task_id,
         interface_name,
         interface_type,
         send_from,
@@ -95,9 +84,7 @@
 
     <!-- 采集接口公共筛选条件。 -->
     <sql id="queryConditions">
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
         <include refid="interfaceNameCondition"/>
         <if test="interfaceType != null">
             and interface_type = #{interfaceType}
@@ -114,16 +101,14 @@
         </if>
     </sql>
 
-    <!-- 按试验任务查询采集接口。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findAllByTaskId"
             resultType="com.example.dataadmin.entity.CollectInterfaceConfig">
         select
             <include refid="columns"/>
         from collect_interface_config
         where is_deleted = 0
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
         order by id
     </select>
 
@@ -162,13 +147,13 @@
                     from collect_interface_statistics statistics
                     where statistics.statistics_time &gt;= current_date
                       and statistics.is_deleted = 0
-                      and statistics.task_id = #{taskId}
+
                 ),
                 0
             ) as today_collection_count
         from collect_interface_config
         where is_deleted = 0
-          and task_id = #{taskId}
+
     </select>
 
     <!-- 按主键查询采集接口。 -->
@@ -197,10 +182,10 @@
         order by id
     </select>
 
-    <!-- 查询未删除HTTP绑定，明确返回保护协议类型、任务和启用状态所需字段。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findHttpBindingsByProtocolConfigId"
             resultType="com.example.dataadmin.entity.CollectInterfaceConfig">
-        select id, task_id, interface_name, enabled
+        select id, interface_name, enabled
         from collect_interface_config
         where transfer_type = 3
           and is_deleted = 0
@@ -215,7 +200,7 @@
         order by id
     </select>
 
-    <!-- HTTP路径在整个接收服务内唯一，不按任务、域名或启用状态分割。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="countHttpReceivePathConflicts" resultType="long">
         select count(1)
         from collect_interface_config
@@ -275,7 +260,6 @@
         </selectKey>
         insert into collect_interface_config (
             id,
-            task_id,
             interface_name,
             interface_type,
             send_from,
@@ -298,7 +282,6 @@
         )
         values (
             #{id},
-            #{taskId},
             #{interfaceName},
             #{interfaceType},
             #{sendFrom},
@@ -346,15 +329,8 @@
           and is_deleted = 0
         <!-- 数据库更新时再次确认接口未启用，避免读取后被其他请求启用仍可编辑。 -->
           and enabled = 0
-        <!-- 更新条件同时核对原任务归属，避免并发请求改变接口关联任务。 -->
-        <choose>
-            <when test="taskId != null">
-                and task_id = #{taskId}
-            </when>
-            <otherwise>
-                and task_id is null
-            </otherwise>
-        </choose>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     </update>
 
     <!-- 逻辑删除采集接口。 -->
@@ -377,7 +353,7 @@
           and is_deleted = 0
     </update>
 
-    <!-- 按用户约定，在线数仅统计启用开关，不限定当前试验任务。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findNodeCounts" resultType="com.example.dataadmin.vo.collection.CollectionOverviewVO">
         select count(id) as interface_total,
                coalesce(sum(case when enabled = 1 then 1 else 0 end), 0) as online_total

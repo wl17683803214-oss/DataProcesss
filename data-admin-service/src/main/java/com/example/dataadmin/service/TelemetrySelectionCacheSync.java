@@ -55,7 +55,7 @@ public class TelemetrySelectionCacheSync {
                 } else {
                     throw new IllegalStateException("已勾选参数的设备卫星类型不正确");
                 }
-                String key = TelemetrySelectionSnapshot.objectKey(row.getTaskId(), source, identity);
+                String key = TelemetrySelectionSnapshot.objectKey(source, identity);
                 objects.computeIfAbsent(key, ignored -> new TreeSet<>()).add(row.getTelemetryCode());
             }
             TelemetrySelectionSnapshot snapshot = new TelemetrySelectionSnapshot();

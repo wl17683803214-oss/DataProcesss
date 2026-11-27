@@ -5,12 +5,11 @@
     <!-- 分页详情查询明确列出页面需要的全部字段。 -->
     <select id="findByTaskIdAndChannelId"
             resultType="com.example.dataadmin.entity.CalibRecordDetail">
-        select id, task_id, channel_id, interface_id, channel_name,
+        select id, channel_id, interface_id, channel_name,
                parameter_name, tm_symbol, telemetry_value, detail,
                is_deleted, create_time
         from calib_record_detail
-        where task_id = #{taskId}
-          and channel_id = #{channelId}
+        where channel_id = #{channelId}
           and is_deleted = 0
         order by create_time desc, id desc
     </select>

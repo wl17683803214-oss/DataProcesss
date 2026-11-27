@@ -7,7 +7,6 @@
     <!-- 协议配置公共查询字段。 -->
     <sql id="columns">
         id,
-        task_id,
         config_name,
         protocol_type,
         config_desc,
@@ -21,9 +20,7 @@
 
     <!-- 分页列表和总数统计共用筛选条件，未传条件不参与查询。 -->
     <sql id="queryConditions">
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
         <if test="protocolType != null">
             and protocol_type = #{protocolType}
         </if>
@@ -58,16 +55,14 @@
         limit #{pageSize} offset #{offset}
     </select>
 
-    <!-- 保留业务内部按试验任务读取全部协议的入口。 -->
+    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findAllByTaskId"
             resultType="com.example.dataadmin.entity.CollectProtocolConfig">
         select
             <include refid="columns"/>
         from collect_protocol_config
         where is_deleted = 0
-        <if test="taskId != null and taskId != ''">
-            and task_id = #{taskId}
-        </if>
+        <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
         order by id desc
     </select>
 
@@ -106,7 +101,6 @@
         </selectKey>
         insert into collect_protocol_config (
             id,
-            task_id,
             config_name,
             protocol_type,
             config_desc,
@@ -117,7 +111,6 @@
         )
         values (
             #{id},
-            #{taskId},
             #{configName},
             #{protocolType},
             #{configDesc},
@@ -131,8 +124,7 @@
     <!-- 更新协议配置业务字段。 -->
     <update id="update">
         update collect_protocol_config
-        set task_id = #{taskId},
-            config_name = #{configName},
+        set config_name = #{configName},
             protocol_type = #{protocolType},
             config_desc = #{configDesc},
             config_params = #{configParams},

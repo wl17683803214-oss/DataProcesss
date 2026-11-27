@@ -4,7 +4,7 @@ import SatDataCenter.DataExchange.TmTc.TelemetryMessages.TelemetryMessage;
 import SatDataCenter.DataExchange.TmTc.Version.SubTopicName;
 import com.example.dataadmin.config.SystemMonitorProperties;
 import com.example.dataadmin.entity.SysMonitorSnapshot;
-import com.example.dataadmin.enums.ExperimentTaskStatus;
+import com.example.common.enums.ExperimentTaskStatus;
 import com.example.dataadmin.mapper.ExperimentTaskMapper;
 import com.example.dataadmin.service.monitor.SystemHealthReportService;
 import com.example.dataadmin.service.monitor.support.SystemHealthTelemetryAssembler;

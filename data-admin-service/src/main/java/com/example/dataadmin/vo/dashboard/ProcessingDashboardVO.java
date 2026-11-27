@@ -5,8 +5,6 @@ import java.util.List;
 
 /** 数据处理总览：汇总卡片、三类处理曲线和表格。 */
 public class ProcessingDashboardVO {
-  /** 试验任务ID。 */
-  private String taskId;
 
   /** 查询时间范围。 */
   private String range;
@@ -23,8 +21,11 @@ public class ProcessingDashboardVO {
   /** 按发送方聚合的处理明细。 */
   private List<TableRow> table = new ArrayList<>();
 
-  public String getTaskId() { return taskId; }
-  public void setTaskId(String v) { taskId = v; }
+  /** 总览不再具有任务归属。 */
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  public String getTaskId() { return null; }
+  /** 兼容旧调用，不保存任务编号。 */
+  public void setTaskId(String ignored) { }
   public String getRange() { return range; }
   public void setRange(String v) { range = v; }
   public String getSampleTime() { return sampleTime; }

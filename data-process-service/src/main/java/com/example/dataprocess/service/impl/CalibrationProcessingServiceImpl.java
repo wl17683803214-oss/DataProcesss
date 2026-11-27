@@ -148,7 +148,7 @@ public class CalibrationProcessingServiceImpl implements CalibrationProcessingSe
             List<String> jsonValues = new ArrayList<String>(calibrationCounts.size());
             for (Map.Entry<Long, Long> entry : calibrationCounts.entrySet()) {
                 CalibrationCountCache count = new CalibrationCountCache();
-                count.setTaskId(interfaceConfig.getTaskId());
+
                 count.setChannelId(entry.getKey());
                 count.setInterfaceId(interfaceConfig.getInterfaceId());
                 count.setCalibrationCount(entry.getValue());
@@ -172,7 +172,7 @@ public class CalibrationProcessingServiceImpl implements CalibrationProcessingSe
             CalibrationChannelRuntimeConfig config,
             TelemetryMessage message,
             Telemetry telemetry) {
-        String taskId = interfaceConfig.getTaskId();
+        String taskId = null;
         String telemetryCode = telemetry.getTmSymbol();
         String effectiveKey = CalibrationRedisKeys.effectiveSamples(
                 taskId, config.getCalibrationFormula(), telemetryCode);
@@ -405,7 +405,7 @@ public class CalibrationProcessingServiceImpl implements CalibrationProcessingSe
             String detail) {
         try {
             CalibrationRecordDetailCache record = new CalibrationRecordDetailCache();
-            record.setTaskId(interfaceConfig.getTaskId());
+
             record.setChannelId(config.getId());
             record.setInterfaceId(interfaceConfig.getInterfaceId());
             record.setChannelName(trimmed(message.getChannelName()));
@@ -458,7 +458,7 @@ public class CalibrationProcessingServiceImpl implements CalibrationProcessingSe
             int cleaned) {
         CalibrationSample result = new CalibrationSample();
         result.setSampleId(UUID.randomUUID().toString());
-        result.setTaskId(taskId);
+
         result.setChannelId(config.getId());
         result.setCalibrationFormula(config.getCalibrationFormula());
         result.setTelemetryCode(telemetryCode);

@@ -178,7 +178,7 @@ public class CollectInterfaceStatistics {
                 } catch (Exception exception) {
                     entry.getValue().restore(snapshot);
                     LOGGER.error("接口秒级增量写入Redis失败，任务编号：{}，接口编号：{}",
-                            key.taskId, key.interfaceId, exception);
+                            key.scope, key.interfaceId, exception);
                     continue;
                 }
             }
@@ -193,7 +193,7 @@ public class CollectInterfaceStatistics {
             } catch (Exception exception) {
                 // 增量已经可靠进入窗口，实时快照失败不能再次恢复以免重复累计。
                 LOGGER.error("接口实时统计写入Redis失败，任务编号：{}，接口编号：{}",
-                        key.taskId, key.interfaceId, exception);
+                        key.scope, key.interfaceId, exception);
             }
         }
         // 按任务单独发布滚动速度，供处理监控接口一次读取。
@@ -296,8 +296,8 @@ public class CollectInterfaceStatistics {
         Map<String, Object> metric = new LinkedHashMap<String, Object>();
         metric.put("interfaceRateKbps", round(receivedBytes / 1024D));
         metric.put("sampleTime", sampleTime.format(SAMPLE_TIME_FORMAT));
-        // 第一步：更新当前任务下接口的最新采集速率。
-        String redisKey = COLLECTION_CURRENT_PREFIX + key.taskId;
+        // 第一步：更新全局接口的最新采集速率。
+        String redisKey = COLLECTION_CURRENT_PREFIX + key.scope;
         redisTemplate.opsForHash().put(
                 redisKey,
                 interfaceField(key.interfaceId),
@@ -315,7 +315,7 @@ public class CollectInterfaceStatistics {
         Map<String, Object> metric = new LinkedHashMap<String, Object>();
         metric.put("processRate", processRate);
         metric.put("sampleTime", sampleTime.format(SAMPLE_TIME_FORMAT));
-        String redisKey = PROCESSING_CURRENT_PREFIX + key.taskId;
+        String redisKey = PROCESSING_CURRENT_PREFIX + key.scope;
         redisTemplate.opsForHash().put(
                 redisKey,
                 interfaceField(key.interfaceId),
@@ -335,7 +335,7 @@ public class CollectInterfaceStatistics {
                 redisTemplate.opsForValue().set(PROCESSING_WINDOW_RATE_PREFIX + taskId,
                         Double.toString(rate), REALTIME_TTL_SECONDS, TimeUnit.SECONDS);
             } catch (RuntimeException exception) {
-                LOGGER.error("任务滚动处理速率写入Redis失败，任务编号：{}", taskId, exception);
+                LOGGER.error("全局滚动处理速率写入Redis失败，范围：{}", taskId, exception);
             }
         }
     }
@@ -368,7 +368,7 @@ public class CollectInterfaceStatistics {
             }
             try {
                 StatisticsKey key = new StatisticsKey(
-                        parts[1], Long.valueOf(parts[2]));
+                        "global", Long.valueOf(parts[2]));
                 BucketValues bucket = result.computeIfAbsent(
                         key, ignored -> new BucketValues());
                 bucket.set(parts[0], Long.parseLong(String.valueOf(entry.getValue())));
@@ -386,7 +386,7 @@ public class CollectInterfaceStatistics {
             BucketValues value) {
         CollectInterfaceStatisticsRecord record =
                 new CollectInterfaceStatisticsRecord();
-        record.setTaskId(key.taskId);
+
         record.setInterfaceId(key.interfaceId);
         record.setStatisticsTime(statisticsTime);
         record.setCollectionCount(value.collectionCount);
@@ -402,7 +402,7 @@ public class CollectInterfaceStatistics {
             BucketValues value) {
         DataProcessingStatisticsRecord record =
                 new DataProcessingStatisticsRecord();
-        record.setTaskId(key.taskId);
+
         record.setInterfaceId(key.interfaceId);
         record.setStatisticsTime(statisticsTime);
         record.setProcessingCount(value.processingCount);
@@ -427,13 +427,13 @@ public class CollectInterfaceStatistics {
 
     /** 根据任务和接口取得计数器。 */
     private InterfaceCounter counter(String taskId, Long interfaceId) {
-        if (taskId == null || taskId.trim().isEmpty() || interfaceId == null) {
-            throw new IllegalArgumentException("统计任务和采集接口编号不能为空");
+        if (interfaceId == null) {
+            throw new IllegalArgumentException("采集接口编号不能为空");
         }
-        StatisticsKey key = new StatisticsKey(taskId, interfaceId);
-        // 接口创建计数器时取得所属任务的窗口，帧完成时直接使用同一对象。
+        StatisticsKey key = new StatisticsKey("global", interfaceId);
+        // 接口创建计数器时取得全局窗口，帧完成时直接使用同一对象。
         return counters.computeIfAbsent(key, ignored -> new InterfaceCounter(
-                processingRateWindows.computeIfAbsent(taskId, task -> new ProcessingRateWindow())));
+                processingRateWindows.computeIfAbsent("global", scope -> new ProcessingRateWindow())));
     }
 
     /** 取得统计窗口键中的秒级时间戳。 */
@@ -458,7 +458,7 @@ public class CollectInterfaceStatistics {
 
     /** 构造Redis窗口指标字段。 */
     private String field(String metric, StatisticsKey key) {
-        return metric + "|" + key.taskId + "|" + key.interfaceId;
+        return metric + "|" + key.scope + "|" + key.interfaceId;
     }
 
     /** 实时速率保留两位小数。 */
@@ -466,13 +466,13 @@ public class CollectInterfaceStatistics {
         return Math.round(value * 100D) / 100D;
     }
 
-    /** 任务和接口联合统计键。 */
+    /** 全局范围和接口联合统计键。 */
     private static final class StatisticsKey {
-        private final String taskId;
+        private final String scope;
         private final Long interfaceId;
 
-        private StatisticsKey(String taskId, Long interfaceId) {
-            this.taskId = taskId;
+        private StatisticsKey(String scope, Long interfaceId) {
+            this.scope = scope;
             this.interfaceId = interfaceId;
         }
 
@@ -481,19 +481,19 @@ public class CollectInterfaceStatistics {
             if (this == value) { return true; }
             if (!(value instanceof StatisticsKey)) { return false; }
             StatisticsKey other = (StatisticsKey) value;
-            return taskId.equals(other.taskId)
+            return scope.equals(other.scope)
                     && interfaceId.equals(other.interfaceId);
         }
 
         @Override
         public int hashCode() {
-            return 31 * taskId.hashCode() + interfaceId.hashCode();
+            return 31 * scope.hashCode() + interfaceId.hashCode();
         }
     }
 
     /** 单个接口尚未形成秒级快照的线程安全计数器。 */
     private static final class InterfaceCounter {
-        /** 当前接口所属任务的滚动处理速率窗口。 */
+        /** 当前接口全局范围的滚动处理速率窗口。 */
         private final ProcessingRateWindow processingRateWindow;
         /** 当前接口统计窗口的单调时钟起点，首次统计从接口建立时开始。 */
         private volatile long lastSampleNanos = System.nanoTime();
@@ -572,11 +572,11 @@ public class CollectInterfaceStatistics {
         private long wildValueCount;
 
         private void set(String metric, long value) {
-            if ("collectionCount".equals(metric)) { collectionCount = value; }
-            else if ("receivedBytes".equals(metric)) { receivedBytes = value; }
-            else if ("processingCount".equals(metric)) { processingCount = value; }
-            else if ("duplicateCount".equals(metric)) { duplicateCount = value; }
-            else if ("wildValueCount".equals(metric)) { wildValueCount = value; }
+            if ("collectionCount".equals(metric)) { collectionCount += value; }
+            else if ("receivedBytes".equals(metric)) { receivedBytes += value; }
+            else if ("processingCount".equals(metric)) { processingCount += value; }
+            else if ("duplicateCount".equals(metric)) { duplicateCount += value; }
+            else if ("wildValueCount".equals(metric)) { wildValueCount += value; }
         }
     }
 }

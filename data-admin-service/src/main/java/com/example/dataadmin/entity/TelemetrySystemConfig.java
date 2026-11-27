@@ -4,8 +4,6 @@ package com.example.dataadmin.entity;
 public class TelemetrySystemConfig {
     /** 主键。 */
     private Long id;
-    /** 试验任务编号。 */
-    private String taskId;
     /** 设备卫星主键。 */
     private Long deviceSatelliteId;
     /** 系统名称。 */
@@ -17,8 +15,12 @@ public class TelemetrySystemConfig {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getTaskId() { return taskId; }
-    public void setTaskId(String taskId) { this.taskId = taskId; }
+    /** 兼容既有内部调用，配置及全局记录不再具有任务归属。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getTaskId() { return null; }
+    /** 兼容旧调用参数，不接收或保存任务绑定。 */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public void setTaskId(String ignored) { }
     public Long getDeviceSatelliteId() { return deviceSatelliteId; }
     public void setDeviceSatelliteId(Long deviceSatelliteId) { this.deviceSatelliteId = deviceSatelliteId; }
     public String getSystemName() { return systemName; }
