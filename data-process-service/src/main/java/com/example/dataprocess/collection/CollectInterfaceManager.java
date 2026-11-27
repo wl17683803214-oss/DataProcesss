@@ -4,6 +4,7 @@ import com.example.common.enums.CollectionDataType;
 import com.example.dataprocess.collection.receive.CollectInterfaceReceiver;
 import com.example.dataprocess.collection.receive.TcpInterfaceReceiver;
 import com.example.dataprocess.collection.receive.UdpInterfaceReceiver;
+import com.example.dataprocess.config.UdpReceiveProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.entity.CalibrationChannelRuntimeConfig;
 import com.example.dataprocess.entity.PdxpFrameSource;
@@ -66,6 +67,8 @@ public class CollectInterfaceManager implements DisposableBean {
     private final ThreadPoolExecutor collectExecutor;
     /** 协议处理器注册表。 */
     private final ProtocolHandlerRegistry protocolHandlerRegistry;
+    /** UDP接收配置，直接构造时沿用默认值。 */
+    private UdpReceiveProperties udpReceiveProperties = new UdpReceiveProperties();
     /** 当前任务校准通道配置加载组件。 */
     private final CalibrationRuntimeConfigManager calibrationConfigManager;
     /** 当前已经启动的接口。 */
@@ -95,6 +98,12 @@ public class CollectInterfaceManager implements DisposableBean {
     @Autowired
     public void setSatelliteDirectory(BaselineSatelliteDirectory satelliteDirectory) {
         this.satelliteDirectory = satelliteDirectory;
+    }
+
+    /** 注入采集服务统一使用的UDP接收配置。 */
+    @Autowired
+    public void setUdpReceiveProperties(UdpReceiveProperties udpReceiveProperties) {
+        this.udpReceiveProperties = udpReceiveProperties;
     }
 
     public CollectInterfaceManager(
@@ -318,7 +327,8 @@ public class CollectInterfaceManager implements DisposableBean {
                 case TRANSFER_TYPE_UDP:
                     // UDP接收器内部完成端口绑定和协议会话组装。
                     receiver = UdpInterfaceReceiver.create(
-                            config, protocolHandlerRegistry);
+                            config, protocolHandlerRegistry,
+                            udpReceiveProperties.getReceiveBufferBytes());
                     break;
                 case TRANSFER_TYPE_TCP:
                     // TCP接收器内部完成端口绑定和协议会话组装。

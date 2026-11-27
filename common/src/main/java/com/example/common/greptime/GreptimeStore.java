@@ -201,7 +201,7 @@ public class GreptimeStore implements AutoCloseable {
                 // 每张表独立执行，单表失败不阻止其他对象清理，下次任务可重试。
                 execute(mapper -> mapper.deleteBefore(name, new Timestamp(beforeTime)));
             } catch (RuntimeException exception) {
-                LOGGER.error("遥测分表过期清理失败，分表：{}", name, exception);
+                // 保留失败状态供调用方判断，清理流程不再主动打印日志。
                 failure = exception;
             }
         }

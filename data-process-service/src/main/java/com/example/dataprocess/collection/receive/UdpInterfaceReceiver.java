@@ -51,26 +51,36 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
     /** 绑定UDP端口并创建已经选定协议会话的接收任务。 */
     public static UdpInterfaceReceiver create(
             CollectInterfaceRuntimeConfig config,
-            ProtocolHandlerRegistry protocolHandlerRegistry)
+            ProtocolHandlerRegistry protocolHandlerRegistry,
+            int receiveBufferBytes)
             throws IOException {
-        // 填写组播地址时加入组播组，否则保持原有单播监听方式。
+        // 单播和组播都在绑定时申请配置的内核接收缓冲。
         UdpTool.DatagramEndpoint endpoint = hasText(config.getMulticastIp())
                 ? UdpTool.openMulticastReceiver(
                         config.getMulticastIp(),
                         config.getPort(),
                         config.getHost(),
-                        0)
+                        0,
+                        receiveBufferBytes)
                 : UdpTool.openUnicast(
-                        config.getHost(), config.getPort(), 0);
+                        config.getHost(), config.getPort(), 0, receiveBufferBytes);
         try {
+            // 记录系统实际分配值，便于发现部署环境对缓冲的限制。
+            int actualBufferBytes = endpoint.getReceiveBufferSize();
             ProtocolHandler handler = protocolHandlerRegistry.get(
                     config.getTransferProtocol());
             ProtocolHandler.UdpSession protocolSession =
                     handler.createUdpSession(config, endpoint);
+            LOGGER.info("UDP采集接收缓冲，接口编号：{}，配置值：{}字节，系统实际值：{}字节",
+                    config.getInterfaceId(), receiveBufferBytes, actualBufferBytes);
             return new UdpInterfaceReceiver(config, endpoint, protocolSession);
-        } catch (RuntimeException exception) {
-            // 协议会话创建失败时释放已经绑定的UDP端口。
-            endpoint.close();
+        } catch (IOException | RuntimeException exception) {
+            // 初始化失败时释放已绑定的端口，并保留原始失败原因。
+            try {
+                endpoint.close();
+            } catch (IOException closeException) {
+                exception.addSuppressed(closeException);
+            }
             throw exception;
         }
     }
@@ -83,7 +93,7 @@ public final class UdpInterfaceReceiver implements CollectInterfaceReceiver {
             while (running && endpoint.isOpen()) {
                 UdpTool.ReceivedPacket packet = endpoint.receivePacket();
                 // 超限报文整包丢弃，不提交协议解析和后续入库。
-                if (!receiveLimiter.acceptDatagram(packet.getData().length)) {
+                if (!receiveLimiter.acceptDatagram(packet.getDataLength())) {
                     droppedPackets++;
                     long now = System.nanoTime();
                     if (lastDropLogNanos == 0 || now - lastDropLogNanos >= 5000000000L) {

@@ -4,8 +4,6 @@ import com.example.common.retention.DataRetentionPolicy;
 import com.example.common.greptime.GreptimeStore;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -14,8 +12,6 @@ import org.springframework.stereotype.Component;
 @Component
 @ConditionalOnProperty(prefix = "greptime", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class TelemetryRetentionScheduler {
-    /** 遥测清理结果统一输出到管理服务日志。 */
-    private static final Logger LOGGER = LoggerFactory.getLogger(TelemetryRetentionScheduler.class);
     /** 复用管理服务统一绑定的数据保留策略。 */
     private final DataRetentionPolicy policy;
     /** 复用公共时序组件及其已有的映射器删除语句。 */
@@ -43,10 +39,8 @@ public class TelemetryRetentionScheduler {
                 return;
             }
             store.deleteBefore(before);
-            LOGGER.info("遥测过期数据清理完成，保留天数：{}，截止时间戳：{}", days, before);
         } catch (Exception exception) {
-            // 第三步：清理失败记录中文日志，下次任务重试，其他类别仍独立清理。
-            LOGGER.error("遥测过期数据清理失败，下轮继续重试", exception);
+            // 第三步：清理失败不打印日志，下轮继续重试，其他类别仍独立清理。
         }
     }
 }

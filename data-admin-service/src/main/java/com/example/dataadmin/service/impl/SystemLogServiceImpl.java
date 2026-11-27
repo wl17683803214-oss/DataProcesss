@@ -5,6 +5,7 @@ import com.example.dataadmin.entity.*;
 import com.example.dataadmin.enums.SystemLogLevel;
 import com.example.dataadmin.enums.SystemLogSource;
 import com.example.dataadmin.mapper.*;
+import com.example.dataadmin.service.AppStoreSystemLogReporter;
 import com.example.dataadmin.service.SystemLogService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -25,9 +26,12 @@ public class SystemLogServiceImpl implements SystemLogService {
 
     /** SysRuntimeLog数据访问组件。 */
     private final SysRuntimeLogMapper logMapper;
+    /** 应用商店日志上报组件。 */
+    private final AppStoreSystemLogReporter appStoreReporter;
 
-    public SystemLogServiceImpl(SysRuntimeLogMapper logMapper) {
+    public SystemLogServiceImpl(SysRuntimeLogMapper logMapper, AppStoreSystemLogReporter appStoreReporter) {
         this.logMapper = logMapper;
+        this.appStoreReporter = appStoreReporter;
     }
 
     /** 按页面条件组合筛选并分页查询系统运行日志。 */
@@ -107,6 +111,8 @@ public class SystemLogServiceImpl implements SystemLogService {
             log.setLogTime(LocalDateTime.now());
         }
         logMapper.insert(log);
+        // 运行日志与操作日志使用同样的提交后上报规则。
+        appStoreReporter.reportAfterCommit(log);
         return log.getId();
     }
 

@@ -9,6 +9,7 @@ info:
     两张遥测表的source_identity在本地处理时保存设备卫星主键，在RPC处理时仅保存返回消息的sat_code并去掉两端空白，不再拼接channel_code或编码长度，卫星代号为空时拒绝入库。旧公共表不参与查询，卫星参数按所属资料code精确路由，接口入参和出参结构保持不变。同一任务、卫星、遥测类型、遥测代号和毫秒时间的参数记录不再区分通道，重复写入按现有规则保留最后一条。
     四个遥测查询接口均支持可选startTime、endTime，格式为2026-11-06T10:00:00，按source_time包含起止边界筛选。都不传时固定本次请求当前时间并向前查询15分钟；只传startTime时endTime取当前时间；只传endTime时startTime取endTime前15分钟；开始时间晚于结束时间返回中文提示。
     data-admin-service 后台管理接口文档。
+    应用商店日志和状态是管理服务、处理服务主动调用的外部接口，请单独导入 apifox-app-store.yaml 调试。
     查询接口统一使用 GET，写操作统一使用 POST；普通写操作使用 JSON DTO，文件导入使用 multipart/form-data。
     登录成功后，请在 Apifox 中配置 Bearer Token。
     标记为必填的 taskId 必须放在查询参数中，例如 ?taskId=TASK-20260908-001，请替换为实际任务编号；仅放在 JSON 请求体中无效。
@@ -3246,7 +3247,7 @@ paths:
     get:
       tags: [数据处理]
       summary: 查询实时处理监控
-      description: 查询当前任务下所有接口的PDXP帧处理速率之和，各接口按业务处理完成且GreptimeDB与MQ异步任务均提交成功的帧数除以实际采样秒数计算，不代表异步入库或消息发送成功。CPU 与当前系统健康查询共用读数，配置内网地址时读取处理服务进程 CPU，地址留空时读取本机 CPU。内存为管理服务所在环境的物理内存使用率。有效数值均直接包含展示单位，处理速率最多保留两位小数。
+      description: 查询当前任务下所有接口合计的PDXP帧滚动处理速率。默认每秒刷新，首次统计不足五秒时按已经历的实际时长计算，满五秒后按最近五秒的完成帧数计算。帧在业务处理完成且所需异步结果任务提交成功时计入，入库和消息发送结果另行统计。CPU 与当前系统健康查询共用读数，配置内网地址时读取处理服务进程 CPU，地址留空时读取本机 CPU。内存为管理服务所在环境的物理内存使用率。有效数值均直接包含展示单位，处理速率最多保留两位小数。
       parameters:
         - $ref: '#/components/parameters/RequiredTaskId'
       responses:
@@ -4054,7 +4055,7 @@ paths:
     post:
       tags: [数据处理]
       summary: 同步基线全部卫星遥测参数
-      description: 不传卫星和通道筛选，使用pageSize=99999查询基线并按total继续翻页。使用satelliteParameterTableUrl下载Excel，按工作簿页签顺序固定读取第一个Sheet作为A表，不依赖satelliteParameterTableName、文件名或页签名称，其余Sheet不读取。跳过首行表头，按A至S列的固定顺序解析参数，位宽、遥测名称和遥测代号均空的占位行跳过。单颗卫星缺少下载地址、下载失败、文件损坏、无工作表、首表无有效参数或参数校验失败时，跳过该卫星并保留已有参数，计入skippedSatelliteCount并继续其他卫星；参数表名称为空不影响同步。分页完整后仅将有效卫星按任务和satelliteCode匹配，并在同一事务中替换参数及系统层级，卫星名称取satelliteName，已有参数勾选按遥测代号保留。任务或基线分页结构、卫星身份有误时仍整体报错。运行接口快照在下次接口同步时更新。
+      description: 不传卫星和通道筛选，使用pageSize=99999查询基线并按total继续翻页，兼容最外层rows/total和data.rows/data.total两种分页结构。使用telemetryUrl下载Excel，不读取satelliteParameterTableUrl；按工作簿页签顺序固定读取第一个Sheet作为A表，不依赖telemetryName、satelliteParameterTableName、文件名或页签名称，其余Sheet不读取。跳过首行表头，按A至S列的固定顺序解析参数，位宽、遥测名称和遥测代号均空的占位行跳过。单颗卫星缺少telemetryUrl、下载失败、文件损坏、无工作表、首表无有效参数或参数校验失败时，跳过该卫星并保留已有参数，计入skippedSatelliteCount并继续其他卫星；参数表名称为空不影响同步。分页完整后仅将有效卫星按任务和satelliteCode匹配，并在同一事务中替换参数及系统层级，卫星名称取satelliteName，已有参数勾选按遥测代号保留。任务或基线分页结构、卫星身份有误时仍整体报错。运行接口快照在下次接口同步时更新。
       parameters:
         - name: taskId
           in: query
@@ -9174,7 +9175,7 @@ components:
                 properties:
                   processRate:
                     type: string
-                    description: "当前任务所有接口的PDXP帧处理速率之和，按业务处理完成且两个异步结果任务均提交成功的帧数除以实际采样秒数计算，不代表外部写入成功，最多保留两位小数，值中包含条/秒单位"
+                    description: "当前任务所有接口合计的PDXP帧滚动处理速率，启动不足五秒时按实际时长计算，满五秒后以最近五秒完成帧数计算，默认每秒刷新，最多保留两位小数，值中包含条/秒单位"
                   cpuUsage:
                     type: string
                     nullable: true

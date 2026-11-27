@@ -2,6 +2,7 @@ package com.example.dataprocess.controller;
 
 import com.example.common.response.ApiResponse;
 import com.example.dataprocess.collection.receive.UdpInterfaceReceiver;
+import com.example.dataprocess.config.UdpReceiveProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.processing.handler.ProtocolHandlerRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -28,6 +29,8 @@ public class PdxpTestInterfaceController {
     private final ThreadPoolExecutor collectExecutor;
     /** 协议处理器注册表。 */
     private final ProtocolHandlerRegistry protocolHandlerRegistry;
+    /** 联调采集接口沿用处理服务的UDP接收配置。 */
+    private final UdpReceiveProperties udpReceiveProperties;
     /** 当前PDXP测试采集接收任务。 */
     private UdpInterfaceReceiver testReceiver;
     /** 当前PDXP测试采集线程任务句柄。 */
@@ -36,9 +39,11 @@ public class PdxpTestInterfaceController {
     public PdxpTestInterfaceController(
             @Qualifier("dataCollectExecutor")
             ThreadPoolExecutor collectExecutor,
-            ProtocolHandlerRegistry protocolHandlerRegistry) {
+            ProtocolHandlerRegistry protocolHandlerRegistry,
+            UdpReceiveProperties udpReceiveProperties) {
         this.collectExecutor = collectExecutor;
         this.protocolHandlerRegistry = protocolHandlerRegistry;
+        this.udpReceiveProperties = udpReceiveProperties;
     }
 
     /** 启动UDP传输的PDXP测试采集接口。 */
@@ -52,7 +57,8 @@ public class PdxpTestInterfaceController {
         try {
             // 第三步：创建PDXP协议的UDP接收任务并提交采集线程池。
             testReceiver = UdpInterfaceReceiver.create(
-                    config, protocolHandlerRegistry);
+                    config, protocolHandlerRegistry,
+                    udpReceiveProperties.getReceiveBufferBytes());
             testFuture = collectExecutor.submit(testReceiver);
             return ApiResponse.success();
         } catch (Exception exception) {

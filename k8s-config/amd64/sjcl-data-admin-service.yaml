@@ -1,0 +1,102 @@
+# 新环境的x86服务器部署配置，适用于AMD64节点。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sjcl-data-admin-service
+  namespace: fet
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: sjcl-data-admin-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sjcl-data-admin-service
+    spec:
+      containers:
+      - env:
+        - name: SPRING_CLOUD_NACOS_SERVER_ADDR
+          value: nacos.fet.svc.cluster.local:8848
+        - name: SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR
+          value: nacos.fet.svc.cluster.local:8848
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR
+          value: nacos.fet.svc.cluster.local:8848
+        - name: SPRING_CLOUD_NACOS_CONFIG_NAMESPACE
+          value: sjcl
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_NAMESPACE
+          value: sjcl
+        - name: SPRING_CLOUD_NACOS_CONFIG_GROUP
+          value: DEFAULT_GROUP
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_GROUP
+          value: DEFAULT_GROUP
+        - name: SPRING_CLOUD_NACOS_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: sjcl-nacos-auth
+        - name: SPRING_CLOUD_NACOS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: sjcl-nacos-auth
+        - name: SPRING_CLOUD_NACOS_CONFIG_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: sjcl-nacos-auth
+        - name: SPRING_CLOUD_NACOS_CONFIG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: sjcl-nacos-auth
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: sjcl-nacos-auth
+        - name: SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: sjcl-nacos-auth
+        # 使用新Harbor中的AMD64镜像。
+        image: 10.126.100.248:8088/sjcl/data-admin-service:6336bf70-amd64
+        imagePullPolicy: IfNotPresent
+        name: sjcl-data-admin-service
+        ports:
+        - containerPort: 8082
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          tcpSocket:
+            port: http
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsConfig:
+        options:
+        - name: ndots
+          value: "2"
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      # 新集群此Secret必须包含10.126.100.248:8088的拉取凭据。
+      - name: sjcl-harbor-pull
+      # 如需固定存储所在节点，请在此补充新集群的实际hostname标签。
+      nodeSelector:
+        # 仅调度到x86节点。
+        kubernetes.io/arch: amd64
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+

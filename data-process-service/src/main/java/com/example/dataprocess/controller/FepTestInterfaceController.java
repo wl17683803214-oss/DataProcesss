@@ -4,6 +4,7 @@ import com.example.common.response.ApiResponse;
 import com.example.dataprocess.collection.receive.CollectInterfaceReceiver;
 import com.example.dataprocess.collection.receive.TcpInterfaceReceiver;
 import com.example.dataprocess.collection.receive.UdpInterfaceReceiver;
+import com.example.dataprocess.config.UdpReceiveProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.processing.handler.ProtocolHandlerRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -36,6 +37,8 @@ public class FepTestInterfaceController {
     private final ThreadPoolExecutor collectExecutor;
     /** 协议处理器注册表。 */
     private final ProtocolHandlerRegistry protocolHandlerRegistry;
+    /** 联调采集接口沿用处理服务的UDP接收配置。 */
+    private final UdpReceiveProperties udpReceiveProperties;
     /** 当前FEP测试采集接收任务。 */
     private CollectInterfaceReceiver testReceiver;
     /** 当前FEP测试采集线程任务句柄。 */
@@ -44,9 +47,11 @@ public class FepTestInterfaceController {
     public FepTestInterfaceController(
             @Qualifier("dataCollectExecutor")
             ThreadPoolExecutor collectExecutor,
-            ProtocolHandlerRegistry protocolHandlerRegistry) {
+            ProtocolHandlerRegistry protocolHandlerRegistry,
+            UdpReceiveProperties udpReceiveProperties) {
         this.collectExecutor = collectExecutor;
         this.protocolHandlerRegistry = protocolHandlerRegistry;
+        this.udpReceiveProperties = udpReceiveProperties;
     }
 
     /** 启动UDP传输的FEP测试采集接口。 */
@@ -86,7 +91,8 @@ public class FepTestInterfaceController {
             switch (transferType) {
                 case TRANSFER_TYPE_UDP:
                     testReceiver = UdpInterfaceReceiver.create(
-                            config, protocolHandlerRegistry);
+                            config, protocolHandlerRegistry,
+                            udpReceiveProperties.getReceiveBufferBytes());
                     break;
                 case TRANSFER_TYPE_TCP:
                     testReceiver = TcpInterfaceReceiver.create(

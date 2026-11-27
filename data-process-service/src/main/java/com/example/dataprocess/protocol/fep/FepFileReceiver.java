@@ -13,8 +13,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 
 /** 根据FEP协议接收文件数据的工具。 */
 public final class FepFileReceiver {
@@ -28,6 +30,8 @@ public final class FepFileReceiver {
     private final Path saveDirectory;
     /** 当前双方约定的数据单元长度。 */
     private final int dataUnitLength;
+    /** 每次打印前读取当前开关，既有会话也使用最新开关值。 */
+    private final BooleanSupplier logEnabled;
     /** 下一个候选文件标识。 */
     private final AtomicInteger nextFileId = new AtomicInteger(1);
     /** 当前正在接收的文件会话，键为文件标识。 */
@@ -41,6 +45,12 @@ public final class FepFileReceiver {
 
     /** 使用指定数据单元长度创建文件接收工具。 */
     public FepFileReceiver(Path saveDirectory, int dataUnitLength) {
+        // 原有工具和离线调用保持默认打印日志的行为。
+        this(saveDirectory, dataUnitLength, () -> true);
+    }
+
+    /** 使用调用方提供的日志开关创建接收工具，不改变文件接收与续传流程。 */
+    public FepFileReceiver(Path saveDirectory, int dataUnitLength, BooleanSupplier logEnabled) {
         // 保存目录不能为空，数据单元长度必须处于协议允许范围内。
         if (saveDirectory == null) {
             throw new IllegalArgumentException("FEP文件保存目录不能为空");
@@ -53,6 +63,8 @@ public final class FepFileReceiver {
         // 保存规范化目录，后续所有文件路径都限制在该目录下。
         this.saveDirectory = saveDirectory.toAbsolutePath().normalize();
         this.dataUnitLength = dataUnitLength;
+        // 仅保存开关读取入口，不缓存布尔结果，保证运行中的会话同步读取开关。
+        this.logEnabled = Objects.requireNonNull(logEnabled, "FEP日志开关不能为空");
     }
 
     /**
@@ -120,8 +132,11 @@ public final class FepFileReceiver {
         // 第六步：按照02包格式返回文件状态、续传单元号和文件标识。
         byte[] responsePacket = FepProtocolTool.buildRequestResponse(
                 request.getFileName(), resumeUnitNumber, fileId);
-        LOGGER.info("FEP文件请求处理完成，文件名：{}，文件标识：{}，续传数据单元号：{}",
-                request.getFileName(), fileId, resumeUnitNumber);
+        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+        if (logEnabled.getAsBoolean()) {
+            LOGGER.info("FEP文件请求处理完成，文件名：{}，文件标识：{}，续传数据单元号：{}",
+                    request.getFileName(), fileId, resumeUnitNumber);
+        }
         return new RequestAcceptance(
                 request.getFileName(),
                 fileId,
@@ -188,8 +203,11 @@ public final class FepFileReceiver {
             session.nextUnitNumber++;
             // 只记录本次接收的首个单元，续传时以会话起始单元为准。
             if (packet.getUnitNumber() == session.initialUnitNumber) {
-                LOGGER.info("FEP文件首个数据单元接收完成，文件名：{}，数据单元号：{}，数据长度：{}",
-                        session.fileName, packet.getUnitNumber(), unitData.length);
+                // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                if (logEnabled.getAsBoolean()) {
+                    LOGGER.info("FEP文件首个数据单元接收完成，文件名：{}，数据单元号：{}，数据长度：{}",
+                            session.fileName, packet.getUnitNumber(), unitData.length);
+                }
             }
             return DataReceiveResult.receiving(
                     session.fileName,
@@ -207,12 +225,18 @@ public final class FepFileReceiver {
                 FepProtocolTool.buildFinishConfirmation(session.fileId);
         // 首个单元同时结束传输时只记录首单元，否则记录最后一个单元。
         if (packet.getUnitNumber() == session.initialUnitNumber) {
-            LOGGER.info("FEP文件首个数据单元接收完成，文件名：{}，数据单元号：{}，数据长度：{}",
-                    session.fileName, packet.getUnitNumber(), unitData.length);
+            // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+            if (logEnabled.getAsBoolean()) {
+                LOGGER.info("FEP文件首个数据单元接收完成，文件名：{}，数据单元号：{}，数据长度：{}",
+                        session.fileName, packet.getUnitNumber(), unitData.length);
+            }
         } else {
-            LOGGER.info("FEP文件接收完成，文件名：{}，文件标识：{}，文件长度：{}，末尾数据单元号：{}，数据长度：{}",
-                    session.fileName, session.fileId, session.fileLength,
-                    packet.getUnitNumber(), unitData.length);
+            // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+            if (logEnabled.getAsBoolean()) {
+                LOGGER.info("FEP文件接收完成，文件名：{}，文件标识：{}，文件长度：{}，末尾数据单元号：{}，数据长度：{}",
+                        session.fileName, session.fileId, session.fileLength,
+                        packet.getUnitNumber(), unitData.length);
+            }
         }
         return DataReceiveResult.completed(
                 session.fileName,

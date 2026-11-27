@@ -1,5 +1,7 @@
 package com.example.dataadmin.enums;
 
+import com.example.common.appstore.AppStoreLogLevel;
+
 /**
  * 系统运行日志级别枚举。
  *
@@ -8,43 +10,39 @@ package com.example.dataadmin.enums;
 public enum SystemLogLevel implements LabeledEnum {
 
     /** 普通运行信息。 */
-    INFO("INFO", "信息"),
+    INFO(AppStoreLogLevel.INFO),
 
     /** 不影响系统继续运行的警告。 */
-    WARN("WARN", "警告"),
+    WARN(AppStoreLogLevel.WARN),
 
     /** 系统功能执行失败或运行异常。 */
-    ERROR("ERROR", "错误");
+    ERROR(AppStoreLogLevel.ERROR);
 
-    /** 数据库存储和接口传输使用的编码。 */
-    private final String code;
+    /** 复用相同的编码和中文名称，系统日志仍只录入这三个级别。 */
+    private final AppStoreLogLevel reportLevel;
 
-    /** 前端展示使用的中文说明。 */
-    private final String description;
-
-    SystemLogLevel(String code, String description) {
-        this.code = code;
-        this.description = description;
+    SystemLogLevel(AppStoreLogLevel reportLevel) {
+        this.reportLevel = reportLevel;
     }
 
     public String getCode() {
-        return code;
+        return reportLevel.name();
     }
 
     @Override
     public Object getValue() {
         // 枚举查询接口沿用数据库保存的字符串编码。
-        return code;
+        return getCode();
     }
 
     public String getDescription() {
-        return description;
+        return reportLevel.getLabel();
     }
 
     @Override
     public String getLabel() {
         // 枚举查询接口沿用原有中文说明。
-        return description;
+        return getDescription();
     }
 
     /**
@@ -59,7 +57,7 @@ public enum SystemLogLevel implements LabeledEnum {
         }
         String normalized = code.trim().toUpperCase();
         for (SystemLogLevel level : values()) {
-            if (level.code.equals(normalized)) {
+            if (level.getCode().equals(normalized)) {
                 return normalized;
             }
         }
@@ -74,8 +72,18 @@ public enum SystemLogLevel implements LabeledEnum {
         }
         String normalized = code.trim().toUpperCase();
         for (SystemLogLevel level : values()) {
-            if (level.code.equals(normalized)) {
-                return level.description;
+            if (level.getCode().equals(normalized)) {
+                return level.getLabel();
+            }
+        }
+        return null;
+    }
+
+    /** 根据已校验的数据库级别取得对应的上报级别。 */
+    public static AppStoreLogLevel reportLevelOf(String code) {
+        for (SystemLogLevel level : values()) {
+            if (level.getCode().equals(code)) {
+                return level.reportLevel;
             }
         }
         return null;

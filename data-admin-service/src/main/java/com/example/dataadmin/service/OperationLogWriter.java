@@ -10,10 +10,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OperationLogWriter {
     private final SysRuntimeLogMapper mapper;
+    private final AppStoreSystemLogReporter appStoreReporter;
     private static final Logger LOGGER = LoggerFactory.getLogger(OperationLogWriter.class);
-    public OperationLogWriter(SysRuntimeLogMapper mapper) { this.mapper = mapper; }
+
+    public OperationLogWriter(SysRuntimeLogMapper mapper, AppStoreSystemLogReporter appStoreReporter) {
+        this.mapper = mapper;
+        this.appStoreReporter = appStoreReporter;
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
-    public void write(SysRuntimeLog log) { mapper.insert(log); }
+    public void write(SysRuntimeLog log) {
+        // 先保存本地日志，只有独立事务提交成功才安排上报。
+        mapper.insert(log);
+        appStoreReporter.reportAfterCommit(log);
+    }
     /** 日志写入失败保留服务日志，不改变已完成业务操作的结果。 */
     public void reportFailure(Exception exception) {
         LOGGER.error("人工操作日志写入失败，业务操作结果不受影响", exception);

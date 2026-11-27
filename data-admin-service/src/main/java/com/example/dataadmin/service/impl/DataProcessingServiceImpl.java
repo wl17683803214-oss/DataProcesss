@@ -76,6 +76,9 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     /** 任务下各采集接口实时处理速率Redis键前缀。 */
     private static final String PROCESSING_CURRENT_PREFIX =
             "dashboard:processing:current:";
+    /** 当前任务的五秒滚动处理速率Redis键前缀。 */
+    private static final String PROCESSING_WINDOW_RATE_PREFIX =
+            "dashboard:processing:window-rate:";
 
     /** 数据处理统计数据访问组件。 */
     private final DashboardMapper dashboardMapper;
@@ -168,7 +171,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         requireTaskId(taskId);
         DataProcessingRealtimeVO result = new DataProcessingRealtimeVO();
         try {
-            // 第一步：汇总当前任务下所有接口按实际采样间隔计算的PDXP帧速率。
+            // 第一步：读取处理服务生成的任务级PDXP帧滚动速率。
             double processRate = processingRate(taskId);
             // 展示时统一四舍五入，整数速率不追加无意义的小数位。
             result.setProcessRate(BigDecimal.valueOf(processRate)
@@ -182,8 +185,14 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         return result;
     }
 
-    /** 汇总任务下所有采集接口按实际采样间隔计算的成功处理帧速率。 */
+    /** 优先读取任务级滚动速率，兼容尚未升级的处理服务。 */
     private double processingRate(String taskId) {
+        String windowRate = redisTemplate.opsForValue().get(PROCESSING_WINDOW_RATE_PREFIX + taskId);
+        if (windowRate != null) {
+            return Double.parseDouble(windowRate);
+        }
+
+        // 旧处理服务还没有滚动快照时，按原口径汇总各接口的最新速率。
         Map<Object, Object> metrics = redisTemplate.opsForHash().entries(
                 PROCESSING_CURRENT_PREFIX + taskId);
         double total = 0D;

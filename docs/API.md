@@ -333,7 +333,7 @@ RPC字段属性仅包含`field`（标识）、`fieldName`（中文名称）、`v
 
 上传.xls、.xlsx或.txt文件（最大20MB），前端选择type，整份文件使用相同类型。卫星Excel按工作簿页签顺序只读取第一个Sheet作为A表，不匹配文件名或页签名称，其余Sheet不读取；跳过首行表头，按A至S列的固定顺序解析，位宽、遥测名称和遥测代号均空的占位行跳过。设备Excel仍按Sheet页签分别创建设备并按中文表头映射，Excel使用实际页签名称填写code和name。TXT使用制表符分隔，一次表示一个设备卫星，使用去掉扩展名的文件名填写code和name，并自动兼容UTF-8和GBK编码。设备Excel和TXT的第一行必须包含全部19个中文表头：序号、位宽、遥测名称、遥测代号、公式类型、处理公式、处理参数、小数位数、是否报警、正常值范围、预警值范围、状态跳变信息、相关命令、所属系统、控制波道、合并波道、延时波道、存储遥测、校准公式；旧TXT最后一列表头和内容为反斜线时按空校准公式处理。每个设备卫星至少有一条有效数据，空行忽略，序号不能重复。完整校验后按当前任务、类型和名称匹配，仅替换同名设备卫星的系统和参数并保留设备主键；不同名新增，未上传的设备卫星及配置保留。任意失败整体回滚。业务单元格按文本保存，是否报警和存储遥测空白时为0。返回导入的参数总条数。
 
-`POST /processing/rules/sync-baseline` 下载每颗卫星的Excel后，也固定读取第一个Sheet作为A表，卫星身份仍按satelliteCode匹配。satelliteParameterTableName不再参与选表，留空不影响同步。单颗卫星缺少下载地址、下载失败、文件损坏、无工作表、首表无有效参数或参数校验失败时，跳过该卫星并计入skippedSatelliteCount，记录中文原因，保留已有配置并继续其他卫星。分页完整后仅将有效卫星在同一事务写入；任务、基线分页结构或卫星身份有误时仍整体报错。手动上传的文件校验失败时仍返回错误。
+`POST /processing/rules/sync-baseline` 兼容基线响应最外层的rows/total和data.rows/data.total两种分页结构，使用每颗卫星的telemetryUrl下载Excel，不读取satelliteParameterTableUrl。固定读取第一个Sheet作为A表，卫星身份仍按satelliteCode匹配；telemetryName和satelliteParameterTableName不参与选表，留空不影响同步。单颗卫星缺少telemetryUrl、下载失败、文件损坏、无工作表、首表无有效参数或参数校验失败时，跳过该卫星并计入skippedSatelliteCount，记录中文原因，保留已有配置并继续其他卫星。分页完整后仅将有效卫星在同一事务写入；任务、基线分页结构或卫星身份有误时仍整体报错。手动上传的文件校验失败时仍返回错误。
 
 新增 `POST /processing/rules/delete?deviceSatelliteId=12`，只传设备卫星主键，删除目录、系统和参数并清理页面关联；仍被有效本地PDXP协议引用时拒绝。详见 `前端对接-参数解析配置删除.md`。
 

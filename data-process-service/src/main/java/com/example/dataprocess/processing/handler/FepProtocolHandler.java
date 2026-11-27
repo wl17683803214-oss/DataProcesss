@@ -4,6 +4,7 @@ import com.example.dataprocess.collection.CollectInterfaceStatistics;
 import com.example.common.protocol.fep.FepPacketType;
 import com.example.common.protocol.fep.FepProtocolTool;
 import com.example.dataprocess.config.FepProperties;
+import com.example.dataprocess.config.TimingLogProperties;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
 import com.example.dataprocess.protocol.fep.FepFileReceiver;
 import com.example.dataprocess.service.FepFileResultService;
@@ -34,6 +35,10 @@ import java.util.function.BooleanSupplier;
 /** FEP协议处理器，负责UDP和TCP下的文件接收协议。 */
 @Component
 public class FepProtocolHandler implements ProtocolHandler {
+    /** 文件交换的正常与异常日志复用现有开关，直接构造时沿用默认开启行为。 */
+    @org.springframework.beans.factory.annotation.Autowired
+    private TimingLogProperties timingLog = new TimingLogProperties();
+
     /** 告警组件采用独立注入，复用已有离线构造入口。 */
     @org.springframework.beans.factory.annotation.Autowired
     private com.example.dataprocess.alarm.DataAlarmRecorder alarmRecorder;
@@ -110,7 +115,7 @@ public class FepProtocolHandler implements ProtocolHandler {
         Path directory = Paths.get(tempDirectory.trim())
                 .resolve("interface-" + config.getInterfaceId());
         return new SessionConfig(
-                new FepFileReceiver(directory, dataUnitLength),
+                new FepFileReceiver(directory, dataUnitLength, timingLog::isEnabled),
                 dataUnitLength);
     }
 
@@ -136,7 +141,7 @@ public class FepProtocolHandler implements ProtocolHandler {
         @Override
         public void handle(UdpTool.ReceivedPacket packet) {
             // FEP速率按实际协议流量统计，采集量只在完整文件形成时增加。
-            statistics.recordReceivedBytes(config, packet.getData().length);
+            statistics.recordReceivedBytes(config, packet.getDataLength());
             synchronized (submitLock) {
                 try {
                     processingTail = processingTail
@@ -151,15 +156,18 @@ public class FepProtocolHandler implements ProtocolHandler {
                                     });
                 } catch (RejectedExecutionException exception) {
                     alarm(config, com.example.common.enums.DataAlarmType.PROCESS_QUEUE, "文件报文提交失败，处理线程池已满");
-                    LOGGER.error("数据处理线程池已满，本次FEP UDP报文已拒绝，接口编号：{}",
-                            config.getInterfaceId(), exception);
+                    // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                    if (timingLog.isEnabled()) {
+                        LOGGER.error("数据处理线程池已满，本次FEP UDP报文已拒绝，接口编号：{}",
+                                config.getInterfaceId(), exception);
+                    }
                 }
             }
         }
 
         /** 处理一条完整FEP UDP报文。 */
         private void process(UdpTool.ReceivedPacket packet) {
-            String fileContext = "报文长度：" + packet.getData().length;
+            String fileContext = "报文长度：" + packet.getDataLength();
             try {
                 FepPacketType packetType =
                         FepProtocolTool.readPacketType(packet.getData());
@@ -169,11 +177,14 @@ public class FepProtocolHandler implements ProtocolHandler {
                                 FepProtocolTool.parseSendRequest(
                                         packet.getData());
                         fileContext = "文件名：" + request.getFileName() + "；声明长度：" + request.getFileLength();
-                        LOGGER.info(
-                                "FEP UDP第一步：收到01发送请求包，接口编号：{}，文件名：{}，文件长度：{}",
-                                config.getInterfaceId(),
-                                request.getFileName(),
-                                request.getFileLength());
+                        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                        if (timingLog.isEnabled()) {
+                            LOGGER.info(
+                                    "FEP UDP第一步：收到01发送请求包，接口编号：{}，文件名：{}，文件长度：{}",
+                                    config.getInterfaceId(),
+                                    request.getFileName(),
+                                    request.getFileLength());
+                        }
                         // 第一步：数据库记录优先决定文件是否已经可靠接收。
                         boolean recorded = fileResultService
                                 .isReceivedAndTriggerRetry(
@@ -191,23 +202,29 @@ public class FepProtocolHandler implements ProtocolHandler {
                                 packet.getSourceAddress(),
                                 packet.getSourcePort(),
                                 acceptance.getResponsePacket());
-                        LOGGER.info(
-                                "FEP UDP第二步：发送02请求应答包，接口编号：{}，文件名：{}，续传单元号：{}，文件标识：{}",
-                                config.getInterfaceId(),
-                                acceptance.getFileName(),
-                                acceptance.getResumeUnitNumber(),
-                                acceptance.getFileId());
+                        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                        if (timingLog.isEnabled()) {
+                            LOGGER.info(
+                                    "FEP UDP第二步：发送02请求应答包，接口编号：{}，文件名：{}，续传单元号：{}，文件标识：{}",
+                                    config.getInterfaceId(),
+                                    acceptance.getFileName(),
+                                    acceptance.getResumeUnitNumber(),
+                                    acceptance.getFileId());
+                        }
                         break;
                     case DATA:
                         FepFileReceiver.DataReceiveResult result =
                                 fileReceiver.receiveData(packet.getData());
                         fileContext = "文件名：" + result.getFileName() + "；单元号：" + result.getUnitNumber() + "；文件标识：" + result.getFileId();
-                        LOGGER.info(
-                                "FEP UDP第三步：收到04文件数据包，接口编号：{}，文件名：{}，单元号：{}，文件标识：{}",
-                                config.getInterfaceId(),
-                                result.getFileName(),
-                                result.getUnitNumber(),
-                                result.getFileId());
+                        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                        if (timingLog.isEnabled()) {
+                            LOGGER.info(
+                                    "FEP UDP第三步：收到04文件数据包，接口编号：{}，文件名：{}，单元号：{}，文件标识：{}",
+                                    config.getInterfaceId(),
+                                    result.getFileName(),
+                                    result.getUnitNumber(),
+                                    result.getFileId());
+                        }
                         if (result.isCompleted()) {
                             // 第一步：先登记可靠处理记录，确保确认后仍可自动恢复。
                             LocalDateTime completedTime = LocalDateTime.now();
@@ -222,22 +239,31 @@ public class FepProtocolHandler implements ProtocolHandler {
                                     packet.getSourceAddress(),
                                     packet.getSourcePort(),
                                     result.getConfirmationPacket());
-                            LOGGER.info(
-                                    "FEP UDP第四步：发送03结束确认包，接口编号：{}，文件标识：{}，文件：{}",
-                                    config.getInterfaceId(),
-                                    result.getFileId(),
-                                    result.getFilePath());
+                            // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                            if (timingLog.isEnabled()) {
+                                LOGGER.info(
+                                        "FEP UDP第四步：发送03结束确认包，接口编号：{}，文件标识：{}，文件：{}",
+                                        config.getInterfaceId(),
+                                        result.getFileId(),
+                                        result.getFilePath());
+                            }
                         }
                         break;
                     default:
-                        LOGGER.warn("FEP UDP接收端收到无需处理的包，接口编号：{}，包类型：{}",
-                                config.getInterfaceId(), packetType.getName());
+                        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                        if (timingLog.isEnabled()) {
+                            LOGGER.warn("FEP UDP接收端收到无需处理的包，接口编号：{}，包类型：{}",
+                                    config.getInterfaceId(), packetType.getName());
+                        }
                         break;
                 }
             } catch (Exception exception) {
                 alarm(config, com.example.common.enums.DataAlarmType.FILE_RECEIVE, fileContext + "；文件协议报文失败：" + exception.getMessage());
-                LOGGER.warn("FEP UDP协议包处理失败，接口编号：{}，原因：{}",
-                        config.getInterfaceId(), exception.getMessage());
+                // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                if (timingLog.isEnabled()) {
+                    LOGGER.warn("FEP UDP协议包处理失败，接口编号：{}，原因：{}",
+                            config.getInterfaceId(), exception.getMessage());
+                }
             }
         }
     }
@@ -336,8 +362,11 @@ public class FepProtocolHandler implements ProtocolHandler {
                                     });
                 } catch (RejectedExecutionException exception) {
                     alarm(config, com.example.common.enums.DataAlarmType.PROCESS_QUEUE, "文件报文提交失败，处理线程池已满");
-                    LOGGER.error("数据处理线程池已满，本次FEP TCP协议包已拒绝，接口编号：{}",
-                            config.getInterfaceId(), exception);
+                    // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                    if (timingLog.isEnabled()) {
+                        LOGGER.error("数据处理线程池已满，本次FEP TCP协议包已拒绝，接口编号：{}",
+                                config.getInterfaceId(), exception);
+                    }
                 }
             }
         }
@@ -355,11 +384,14 @@ public class FepProtocolHandler implements ProtocolHandler {
                         FepProtocolTool.SendRequest request =
                                 FepProtocolTool.parseSendRequest(packetData);
                         fileContext = "文件名：" + request.getFileName() + "；声明长度：" + request.getFileLength();
-                        LOGGER.info(
-                                "FEP TCP第一步：收到01发送请求包，接口编号：{}，文件名：{}，文件长度：{}",
-                                config.getInterfaceId(),
-                                request.getFileName(),
-                                request.getFileLength());
+                        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                        if (timingLog.isEnabled()) {
+                            LOGGER.info(
+                                    "FEP TCP第一步：收到01发送请求包，接口编号：{}，文件名：{}，文件长度：{}",
+                                    config.getInterfaceId(),
+                                    request.getFileName(),
+                                    request.getFileLength());
+                        }
                         // 第一步：数据库记录优先决定文件是否已经可靠接收。
                         boolean recorded = fileResultService
                                 .isReceivedAndTriggerRetry(
@@ -379,23 +411,29 @@ public class FepProtocolHandler implements ProtocolHandler {
                                     request.getFileLength());
                         }
                         connection.send(acceptance.getResponsePacket());
-                        LOGGER.info(
-                                "FEP TCP第二步：发送02请求应答包，接口编号：{}，文件名：{}，续传单元号：{}，文件标识：{}",
-                                config.getInterfaceId(),
-                                acceptance.getFileName(),
-                                acceptance.getResumeUnitNumber(),
-                                acceptance.getFileId());
+                        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                        if (timingLog.isEnabled()) {
+                            LOGGER.info(
+                                    "FEP TCP第二步：发送02请求应答包，接口编号：{}，文件名：{}，续传单元号：{}，文件标识：{}",
+                                    config.getInterfaceId(),
+                                    acceptance.getFileName(),
+                                    acceptance.getResumeUnitNumber(),
+                                    acceptance.getFileId());
+                        }
                         break;
                     case DATA:
                         FepFileReceiver.DataReceiveResult result =
                                 fileReceiver.receiveData(packetData);
                         fileContext = "文件名：" + result.getFileName() + "；单元号：" + result.getUnitNumber() + "；文件标识：" + result.getFileId();
-                        LOGGER.info(
-                                "FEP TCP第三步：收到04文件数据包，接口编号：{}，文件名：{}，单元号：{}，文件标识：{}",
-                                config.getInterfaceId(),
-                                result.getFileName(),
-                                result.getUnitNumber(),
-                                result.getFileId());
+                        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                        if (timingLog.isEnabled()) {
+                            LOGGER.info(
+                                    "FEP TCP第三步：收到04文件数据包，接口编号：{}，文件名：{}，单元号：{}，文件标识：{}",
+                                    config.getInterfaceId(),
+                                    result.getFileName(),
+                                    result.getUnitNumber(),
+                                    result.getFileId());
+                        }
                         if (result.isCompleted()) {
                             // 第一步：先登记可靠处理记录，确保确认后仍可自动恢复。
                             LocalDateTime completedTime = LocalDateTime.now();
@@ -408,22 +446,31 @@ public class FepProtocolHandler implements ProtocolHandler {
 
                             // 第二步：登记成功后立即确认，不等待MinIO和消息发送。
                             connection.send(result.getConfirmationPacket());
-                            LOGGER.info(
-                                    "FEP TCP第四步：发送03结束确认包，接口编号：{}，文件标识：{}，文件：{}",
-                                    config.getInterfaceId(),
-                                    result.getFileId(),
-                                    result.getFilePath());
+                            // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                            if (timingLog.isEnabled()) {
+                                LOGGER.info(
+                                        "FEP TCP第四步：发送03结束确认包，接口编号：{}，文件标识：{}，文件：{}",
+                                        config.getInterfaceId(),
+                                        result.getFileId(),
+                                        result.getFilePath());
+                            }
                         }
                         break;
                     default:
-                        LOGGER.warn("FEP TCP接收端收到无需处理的包，接口编号：{}，包类型：{}",
-                                config.getInterfaceId(), packetType.getName());
+                        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                        if (timingLog.isEnabled()) {
+                            LOGGER.warn("FEP TCP接收端收到无需处理的包，接口编号：{}，包类型：{}",
+                                    config.getInterfaceId(), packetType.getName());
+                        }
                         break;
                 }
             } catch (Exception exception) {
                 alarm(config, com.example.common.enums.DataAlarmType.FILE_RECEIVE, fileContext + "；文件协议报文失败：" + exception.getMessage());
-                LOGGER.warn("FEP TCP协议包处理失败，接口编号：{}，原因：{}",
-                        config.getInterfaceId(), exception.getMessage());
+                // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+                if (timingLog.isEnabled()) {
+                    LOGGER.warn("FEP TCP协议包处理失败，接口编号：{}，原因：{}",
+                            config.getInterfaceId(), exception.getMessage());
+                }
             }
         }
     }
@@ -449,8 +496,11 @@ public class FepProtocolHandler implements ProtocolHandler {
 
         // 补登记成功后累计完整文件采集量，已有记录由上方判断跳过，避免重复累计。
         statistics.recordCollection(config);
-        LOGGER.info("FEP遗留完整文件已经补登记，接口编号：{}，文件：{}",
-                config.getInterfaceId(), acceptance.getFilePath());
+        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+        if (timingLog.isEnabled()) {
+            LOGGER.info("FEP遗留完整文件已经补登记，接口编号：{}，文件：{}",
+                    config.getInterfaceId(), acceptance.getFilePath());
+        }
     }
 
     /** 单个FEP接口创建时解析出的固定会话配置。 */

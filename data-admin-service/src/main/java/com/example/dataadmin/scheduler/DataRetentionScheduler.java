@@ -4,15 +4,12 @@ import com.example.common.retention.DataRetentionPolicy;
 import com.example.dataadmin.enums.DataRetentionCategory;
 import com.example.dataadmin.service.DataRetentionCleaner;
 import java.time.LocalDateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /** 每小时分批清理已配置保留天数的业务数据，单轮上限避免持续占用数据库。 */
 @Component
 public class DataRetentionScheduler {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DataRetentionScheduler.class);
     /** 单批最多删除一千条，超过单轮上限的数据交给下次任务继续处理。 */
     private static final int BATCH_SIZE = 1000;
     private static final int MAX_BATCHES = 100;
@@ -33,20 +30,15 @@ public class DataRetentionScheduler {
             if (days == null) { continue; }
             try {
                 LocalDateTime before = LocalDateTime.now().minusDays(days);
-                int total = 0;
+                // 第二步：保持单批与单轮上限，未清理完的数据交给下轮继续处理。
                 for (int batch = 0; batch < MAX_BATCHES; batch++) {
                     int deleted = cleaner.cleanBatch(category, before, BATCH_SIZE);
-                    total += deleted;
-                    if (deleted < BATCH_SIZE) { break; }
-                }
-                LOGGER.info("本轮过期数据清理结束，分类：{}，保留天数：{}，删除数量：{}",
-                        category.getLabel(), days, total);
-                // 达到单轮上限时可能仍有积压，下次任务继续清理。
-                if (total >= BATCH_SIZE * MAX_BATCHES) {
-                    LOGGER.info("过期数据清理达到单轮上限，分类：{}，下轮继续处理", category.getLabel());
+                    if (deleted < BATCH_SIZE) {
+                        break;
+                    }
                 }
             } catch (Exception exception) {
-                LOGGER.error("过期数据清理失败，分类：{}，下轮继续重试", category.getLabel(), exception);
+                // 单类清理失败不打印日志，继续其他分类并在下轮重试。
             }
         }
     }

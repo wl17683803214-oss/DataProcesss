@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
@@ -26,6 +28,14 @@ public final class ImageResolutionReader {
 
     /** 返回宽乘高的像素尺寸，普通文件、不支持的格式或异常图片返回空值。 */
     public static String read(Path file, String fileType) {
+        // 保持已有工具调用方式兼容，业务调用显式传入统一日志开关。
+        return read(file, fileType, () -> true);
+    }
+
+    /** 按调用方日志开关处理识别提示，识别结果与文件处理流程保持不变。 */
+    public static String read(Path file, String fileType, BooleanSupplier logEnabled) {
+        // 先校验开关读取入口，异常图片仍按原约定返回空值。
+        Objects.requireNonNull(logEnabled, "图片识别日志开关不能为空");
         // 第一步：普通文件不尝试解析图片，避免影响文件接收效率。
         if (!IMAGE_TYPES.contains(fileType)) {
             return null;
@@ -51,7 +61,10 @@ public final class ImageResolutionReader {
             }
         } catch (IOException | RuntimeException exception) {
             // 第四步：异常只记录中文提示，文件仍按原流程上传和发布。
-            LOGGER.warn("图片分辨率识别失败，文件：{}，原因：{}", file, exception.getMessage());
+            // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+            if (logEnabled.getAsBoolean()) {
+                LOGGER.warn("图片分辨率识别失败，文件：{}，原因：{}", file, exception.getMessage());
+            }
             return null;
         }
     }

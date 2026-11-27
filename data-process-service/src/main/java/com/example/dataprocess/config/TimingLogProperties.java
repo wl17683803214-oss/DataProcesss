@@ -3,11 +3,11 @@ package com.example.dataprocess.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-/** 处理服务共用的耗时日志开关与包序号采样间隔。 */
+/** 处理服务共用的计时、遥测发送与文件交换日志开关及包序号采样间隔。 */
 @Component
 @ConfigurationProperties(prefix = "data-processing.timing-log")
 public class TimingLogProperties {
-    /** 默认保留处理计时、入库采样和遥测消息发送成功日志。 */
+    /** 默认保留处理计时、入库采样、遥测发送成功及全部文件交换日志。 */
     private volatile boolean enabled = true;
     /** 包序号为该间隔的整数倍时记录阶段耗时。 */
     private volatile int sampleEveryPackets = 20;

@@ -43,6 +43,9 @@ public class CollectInterfaceStatistics {
     /** 处理实时指标Redis键前缀。 */
     private static final String PROCESSING_CURRENT_PREFIX =
             "dashboard:processing:current:";
+    /** 处理监控接口专用的任务级滚动速率。 */
+    private static final String PROCESSING_WINDOW_RATE_PREFIX =
+            "dashboard:processing:window-rate:";
     /** 实时指标缓存保留秒数。 */
     private static final long REALTIME_TTL_SECONDS = 5L;
     /** 等待数据库落库的统计窗口键前缀。 */
@@ -88,6 +91,9 @@ public class CollectInterfaceStatistics {
     /** 各任务和接口尚未生成秒级快照的内存计数器。 */
     private final ConcurrentMap<StatisticsKey, InterfaceCounter> counters =
             new ConcurrentHashMap<StatisticsKey, InterfaceCounter>();
+    /** 同一任务的全部采集接口共享一个滚动窗口。 */
+    private final ConcurrentMap<String, ProcessingRateWindow> processingRateWindows =
+            new ConcurrentHashMap<>();
     /** Redis字符串访问组件。 */
     private final StringRedisTemplate redisTemplate;
     /** 实时指标序列化组件。 */
@@ -130,6 +136,8 @@ public class CollectInterfaceStatistics {
         counter.processingCount.increment();
         // 第二步：单独累计帧级数量，避免FEP文件混入实时条数速率。
         counter.realtimeProcessingCount.increment();
+        // 第三步：累计任务级完成帧，滚动窗口读取累计量差值。
+        counter.processingRateWindow.recordFrame();
     }
 
     /** 记录本地处理时被后值覆盖的重复遥测参数数量。 */
@@ -188,6 +196,8 @@ public class CollectInterfaceStatistics {
                         key.taskId, key.interfaceId, exception);
             }
         }
+        // 按任务单独发布滚动速度，供处理监控接口一次读取。
+        writeTaskProcessingRates();
     }
 
     /** 每五秒把Redis中已经结束的窗口写入数据库。 */
@@ -315,6 +325,21 @@ public class CollectInterfaceStatistics {
                 redisKey, REALTIME_TTL_SECONDS, TimeUnit.SECONDS);
     }
 
+    /** 发布所有任务的滚动速率，空闲任务的窗口速度会自然归零。 */
+    private void writeTaskProcessingRates() {
+        for (Map.Entry<String, ProcessingRateWindow> entry : processingRateWindows.entrySet()) {
+            String taskId = entry.getKey();
+            // 使用一次写入发布完整的任务级快照和过期时间。
+            double rate = entry.getValue().framesPerSecond();
+            try {
+                redisTemplate.opsForValue().set(PROCESSING_WINDOW_RATE_PREFIX + taskId,
+                        Double.toString(rate), REALTIME_TTL_SECONDS, TimeUnit.SECONDS);
+            } catch (RuntimeException exception) {
+                LOGGER.error("任务滚动处理速率写入Redis失败，任务编号：{}", taskId, exception);
+            }
+        }
+    }
+
     /** 累加一个接口在当前Redis窗口中的全部指标。 */
     private void incrementBucket(
             String bucketKey,
@@ -406,7 +431,9 @@ public class CollectInterfaceStatistics {
             throw new IllegalArgumentException("统计任务和采集接口编号不能为空");
         }
         StatisticsKey key = new StatisticsKey(taskId, interfaceId);
-        return counters.computeIfAbsent(key, ignored -> new InterfaceCounter());
+        // 接口创建计数器时取得所属任务的窗口，帧完成时直接使用同一对象。
+        return counters.computeIfAbsent(key, ignored -> new InterfaceCounter(
+                processingRateWindows.computeIfAbsent(taskId, task -> new ProcessingRateWindow())));
     }
 
     /** 取得统计窗口键中的秒级时间戳。 */
@@ -466,6 +493,8 @@ public class CollectInterfaceStatistics {
 
     /** 单个接口尚未形成秒级快照的线程安全计数器。 */
     private static final class InterfaceCounter {
+        /** 当前接口所属任务的滚动处理速率窗口。 */
+        private final ProcessingRateWindow processingRateWindow;
         /** 当前接口统计窗口的单调时钟起点，首次统计从接口建立时开始。 */
         private volatile long lastSampleNanos = System.nanoTime();
         private final LongAdder collectionCount = new LongAdder();
@@ -474,6 +503,10 @@ public class CollectInterfaceStatistics {
         private final LongAdder realtimeProcessingCount = new LongAdder();
         private final LongAdder duplicateCount = new LongAdder();
         private final LongAdder wildValueCount = new LongAdder();
+
+        private InterfaceCounter(ProcessingRateWindow processingRateWindow) {
+            this.processingRateWindow = processingRateWindow;
+        }
 
         private CounterSnapshot drain() {
             return new CounterSnapshot(

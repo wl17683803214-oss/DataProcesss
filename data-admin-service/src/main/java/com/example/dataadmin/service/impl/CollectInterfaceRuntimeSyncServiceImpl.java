@@ -151,6 +151,9 @@ public class CollectInterfaceRuntimeSyncServiceImpl
     private void synchronizeEnabledInterfacesSafely() {
         long started = System.nanoTime();
         List<Long> enabledIds = new ArrayList<Long>();
+        List<Long> failedIds = new ArrayList<Long>();
+        Exception failure = null;
+        String detail;
         try {
             // 第一步：数据库启用开关决定数据处理服务最终运行哪些接口。
             enabledIds = interfaceMapper.findAllEnabledIds();
@@ -164,25 +167,36 @@ public class CollectInterfaceRuntimeSyncServiceImpl
             }
             List<Long> runningIds = new ArrayList<Long>();
             for (JsonNode id : response.path("data")) { runningIds.add(id.asLong()); }
-            List<Long> failedIds = new ArrayList<Long>(enabledIds);
+            failedIds.addAll(enabledIds);
             failedIds.removeAll(runningIds);
-            String detail = "已启动接口ID：" + runningIds + "；已启用但未启动接口ID：" + failedIds
+            detail = "已启动接口ID：" + runningIds + "；已启用但未启动接口ID：" + failedIds
                     + "；同步耗时：" + elapsedMillis(started) + "毫秒";
-            recordBackgroundResult(enabledIds, failedIds, detail, null);
+        } catch (Exception exception) {
+            // 第三步：同步异常统一留到最终结果输出，避免同一轮重复打印。
+            failure = exception;
+            failedIds = new ArrayList<Long>(enabledIds);
+            detail = "配置已保存，后台运行状态同步失败：" + exception.getMessage()
+                    + "；同步耗时：" + elapsedMillis(started) + "毫秒";
+        }
+
+        // 第四步：保留原有告警及运行日志入库，附带异常汇总进本轮唯一的结果日志。
+        String diagnostics = recordBackgroundResult(enabledIds, failedIds, detail, failure);
+        if (failure != null) {
+            LOGGER.error("采集接口后台同步失败，启用接口数量：{}，未启动接口数量：{}，耗时：{}毫秒，原因：{}，附带异常：{}",
+                    enabledIds.size(), failedIds.size(), elapsedMillis(started), failure.getMessage(), diagnostics, failure);
+        } else if (!failedIds.isEmpty() || !diagnostics.isEmpty()) {
+            LOGGER.warn("采集接口后台同步部分完成，启用接口数量：{}，未启动接口数量：{}，耗时：{}毫秒，原因：{}，附带异常：{}",
+                    enabledIds.size(), failedIds.size(), elapsedMillis(started), detail, diagnostics);
+        } else {
             LOGGER.info("采集接口后台同步完成，启用接口数量：{}，未启动接口数量：{}，耗时：{}毫秒",
                     enabledIds.size(), failedIds.size(), elapsedMillis(started));
-        } catch (Exception exception) {
-            String detail = "配置已保存，后台运行状态同步失败：" + exception.getMessage()
-                    + "；同步耗时：" + elapsedMillis(started) + "毫秒";
-            recordBackgroundResult(enabledIds, enabledIds, detail, exception);
-            LOGGER.error("采集接口后台同步失败，耗时：{}毫秒，原因：{}",
-                    elapsedMillis(started), exception.getMessage(), exception);
         }
     }
 
-    /** 后台结果独立记录，并只恢复实际启动成功接口的同步告警。 */
-    private void recordBackgroundResult(List<Long> enabledIds, List<Long> failedIds,
+    /** 后台结果独立记录，附带异常交由调用方汇总，不逐个接口打印。 */
+    private String recordBackgroundResult(List<Long> enabledIds, List<Long> failedIds,
             String detail, Exception failure) {
+        StringBuilder diagnostics = new StringBuilder();
         Map<String, List<Long>> idsByTask = new LinkedHashMap<String, List<Long>>();
         for (Long id : enabledIds) {
             try {
@@ -199,7 +213,9 @@ public class CollectInterfaceRuntimeSyncServiceImpl
                     alarmRecorder.recover(config);
                 }
             } catch (Exception exception) {
-                LOGGER.warn("采集接口后台同步结果上下文记录失败，接口编号：{}", id, exception);
+                // 上下文记录失败不影响其他接口，保留接口身份与原因供最终结果定位。
+                diagnostics.append("接口编号：").append(id)
+                        .append("，同步结果上下文记录失败：").append(exception.getMessage()).append("；");
             }
         }
         // 没有运行接口或数据库上下文不可用时，结果作为全局运行日志记录。
@@ -215,9 +231,12 @@ public class CollectInterfaceRuntimeSyncServiceImpl
                                 : failedIds.isEmpty() ? "采集接口后台同步完成" : "部分采集接口后台同步未完成",
                         "本任务接口ID：" + entry.getValue() + "\n" + detail, null);
             } catch (Exception exception) {
-                LOGGER.error("采集接口后台同步结果写入运行日志失败，原同步结果：{}", detail, exception);
+                // 各任务继续独立入库，写入异常只汇总一次，避免同步结果重复打印。
+                diagnostics.append("任务编号：").append(entry.getKey())
+                        .append("，运行日志写入失败：").append(exception.getMessage()).append("；");
             }
         }
+        return diagnostics.toString();
     }
 
     /** 计算本次完整同步的实际耗时。 */

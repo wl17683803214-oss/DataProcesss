@@ -4,18 +4,12 @@ import com.example.common.tool.HttpRequestTool;
 import com.example.dataadmin.config.InteractionHeartbeatProperties;
 import com.example.dataadmin.dto.integration.InteractionHeartbeatRequest;
 import com.example.dataadmin.enums.InteractionHeartbeatStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /** 定时向交互系统上报当前系统心跳。 */
 @Component
 public class InteractionHeartbeatReporter {
-
-    /** 心跳上报日志。 */
-    private static final Logger LOGGER = LoggerFactory.getLogger(
-            InteractionHeartbeatReporter.class);
 
     /** 交互系统心跳配置。 */
     private final InteractionHeartbeatProperties properties;
@@ -49,17 +43,8 @@ public class InteractionHeartbeatReporter {
             String reportUrl = properties.buildReportUrl();
             httpRequestTool.postJson(reportUrl, request, String.class);
 
-            // 第三步：使用信息级别记录成功结果，便于确认定时任务正常执行。
-            LOGGER.info(
-                    "交互系统心跳上报成功，系统标识：{}，状态：{}",
-                    request.getSystemId(),
-                    InteractionHeartbeatStatus.NORMAL.getLabel());
         } catch (Exception exception) {
-            // 单次失败仅记录异常，等待下一次定时任务继续上报。
-            LOGGER.error(
-                    "交互系统心跳上报失败，原因：{}",
-                    exception.getMessage(),
-                    exception);
+            // 单次失败不打印日志，等待下一次定时任务继续上报。
         }
     }
 

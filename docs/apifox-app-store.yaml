@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: 应用商店上报接口
+  version: 1.0.0
+  description: 管理服务和处理服务分别向应用商店发送日志和状态。使用前填写实际服务器地址，部署路径不同时按服务配置调整接口前缀。
+servers:
+  - url: http://127.0.0.1:20001
+    description: 示例地址，请替换为实际应用商店地址。
+paths:
+  /app/external/saveAppLog:
+    post:
+      summary: 应用日志上报
+      operationId: saveAppLog
+      description: 各服务异步上报本服务的日志摘要，参数通过查询字符串传入。
+      parameters:
+        - $ref: '#/components/parameters/AppName'
+        - name: level
+          in: query
+          required: true
+          description: 应用商店接收的英文日志等级编码。
+          schema:
+            type: string
+            enum: [DEBUG, INFO, WARN, ERROR, FATAL]
+            x-apifox-enum:
+              - {value: DEBUG, name: 调试}
+              - {value: INFO, name: 信息}
+              - {value: WARN, name: 警告}
+              - {value: ERROR, name: 错误}
+              - {value: FATAL, name: 致命}
+          example: ERROR
+        - name: msg
+          in: query
+          required: true
+          description: 上报的中文日志摘要。
+          schema:
+            type: string
+          example: 数据存储失败，接口编号：12
+        - $ref: '#/components/parameters/SaveDate'
+      responses:
+        '200':
+          $ref: '#/components/responses/ReportResult'
+  /app/external/saveAppStatus:
+    post:
+      summary: 应用状态上报
+      operationId: saveAppStatus
+      description: 服务按配置周期上报在运行状态，默认每三分钟发送一次。
+      parameters:
+        - $ref: '#/components/parameters/AppName'
+        - $ref: '#/components/parameters/SaveDate'
+      responses:
+        '200':
+          $ref: '#/components/responses/ReportResult'
+components:
+  parameters:
+    AppName:
+      name: appName
+      in: query
+      required: true
+      description: 当前服务在应用商店登记的名称。
+      schema:
+        type: string
+      example: 数据处理服务
+    SaveDate:
+      name: saveDate
+      in: query
+      required: true
+      description: 日志时间或状态上报时间，格式为年-月-日 时:分:秒。
+      schema:
+        type: string
+      example: '2026-08-14 09:36:16'
+  responses:
+    ReportResult:
+      description: 应用商店响应，业务状态码为200表示成功。
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [code]
+            properties:
+              code:
+                type: integer
+                description: 业务状态码，200表示成功，其他值表示失败。
+              msg:
+                type: string
+                description: 应用商店返回的结果说明。
+              data:
+                type: object
+                nullable: true
+                description: 应用商店返回的结果数据。
+          example:
+            code: 200
+            msg: 成功
+            data: null

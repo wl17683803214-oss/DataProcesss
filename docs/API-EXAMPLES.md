@@ -1703,7 +1703,7 @@ Authorization: Bearer <登录令牌>
 }
 ```
 
-按卫星编码匹配当前任务内的卫星并替换参数，缺少校准公式按空值处理；所属系统连续反斜线统一为单个层级分隔符。遥测为空时跳过且保留已有参数，任何非空遥测解析失败或入库失败均不提交本次同步。运行中的接口快照需下次接口同步后更新。
+基线分页兼容最外层的rows/total和data.rows/data.total两种结构，使用telemetryUrl下载Excel，不读取satelliteParameterTableUrl；telemetryName和satelliteParameterTableName为空不影响同步。按工作簿页签顺序仅解析第一个Sheet作为A表，按satelliteCode匹配当前任务内的卫星并替换参数，缺少校准公式按空值处理；所属系统连续反斜线统一为单个层级分隔符。telemetryUrl为空、下载失败或参数表校验失败时仅跳过当前卫星，计入skippedSatelliteCount并保留已有参数。完整分页校验通过后，有效卫星在同一事务内入库；入库失败整体回滚。运行中的接口快照需下次接口同步后更新。
 
 ### `POST /processing/rules/import`
 

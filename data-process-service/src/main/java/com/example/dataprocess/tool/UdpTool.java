@@ -34,9 +34,21 @@ public final class UdpTool {
             String localAddress,
             int localPort,
             int timeoutMillis) throws IOException {
-        // 校验本机端口和接收超时时间。
+        // 保留直接调用时使用操作系统默认缓冲的行为。
+        return openUnicast(localAddress, localPort, timeoutMillis, 0);
+    }
+
+    /**
+     * 创建指定接收缓冲大小的单播端点，缓冲参数使用字节，传入零时沿用系统默认值。
+     */
+    public static UnicastEndpoint openUnicast(
+            String localAddress,
+            int localPort,
+            int timeoutMillis,
+            int receiveBufferBytes) throws IOException {
+        // 校验本机端口和接收参数。
         validatePort(localPort, "UDP 本机端口");
-        validateTimeout(timeoutMillis);
+        validateReceiveOptions(timeoutMillis, receiveBufferBytes);
 
         // 根据参数确定绑定全部网卡或指定本机地址。
         InetSocketAddress bindAddress = resolveLocalAddress(localAddress, localPort);
@@ -45,6 +57,10 @@ public final class UdpTool {
         DatagramSocket socket = new DatagramSocket(null);
         try {
             socket.setReuseAddress(true);
+            // 在绑定端口之前申请内核接收缓冲。
+            if (receiveBufferBytes > 0) {
+                socket.setReceiveBufferSize(receiveBufferBytes);
+            }
             socket.bind(bindAddress);
             socket.setSoTimeout(timeoutMillis);
 
@@ -98,15 +114,32 @@ public final class UdpTool {
             int port,
             String localAddress,
             int timeoutMillis) throws IOException {
-        // 校验组播地址、端口、网卡和接收超时时间。
+        // 保留直接调用时使用操作系统默认缓冲的行为。
+        return openMulticastReceiver(multicastAddress, port, localAddress, timeoutMillis, 0);
+    }
+
+    /**
+     * 创建指定接收缓冲大小的组播端点，缓冲参数使用字节，传入零时沿用系统默认值。
+     */
+    public static MulticastReceiver openMulticastReceiver(
+            String multicastAddress,
+            int port,
+            String localAddress,
+            int timeoutMillis,
+            int receiveBufferBytes) throws IOException {
+        // 校验组播地址、端口、网卡和接收参数。
         InetAddress groupAddress = resolveMulticastAddress(multicastAddress, port);
         NetworkInterface networkInterface = resolveNetworkInterface(localAddress);
-        validateTimeout(timeoutMillis);
+        validateReceiveOptions(timeoutMillis, receiveBufferBytes);
 
         // 创建并绑定负责接收组播数据的长期套接字。
         MulticastSocket socket = new MulticastSocket(null);
         try {
             socket.setReuseAddress(true);
+            // 在绑定端口和加入组播组之前申请内核接收缓冲。
+            if (receiveBufferBytes > 0) {
+                socket.setReceiveBufferSize(receiveBufferBytes);
+            }
             socket.bind(new InetSocketAddress(port));
             socket.setSoTimeout(timeoutMillis);
 
@@ -131,30 +164,30 @@ public final class UdpTool {
         }
     }
 
-    /** 从同一个 UDP 套接字接收一个完整报文。 */
-    private static byte[] receive(DatagramSocket socket) throws IOException {
-        // 普通调用只关心报文内容，复用带来源信息的统一接收入口。
-        return receivePacket(socket).getData();
+    /** 为接收端点准备专用的临时收包空间。 */
+    private static DatagramPacket createReceivePacket() {
+        return new DatagramPacket(new byte[MAX_DATAGRAM_LENGTH], MAX_DATAGRAM_LENGTH);
     }
 
     /** 从同一个UDP套接字接收报文及其来源地址。 */
-    private static ReceivedPacket receivePacket(DatagramSocket socket) throws IOException {
-        // 每次接收都创建独立缓冲区，避免后续报文覆盖前一次结果。
-        byte[] buffer = new byte[MAX_DATAGRAM_LENGTH];
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+    private static ReceivedPacket receivePacket(
+            DatagramSocket socket, DatagramPacket packet) throws IOException {
+        // 同一个端点的并发读取共用临时缓冲，直到本次报文复制完成才允许再次接收。
+        synchronized (packet) {
+            // 恢复最大接收长度，避免较短的上一包影响这次收包。
+            packet.setLength(MAX_DATAGRAM_LENGTH);
+            socket.receive(packet);
 
-        // UDP 保留报文边界，一次调用只取得一个完整报文。
-        socket.receive(packet);
-
-        // 复制实际收到的范围，并保留来源地址供FEP等应答协议使用。
-        byte[] receivedData = Arrays.copyOfRange(
-                packet.getData(),
-                packet.getOffset(),
-                packet.getOffset() + packet.getLength());
-        return new ReceivedPacket(
-                receivedData,
-                packet.getAddress().getHostAddress(),
-                packet.getPort());
+            // 复制有效字节交给处理线程，保留来源地址供FEP等协议应答。
+            byte[] receivedData = Arrays.copyOfRange(
+                    packet.getData(),
+                    packet.getOffset(),
+                    packet.getOffset() + packet.getLength());
+            return new ReceivedPacket(
+                    receivedData,
+                    packet.getAddress().getHostAddress(),
+                    packet.getPort());
+        }
     }
 
     /** 使用同一个 UDP 套接字发送一个完整报文。 */
@@ -243,11 +276,15 @@ public final class UdpTool {
         }
     }
 
-    /** 校验接收超时时间。 */
-    private static void validateTimeout(int timeoutMillis) {
+    /** 校验接收超时时间和申请的缓冲字节数。 */
+    private static void validateReceiveOptions(int timeoutMillis, int receiveBufferBytes) {
         // 零表示一直等待，负数没有合法含义。
         if (timeoutMillis < 0) {
             throw new IllegalArgumentException("UDP 接收超时时间不能小于0");
+        }
+        // 缓冲字节数为零时保留操作系统默认值。
+        if (receiveBufferBytes < 0) {
+            throw new IllegalArgumentException("UDP 接收缓冲字节数不能小于0");
         }
     }
 
@@ -272,6 +309,9 @@ public final class UdpTool {
         /** 接收下一条UDP报文并保留发送方地址和端口。 */
         ReceivedPacket receivePacket() throws IOException;
 
+        /** 读取操作系统为端点实际分配的接收缓冲字节数。 */
+        int getReceiveBufferSize() throws IOException;
+
         /** @return 当前UDP端点是否仍可使用 */
         boolean isOpen();
 
@@ -285,6 +325,8 @@ public final class UdpTool {
 
         /** 当前单播端点长期复用的套接字。 */
         private final DatagramSocket socket;
+        /** 当前单播端点专用的临时接收报文。 */
+        private final DatagramPacket receiveBuffer = createReceivePacket();
 
         /** 保存已经完成绑定的单播套接字。 */
         private UnicastEndpoint(DatagramSocket socket) {
@@ -313,14 +355,20 @@ public final class UdpTool {
          */
         public byte[] receive() throws IOException {
             // 复用当前端点的同一个套接字接收下一条报文。
-            return UdpTool.receive(socket);
+            return receivePacket().getData();
         }
 
         /** 接收下一条UDP报文，并返回发送方地址和端口。 */
         @Override
         public ReceivedPacket receivePacket() throws IOException {
             // FEP应答必须发回当前报文来源，因此保留来源网络信息。
-            return UdpTool.receivePacket(socket);
+            return UdpTool.receivePacket(socket, receiveBuffer);
+        }
+
+        /** 读取单播套接字实际使用的接收缓冲字节数。 */
+        @Override
+        public int getReceiveBufferSize() throws IOException {
+            return socket.getReceiveBufferSize();
         }
 
         /** @return 当前单播端点是否仍可使用 */
@@ -352,11 +400,18 @@ public final class UdpTool {
                 byte[] data,
                 String sourceAddress,
                 int sourcePort) {
-            this.data = Arrays.copyOf(data, data.length);
+            // 调用方已经复制有效数据，由报文独立持有。
+            this.data = data;
             this.sourceAddress = sourceAddress;
             this.sourcePort = sourcePort;
         }
 
+        /** 读取独立报文的字节数，无需为长度判断复制内容。 */
+        public int getDataLength() {
+            return data.length;
+        }
+
+        /** 返回副本，避免调用方修改已保存的报文内容。 */
         public byte[] getData() {
             return Arrays.copyOf(data, data.length);
         }
@@ -416,6 +471,8 @@ public final class UdpTool {
 
         /** 当前组播接收端长期复用的套接字。 */
         private final MulticastSocket socket;
+        /** 当前组播端点专用的临时接收报文。 */
+        private final DatagramPacket receiveBuffer = createReceivePacket();
 
         /** 当前接收端加入的组播地址。 */
         private final InetAddress groupAddress;
@@ -441,14 +498,20 @@ public final class UdpTool {
         /** 接收下一条具有完整边界的 UDP 组播报文。 */
         public byte[] receive() throws IOException {
             // 复用已经加入组播的套接字接收下一条报文。
-            return UdpTool.receive(socket);
+            return receivePacket().getData();
         }
 
         /** 接收下一条组播报文，并保留实际发送方地址和端口。 */
         @Override
         public ReceivedPacket receivePacket() throws IOException {
             // FEP等需要应答的协议使用来源信息把响应发送给实际发送方。
-            return UdpTool.receivePacket(socket);
+            return UdpTool.receivePacket(socket, receiveBuffer);
+        }
+
+        /** 读取组播套接字实际使用的接收缓冲字节数。 */
+        @Override
+        public int getReceiveBufferSize() throws IOException {
+            return socket.getReceiveBufferSize();
         }
 
         /** 使用当前组播套接字向指定目标发送一个UDP应答报文。 */

@@ -3,6 +3,7 @@ package com.example.dataprocess.service.impl;
 import com.example.dataprocess.collection.CollectInterfaceStatistics;
 import com.example.dataprocess.config.FepMqProperties;
 import com.example.dataprocess.config.FepProperties;
+import com.example.dataprocess.config.TimingLogProperties;
 import com.example.dataprocess.config.MinioStorageProperties;
 import com.example.dataprocess.dto.FepFileMessage;
 import com.example.dataprocess.entity.CollectInterfaceRuntimeConfig;
@@ -44,6 +45,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 /** 可靠执行FEP文件对象上传和消息发布。 */
 @Service
 public class FepFileResultServiceImpl implements FepFileResultService {
+    /** 上传、消息发布及相关异常日志统一使用现有日志开关。 */
+    @org.springframework.beans.factory.annotation.Autowired
+    private TimingLogProperties timingLog = new TimingLogProperties();
+
     /** 告警组件采用独立注入，复用已有离线构造入口。 */
     @org.springframework.beans.factory.annotation.Autowired
     private com.example.dataprocess.alarm.DataAlarmRecorder alarmRecorder;
@@ -133,8 +138,11 @@ public class FepFileResultServiceImpl implements FepFileResultService {
         }
 
         // 第四步：本地文件已经丢失时允许发送方重新发送并覆盖旧处理状态。
-        LOGGER.warn("FEP已接收记录缺少本地文件，将允许重新传输，记录编号：{}，文件：{}",
-                record.getId(), record.getLocalPath());
+        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+        if (timingLog.isEnabled()) {
+            LOGGER.warn("FEP已接收记录缺少本地文件，将允许重新传输，记录编号：{}，文件：{}",
+                    record.getId(), record.getLocalPath());
+        }
         return false;
     }
 
@@ -160,7 +168,7 @@ public class FepFileResultServiceImpl implements FepFileResultService {
         record.setFileType(fileType);
         record.setFileLength(fileLength);
         // 分辨率随完整文件一次登记，识别失败不影响接收、上传和消息发布。
-        record.setResolution(ImageResolutionReader.read(normalizedFile, fileType));
+        record.setResolution(ImageResolutionReader.read(normalizedFile, fileType, timingLog::isEnabled));
         record.setLocalPath(normalizedFile.toString());
         record.setObjectName(objectName);
         record.setFileUrl("");
@@ -182,8 +190,11 @@ public class FepFileResultServiceImpl implements FepFileResultService {
 
         // 第四步：数据库已经形成可靠重试入口，再提交后续异步任务。
         submitRecord(record);
-        LOGGER.info("FEP完整文件已经登记，记录编号：{}，文件：{}",
-                record.getId(), normalizedFile);
+        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+        if (timingLog.isEnabled()) {
+            LOGGER.info("FEP完整文件已经登记，记录编号：{}，文件：{}",
+                    record.getId(), normalizedFile);
+        }
     }
 
     /** 定时扫描所有到达重试时间的文件。 */
@@ -228,8 +239,11 @@ public class FepFileResultServiceImpl implements FepFileResultService {
         } catch (RejectedExecutionException exception) {
             // 队列已满时交给下次数据库扫描继续处理。
             submittedRecordIds.remove(record.getId());
-            LOGGER.warn("FEP文件结果线程池已满，记录将在稍后重试，记录编号：{}",
-                    record.getId());
+            // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+            if (timingLog.isEnabled()) {
+                LOGGER.warn("FEP文件结果线程池已满，记录将在稍后重试，记录编号：{}",
+                        record.getId());
+            }
         }
     }
 
@@ -277,11 +291,14 @@ public class FepFileResultServiceImpl implements FepFileResultService {
                         + "；阶段：" + FepFileProcessStatus.getNameByCode(record.getProcessStatus())
                         + "；重试次数：" + record.getRetryCount() + "；本次失败将自动重试；原因：" + failureMessage);
             }
-            LOGGER.warn("FEP文件后续处理失败，记录编号：{}，状态：{}，原因：{}",
-                    record.getId(),
-                    FepFileProcessStatus.getNameByCode(
-                            record.getProcessStatus()),
-                    failureMessage);
+            // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+            if (timingLog.isEnabled()) {
+                LOGGER.warn("FEP文件后续处理失败，记录编号：{}，状态：{}，原因：{}",
+                        record.getId(),
+                        FepFileProcessStatus.getNameByCode(
+                                record.getProcessStatus()),
+                        failureMessage);
+            }
         }
     }
 
@@ -308,8 +325,11 @@ public class FepFileResultServiceImpl implements FepFileResultService {
                             .contentType(contentType)
                             .build());
         }
-        LOGGER.info("FEP文件上传对象存储成功，文件：{}，对象名称：{}",
-                completedFile.getFileName(), objectName);
+        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+        if (timingLog.isEnabled()) {
+            LOGGER.info("FEP文件上传对象存储成功，文件：{}，对象名称：{}",
+                    completedFile.getFileName(), objectName);
+        }
     }
 
     /** 发布一条可以按记录编号识别的文件完成消息。 */
@@ -328,8 +348,11 @@ public class FepFileResultServiceImpl implements FepFileResultService {
                 .build();
         SendResult sendResult = rocketMQTemplate.syncSend(
                 buildDestination(), rocketMessage);
-        LOGGER.info("FEP文件完成消息发送成功，记录编号：{}，消息标识：{}，文件地址：{}",
-                record.getId(), sendResult.getMsgId(), record.getFileUrl());
+        // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+        if (timingLog.isEnabled()) {
+            LOGGER.info("FEP文件完成消息发送成功，记录编号：{}，消息标识：{}，文件地址：{}",
+                    record.getId(), sendResult.getMsgId(), record.getFileUrl());
+        }
     }
 
     /** 删除已经完成全部后续处理的本地文件。 */
@@ -338,8 +361,11 @@ public class FepFileResultServiceImpl implements FepFileResultService {
             // 文件不存在也视为清理完成，避免无意义地重复报警。
             Files.deleteIfExists(Paths.get(record.getLocalPath()));
         } catch (Exception exception) {
-            LOGGER.warn("FEP本地完整文件清理失败，文件：{}，原因：{}",
-                    record.getLocalPath(), exception.getMessage());
+            // 文件交换日志统一由现有开关控制，关闭时仍继续原有业务处理。
+            if (timingLog.isEnabled()) {
+                LOGGER.warn("FEP本地完整文件清理失败，文件：{}，原因：{}",
+                        record.getLocalPath(), exception.getMessage());
+            }
         }
     }
 

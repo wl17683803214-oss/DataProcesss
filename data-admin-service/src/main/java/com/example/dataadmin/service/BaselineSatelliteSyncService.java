@@ -78,7 +78,8 @@ public class BaselineSatelliteSyncService {
                 throw new IllegalStateException("查询基线卫星失败：" + (response == null ? "未返回响应" :
                         response.path("msg").asText(response.path("message").asText("业务返回失败"))));
             }
-            JsonNode data = response.path("data");
+            // 兼容分页字段位于响应最外层或data对象内，两种结构共用后续完整性校验。
+            JsonNode data = response.has("rows") || response.has("total") ? response : response.path("data");
             JsonNode rows = data.path("rows");
             JsonNode total = data.path("total");
             if (!rows.isArray() || !total.isIntegralNumber() || !total.canConvertToLong() || total.asLong() < 0) {
@@ -96,11 +97,12 @@ public class BaselineSatelliteSyncService {
                 if (!seenCodes.add(code)) {
                     throw new IllegalArgumentException("基线返回重复卫星编码：" + code);
                 }
-                String tableUrl = optionalText(satellite.path("satelliteParameterTableUrl"));
+                // 与卫星档案同步使用相同的遥测下载字段，参数表名称不参与下载或选表。
+                String tableUrl = optionalText(satellite.path("telemetryUrl"));
                 if (tableUrl.isEmpty()) {
                     // 无下载地址时跳过该卫星，保留当前任务已有配置。
                     skipped++;
-                    LOGGER.warn("基线卫星缺少参数表下载地址，已跳过，卫星名称：{}，卫星编码：{}", name, code);
+                    LOGGER.warn("基线卫星缺少遥测参数表下载地址，已跳过，卫星名称：{}，卫星编码：{}", name, code);
                     continue;
                 }
                 try {
