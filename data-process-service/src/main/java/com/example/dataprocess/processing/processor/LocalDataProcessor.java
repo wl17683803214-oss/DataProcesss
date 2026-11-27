@@ -143,7 +143,7 @@ public class LocalDataProcessor implements DataProcessor {
                     .setTableIndex(item.getTableIndex())
                     .setTmSymbol(tmSymbol)
                     .setRawData(ByteString.copyFrom(raw));
-            // 直接传入原始字节；只有未配置公式时才按小端无符号整数输出原码。
+            // 直接传入原始字节；未配置公式或找不到脚本时按小端无符号整数输出原码。
             long conversionStart = timed ? System.nanoTime() : 0L;
             BigDecimal stateValue = fillValue(config, telemetry, prepared, raw, rawBySymbol);
             if (timed) {
@@ -247,7 +247,7 @@ public class LocalDataProcessor implements DataProcessor {
         return SubTopicName.DATA_SUBSYSTEM_CSCL_PHYVALUE;
     }
 
-    /** 按公式编号执行脚本，失败只保留二进制原码，不生成虚假的计算值。 */
+    /** 缺少公式时输出原码；已有脚本执行失败时只保留二进制原码。 */
     private BigDecimal fillValue(
             CollectInterfaceRuntimeConfig config,
             Telemetry.Builder telemetry,
@@ -256,18 +256,15 @@ public class LocalDataProcessor implements DataProcessor {
             java.util.Map<String, byte[]> rawBySymbol) {
         PdxpProtocolField field = prepared.getConfig();
         try {
-            if (prepared.getFormulaCode().isEmpty()) {
-                // 空公式是合法的原码输出场景，展示文本保留完整整数精度。
+            if (prepared.getFormulaCode().isEmpty() || prepared.getParameters() == null) {
+                // 第一步：空公式和缺失脚本共用原码输出，展示文本保留完整整数精度。
                 BigInteger decodedValue = unsigned(raw);
                 telemetry.setValueType(ValueType.VALUE_TYPE_RAW);
                 telemetry.setValue(decodedValue.doubleValue())
                         .setValueText(decodedValue.toString());
                 return new BigDecimal(decodedValue);
             }
-            // 执行预先解析的公式参数，当帧引用仍读取本帧提取的完整原码。
-            if (prepared.getParameters() == null) {
-                throw new IllegalArgumentException("未找到公式" + prepared.getFormulaCode() + "对应的脚本");
-            }
+            // 第二步：执行已找到脚本的准备参数，当帧引用仍读取本帧提取的完整原码。
             LuaFormulaEngine.Result result = LuaFormulaEngine.executePrepared(
                     prepared.getParameters(), raw, prepared.getWidth(), rawBySymbol);
             ValueType type = result.getType();

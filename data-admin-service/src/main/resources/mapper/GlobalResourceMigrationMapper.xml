@@ -16,25 +16,28 @@
     <!-- 在升级事务内取得表锁，停止旧实例后再执行升级可避免长时间等待。 -->
     <select id="findConflicts" resultType="string">
         WITH configuration_conflicts AS (
-            select '设备卫星重复：' || type || '/' || code as detail from device_satellite
+            select cast(concat(concat('设备卫星重复：', cast(type as text)),
+                               concat('/', cast(code as text))) as text) as detail from device_satellite
             where is_deleted = 0 group by type, code having count(1) &gt; 1
             union all
-            select '校准公式重复：' || calibration_formula as detail from calib_channel_config
+            select cast(concat('校准公式重复：', cast(calibration_formula as text)) as text) as detail from calib_channel_config
             where is_deleted = 0 group by calibration_formula having count(1) &gt; 1
             union all
-            select '组件键重复：用户' || user_id || '/' || widget_key as detail from monitor_dashboard_widget
+            select cast(concat(concat('组件键重复：用户', cast(user_id as text)),
+                               concat('/', cast(widget_key as text))) as text) as detail from monitor_dashboard_widget
             where 1 = 1 group by user_id, widget_key having count(1) &gt; 1
             union all
-            select '参数勾选重复：设备' || device_satellite_id || '/' || telemetry_code as detail from processed_telemetry_filter_selection
+            select cast(concat(concat('参数勾选重复：设备', cast(device_satellite_id as text)),
+                               concat('/', cast(telemetry_code as text))) as text) as detail from processed_telemetry_filter_selection
             where 1 = 1 group by selection_type, target_id, device_satellite_id, telemetry_code having count(1) &gt; 1
             union all
-            select '采集统计窗口重复：接口' || interface_id as detail from collect_interface_statistics
+            select cast(concat('采集统计窗口重复：接口', cast(interface_id as text)) as text) as detail from collect_interface_statistics
             where 1 = 1 group by interface_id, statistics_time having count(1) &gt; 1
             union all
-            select '处理统计窗口重复：接口' || interface_id as detail from data_processing_statistics
+            select cast(concat('处理统计窗口重复：接口', cast(interface_id as text)) as text) as detail from data_processing_statistics
             where 1 = 1 group by interface_id, statistics_time having count(1) &gt; 1
             union all
-            select '不同任务的参数范围检查开关不一致，请先统一配置' as detail
+            select cast('不同任务的参数范围检查开关不一致，请先统一配置' as text) as detail
             from processing_rule_config
             having count(distinct parameter_range_check_enabled) &gt; 1
                and sum(case when scope_key = 'global' then 1 else 0 end) = 0

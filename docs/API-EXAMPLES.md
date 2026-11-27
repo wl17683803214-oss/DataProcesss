@@ -2355,7 +2355,7 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
 
 采集接口选择 `rpcEnabled=0` 时，通过 `protocolConfigId` 取得协议配置，将 `configParams.fields` 按 `tableIndex` 数字升序排列，再按 `bitWidth` 连续解码并组装遥测Protobuf消息。
 
-当字段的 `alarmFlag` 为 `"1"` 时，优先使用 `warningValue` 状态范围，为空时使用 `normalValue`。命中范围后写入 `STATE_TYPE_NORMAL`、从零开始的 `stateIndex` 和范围中文名称 `stateName`；未命中时只写入 `STATE_TYPE_ALARM`。本地处理统一按 `formulaType` 匹配已导入Lua脚本，结果类型由脚本返回，300至303不再内置。公式为空输出 `VALUE_TYPE_RAW`；公式缺失或执行失败只保留 `VALUE_TYPE_BINARY` 原码并产生参数处理告警，其他参数继续。状态范围按处理后的数值判断，文本不参与数值范围判定。
+当字段的 `alarmFlag` 为 `"1"` 时，优先使用 `warningValue` 状态范围，为空时使用 `normalValue`。命中范围后写入 `STATE_TYPE_NORMAL`、从零开始的 `stateIndex` 和范围中文名称 `stateName`；未命中时只写入 `STATE_TYPE_ALARM`。本地处理统一按 `formulaType` 匹配已导入Lua脚本，结果类型由脚本返回，300至303不再内置。公式为空或未找到对应脚本时，统一输出 `VALUE_TYPE_RAW` 原码数值和精确文本，不因缺少脚本产生参数处理告警；已找到脚本但执行失败时只保留 `VALUE_TYPE_BINARY` 原码并产生参数处理告警，其他参数继续。状态范围按处理后的数值判断，文本不参与数值范围判定。
 
 | tableIndex | telemetryCode | bitWidth | 读取位置 | 原始值 |
 | --- | --- | --- | --- | --- |
@@ -2385,7 +2385,7 @@ GET /system/logs?taskId=TASK-20260908-001&logLevel=ERROR&logSource=COLLECTION&op
 
 303示例脚本：value保存从2000-01-01 12:00:00开始的0.1毫秒整数计数，valueType为VALUE_TYPE_TIME；计数10001对应valueText“2000-01-01 12:00:01.0001”。时间行为由脚本调用工具选择，不由Java按303编号硬编码，不按decimalPlaces舍入，不作时区偏移。
 
-找不到公式、参数无效、脚本执行失败或结果不合法时，仅将当前参数保留为BINARY原码，不生成计算值，并写参数处理失败告警；同帧其他参数继续。BINARY不参与数值校准，数据库value存NULL。导入、覆盖或修正配置后由内部同步机制更新运行快照，后续数值或文本参数正常处理不再自动恢复PROCESS_CONFIG告警；故障记录和人工处理功能保留，历史失败数据不自动补算。完整规范及文件见docs/lua-formulas/README.md。
+找不到公式时，按未配置公式处理，保留原始字节并输出RAW原码数值和精确文本，沿用原码状态检查、校准和入库流程。已找到脚本但参数无效、执行失败或结果不合法时，仅将当前参数保留为BINARY原码，不生成计算值，并写参数处理失败告警；同帧其他参数继续。BINARY不参与数值校准，数据库value存NULL。导入、覆盖或修正配置后由内部同步机制更新运行快照，后续数值或文本参数正常处理不再自动恢复PROCESS_CONFIG告警；故障记录和人工处理功能保留，历史失败数据不自动补算。完整规范及文件见docs/lua-formulas/README.md。
 ### 遥测整帧检查结果与查询
 
 `GET /processing/realtime/telemetry?taskId=728101&interfaceId=14` 查询最近15分钟的正常整帧，按时间倒序最多100条，data直接返回数组。当前记录示例：
