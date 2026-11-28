@@ -4937,7 +4937,7 @@ paths:
       - 数据处理
       summary: 同步基线全部设备遥测参数
       description: |-
-        使用baseline.sso.api-base-url和trial-param-table-list-path拼接基线地址，以POST JSON请求pageNum和pageSize=99999，按total继续分页。解析每条记录的paramData.sheets，每个Sheet作为设备，名称和编码均取完整Sheet名，必须符合通道名称_业务标识格式且不超过100个字符。按当前任务和设备类型同名匹配，保留主键并替换参数及系统层级；缺少校准公式按空值处理。空paramData跳过且保留已有数据，未返回设备不删除，卫星不受影响。重复参数表主键、跨表同名设备、分页不完整或参数无效时整体不提交；全部校验成功后在同一事务入库，运行接口快照下次接口同步后更新。
+        使用baseline.sso.api-base-url和trial-param-table-list-path拼接基线地址，以POST JSON请求pageNum和pageSize=99999，按total继续分页，兼容最外层rows/total和data.rows/data.total。读取每条记录的fileUrl下载原始参数表到内存，按fileName识别.xls、.xlsx或.txt格式，不读取paramData，不在本地保存下载文件。与手动导入共用固定十九列顺序，跳过首行且不匹配表头文字；第10列为正常值范围，第11列为预警值范围，中间空列保留位置，十九列之后不参与解析。Excel读取全部非空Sheet，每个Sheet作为设备；TXT作为单个设备。名称和编码取完整Sheet名或TXT不带扩展名的文件名，必须符合通道名称_业务标识格式且不超过100个字符。按设备类型和名称全局匹配，保留主键并替换参数及系统层级。fileUrl缺失或为空时跳过并保留已有数据，paramData为空不影响同步；未返回设备不删除，卫星不受影响。重复参数表主键、跨表同名设备、分页不完整、文件名无效、下载失败或参数无效时整体不提交；全部校验成功后在同一事务入库，提交后刷新运行接口快照。成功响应仍须结合importedParameterCount和skippedTableCount判断实际导入数量。
         配置、查询和参数勾选均不接收任务编号，查询不按任务筛选。遥测与FEP文件保存时记录接收开始时最新运行中任务，无运行中任务不保存；校准记录、告警及统计独立于任务。
       responses:
         '200':
@@ -4962,7 +4962,7 @@ paths:
                         description: 依据Sheet数量成功导入的设备数
                       skippedTableCount:
                         type: integer
-                        description: paramData为空而跳过的参数表数
+                        description: fileUrl缺失或为空而跳过的参数表数；paramData为空不再影响同步
                       importedParameterCount:
                         type: integer
                         description: 成功导入的遥测参数数
@@ -4975,14 +4975,14 @@ paths:
                   skippedTableCount: 1
                   importedParameterCount: 150
         '400':
-          description: 任务、接口配置、分页、设备名称或参数校验失败，已有参数不更新
+          description: 接口配置、分页、文件下载、文件格式、设备名称或参数校验失败，已有参数不更新
   /processing/rules/sync-baseline:
     post:
       tags:
       - 数据处理
       summary: 同步基线全部卫星遥测参数
       description: |-
-        不传卫星和通道筛选，使用pageSize=99999查询基线并按total继续翻页，兼容最外层rows/total和data.rows/data.total两种分页结构。使用telemetryUrl下载Excel，不读取satelliteParameterTableUrl；按工作簿页签顺序固定读取第一个Sheet作为A表，不依赖telemetryName、satelliteParameterTableName、文件名或页签名称，其余Sheet不读取。跳过首行表头，按A至S列的固定顺序解析参数，位宽、遥测名称和遥测代号均空的占位行跳过。单颗卫星缺少telemetryUrl、下载失败、文件损坏、无工作表、首表无有效参数或参数校验失败时，跳过该卫星并保留已有参数，计入skippedSatelliteCount并继续其他卫星；参数表名称为空不影响同步。分页完整后仅将有效卫星按任务和satelliteCode匹配，并在同一事务中替换参数及系统层级，卫星名称取satelliteName，已有参数勾选按遥测代号保留。任务或基线分页结构、卫星身份有误时仍整体报错。运行接口快照在下次接口同步时更新。
+        不传卫星和通道筛选，使用pageSize=99999查询基线并按total继续翻页，兼容最外层rows/total和data.rows/data.total两种分页结构。使用telemetryUrl下载Excel到内存，不保存下载文件，不读取satelliteParameterTableUrl；按工作簿页签顺序固定读取第一个Sheet作为A表，不依赖telemetryName、satelliteParameterTableName、文件名或页签名称，其余Sheet不读取。与手动导入共用固定十九列顺序，跳过首行且不匹配表头文字；第10列为正常值范围，第11列为预警值范围，中间空列保留位置，十九列之后不参与解析。位宽、遥测名称和遥测代号均空的占位行跳过。单颗卫星缺少telemetryUrl、下载失败、文件损坏、无工作表、首表无有效参数或参数校验失败时，跳过该卫星并保留已有参数，计入skippedSatelliteCount并继续其他卫星；参数表名称为空不影响同步。分页完整后仅将有效卫星按satelliteCode全局匹配，并在同一事务中替换参数及系统层级，卫星名称取satelliteName，已有参数勾选按遥测代号保留。基线分页结构或卫星身份有误时仍整体报错，提交后刷新运行接口快照。
         配置、查询和参数勾选均不接收任务编号，查询不按任务筛选。遥测与FEP文件保存时记录接收开始时最新运行中任务，无运行中任务不保存；校准记录、告警及统计独立于任务。
       responses:
         '200':
@@ -5025,9 +5025,9 @@ paths:
     post:
       tags:
       - 数据处理
-      summary: 按任务和类型导入Excel或TXT设备卫星及参数
+      summary: 按类型和固定列顺序导入Excel或TXT设备卫星及参数
       description: |-
-        按当前任务、类型和名称仅替换同名设备卫星的系统和参数，保留设备主键；不同名新增，未上传的设备卫星及配置保留；所属系统按反斜线逐层建立；仍存在的遥测代号保留勾选状态。全部操作在同一事务中完成。
+        按类型和名称全局匹配，仅替换同名设备卫星的系统和参数，保留设备主键；不同名新增，未上传的设备卫星及配置保留；所属系统按反斜线逐层建立；仍存在的遥测代号保留勾选状态。Excel和TXT均跳过首行，不匹配表头文字，按固定十九列顺序读取：序号、位宽、遥测名称、遥测代号、公式类型、处理公式、处理参数、小数位数、是否报警、正常值范围、预警值范围、状态跳变信息、相关命令、所属系统、控制波道、合并波道、延时波道、存储遥测、校准公式。正常值范围固定为J列，预警值范围固定为K列，中间空列保留位置，十九列之后不参与解析。全部操作在同一事务中完成。
         配置、查询和参数勾选均不接收任务编号，查询不按任务筛选。遥测与FEP文件保存时记录接收开始时最新运行中任务，无运行中任务不保存；校准记录、告警及统计独立于任务。
       requestBody:
         required: true
@@ -5048,7 +5048,7 @@ paths:
                   example: '1'
                 file:
                   type: string
-                  description: 卫星Excel按工作簿页签顺序只读取第一个Sheet作为A表，不匹配文件名或页签名称，其余Sheet不读取；跳过首行表头，按A至S列的固定顺序解析，位宽、遥测名称和遥测代号均空的占位行跳过。设备Excel仍读取全部Sheet并按中文表头映射。Excel使用实际页签名称，TXT使用文件名作为设备卫星编码和名称。
+                  description: 支持.xls、.xlsx和制表符.txt，最大20MB。统一跳过首行，按前十九列顺序读取，不匹配表头文字；第10列为正常值范围，第11列为预警值范围。卫星Excel只读取第一个Sheet作为A表，位宽、遥测名称和遥测代号均空的占位行跳过；设备Excel读取全部非空Sheet，完全空白的Sheet跳过。Excel使用实际页签名称，TXT使用不带扩展名的文件名作为设备卫星编码和名称；TXT首行至少十九列，兼容UTF-8和GBK编码。范围单元格仅包含横线时按空值处理，第19列为反斜线时按空校准公式处理。
                   format: binary
       responses:
         '200':

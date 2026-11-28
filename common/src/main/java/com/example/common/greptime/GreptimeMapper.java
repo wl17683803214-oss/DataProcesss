@@ -11,6 +11,13 @@ public interface GreptimeMapper {
     void createDatabase(@Param("databaseName") String databaseName);
     /** 创建持久化对象分表目录，供跨对象整帧查询定位。 */
     void createTableRegistry();
+    /** 创建每日遥测统计表。 */
+    void createDailyStatisticsTable();
+    List<String> dailyStatisticsPrimaryKey(@Param("databaseName") String databaseName);
+    List<DailyTelemetryStatistics> dailyStatistics(@Param("tableName") String tableName,
+            @Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime);
+    void insertDailyStatistics(@Param("statDate") Timestamp statDate,
+            @Param("createdAt") Timestamp createdAt, @Param("rows") List<DailyTelemetryStatistics> rows);
     /** 自动创建整帧表。 */
     void createFrameTable(@Param("tableName") String tableName);
     /** 自动创建参数表。 */

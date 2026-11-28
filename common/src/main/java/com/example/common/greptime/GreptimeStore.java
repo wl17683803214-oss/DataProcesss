@@ -75,6 +75,7 @@ public class GreptimeStore implements AutoCloseable {
                 initializeDatabase();
                 execute(mapper -> {
                     mapper.createTableRegistry();
+                    mapper.createDailyStatisticsTable();
                     return null;
                 });
             }
@@ -211,6 +212,39 @@ public class GreptimeStore implements AutoCloseable {
     }
 
     /** 按对象把勾选条件归并到各自分表，减少联合查询的分支数量。 */
+    public int calculateDailyStatistics(Timestamp startTime, Timestamp endTime) {
+        if (startTime == null || endTime == null || !startTime.before(endTime)) {
+            throw new IllegalArgumentException("统计时间范围不正确");
+        }
+        List<String> primaryKey = execute(mapper -> mapper.dailyStatisticsPrimaryKey(databaseName));
+        if (!primaryKey.equals(Arrays.asList("task_id", "satellite_code", "telemetry_code", "status"))) {
+            throw new IllegalStateException("每日统计表主键不正确，请先迁移旧表，避免不同状态的结果互相覆盖");
+        }
+        Map<List<String>, DailyTelemetryStatistics> merged = new LinkedHashMap<>();
+        for (String table : execute(mapper -> mapper.shardTables(databaseName))) {
+            if (!GreptimeTableRoute.isShardTable(table) || !table.startsWith("telemetry_parameter_")) {
+                continue;
+            }
+            List<DailyTelemetryStatistics> rows = execute(mapper -> mapper.dailyStatistics(table, startTime, endTime));
+            for (DailyTelemetryStatistics row : rows) {
+                DailyTelemetryStatistics existing = merged.putIfAbsent(row.key(), row);
+                if (existing != null) {
+                    existing.merge(row);
+                }
+            }
+        }
+        List<DailyTelemetryStatistics> rows = new ArrayList<>(merged.values());
+        Timestamp createdAt = new Timestamp(System.currentTimeMillis());
+        for (int offset = 0; offset < rows.size(); offset += 500) {
+            List<DailyTelemetryStatistics> batch = rows.subList(offset, Math.min(offset + 500, rows.size()));
+            execute(mapper -> {
+                mapper.insertDailyStatistics(startTime, createdAt, batch);
+                return null;
+            });
+        }
+        return rows.size();
+    }
+
     private Map<String, Object> parameterQuery(Map<String, Object> query) {
         Map<String, Map<String, Object>> grouped = new LinkedHashMap<>();
         Object filters = query.get("filters");

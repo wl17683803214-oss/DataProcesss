@@ -3,7 +3,6 @@ package com.example.dataadmin.service.support;
 import com.example.dataadmin.entity.TelemetryParseRuleConfig;
 import com.example.dataadmin.enums.BusinessEnums;
 import com.example.dataadmin.enums.EnumData;
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
@@ -25,9 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -37,55 +34,11 @@ import java.util.Set;
 /** 读取Excel工作簿或制表符TXT，校验完成前不访问数据库。 */
 @Component
 public class ParameterWorkbookParser {
-    /** 解析基线参数对象，跨工作表合并并统一检查序号，缺少校准公式时留空。 */
-    public List<TelemetryParseRuleConfig> parseBaseline(
-            String taskId, String satelliteName, JsonNode data) {
-        // 第一步：检查工作表结构，禁止错误响应覆盖已有参数。
-        JsonNode sheets = data.path("sheets");
-        if (!sheets.isObject() || sheets.size() == 0) {
-            throw new IllegalArgumentException("参数来源【" + satelliteName + "】遥测工作表为空或格式错误");
-        }
-        List<TelemetryParseRuleConfig> rules = new ArrayList<>();
-        Set<String> serials = new HashSet<>();
-        Iterator<Map.Entry<String, JsonNode>> entries = sheets.fields();
-        // 第二步：按照现有中文字段映射转换，忽略基线多余列。
-        while (entries.hasNext()) {
-            Map.Entry<String, JsonNode> sheet = entries.next();
-            if (!sheet.getValue().isArray()) {
-                throw new IllegalArgumentException("参数来源【" + satelliteName + "】工作表格式错误：" + sheet.getKey());
-            }
-            int rowIndex = 0;
-            for (JsonNode row : sheet.getValue()) {
-                rowIndex++;
-                if (!row.isObject()) {
-                    throw new IllegalArgumentException("参数来源【" + satelliteName + "】遥测记录必须为对象");
-                }
-                List<String> values = new ArrayList<>();
-                for (String[] column : COLUMNS) {
-                    JsonNode value = row.get(column[0]);
-                    if (value != null && value.isContainerNode()) {
-                        throw new IllegalArgumentException("参数来源【" + satelliteName + "】字段格式错误：" + column[0]);
-                    }
-                    String text = value == null || value.isNull() ? "" : value.asText();
-                    // 基线系统路径可能使用连续反斜线，统一为本地层级分隔符。
-                    if ("systemName".equals(column[1])) {
-                        text = normalizeSystemName(text);
-                    }
-                    values.add(text);
-                }
-                addRule(taskId, values, rules, serials,
-                        "参数来源【" + satelliteName + "】工作表【" + sheet.getKey() + "】第" + rowIndex + "条");
-            }
-        }
-        // 第三步：复用现有必填、枚举和重复序号校验后的结果。
-        requireRules(satelliteName, rules);
-        return rules;
-    }
     /** 单个导入文件最大字节数。 */
     private static final int MAX_FILE_SIZE = 20 * 1024 * 1024;
     /** TXT兼容的GBK字符集。 */
     private static final Charset GBK = Charset.forName("GBK");
-    /** 表头及对应的实体属性，避免按固定列位置读取。 */
+    /** 固定十九列的业务顺序及实体属性，所有文件导入均按列位置读取。 */
     private static final String[][] COLUMNS = {
         {"序号", "tableIndex"},
         {"位宽", "bitWidth"},
@@ -136,7 +89,7 @@ public class ParameterWorkbookParser {
         return parseWorkbook(taskId, content, true);
     }
 
-    /** 卫星只解析首个工作表，设备仍按页签顺序解析整个工作簿。 */
+    /** 卫星只解析首个工作表，设备按页签顺序解析全部非空工作表，统一按前十九列读取。 */
     private Map<String, List<TelemetryParseRuleConfig>> parseWorkbook(
             String taskId,
             byte[] content,
@@ -148,9 +101,8 @@ public class ParameterWorkbookParser {
             // 第一步：按显示格式读取文本，包括前导零；公式单元格只读取缓存结果。
             DataFormatter formatter = new DataFormatter(Locale.ROOT);
             formatter.setUseCachedValuesForFormulaCells(true);
-            boolean positional = satellite;
             Iterable<Sheet> sheets = workbook;
-            if (positional) {
+            if (satellite) {
                 // 卫星首个工作表固定为A表，缺少工作表时在任何数据库写入前报错。
                 if (workbook.getNumberOfSheets() == 0) {
                     throw new IllegalArgumentException("Excel没有可导入的工作表");
@@ -159,15 +111,14 @@ public class ParameterWorkbookParser {
             }
             for (Sheet sheet : sheets) {
                 String sheetName = sheet.getSheetName();
+                // 设备工作簿可能自带空白页，仅跳过完全空白的工作表。
+                if (!satellite && isBlankSheet(sheet, formatter)) {
+                    continue;
+                }
                 Row header = sheet.getRow(sheet.getFirstRowNum());
                 if (header == null) {
                     throw new IllegalArgumentException(
                             "工作表【" + sheetName + "】没有表头");
-                }
-                Map<String, Integer> indexes = positional ? null : workbookHeaders(sheetName, header, formatter);
-                int[] columns = new int[COLUMNS.length];
-                for (int column = 0; column < COLUMNS.length; column++) {
-                    columns[column] = positional ? column : indexes.get(COLUMNS[column][0]);
                 }
                 List<TelemetryParseRuleConfig> rules =
                         new ArrayList<TelemetryParseRuleConfig>();
@@ -180,18 +131,19 @@ public class ParameterWorkbookParser {
                         continue;
                     }
                     List<String> values = new ArrayList<String>();
-                    for (int column : columns) {
+                    // 从固定物理列取值，中间空列保留位置，十九列之后不参与解析。
+                    for (int column = 0; column < COLUMNS.length; column++) {
                         values.add(formatter.formatCellValue(row.getCell(column)));
                     }
-                    if (positional) {
+                    if (satellite) {
                         // 位宽、遥测名称和遥测代号均空的行是卫星表占位行。
                         if (values.get(1).trim().isEmpty() && values.get(2).trim().isEmpty()
                                 && values.get(3).trim().isEmpty()) {
                             continue;
                         }
-                        // 卫星表所属系统统一使用单个反斜线分隔层级。
-                        values.set(13, normalizeSystemName(values.get(13)));
                     }
+                    // 同步与手动导入均统一所属系统的层级分隔符。
+                    values.set(13, normalizeSystemName(values.get(13)));
                     addRule(taskId, values, rules, serials,
                             "工作表【" + sheetName + "】第"
                                     + (rowIndex + 1) + "行");
@@ -225,13 +177,15 @@ public class ParameterWorkbookParser {
         Set<String> serials = new HashSet<String>();
         try (BufferedReader reader = new BufferedReader(
                 new StringReader(decodeText(content)))) {
-            // 第一步：TXT第一行必须是十九列中文表头。
+            // 第一步：跳过TXT首行表头，仅检查列数，不按表头名称重排列。
             String headerLine = reader.readLine();
             if (headerLine == null || headerLine.trim().isEmpty()) {
                 throw new IllegalArgumentException("TXT文件没有表头");
             }
             List<String> headers = parseTabLine(headerLine, 1);
-            Map<String, Integer> indexes = textHeaders(headers);
+            if (headers.size() < COLUMNS.length) {
+                throw new IllegalArgumentException("TXT表头至少需要19列，实际为" + headers.size() + "列");
+            }
             String line;
             int lineNumber = 1;
             // 第二步：逐行解析制表符和双引号，空行直接忽略。
@@ -242,9 +196,11 @@ public class ParameterWorkbookParser {
                 }
                 List<String> cells = parseTabLine(line, lineNumber);
                 List<String> values = new ArrayList<String>();
-                for (String[] column : COLUMNS) {
-                    values.add(value(cells, indexes.get(column[0])));
+                // 第三步：固定读取前十九列，保留连续空列，缺少的尾部值按空文本处理。
+                for (int column = 0; column < COLUMNS.length; column++) {
+                    values.add(value(cells, column));
                 }
+                values.set(13, normalizeSystemName(values.get(13)));
                 addRule(taskId, values, rules, serials,
                         "TXT第" + lineNumber + "行");
             }
@@ -260,55 +216,17 @@ public class ParameterWorkbookParser {
         return result;
     }
 
-    /** 读取并校验Excel表头。 */
-    private Map<String, Integer> workbookHeaders(
-            String sheetName,
-            Row header,
-            DataFormatter formatter) {
-        List<String> titles = new ArrayList<String>();
-        for (Cell cell : header) {
-            // 空白列也保留位置，确保字段索引与工作簿一致。
-            while (titles.size() < cell.getColumnIndex()) {
-                titles.add("");
-            }
-            titles.add(formatter.formatCellValue(cell));
-        }
-        return headers(titles, "工作表【" + sheetName + "】");
-    }
-
-    /** 读取并校验TXT表头，兼容旧文件最后一列的反斜线名称。 */
-    private Map<String, Integer> textHeaders(List<String> titles) {
-        if (titles.size() != COLUMNS.length) {
-            throw new IllegalArgumentException(
-                    "TXT表头必须包含19列，实际为" + titles.size() + "列");
-        }
-        // 旧TXT最后一列表头使用反斜线，按校准公式列处理。
-        if ("\\".equals(titles.get(COLUMNS.length - 1).trim())) {
-            titles.set(COLUMNS.length - 1, "校准公式");
-        }
-        return headers(titles, "TXT文件");
-    }
-
-    /** 建立中文表头到列号的映射。 */
-    private Map<String, Integer> headers(
-            List<String> titles,
-            String sourceName) {
-        Map<String, Integer> indexes = new HashMap<String, Integer>();
-        for (int index = 0; index < titles.size(); index++) {
-            String title = titles.get(index) == null
-                    ? "" : titles.get(index).trim();
-            if (indexes.put(title, index) != null && !title.isEmpty()) {
-                throw new IllegalArgumentException(
-                        sourceName + "表头重复：" + title);
+    /** 判断工作表是否完全空白，格式化产生的空单元格不作为业务数据。 */
+    private boolean isBlankSheet(Sheet sheet, DataFormatter formatter) {
+        // 检查实际存在的单元格，避免空白模板页导致整份有效工作簿导入失败。
+        for (Row row : sheet) {
+            for (Cell cell : row) {
+                if (!formatter.formatCellValue(cell).trim().isEmpty()) {
+                    return false;
+                }
             }
         }
-        for (String[] column : COLUMNS) {
-            if (!indexes.containsKey(column[0])) {
-                throw new IllegalArgumentException(
-                        sourceName + "缺少表头：" + column[0]);
-            }
-        }
-        return indexes;
+        return true;
     }
 
     /** 把一行文本构造成参数实体并执行公共校验。 */

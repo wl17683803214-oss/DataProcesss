@@ -6,7 +6,7 @@ public class BaselineDeviceSyncVO {
     private final int queriedTableCount;
     /** 按工作表导入的设备数量。 */
     private final int syncedDeviceCount;
-    /** 参数数据为空而跳过的参数表数量。 */
+    /** 文件下载地址为空而跳过的参数表数量。 */
     private final int skippedTableCount;
     /** 导入的参数总数。 */
     private final int importedParameterCount;

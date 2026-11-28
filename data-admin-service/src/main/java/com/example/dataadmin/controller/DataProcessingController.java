@@ -51,7 +51,7 @@ public class DataProcessingController {
     @Autowired
     private BaselineDeviceSyncService baselineDeviceSyncService;
 
-    /** 将基线设备参数表按现有工作表导入规则同步到当前任务。 */
+    /** 下载基线设备参数表到内存，按固定列顺序同步到全局配置。 */
     @PostMapping("/rules/sync-baseline-devices")
     public ApiResponse<BaselineDeviceSyncVO> syncBaselineDevices() {
         // 先查询并校验全部参数表，再进入独立写事务。

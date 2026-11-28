@@ -1664,7 +1664,7 @@ FEP文件上传对象存储后发送的文件完成消息：
 同步设备遥测参数，沿用现有Excel导入的Sheet设备身份规则：
 
 ```http
-POST /processing/rules/sync-baseline-devices?taskId=TASK-20260908-001
+POST /processing/rules/sync-baseline-devices
 Authorization: Bearer <登录令牌>
 ```
 
@@ -1681,14 +1681,14 @@ Authorization: Bearer <登录令牌>
 }
 ```
 
-基线设备接口路径配置项为 `baseline.sso.trial-param-table-list-path`，请求使用POST JSON分页，不传额外筛选。读取 `paramData.sheets`，每个Sheet作为一个设备，Sheet名必须为 `通道名称_业务标识`。外层 `tableName`、`fileName` 不作为设备身份。缺少校准公式允许留空，参数仍须包含位宽、遥测名称、遥测代号等必填字段，公式类型允许为空；指令表不能作为遥测参数导入。跨参数表同名设备报错，避免相互覆盖。空参数数据跳过，整批校验成功后事务入库，不删除未返回设备，不修改卫星。
+基线设备接口路径配置项为 `baseline.sso.trial-param-table-list-path`，请求仍使用POST JSON分页，不传额外筛选，兼容最外层及data内的rows/total。按 `fileUrl` 下载原始表格到内存，按 `fileName` 识别文件格式，不读取 `paramData`，不保存下载文件。复用手动导入的前19列固定顺序，跳过首行且不匹配表头名称，第10列为正常值范围，第11列为预警值范围。Excel读取全部非空Sheet，每个Sheet作为一个设备，Sheet名必须为 `通道名称_业务标识`；TXT使用不带扩展名的文件名作为设备名称和编码，并使用同样的名称格式。位宽、遥测名称、遥测代号等必填字段仍校验，缺少校准公式允许留空，公式类型允许为空；指令表不能作为遥测参数导入。跨参数表同名设备报错，避免相互覆盖。fileUrl为空时跳过并保留已有数据，计入skippedTableCount；paramData为空不影响同步。下载或校验失败整批不提交，全部校验成功后事务入库，不删除未返回设备，不修改卫星；提交后刷新运行接口快照。
 
 ### `POST /processing/rules/sync-baseline`
 
-同步基线全部卫星参数，仅传目标任务编号，无需上传文件：
+同步基线全部卫星参数，无需任务编号或上传文件：
 
 ```http
-POST /processing/rules/sync-baseline?taskId=TASK-20260908-001
+POST /processing/rules/sync-baseline
 Authorization: Bearer <登录令牌>
 ```
 
@@ -1705,7 +1705,7 @@ Authorization: Bearer <登录令牌>
 }
 ```
 
-基线分页兼容最外层的rows/total和data.rows/data.total两种结构，使用telemetryUrl下载Excel，不读取satelliteParameterTableUrl；telemetryName和satelliteParameterTableName为空不影响同步。按工作簿页签顺序仅解析第一个Sheet作为A表，按satelliteCode匹配当前任务内的卫星并替换参数，缺少校准公式按空值处理；所属系统连续反斜线统一为单个层级分隔符。telemetryUrl为空、下载失败或参数表校验失败时仅跳过当前卫星，计入skippedSatelliteCount并保留已有参数。完整分页校验通过后，有效卫星在同一事务内入库；入库失败整体回滚。运行中的接口快照需下次接口同步后更新。
+基线分页兼容最外层的rows/total和data.rows/data.total两种结构，使用telemetryUrl下载Excel到内存，不保存下载文件，不读取satelliteParameterTableUrl；telemetryName和satelliteParameterTableName为空不影响同步。按工作簿页签顺序仅解析第一个Sheet作为A表，跳过首行且不匹配表头名称，固定按前19列读取，第10列为正常值范围，第11列为预警值范围。按satelliteCode全局匹配卫星并替换参数，缺少校准公式按空值处理；所属系统连续反斜线统一为单个层级分隔符。telemetryUrl为空、下载失败或参数表校验失败时仅跳过当前卫星，计入skippedSatelliteCount并保留已有参数。完整分页校验通过后，有效卫星在同一事务内入库；入库失败整体回滚，提交后刷新运行接口快照。
 
 ### `POST /processing/rules/import`
 
@@ -1713,7 +1713,6 @@ Authorization: Bearer <登录令牌>
 POST /processing/rules/import
 Content-Type: multipart/form-data
 
-taskId=TASK-20260908-001
 type=1
 file=@设备卫星参数.xlsx
 ```
@@ -1724,16 +1723,15 @@ file=@设备卫星参数.xlsx
 POST /processing/rules/import
 Content-Type: multipart/form-data
 
-taskId=TASK-20260908-001
 type=2
 file=@TMtable-A.txt
 ```
 
-支持.xls、.xlsx和.txt文件（最大20MB）。Excel按Sheet页签分别创建设备卫星；TXT一次表示一个设备卫星，使用去掉扩展名的文件名填写code和name，自动兼容UTF-8和GBK编码。第一行必须包含19个中文表头，TXT按制表符分列；旧TXT最后一列使用反斜线时按空校准公式处理。每个设备至少有一条有效数据，空行忽略，序号不能重复。完整校验后在同一事务中替换当前taskId下同类型数据，任意失败整体回滚。
+支持.xls、.xlsx和.txt文件（最大20MB）。Excel和TXT均跳过首行，不匹配表头名称，按前19列固定顺序读取，中间空列保留位置，19列之后不参与解析，第10列为正常值范围，第11列为预警值范围。设备Excel按全部非空Sheet分别创建设备，完全空白的Sheet跳过；卫星Excel只读取第一个Sheet。TXT一次表示一个设备卫星，使用去掉扩展名的文件名填写code和name，首行至少19列，自动兼容UTF-8和GBK编码。第19列内容为反斜线时按空校准公式处理。每个有效设备卫星至少有一条有效数据，空行忽略，序号不能重复。完整校验后在同一事务中替换同类型同名配置，任意失败整体回滚。
 
-上传仅替换当前任务同类型同名设备卫星的系统和参数，文件未包含的设备卫星及其配置全部保留。
+上传仅替换同类型同名设备卫星的系统和参数，文件未包含的设备卫星及其配置全部保留。
 
-示例：工作簿含“卫星一号”和“卫星二号”两页，分别创建设备卫星，参数关联各自的新ID。再次导入 `taskId=TASK-20260908-001&type=1` 时，只替换文件中同名卫星的系统和参数，保留卫星主键，未上传的卫星全部保留；任务TASK-20260908-001的设备和其他任务全部保留。
+示例：设备工作簿含“设备一号”和“设备二号”两页，使用 `type=2` 导入后分别创建设备，参数关联各自的ID；再次导入时只替换文件中同名设备的系统和参数，保留设备主键及未上传设备。使用 `type=1` 导入卫星时仅解析第一个Sheet。
 
 ```json
 {"code":200,"message":"操作成功","data":5}
