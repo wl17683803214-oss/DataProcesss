@@ -12,8 +12,6 @@ import java.util.List;
 
 /** 配置文件专用批量查询，所有数据库语句维护在映射文件中。 */
 public interface VisualizationConfigMapper {
-    /** 检查目标任务存在，避免把配置导入任意任务编号。 */
-    String findTask(@Param("taskId") String taskId);
     /** 直接读取当前用户整页组件的场景勾选，不依赖组件数据项是否存在。 */
     List<VisualizationParameterRecord> findSelectedParameters(@Param("taskId") String taskId,
             @Param("userId") Long userId);

@@ -34,13 +34,14 @@ public class GlobalResourceSchemaMigration implements InitializingBean {
         transaction.execute(status -> {
             // 第一步：保护配置表及统计表，避免检查通过后又有旧实例写入冲突数据。
             mapper.lockTables();
-            mapper.prepareScope();
+            // 第二步：只读识别旧范围列，用于保留已生效的全局开关。
+            boolean legacyScopePresent = mapper.hasLegacyScope();
             List<String> conflicts = mapper.findConflicts();
             if (!conflicts.isEmpty()) {
                 throw new IllegalStateException("全局配置升级存在冲突，请先处理后重试：" + conflicts);
             }
-            // 第二步：调整结构并初始化唯一全局配置，保持原有任务数据归属。
-            mapper.migrate();
+            // 第三步：调整结构并初始化固定主键的全局配置，移除旧范围列。
+            mapper.migrate(legacyScopePresent);
             return null;
         });
         LOGGER.info("全局配置及无任务筛选查询的数据结构升级完成");

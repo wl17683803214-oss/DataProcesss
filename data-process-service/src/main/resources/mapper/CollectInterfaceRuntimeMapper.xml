@@ -27,7 +27,7 @@
             and protocol_config.is_deleted = 0
             and protocol_config.enabled = 1
         left join processing_rule_config rule_config
-            on rule_config.scope_key = 'global'
+            on rule_config.id = 1
         where interface_config.is_deleted = 0
           and interface_config.enabled = 1
           <!-- HTTP由统一Web入口接收，不交给UDP或TCP接收器创建监听任务。 -->

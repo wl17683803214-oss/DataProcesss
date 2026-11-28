@@ -58,7 +58,7 @@ public class VisualizationConfigService {
     private final MonitorDashboardWidgetMapper widgetMapper;
     /** 文件专用批量业务标识查询。 */
     private final VisualizationConfigMapper configMapper;
-    /** 复用任务行锁，与参数全量导入、批量编辑串行。 */
+    /** 复用全局事务锁，与参数全量导入、批量编辑串行。 */
     private final DeviceSatelliteMapper deviceMapper;
     /** 使用独立副本严格读取配置文件，不改变应用其他接口的配置。 */
     private final ObjectMapper fileMapper;
@@ -85,9 +85,8 @@ public class VisualizationConfigService {
     /** 同一数据库快照中读取布局和筛选，防止导出混合前后两版配置。 */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public byte[] exportConfig(String taskId, Long userId) {
-        // 第一步：确认用户及任务范围，读取全部组件并建立新文件。
+        // 第一步：确认当前用户，读取全部组件并建立新文件，不依赖处理开关配置。
         String scope = requireScope(taskId, userId);
-        requireTaskExists(scope);
         VisualizationConfigFile file = new VisualizationConfigFile();
         file.setSchemaVersion(1);
         file.setExportedAt(OffsetDateTime.now().toString());
@@ -148,20 +147,17 @@ public class VisualizationConfigService {
 
     /** 文件问题作为中文检查列表返回，本方法不加写锁、不写入数据。 */
     public VisualizationConfigPreviewVO preview(String taskId, Long userId, String filename, byte[] bytes) {
-        // 在当前用户目标任务中进行完整匹配，检查结果不作为后续写入授权凭据。
+        // 在当前用户的全局页面中匹配，检查结果不作为后续写入授权凭据。
         String scope = requireScope(taskId, userId);
-        requireTaskExists(scope);
         return prepare(scope, userId, filename, bytes, false).preview;
     }
 
     /** 真正导入时重新检查，并在同一事务内清理旧页面和创建新页面。 */
     @Transactional(rollbackFor = Exception.class)
     public VisualizationConfigPreviewVO importConfig(String taskId, Long userId, String filename, byte[] bytes) {
-        // 第一步：锁定目标任务，与参数配置替换及本页配置写入串行执行。
+        // 第一步：取得全局事务锁，与参数配置替换及本页配置写入串行执行。
         String scope = requireScope(taskId, userId);
-        if (deviceMapper.lockForReplacement(scope) == null) {
-            throw new IllegalArgumentException("全局处理配置不存在");
-        }
+        deviceMapper.lockGlobalConfiguration();
         // 第二步：重新校验同一文件和最新参数关联，全部成功后才允许清理原页面。
         Prepared prepared = prepare(scope, userId, filename, bytes, true);
         requireValid(prepared.preview);
@@ -474,19 +470,12 @@ public class VisualizationConfigService {
         }
     }
 
-    /** 所有公开操作强制限制到有效登录用户及非空任务编号。 */
+    /** 所有公开操作限制到有效登录用户，不再校验任务或处理开关配置。 */
     private String requireScope(String taskId, Long userId) {
         if (userId == null || userId <= 0) {
             throw new IllegalArgumentException("当前登录用户无效");
         }
         return null;
-    }
-
-    /** 导出和检查只读确认任务存在，真正导入使用同一任务的行锁。 */
-    private void requireTaskExists(String taskId) {
-        if (configMapper.findTask(taskId) == null) {
-            throw new IllegalArgumentException("目标试验任务不存在");
-        }
     }
 
     /** 将最多一百条中文问题返回给页面。 */

@@ -9,10 +9,14 @@
             collect_interface_statistics, data_processing_statistics, dm_alarm_event,
             processed_telemetry_filter_selection, monitor_dashboard_widget in access exclusive mode
     </update>
-    <!-- 补列也在升级事务内，冲突时随同回滚，不产生半完成结构。 -->
-    <update id="prepareScope">
-        alter table processing_rule_config add column if not exists scope_key varchar(32)
-    </update>
+    <!-- 只识别旧版本范围列，未添加过该列的环境无需先补列。 -->
+    <select id="hasLegacyScope" resultType="boolean">
+        select exists (
+            select 1 from information_schema.columns
+            where table_schema = current_schema()
+              and table_name = 'processing_rule_config' and column_name = 'scope_key'
+        )
+    </select>
     <!-- 在升级事务内取得表锁，停止旧实例后再执行升级可避免长时间等待。 -->
     <select id="findConflicts" resultType="string">
         WITH configuration_conflicts AS (
@@ -36,14 +40,35 @@
             union all
             select cast(concat('处理统计窗口重复：接口', cast(interface_id as text)) as text) as detail from data_processing_statistics
             where 1 = 1 group by interface_id, statistics_time having count(1) &gt; 1
-            union all
-            select cast('不同任务的参数范围检查开关不一致，请先统一配置' as text) as detail
-            from processing_rule_config
-            having count(distinct parameter_range_check_enabled) &gt; 1
-               and sum(case when scope_key = 'global' then 1 else 0 end) = 0
         )
         select detail from configuration_conflicts order by detail limit 100
     </select>
+    <!-- 先保留现有全局开关，未迁移环境沿用主键一，无记录时采用最近配置或关闭值。 -->
+    <sql id="processingRuleConfigUpgrade">
+        alter table processing_rule_config alter column task_id drop not null;
+        insert into processing_rule_config (id, parameter_range_check_enabled)
+        select 1, coalesce(
+            <if test="legacyScopePresent">
+                (select parameter_range_check_enabled from processing_rule_config
+                 where scope_key = 'global' order by id desc limit 1),
+            </if>
+            (select parameter_range_check_enabled from processing_rule_config where id = 1),
+            (select parameter_range_check_enabled from processing_rule_config
+             order by update_time desc, id desc limit 1),
+            0
+        )
+        on conflict (id) do update
+        set parameter_range_check_enabled = excluded.parameter_range_check_enabled,
+            update_time = current_timestamp
+        where processing_rule_config.parameter_range_check_enabled
+            is distinct from excluded.parameter_range_check_enabled;
+        <!-- 只移除已废弃的范围列，不删除旧配置行或其他业务数据。 -->
+        alter table processing_rule_config drop column if exists scope_key;
+    </sql>
+    <!-- 已完成全局化的数据库可单独移除旧范围列，调用方须在事务内锁定配置表。 -->
+    <update id="migrateProcessingRuleConfig">
+        <include refid="processingRuleConfigUpgrade"/>
+    </update>
     <!-- 历史任务列保留用于兼容及追溯，新代码不再读写这些列。 -->
     <update id="migrate">
         alter table collect_interface_config alter column task_id drop not null;
@@ -51,7 +76,6 @@
         alter table device_satellite alter column task_id drop not null;
         alter table telemetry_system_config alter column task_id drop not null;
         alter table telemetry_parse_rule_config alter column task_id drop not null;
-        alter table processing_rule_config alter column task_id drop not null;
         alter table calib_channel_config alter column task_id drop not null;
         alter table calib_record alter column task_id drop not null;
         alter table calib_record_detail alter column task_id drop not null;
@@ -60,12 +84,8 @@
         alter table dm_alarm_event alter column task_id drop not null;
         alter table processed_telemetry_filter_selection alter column task_id drop not null;
         alter table monitor_dashboard_widget alter column task_id drop not null;
-        <!-- 全局开关使用独立范围键，旧任务开关保留为历史记录。 -->
-        alter table processing_rule_config add column if not exists scope_key varchar(32);
-        create unique index if not exists uk_processing_rule_scope on processing_rule_config (scope_key);
-        insert into processing_rule_config (scope_key, parameter_range_check_enabled)
-        select 'global', coalesce(max(parameter_range_check_enabled), 0) from processing_rule_config
-        on conflict (scope_key) do nothing;
+        <!-- 复用固定主键初始化及旧列清理，不再添加范围字段。 -->
+        <include refid="processingRuleConfigUpgrade"/>
         <!-- 新的唯一约束覆盖所有有效配置，不再按任务分区。 -->
         drop index if exists uk_collect_interface_statistics_window;
         create unique index uk_collect_interface_statistics_window on collect_interface_statistics (interface_id, statistics_time);

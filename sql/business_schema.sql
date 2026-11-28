@@ -120,11 +120,10 @@ COMMENT ON COLUMN data_process_task.update_time IS '更新时间';
 
 CREATE INDEX IF NOT EXISTS idx_data_process_task_task_id ON data_process_task (task_id);
 
--- 数据处理页面右侧“处理规则配置”，每个试验任务保存一组开关。
+-- 数据处理页面右侧的全局开关，固定使用主键一，不再按试验任务或范围字段区分。
 CREATE TABLE IF NOT EXISTS processing_rule_config (
     id BIGSERIAL PRIMARY KEY,
     task_id VARCHAR(100),
-    scope_key VARCHAR(32) UNIQUE,
     dedup_enabled SMALLINT NOT NULL DEFAULT 1,
     abnormal_frame_filter_enabled SMALLINT NOT NULL DEFAULT 1,
     delayed_data_compensation_enabled SMALLINT NOT NULL DEFAULT 0,
@@ -134,8 +133,8 @@ CREATE TABLE IF NOT EXISTS processing_rule_config (
     update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON TABLE processing_rule_config IS '任务级数据处理规则开关配置';
-COMMENT ON COLUMN processing_rule_config.id IS '规则配置主键ID';
+COMMENT ON TABLE processing_rule_config IS '全局数据处理规则开关配置';
+COMMENT ON COLUMN processing_rule_config.id IS '规则配置主键ID，固定主键一为全局生效配置';
 COMMENT ON COLUMN processing_rule_config.task_id IS '历史兼容字段，新配置和全局记录不再读写';
 COMMENT ON COLUMN processing_rule_config.dedup_enabled IS '数据去重规则：0关闭 1开启';
 COMMENT ON COLUMN processing_rule_config.abnormal_frame_filter_enabled IS '异常帧过滤：0关闭 1开启';
@@ -145,11 +144,11 @@ COMMENT ON COLUMN processing_rule_config.compression_archive_enabled IS '数据�
 COMMENT ON COLUMN processing_rule_config.create_time IS '创建时间';
 COMMENT ON COLUMN processing_rule_config.update_time IS '更新时间';
 
--- 数据监测告警事件表
--- 全局处理配置同时用于导入与勾选维护的并发锁。
-INSERT INTO processing_rule_config (scope_key, parameter_range_check_enabled)
-VALUES ('global', 0) ON CONFLICT (scope_key) DO NOTHING;
+-- 新环境默认关闭野值检测；重复搭建时保留已经设置的开关，不覆盖已有配置。
+INSERT INTO processing_rule_config (id, parameter_range_check_enabled)
+VALUES (1, 0) ON CONFLICT (id) DO NOTHING;
 
+-- 数据监测告警事件表。
 CREATE TABLE IF NOT EXISTS dm_alarm_event (
     id BIGSERIAL PRIMARY KEY,
     task_id VARCHAR(100),

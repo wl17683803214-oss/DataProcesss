@@ -12,12 +12,9 @@
             <otherwise>and 1 = 0</otherwise>
         </choose>
     </update>
-    <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
-    <select id="lockForReplacement" resultType="string" useCache="false" flushCache="true">
-        select scope_key
-        from processing_rule_config
-        where scope_key = 'global'
-        for update
+    <!-- 复用项目已有的事务级咨询锁，不依赖配置表字段或初始化记录。 -->
+    <select id="lockGlobalConfiguration" resultType="string" useCache="false" flushCache="true">
+        select pg_advisory_xact_lock(hashtext('全局配置维护'))
     </select>
     <!-- 全局配置及查询不按试验任务隔离，保留主键与业务范围约束。 -->
     <select id="findOptions" resultType="com.example.dataadmin.vo.processing.DeviceSatelliteOptionVO">

@@ -156,9 +156,7 @@ public class TelemetryFilterService {
     @Transactional(rollbackFor = Exception.class)
     public void update(TelemetryFilterSelectionRequest request) {
         // 参数勾选与整页可视化导入、参数表替换共同串行，锁内重新检查组件归属。
-        if (deviceMapper.lockForReplacement(request.getTaskId()) == null) {
-            throw new IllegalArgumentException("目标全局处理配置不存在");
-        }
+        deviceMapper.lockGlobalConfiguration();
         long scopeId = scopeService.require(request.getTaskId(),
                 request.getSelectionType(), request.getTargetId());
         TelemetryParseRuleConfig rule = ruleMapper.findActiveById(
@@ -206,13 +204,11 @@ public class TelemetryFilterService {
     /** 按现有勾选场景清除单个页面或组件，整个操作失败时统一回滚。 */
     @Transactional(rollbackFor = Exception.class)
     public void clear(TelemetryFilterClearRequest request) {
-        // 第一步：校验任务并复用任务锁，与单项勾选和配置导入保持串行。
+        // 第一步：取得全局事务锁，与单项勾选和配置导入保持串行。
         String taskId = request.getTaskId();
-        if (deviceMapper.lockForReplacement(taskId) == null) {
-            throw new IllegalArgumentException("目标试验任务不存在");
-        }
+        deviceMapper.lockGlobalConfiguration();
 
-        // 第二步：锁内复用场景校验，确保组件属于当前任务、当前用户且类型匹配。
+        // 第二步：锁内复用场景校验，确保组件属于当前用户且类型匹配。
         long scopeId = scopeService.require(taskId, request.getSelectionType(), request.getTargetId());
 
         // 第三步：物理删除当前范围内全部勾选记录，不受树展开或搜索条件影响。

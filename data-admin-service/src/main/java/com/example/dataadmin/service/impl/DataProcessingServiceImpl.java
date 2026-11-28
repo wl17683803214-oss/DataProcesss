@@ -283,15 +283,16 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     @Override
     @Transactional
     public ProcessingRuleConfig getProcessingRuleConfig(String taskId) {
-        ProcessingRuleConfig config = processingRuleConfigMapper.findByTaskId(taskId);
+        // 第一步：读取固定主键的全局开关，不依赖试验任务或范围字段。
+        ProcessingRuleConfig config = processingRuleConfigMapper.findGlobal();
         if (config != null) {
             return config;
         }
         config = new ProcessingRuleConfig();
-        config.setTaskId(taskId);
+        // 第二步：兼容尚未初始化配置的环境，并发首次访问不覆盖已有值。
         config.setParameterRangeCheckEnabled(0);
         processingRuleConfigMapper.insert(config);
-        return processingRuleConfigMapper.findByTaskId(taskId);
+        return processingRuleConfigMapper.findGlobal();
     }
 
     @Override
@@ -300,14 +301,13 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         if (config == null) {
             throw new IllegalArgumentException("处理规则配置不能为空");
         }
-        if (processingRuleConfigMapper.findByTaskId(config.getTaskId()) == null) {
-            processingRuleConfigMapper.insert(config);
-        } else {
-            processingRuleConfigMapper.update(config);
-        }
+        // 第一步：复用全局事务锁，并确保并发首次保存也能写入本次开关值。
+        deviceSatelliteMapper.lockGlobalConfiguration();
+        processingRuleConfigMapper.insert(config);
+        processingRuleConfigMapper.update(config);
         // 事务提交后通知数据处理模块刷新当前接口的规则开关快照。
         runtimeSyncService.syncAfterCommit();
-        return processingRuleConfigMapper.findByTaskId(config.getTaskId());
+        return processingRuleConfigMapper.findGlobal();
     }
 
     /** 查询当前任务指定类型的设备卫星筛选项。 */
@@ -362,7 +362,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             throw new IllegalArgumentException("单次必须修改1到200条遥测参数");
         }
         // 第一步：按任务串行化导入与编辑，并一次加载本批次原始记录。
-        lockTask(taskId);
+        deviceSatelliteMapper.lockGlobalConfiguration();
         List<Long> ids = new ArrayList<>(items.size());
         Set<Long> distinctIds = new HashSet<>();
         for (TelemetryParseRuleBatchUpdateRequest.Item item : items) {
@@ -557,7 +557,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     private int persistImportedRules(String taskId, String type,
             Map<String, List<TelemetryParseRuleConfig>> sheets, Map<String, String> names) {
         // 第一步：锁定替换过程，防止并发导入或编辑留下多套有效记录。
-        lockTask(taskId);
+        deviceSatelliteMapper.lockGlobalConfiguration();
         // 第二步：文件按名称匹配，基线按卫星编码匹配，未返回项保留原有配置。
         Map<String, DeviceSatellite> existing = new HashMap<>();
         for (DeviceSatellite device : deviceSatelliteMapper.findByType(taskId, type)) {
@@ -642,7 +642,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteParseRules(Long deviceSatelliteId) {
-        // 第一步：定位所属任务并加锁，与上传和参数编辑串行执行。
+        // 第一步：校验设备并取得全局事务锁，与上传和参数编辑串行执行。
         if (deviceSatelliteId == null || deviceSatelliteId <= 0) {
             throw new IllegalArgumentException("设备卫星编号必须为正整数");
         }
@@ -651,7 +651,7 @@ public class DataProcessingServiceImpl implements DataProcessingService {
             throw new IllegalArgumentException("设备卫星不存在或已删除");
         }
         String taskId = device.getTaskId();
-        lockTask(taskId);
+        deviceSatelliteMapper.lockGlobalConfiguration();
         device = deviceSatelliteMapper.findActive(taskId, deviceSatelliteId);
         if (device == null) {
             throw new IllegalArgumentException("设备卫星不存在或已删除");
@@ -730,13 +730,6 @@ public class DataProcessingServiceImpl implements DataProcessingService {
         if (deviceSatelliteId == null || deviceSatelliteId <= 0
                 || deviceSatelliteMapper.findActive(taskId, deviceSatelliteId) == null) {
             throw new IllegalArgumentException("不存在有效的设备卫星");
-        }
-    }
-
-    /** 通过全局处理配置行串行化导入、编辑与勾选维护。 */
-    private void lockTask(String taskId) {
-        if (deviceSatelliteMapper.lockForReplacement(taskId) == null) {
-            throw new IllegalArgumentException("全局处理配置不存在，请先完成数据库升级");
         }
     }
 

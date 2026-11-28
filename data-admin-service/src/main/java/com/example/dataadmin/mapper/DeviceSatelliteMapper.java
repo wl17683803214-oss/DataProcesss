@@ -13,8 +13,8 @@ public interface DeviceSatelliteMapper {
     int deleteByDevice(@Param("taskId") String taskId, @Param("deviceSatelliteId") Long deviceSatelliteId);
     /** 根据唯一主键定位有效设备卫星及其所属任务。 */
     DeviceSatellite findActiveById(@Param("id") Long id);
-    /** 锁定当前试验任务，防止同时导入产生两套有效数据。 */
-    String lockForReplacement(@Param("taskId") String taskId);
+    /** 全局配置维护使用同一事务锁，事务结束自动释放，不依赖配置记录。 */
+    void lockGlobalConfiguration();
     /** 查询指定任务和类型的筛选项。 */
     List<DeviceSatelliteOptionVO> findOptions(@Param("taskId") String taskId, @Param("type") String type);
     /** 在当前任务中查找有效关联。 */

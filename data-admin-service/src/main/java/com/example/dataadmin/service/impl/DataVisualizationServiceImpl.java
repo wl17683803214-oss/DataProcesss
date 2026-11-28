@@ -37,7 +37,7 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     private final ProcessedTelemetryFilterSelectionMapper selectionMapper;
     /** 文件分页查询只读取已上传至对象存储的接收记录。 */
     private final FepFileListMapper fileListMapper;
-    /** 页面写入与整页配置替换共同锁定所属任务，避免并发写入残留组件。 */
+    /** 页面写入与整页配置替换共用全局事务锁，避免并发写入残留组件。 */
     private final DeviceSatelliteMapper deviceMapper;
     /** 查询授权通过后才为文件生成临时读取地址。 */
     private final MinioFileUrlSigner fileUrlSigner;
@@ -77,8 +77,8 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     public Long createWidget(MonitorDashboardWidget widget) {
         // 组件类型必须来自统一枚举，不再校验任务编号。
         requireWidgetConfig(widget);
-        // 锁定同一任务后再新增，与整页替换保持串行。
-        lockTask(widget.getTaskId());
+        // 取得全局事务锁后新增，与整页替换保持串行，不依赖开关配置记录。
+        deviceMapper.lockGlobalConfiguration();
         widgetMapper.insert(widget);
         // 新组件的遥测参数由按需筛选树勾选，不复制任务下全部解析配置。
         return widget.getId();
@@ -107,7 +107,7 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Override
     @Transactional
     public boolean deleteWidget(Long id) {
-        // 组件与参数勾选的清理使用同一任务锁。
+        // 组件与参数勾选的清理使用同一全局事务锁。
         lockWidget(id);
         // 先清理组件下的数据项，避免残留无法归属的配置记录。
         MonitorDashboardWidget widget = widgetMapper.findById(id);
@@ -133,7 +133,7 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
     @Override
     @Transactional
     public Long createWidgetItem(MonitorWidgetConfigItem item) {
-        // 在任务锁内确认组件仍存在，防止写入旧组件主键。
+        // 在全局事务锁内确认组件仍存在，防止写入旧组件主键。
         lockWidget(item.getWidgetId());
         // 未明确勾选的遥测参数默认保持未选中，避免重新运行迁移脚本时误勾选。
         if (item.getParseRuleId() != null && item.getIsSelected() == null) {
@@ -238,23 +238,14 @@ public class DataVisualizationServiceImpl implements DataVisualizationService {
         throw new IllegalArgumentException("组件类型无效");
     }
 
-    /** 页面写入复用任务行锁，与参数配置维护及配置整页替换保持一致。 */
-    private void lockTask(String taskId) {
-        if (deviceMapper.lockForReplacement(null) == null) {
-            throw new IllegalArgumentException("组件所属试验任务不存在");
-        }
-    }
-
-    /** 等待任务锁后重新确认组件存在，避免并发导入后出现悬空关联。 */
+    /** 等待全局事务锁后确认组件存在，避免并发导入后出现悬空关联。 */
     private void lockWidget(Long widgetId) {
+        // 第一步：锁查询清理本地缓存，后续读取使用最新组件记录。
+        deviceMapper.lockGlobalConfiguration();
+        // 第二步：只校验组件，不要求处理规则配置已经初始化。
         MonitorDashboardWidget widget = widgetMapper.findById(widgetId);
         if (widget == null) {
             throw new IllegalArgumentException("可视化组件不存在");
-        }
-        // 任务锁查询会清理本地查询缓存，加锁后的确认读取最新组件记录。
-        lockTask(widget.getTaskId());
-        if (widgetMapper.findById(widgetId) == null) {
-            throw new IllegalArgumentException("可视化组件已被替换，请刷新页面后重试");
         }
     }
 
