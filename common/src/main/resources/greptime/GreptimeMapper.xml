@@ -19,6 +19,7 @@
         ) WITH ('append_mode'='false', 'merge_mode'='last_row', 'ttl'='forever')
     </update>
     <update id="createDailyStatisticsTable">
+        <!-- 使用遥测状态专用字段名，避免与数据库关键字冲突。 -->
         CREATE TABLE IF NOT EXISTS telemetry_daily_statistics (
             stat_date TIMESTAMP(3) NOT NULL COMMENT '统计日期',
             task_id STRING NOT NULL INVERTED INDEX COMMENT '任务ID',
@@ -29,10 +30,10 @@
             min_value DOUBLE COMMENT '最小值',
             avg_value DOUBLE COMMENT '平均值',
             variance DOUBLE COMMENT '方差',
-            status STRING NOT NULL DEFAULT '' COMMENT '遥测状态类型',
+            telemetry_status STRING NOT NULL DEFAULT '' COMMENT '遥测状态类型',
             created_at TIMESTAMP(3) COMMENT '统计结果生成时间',
             TIME INDEX (stat_date),
-            PRIMARY KEY (task_id, satellite_code, telemetry_code, status)
+            PRIMARY KEY (task_id, satellite_code, telemetry_code, telemetry_status)
         ) WITH ('append_mode'='false', 'merge_mode'='last_row', 'ttl'='forever')
     </update>
     <select id="dailyStatisticsPrimaryKey" resultType="string">
@@ -46,7 +47,7 @@
         SELECT task_id,
                CASE WHEN source_type = 'rpc' THEN source_identity ELSE '' END AS satellite_code,
                telemetry_code, MAX(telemetry_name) AS telemetry_name,
-               COALESCE(state_type, '') AS status,
+               COALESCE(state_type, '') AS telemetry_status,
                MAX(`value`) AS max_value, MIN(`value`) AS min_value,
                AVG(`value`) AS avg_value, VAR_POP(`value`) AS variance,
                COUNT(`value`) AS sample_count
@@ -59,13 +60,13 @@
     <insert id="insertDailyStatistics">
         INSERT INTO telemetry_daily_statistics
             (stat_date, task_id, satellite_code, telemetry_code, telemetry_name,
-             max_value, min_value, avg_value, variance, status, created_at)
+             max_value, min_value, avg_value, variance, telemetry_status, created_at)
         VALUES
         <foreach collection="rows" item="row" separator=",">
             (#{statDate,jdbcType=TIMESTAMP}, #{row.taskId}, #{row.satelliteCode}, #{row.telemetryCode},
              #{row.telemetryName,jdbcType=VARCHAR}, #{row.maxValue,jdbcType=DOUBLE},
              #{row.minValue,jdbcType=DOUBLE}, #{row.avgValue,jdbcType=DOUBLE},
-             #{row.variance,jdbcType=DOUBLE}, #{row.status}, #{createdAt,jdbcType=TIMESTAMP})
+             #{row.variance,jdbcType=DOUBLE}, #{row.telemetryStatus}, #{createdAt,jdbcType=TIMESTAMP})
         </foreach>
     </insert>
     <insert id="registerTables">
@@ -253,3 +254,4 @@
         </where>
     </delete>
 </mapper>
+

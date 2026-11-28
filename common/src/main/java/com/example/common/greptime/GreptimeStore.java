@@ -217,7 +217,7 @@ public class GreptimeStore implements AutoCloseable {
             throw new IllegalArgumentException("统计时间范围不正确");
         }
         List<String> primaryKey = execute(mapper -> mapper.dailyStatisticsPrimaryKey(databaseName));
-        if (!primaryKey.equals(Arrays.asList("task_id", "satellite_code", "telemetry_code", "status"))) {
+        if (!primaryKey.equals(Arrays.asList("task_id", "satellite_code", "telemetry_code", "telemetry_status"))) {
             throw new IllegalStateException("每日统计表主键不正确，请先迁移旧表，避免不同状态的结果互相覆盖");
         }
         Map<List<String>, DailyTelemetryStatistics> merged = new LinkedHashMap<>();
@@ -410,3 +410,4 @@ public class GreptimeStore implements AutoCloseable {
         }
     }
 }
+

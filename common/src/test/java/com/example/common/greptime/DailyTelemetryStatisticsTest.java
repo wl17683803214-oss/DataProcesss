@@ -20,8 +20,8 @@ class DailyTelemetryStatisticsTest {
     void distinctStatesHaveDistinctKeys() {
         DailyTelemetryStatistics first = row(1, 1, 1, 1, 0);
         DailyTelemetryStatistics second = row(1, 1, 1, 1, 0);
-        first.status = "A";
-        second.status = "B";
+        first.telemetryStatus = "A";
+        second.telemetryStatus = "B";
         assertNotEquals(first.key(), second.key());
     }
 
@@ -35,3 +35,4 @@ class DailyTelemetryStatisticsTest {
         return row;
     }
 }
+

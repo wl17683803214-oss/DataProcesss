@@ -9,7 +9,7 @@ public class DailyTelemetryStatistics {
     public String satelliteCode;
     public String telemetryCode;
     public String telemetryName;
-    public String status;
+    public String telemetryStatus;
     public Double maxValue;
     public Double minValue;
     public Double avgValue;
@@ -18,7 +18,7 @@ public class DailyTelemetryStatistics {
     public long sampleCount;
 
     List<String> key() {
-        return Arrays.asList(taskId, satelliteCode, telemetryCode, status);
+        return Arrays.asList(taskId, satelliteCode, telemetryCode, telemetryStatus);
     }
 
     /** 按实际样本数合并，不能直接平均各分表的均值或方差。 */
@@ -51,3 +51,4 @@ public class DailyTelemetryStatistics {
         sampleCount = total;
     }
 }
+
